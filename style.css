@@ -150,10 +150,7 @@ header {
 header h1 {
   font-size: 1.15rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary), var(--cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary);
   white-space: nowrap;
 }
 
