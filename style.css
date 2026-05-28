@@ -5,6 +5,7 @@ body {
   background: #0f172a;
   color: #f1f5f9;
   min-height: 100vh;
+  color-scheme: dark;
 }
 
 /* ── LOGIN ── */
@@ -37,9 +38,10 @@ body {
   border-radius: 10px;
   font-size: 1rem;
   outline: none;
-  background: #0f172a;
-  color: #f1f5f9;
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
   transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none; appearance: none;
 }
 .pwd-wrapper input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
 .pwd-wrapper input::placeholder { color: #64748b; }
@@ -140,7 +142,9 @@ nav { display: flex; gap: 0.4rem; flex: 1; flex-wrap: wrap; }
 .filters select, .filters input {
   padding: 0.45rem 0.7rem; border: 1.5px solid #334155;
   border-radius: 8px; font-size: 0.88rem; outline: none;
-  background: #0f172a; color: #f1f5f9; transition: border-color .15s;
+  background: #0f172a !important; color: #f1f5f9 !important;
+  transition: border-color .15s;
+  -webkit-appearance: none; appearance: none;
 }
 .filters select:focus, .filters input:focus { border-color: #6366f1; }
 .filters select option { background: #1e293b; color: #f1f5f9; }
@@ -151,8 +155,9 @@ form label { display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem;
 form input, form select, form textarea {
   padding: 0.65rem 0.9rem; border: 1.5px solid #334155;
   border-radius: 10px; font-size: 0.95rem; font-family: inherit;
-  outline: none; background: #0f172a; color: #f1f5f9;
+  outline: none; background: #0f172a !important; color: #f1f5f9 !important;
   transition: border-color .15s, box-shadow .15s;
+  -webkit-appearance: none; appearance: none;
 }
 form input:focus, form select:focus, form textarea:focus {
   border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
