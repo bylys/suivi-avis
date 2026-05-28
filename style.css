@@ -150,7 +150,7 @@ header {
 header h1 {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #3730a3;
+  color: #000000;
   white-space: nowrap;
 }
 @media (prefers-color-scheme: dark) {
