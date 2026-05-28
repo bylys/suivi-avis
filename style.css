@@ -149,9 +149,12 @@ header {
 
 header h1 {
   font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--primary);
+  font-weight: 800;
+  color: #3730a3;
   white-space: nowrap;
+}
+@media (prefers-color-scheme: dark) {
+  header h1 { color: #a5b4fc; }
 }
 
 nav { display: flex; gap: 0.4rem; flex: 1; flex-wrap: wrap; }
