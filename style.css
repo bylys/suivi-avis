@@ -50,8 +50,10 @@
 
   form input, form select, form textarea,
   .filters select, .filters input,
+  .form select option,
+  .filters select option { background: #1e293b; color: #f1f5f9; }
   .statut-inline, .inline-form input { background: #0f172a; color: #f1f5f9; border-color: #334155; }
-
+  .form select option, .filters select option, .statut-inline option { background: #1e293b; color: #f1f5f9; }
   .avis-fiche      { background: #1e1b4b; color: #818cf8; }
   .rappels-summary { background: #1c1708; border-color: #fbbf24; color: #fde68a; }
   .avis-a-verifier { background: #1c1708 !important; }
