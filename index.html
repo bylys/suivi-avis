@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suivi Avis GMB – Kevin</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── ÉCRAN MOT DE PASSE ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>🔒 Suivi Avis GMB</h1>
+    <p>Accès réservé</p>
+    <div class="pwd-wrapper">
+      <input type="password" id="pwd-input" placeholder="Mot de passe" />
+      <button type="button" class="eye-btn" onclick="togglePwd()" id="eye-btn">👁</button>
+    </div>
+    <button onclick="checkPassword()">Entrer</button>
+    <p id="pwd-error" class="error hidden">Mot de passe incorrect.</p>
+  </div>
+</div>
+
+<!-- ── APPLICATION PRINCIPALE ── -->
+<div id="app" class="hidden">
+  <header>
+    <h1>📍 Suivi Avis GMB</h1>
+    <nav>
+      <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
+      <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
+      <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
+      <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
+    </nav>
+    <button class="logout-btn" onclick="logout()">Déconnexion</button>
+  </header>
+
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard" class="tab-content">
+    <h2>Dashboard mensuel</h2>
+    <div class="filters">
+      <label>Fiche GMB :
+        <select id="dash-fiche">
+          <option value="">Toutes les fiches</option>
+        </select>
+      </label>
+      <label>Année :
+        <select id="dash-year"></select>
+      </label>
+      <label>Mois :
+        <select id="dash-month">
+          <option value="">Tous</option>
+          <option value="01">Janvier</option>
+          <option value="02">Février</option>
+          <option value="03">Mars</option>
+          <option value="04">Avril</option>
+          <option value="05">Mai</option>
+          <option value="06">Juin</option>
+          <option value="07">Juillet</option>
+          <option value="08">Août</option>
+          <option value="09">Septembre</option>
+          <option value="10">Octobre</option>
+          <option value="11">Novembre</option>
+          <option value="12">Décembre</option>
+        </select>
+      </label>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <span id="stat-total">0</span>
+        <label>Avis ce mois</label>
+      </div>
+      <div class="stat-card">
+        <span id="stat-moyenne">–</span>
+        <label>Note moyenne</label>
+      </div>
+      <div class="stat-card">
+        <span id="stat-positifs">0</span>
+        <label>Avis positifs (4-5★)</label>
+      </div>
+      <div class="stat-card">
+        <span id="stat-negatifs">0</span>
+        <label>Avis négatifs (1-2★)</label>
+      </div>
+      <div class="stat-card highlight">
+        <span id="stat-j30">0</span>
+        <label>Toujours en ligne J+30</label>
+      </div>
+      <div class="stat-card">
+        <span id="stat-supprimes">0</span>
+        <label>Avis supprimés</label>
+      </div>
+      <div class="stat-card highlight-gold">
+        <span id="stat-survie">–</span>
+        <label>Taux de survie J+30</label>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box">
+        <h3>Nombre d'avis par mois</h3>
+        <canvas id="chart-volume"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Note moyenne par mois</h3>
+        <canvas id="chart-note"></canvas>
+      </div>
+    </div>
+    <div class="chart-box wide">
+      <h3>Répartition des notes</h3>
+      <canvas id="chart-repartition"></canvas>
+    </div>
+    <button class="btn-export" onclick="exportExcel()">📥 Exporter en Excel (mois en cours)</button>
+  </section>
+
+  <!-- SAISIE -->
+  <section id="tab-saisie" class="tab-content hidden">
+    <h2>Saisir un nouvel avis</h2>
+    <form id="form-avis" onsubmit="submitAvis(event)">
+      <label>Fiche GMB *
+        <select id="form-fiche" required>
+          <option value="">-- Choisir une fiche --</option>
+        </select>
+      </label>
+      <label>Gmail de l'auteur *
+        <input type="email" id="form-auteur" placeholder="client@gmail.com" required />
+      </label>
+      <label>Note * <span id="star-display">☆☆☆☆☆</span>
+        <div class="star-picker">
+          <span onclick="setNote(1)">★</span>
+          <span onclick="setNote(2)">★</span>
+          <span onclick="setNote(3)">★</span>
+          <span onclick="setNote(4)">★</span>
+          <span onclick="setNote(5)">★</span>
+        </div>
+        <input type="hidden" id="form-note" required />
+      </label>
+      <label>Date de l'avis *
+        <input type="date" id="form-date" required />
+      </label>
+      <label>Texte de l'avis
+        <textarea id="form-texte" rows="4" placeholder="Contenu de l'avis (optionnel)"></textarea>
+      </label>
+      <label>Statut de l'avis *
+        <select id="form-statut" required>
+          <option value="">-- Choisir un statut --</option>
+          <option value="supprime">Supprimé (à été fait)</option>
+          <option value="j0">Posté J+0</option>
+          <option value="j7">Posté J+7</option>
+          <option value="j14">Posté J+14</option>
+          <option value="j21">Posté J+21</option>
+          <option value="j30">Posté J+30</option>
+        </select>
+      </label>
+      <label>Réponse apportée
+        <textarea id="form-reponse" rows="3" placeholder="Réponse au client (optionnel)"></textarea>
+      </label>
+      <button type="submit" class="btn-primary">Enregistrer l'avis</button>
+    </form>
+    <p id="form-success" class="success hidden">✅ Avis enregistré avec succès !</p>
+  </section>
+
+  <!-- LISTE -->
+  <section id="tab-liste" class="tab-content hidden">
+    <h2>Liste des avis</h2>
+    <div class="filters">
+      <label>Fiche :
+        <select id="list-fiche" onchange="renderListe()">
+          <option value="">Toutes</option>
+        </select>
+      </label>
+      <label>Mois :
+        <input type="month" id="list-month" onchange="renderListe()" />
+      </label>
+      <label>Note :
+        <select id="list-note" onchange="renderListe()">
+          <option value="">Toutes</option>
+          <option value="5">5★</option>
+          <option value="4">4★</option>
+          <option value="3">3★</option>
+          <option value="2">2★</option>
+          <option value="1">1★</option>
+        </select>
+      </label>
+      <label>Statut :
+        <select id="list-statut" onchange="renderListe()">
+          <option value="">Tous</option>
+          <option value="supprime">Supprimé (à été fait)</option>
+          <option value="j0">Posté J+0</option>
+          <option value="j7">Posté J+7</option>
+          <option value="j14">Posté J+14</option>
+          <option value="j21">Posté J+21</option>
+          <option value="j30">Posté J+30</option>
+        </select>
+      </label>
+    </div>
+    <div id="rappels-banner"></div>
+    <div id="rappels-count"></div>
+    <div id="liste-avis"></div>
+  </section>
+
+  <!-- FICHES -->
+  <section id="tab-fiches" class="tab-content hidden">
+    <h2>Gérer les fiches GMB</h2>
+    <form onsubmit="addFiche(event)">
+      <div class="inline-form">
+        <input type="text" id="fiche-nom" placeholder="Nom de la fiche (ex: Restaurant Paris 12e)" required />
+        <input type="url" id="fiche-lien" placeholder="Lien GMB (optionnel)" />
+        <button type="submit" class="btn-primary">Ajouter</button>
+      </div>
+    </form>
+    <ul id="liste-fiches"></ul>
+  </section>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
