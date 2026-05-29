@@ -27,7 +27,7 @@ body {
   border: 1px solid #334155;
 }
 
-.login-box h1 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #f1f5f9; }
+.login-box h1 { font-size: 1.6rem; margin-bottom: 0.4rem; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
 .login-box > p { color: #94a3b8; margin-bottom: 1.8rem; font-size: 0.9rem; }
 
 .pwd-wrapper { position: relative; margin-bottom: 1rem; }
