@@ -43,10 +43,8 @@
     <div class="filters">
       <label>Fiche GMB :
         <select id="dash-fiche">
-          <option value="">Toutes les fiches</option>
-        </select>
-      </label>
-      <label>Année :
+          <input type="text" id="dash-fiche" list="datalist-dash-fiche" placeholder="Toutes les fiches" autocomplete="off" oninput="renderDashboard()" />
+<datalist id="datalist-dash-fiche"></datalist>
         <select id="dash-year"></select>
       </label>
       <label>Mois :
@@ -122,10 +120,8 @@
         <select id="form-fiche" required>
           <option value="">-- Choisir une fiche --</option>
         </select>
-      </label>
-      <label>Gmail de l'auteur *
-        <input type="email" id="form-auteur" placeholder="client@gmail.com" required />
-      </label>
+      <input type="text" id="form-fiche" list="datalist-form-fiche" placeholder="Rechercher une fiche..." autocomplete="off" required />
+<datalist id="datalist-form-fiche"></datalist>
       <label>Note * <span id="star-display">☆☆☆☆☆</span>
         <div class="star-picker">
           <span onclick="setNote(1)">★</span>
@@ -171,10 +167,8 @@
         </select>
       </label>
       <label>Mois :
-        <input type="month" id="list-month" onchange="renderListe()" />
-      </label>
-      <label>Note :
-        <select id="list-note" onchange="renderListe()">
+        <input type="text" id="list-fiche" list="datalist-list-fiche" placeholder="Toutes" autocomplete="off" oninput="renderListe()" />
+<datalist id="datalist-list-fiche"></datalist>
           <option value="">Toutes</option>
           <option value="5">5★</option>
           <option value="4">4★</option>
