@@ -73,7 +73,6 @@ async function init() {
     yearSel.appendChild(o);
   }
   yearSel.addEventListener('change', renderDashboard);
-  document.getElementById('dash-fiche').addEventListener('change', renderDashboard);
   document.getElementById('dash-month').addEventListener('change', renderDashboard);
 
   const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
@@ -94,21 +93,10 @@ function showTab(name) {
 // ── FICHES ──
 async function populateFicheSelects() {
   const fiches = await getFiches();
-  ['form-fiche', 'dash-fiche', 'list-fiche'].forEach(id => {
-    const sel = document.getElementById(id);
-    const keep = (id === 'dash-fiche' || id === 'list-fiche') ? sel.options[0] : null;
-    sel.innerHTML = '';
-    if (keep) sel.appendChild(keep);
-    else {
-      const def = document.createElement('option');
-      def.value = ''; def.textContent = '-- Choisir une fiche --';
-      sel.appendChild(def);
-    }
-    fiches.forEach(f => {
-      const o = document.createElement('option');
-      o.value = f.nom; o.textContent = f.nom;
-      sel.appendChild(o);
-    });
+  const options = fiches.map(f => `<option value="${f.nom.replace(/"/g,'&quot;')}">`).join('');
+  ['datalist-form-fiche', 'datalist-dash-fiche', 'datalist-list-fiche'].forEach(id => {
+    const dl = document.getElementById(id);
+    if (dl) dl.innerHTML = options;
   });
 }
 
