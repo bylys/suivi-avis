@@ -1,8 +1,43 @@
-// ── SUPABASE CLIENT ──
-const { createClient } = supabase;
+// ── SUPABASE REST API (sans CDN) ──
 const SUPABASE_URL = 'https://rrbvghxmnimusfyqixau.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_k0nVhKHWUT5kBW9xBNpLkA_AKam7uBa';
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SB_HEADERS = {
+  'apikey': SUPABASE_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_KEY,
+  'Content-Type': 'application/json'
+};
+
+async function sbGet(table, params) {
+  const url = `${SUPABASE_URL}/rest/v1/${table}?${params || 'select=*'}`;
+  const res = await fetch(url, { headers: SB_HEADERS });
+  return res.ok ? await res.json() : [];
+}
+
+async function sbInsert(table, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+    body: JSON.stringify(data)
+  });
+  return res.ok;
+}
+
+async function sbUpdate(table, id, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+    body: JSON.stringify(data)
+  });
+  return res.ok;
+}
+
+async function sbDelete(table, id) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: SB_HEADERS
+  });
+  return res.ok;
+}
 
 // ── MOT DE PASSE ──
 const PASSWORD = 'teamreview2026';
@@ -40,17 +75,13 @@ function togglePwd() {
   }
 }
 
-// ── DONNÉES SUPABASE ──
+// ── DONNÉES ──
 async function getAvis() {
-  const { data, error } = await sb.from('avis').select('*').order('date', { ascending: false });
-  if (error) { console.error('getAvis error:', error); return []; }
-  return data || [];
+  return await sbGet('avis', 'select=*&order=date.desc');
 }
 
 async function getFiches() {
-  const { data, error } = await sb.from('fiches').select('*').order('nom');
-  if (error) { console.error('getFiches error:', error); return []; }
-  return data || [];
+  return await sbGet('fiches', 'select=*&order=nom.asc');
 }
 
 // ── INIT ──
@@ -107,8 +138,7 @@ async function addFiche(e) {
   if (!nom) return;
   const fiches = await getFiches();
   if (fiches.find(f => f.nom === nom)) return alert('Cette fiche existe déjà.');
-  const { error } = await sb.from('fiches').insert({ nom, lien: lien || null });
-  if (error) { console.error('addFiche error:', error); return; }
+  await sbInsert('fiches', { nom, lien: lien || null });
   document.getElementById('fiche-nom').value = '';
   document.getElementById('fiche-lien').value = '';
   await populateFicheSelects();
@@ -117,8 +147,10 @@ async function addFiche(e) {
 
 async function deleteFiche(nom) {
   if (!confirm(`Supprimer la fiche "${nom}" ?`)) return;
-  const { error } = await sb.from('fiches').delete().eq('nom', nom);
-  if (error) { console.error('deleteFiche error:', error); return; }
+  const fiches = await getFiches();
+  const fiche = fiches.find(f => f.nom === nom);
+  if (!fiche) return;
+  await sbDelete('fiches', fiche.id);
   await populateFicheSelects();
   renderFiches();
 }
@@ -157,7 +189,7 @@ function setNote(n) {
 
 async function submitAvis(e) {
   e.preventDefault();
-  const fiche_nom = document.getElementById('form-fiche').value;
+  const fiche_nom = document.getElementById('form-fiche').value.trim();
   const auteur    = document.getElementById('form-auteur').value.trim();
   const note      = parseInt(document.getElementById('form-note').value);
   const date      = document.getElementById('form-date').value;
@@ -167,12 +199,12 @@ async function submitAvis(e) {
 
   if (!fiche_nom || !auteur || !note || !date || !statut) return;
 
-  const { error } = await sb.from('avis').insert({
+  const ok = await sbInsert('avis', {
     fiche_nom, auteur, note, date, statut,
     texte: texte || null,
     reponse: reponse || null
   });
-  if (error) { console.error('submitAvis error:', error); alert('Erreur lors de l\'enregistrement.'); return; }
+  if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
 
   document.getElementById('form-avis').reset();
   selectedNote = 0;
@@ -184,7 +216,6 @@ async function submitAvis(e) {
   const msg = document.getElementById('form-success');
   msg.classList.remove('hidden');
   setTimeout(() => msg.classList.add('hidden'), 3000);
-
   renderFiches();
 }
 
@@ -200,7 +231,7 @@ const STATUT_LABELS = {
 
 async function renderListe() {
   let avis = await getAvis();
-  const fiche  = document.getElementById('list-fiche').value;
+  const fiche  = document.getElementById('list-fiche').value.trim();
   const month  = document.getElementById('list-month').value;
   const note   = document.getElementById('list-note').value;
   const statut = document.getElementById('list-statut').value;
@@ -226,14 +257,8 @@ async function renderListe() {
   <table class="avis-table">
     <thead>
       <tr>
-        <th>Date</th>
-        <th>Fiche GMB</th>
-        <th>Gmail</th>
-        <th>Note</th>
-        <th>Statut</th>
-        <th>Rappel</th>
-        <th>Avis</th>
-        <th></th>
+        <th>Date</th><th>Fiche GMB</th><th>Gmail</th><th>Note</th>
+        <th>Statut</th><th>Rappel</th><th>Avis</th><th></th>
       </tr>
     </thead>
     <tbody>
@@ -265,15 +290,13 @@ async function renderListe() {
 }
 
 async function updateStatut(id, newStatut) {
-  const { error } = await sb.from('avis').update({ statut: newStatut }).eq('id', id);
-  if (error) { console.error('updateStatut error:', error); return; }
+  await sbUpdate('avis', id, { statut: newStatut });
   renderListe();
 }
 
 async function deleteAvis(id) {
   if (!confirm('Supprimer cet avis ?')) return;
-  const { error } = await sb.from('avis').delete().eq('id', id);
-  if (error) { console.error('deleteAvis error:', error); return; }
+  await sbDelete('avis', id);
   renderListe();
   renderFiches();
 }
@@ -283,7 +306,7 @@ let chartVolume, chartNote, chartRep;
 
 async function renderDashboard() {
   let avis = await getAvis();
-  const fiche = document.getElementById('dash-fiche')?.value || '';
+  const fiche = document.getElementById('dash-fiche')?.value.trim() || '';
   const year  = parseInt(document.getElementById('dash-year')?.value || new Date().getFullYear());
   const month = document.getElementById('dash-month')?.value || '';
 
@@ -311,7 +334,6 @@ async function renderDashboard() {
 
   const months = Array.from({length: 12}, (_, i) => `${year}-${String(i+1).padStart(2,'0')}`);
   const labels = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
-
   const volumes  = months.map(m => avis.filter(a => a.date.startsWith(m)).length);
   const moyennes = months.map(m => {
     const ma = avis.filter(a => a.date.startsWith(m));
@@ -347,25 +369,17 @@ async function renderDashboard() {
 // ── EXPORT EXCEL ──
 async function exportExcel() {
   let avis = await getAvis();
-  const fiche = document.getElementById('dash-fiche').value;
+  const fiche = document.getElementById('dash-fiche').value.trim();
   if (fiche) avis = avis.filter(a => a.fiche_nom === fiche);
-
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const moisAvis = avis.filter(a => a.date.startsWith(thisMonth));
-
   const rows = moisAvis.map(a => ({
-    'Fiche GMB': a.fiche_nom,
-    'Auteur': a.auteur,
-    'Note': a.note,
-    'Date': a.date,
-    'Statut': STATUT_LABELS[a.statut]?.label || a.statut,
-    'Avis': a.texte,
-    'Réponse': a.reponse
+    'Fiche GMB': a.fiche_nom, 'Auteur': a.auteur, 'Note': a.note,
+    'Date': a.date, 'Statut': STATUT_LABELS[a.statut]?.label || a.statut,
+    'Avis': a.texte, 'Réponse': a.reponse
   }));
-
   if (!rows.length) { alert('Aucun avis ce mois-ci.'); return; }
-
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);
   ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 20 }, { wch: 50 }, { wch: 50 }];
@@ -414,12 +428,9 @@ async function checkNotifications() {
   if (!dus.length) return;
   renderRappelsBanner(dus);
   if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    sendNotifications(dus);
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then(p => {
-      if (p === 'granted') sendNotifications(dus);
-    });
+  if (Notification.permission === 'granted') sendNotifications(dus);
+  else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => { if (p === 'granted') sendNotifications(dus); });
   }
 }
 
@@ -428,8 +439,7 @@ function sendNotifications(dus) {
   paliers.forEach(label => {
     const nb = dus.filter(d => d.label === label).length;
     new Notification(`📍 Suivi GMB — Vérification ${label}`, {
-      body: `${nb} avis ${nb > 1 ? 'atteignent' : 'atteint'} le palier ${label}. Pensez à mettre à jour le statut !`,
-      icon: 'https://www.google.com/favicon.ico'
+      body: `${nb} avis ${nb > 1 ? 'atteignent' : 'atteint'} le palier ${label}.`
     });
   });
 }
