@@ -73,6 +73,7 @@ header {
 }
 
 header h1 { font-size: 1.15rem; font-weight: 800; color: #a5b4fc !important; -webkit-text-fill-color: #a5b4fc !important; white-space: nowrap; }
+
 nav { display: flex; gap: 0.4rem; flex: 1; flex-wrap: wrap; }
 
 .tab-btn {
@@ -153,7 +154,7 @@ nav { display: flex; gap: 0.4rem; flex: 1; flex-wrap: wrap; }
 /* ── FORM ── */
 form { display: flex; flex-direction: column; gap: 1.1rem; max-width: 540px; }
 form label { display: flex; flex-direction: column; gap: 5px; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
-form input, form select, form textarea {
+form input:not([type="checkbox"]), form select, form textarea {
   padding: 0.65rem 0.9rem; border: 1.5px solid #334155;
   border-radius: 10px; font-size: 0.95rem; font-family: inherit;
   outline: none; background: #0f172a !important; color: #f1f5f9 !important;
@@ -162,7 +163,6 @@ form input, form select, form textarea {
   color-scheme: dark;
   -webkit-text-fill-color: #f1f5f9;
 }
-
 form input:-webkit-autofill,
 form input:-webkit-autofill:hover,
 form input:-webkit-autofill:focus {
@@ -170,7 +170,7 @@ form input:-webkit-autofill:focus {
   -webkit-text-fill-color: #f1f5f9 !important;
   caret-color: #f1f5f9;
 }
-form input:focus, form select:focus, form textarea:focus {
+form input:not([type="checkbox"]):focus, form select:focus, form textarea:focus {
   border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
 }
 form input::placeholder, form textarea::placeholder { color: #475569; }
@@ -179,6 +179,7 @@ form select option { background: #1e293b; color: #f1f5f9; }
 .star-picker { display: flex; gap: 6px; font-size: 1.8rem; cursor: pointer; color: #fbbf24; }
 .star-picker span:hover { transform: scale(1.2); }
 #star-display { font-size: 1.1rem; color: #fbbf24; margin-left: 0.5rem; }
+
 .checkbox-label {
   display: flex !important; flex-direction: row !important;
   align-items: center; gap: 0.6rem;
@@ -189,6 +190,7 @@ form select option { background: #1e293b; color: #f1f5f9; }
   width: 18px; height: 18px; cursor: pointer;
   accent-color: #6366f1;
 }
+
 .btn-primary {
   padding: 0.72rem 2rem;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -276,8 +278,10 @@ form select option { background: #1e293b; color: #f1f5f9; }
 #liste-fiches li a { color: #a5b4fc; text-decoration: none; font-weight: 500; }
 #liste-fiches li a:hover { text-decoration: underline; }
 #liste-fiches .count { font-size: 0.78rem; color: #64748b; margin-right: 0.6rem; }
+
 /* ── DATALIST ── */
 datalist { display: none; }
+
 /* ── UTILITAIRES ── */
 .hidden  { display: none !important; }
 .error   { color: #f87171; font-size: 0.85rem; margin-top: 0.5rem; }
@@ -290,32 +294,24 @@ datalist { display: none; }
   nav { gap: 0.3rem; }
   .tab-btn { padding: 0.4rem 0.7rem; font-size: 0.78rem; }
   .logout-btn { padding: 0.4rem 0.7rem; font-size: 0.75rem; }
-
   .login-box { width: 92%; padding: 2rem 1.5rem; }
-
   .tab-content { padding: 1rem; }
   .tab-content h2 { font-size: 1.1rem; margin-bottom: 1rem; }
-
   .stats-row { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
   .stat-card { padding: 1rem 0.7rem; }
   .stat-card span { font-size: 1.6rem; }
   .stat-card label { font-size: 0.72rem; }
-
   .charts-row { grid-template-columns: 1fr; }
   .chart-box { padding: 1rem; }
-
   .filters { gap: 0.8rem; }
   .filters label { font-size: 0.72rem; }
   .filters select, .filters input { font-size: 0.82rem; padding: 0.4rem 0.5rem; }
-
   form { max-width: 100%; }
   .inline-form { flex-direction: column; align-items: stretch; }
   .inline-form input { width: 100%; }
-
   #liste-avis { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .avis-table { min-width: 650px; font-size: 0.8rem; }
   .avis-table th, .avis-table td { padding: 0.4rem 0.6rem; }
-
   .btn-export { width: 100%; text-align: center; }
   .btn-primary { width: 100%; text-align: center; }
 }
