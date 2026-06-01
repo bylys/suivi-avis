@@ -267,7 +267,8 @@ form select option { background: #1e293b; color: #f1f5f9; }
 #liste-fiches li a { color: #a5b4fc; text-decoration: none; font-weight: 500; }
 #liste-fiches li a:hover { text-decoration: underline; }
 #liste-fiches .count { font-size: 0.78rem; color: #64748b; margin-right: 0.6rem; }
-
+/* ── DATALIST ── */
+datalist { display: none; }
 /* ── UTILITAIRES ── */
 .hidden  { display: none !important; }
 .error   { color: #f87171; font-size: 0.85rem; margin-top: 0.5rem; }
