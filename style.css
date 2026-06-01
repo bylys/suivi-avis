@@ -179,7 +179,16 @@ form select option { background: #1e293b; color: #f1f5f9; }
 .star-picker { display: flex; gap: 6px; font-size: 1.8rem; cursor: pointer; color: #fbbf24; }
 .star-picker span:hover { transform: scale(1.2); }
 #star-display { font-size: 1.1rem; color: #fbbf24; margin-left: 0.5rem; }
-
+.checkbox-label {
+  display: flex !important; flex-direction: row !important;
+  align-items: center; gap: 0.6rem;
+  font-size: 0.92rem !important; color: #94a3b8 !important;
+  cursor: pointer; text-transform: none !important; letter-spacing: 0 !important;
+}
+.checkbox-label input[type="checkbox"] {
+  width: 18px; height: 18px; cursor: pointer;
+  accent-color: #6366f1;
+}
 .btn-primary {
   padding: 0.72rem 2rem;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
