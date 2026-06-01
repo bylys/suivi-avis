@@ -163,6 +163,7 @@ form input:not([type="checkbox"]), form select, form textarea {
   color-scheme: dark;
   -webkit-text-fill-color: #f1f5f9;
 }
+
 form input:-webkit-autofill,
 form input:-webkit-autofill:hover,
 form input:-webkit-autofill:focus {
@@ -289,29 +290,46 @@ datalist { display: none; }
 
 /* ── RESPONSIVE MOBILE ── */
 @media (max-width: 600px) {
+  /* Header */
   header { padding: 0.8rem 1rem; gap: 0.8rem; }
   header h1 { font-size: 1rem; }
   nav { gap: 0.3rem; }
   .tab-btn { padding: 0.4rem 0.7rem; font-size: 0.78rem; }
   .logout-btn { padding: 0.4rem 0.7rem; font-size: 0.75rem; }
+
+  /* Login */
   .login-box { width: 92%; padding: 2rem 1.5rem; }
+
+  /* Sections */
   .tab-content { padding: 1rem; }
   .tab-content h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+
+  /* Stats */
   .stats-row { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
   .stat-card { padding: 1rem 0.7rem; }
   .stat-card span { font-size: 1.6rem; }
   .stat-card label { font-size: 0.72rem; }
+
+  /* Charts */
   .charts-row { grid-template-columns: 1fr; }
   .chart-box { padding: 1rem; }
+
+  /* Filters */
   .filters { gap: 0.8rem; }
   .filters label { font-size: 0.72rem; }
   .filters select, .filters input { font-size: 0.82rem; padding: 0.4rem 0.5rem; }
+
+  /* Form */
   form { max-width: 100%; }
   .inline-form { flex-direction: column; align-items: stretch; }
   .inline-form input { width: 100%; }
+
+  /* Table → scroll horizontal */
   #liste-avis { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .avis-table { min-width: 650px; font-size: 0.8rem; }
   .avis-table th, .avis-table td { padding: 0.4rem 0.6rem; }
+
+  /* Export btn */
   .btn-export { width: 100%; text-align: center; }
   .btn-primary { width: 100%; text-align: center; }
 }
