@@ -196,17 +196,19 @@ async function submitAvis(e) {
   const statut    = document.getElementById('form-statut').value;
   const texte     = document.getElementById('form-texte').value.trim();
   const reponse   = document.getElementById('form-reponse').value.trim();
+  const photo     = document.getElementById('form-photo').checked;
 
   if (!fiche_nom || !auteur || !note || !date || !statut) return;
 
   const ok = await sbInsert('avis', {
-    fiche_nom, auteur, note, date, statut,
+    fiche_nom, auteur, note, date, statut, photo,
     texte: texte || null,
     reponse: reponse || null
   });
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
 
   document.getElementById('form-avis').reset();
+  document.getElementById('form-photo').checked = false;
   selectedNote = 0;
   document.getElementById('star-display').textContent = '☆☆☆☆☆';
   document.querySelectorAll('.star-picker span').forEach(s => s.style.opacity = '1');
@@ -258,7 +260,7 @@ async function renderListe() {
     <thead>
       <tr>
         <th>Date</th><th>Fiche GMB</th><th>Gmail</th><th>Note</th>
-        <th>Statut</th><th>Rappel</th><th>Avis</th><th></th>
+        <th>Statut</th><th>Rappel</th><th>Photo</th><th>Avis</th><th></th>
       </tr>
     </thead>
     <tbody>
@@ -279,6 +281,7 @@ async function renderListe() {
             </select>
           </td>
           <td>${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
+          <td style="text-align:center">${a.photo ? '📷' : ''}</td>
           <td class="col-texte">${a.texte || ''}</td>
           <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
         </tr>`;
