@@ -195,6 +195,7 @@ async function submitAvis(e) {
   const date      = document.getElementById('form-date').value;
   const statut    = document.getElementById('form-statut').value;
   const texte     = document.getElementById('form-texte').value.trim();
+  const lien      = document.getElementById('form-lien').value.trim();
   const reponse   = document.getElementById('form-reponse').value.trim();
   const photo     = document.getElementById('form-photo').checked;
 
@@ -203,6 +204,7 @@ async function submitAvis(e) {
   const ok = await sbInsert('avis', {
     fiche_nom, auteur, note, date, statut, photo,
     texte: texte || null,
+    lien: lien || null,
     reponse: reponse || null
   });
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
@@ -260,7 +262,7 @@ async function renderListe() {
     <thead>
       <tr>
         <th>Date</th><th>Fiche GMB</th><th>Gmail</th><th>Note</th>
-        <th>Statut</th><th>Rappel</th><th>Photo</th><th>Avis</th><th></th>
+        <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
       </tr>
     </thead>
     <tbody>
@@ -282,6 +284,7 @@ async function renderListe() {
           </td>
           <td>${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
           <td style="text-align:center">${a.photo ? '📷' : ''}</td>
+          <td style="text-align:center">${a.lien ? `<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
           <td class="col-texte">${a.texte || ''}</td>
           <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
         </tr>`;
