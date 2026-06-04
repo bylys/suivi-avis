@@ -248,7 +248,7 @@ form select option { background: #1e293b; color: #f1f5f9; }
   margin-bottom: 0.8rem;
   border: 1px solid #1e293b;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 .month-summary {
   display: flex; align-items: center; justify-content: space-between;
