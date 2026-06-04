@@ -259,7 +259,7 @@ function buildAvisRow(a, rappelsDus, aVerif) {
   </tr>`;
 }
 
-async function renderListe() {
+async function renderListe(openMonths = null) {
   let avis = await getAvis();
   const fiche  = document.getElementById('list-fiche').value.trim();
   const month  = document.getElementById('list-month').value;
@@ -304,7 +304,9 @@ async function renderListe() {
     const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
     const suppCount = byMonth[m].filter(a => a.statut === 'supprime').length;
     const j30Count  = byMonth[m].filter(a => a.statut === 'j30').length;
-    return `<details class="month-group" ${idx === 0 ? 'open' : ''}>
+    // Ouvert si : état précédent connu → respecter, sinon premier mois ouvert par défaut
+    const isOpen = openMonths ? openMonths.has(m) : idx === 0;
+    return `<details class="month-group" data-month="${m}" ${isOpen ? 'open' : ''}>
       <summary class="month-summary">
         <span class="month-label">📅 ${label}</span>
         <span class="month-badges">
@@ -322,7 +324,12 @@ async function renderListe() {
 
 async function updateStatut(id, newStatut) {
   await sbUpdate('avis', id, { statut: newStatut });
-  renderListe();
+  // Sauvegarder quels mois sont ouverts avant de re-rendre
+  const openMonths = new Set();
+  document.querySelectorAll('.month-group[open]').forEach(el => {
+    openMonths.add(el.dataset.month);
+  });
+  await renderListe(openMonths);
 }
 
 async function deleteAvis(id) {
@@ -428,9 +435,11 @@ const RAPPELS = [
 ];
 
 function daysDiff(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const posted = new Date(y, m - 1, d); // heure locale, évite le décalage UTC
   const now = new Date(); now.setHours(0,0,0,0);
-  const d   = new Date(dateStr); d.setHours(0,0,0,0);
-  return Math.floor((now - d) / 86400000);
+  posted.setHours(0,0,0,0);
+  return Math.floor((now - posted) / 86400000);
 }
 
 function getRappelsDus(avis) {
