@@ -438,12 +438,14 @@ function getRappelsDus(avis) {
   for (const a of avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
     const age = daysDiff(a.date);
+    // On cherche le palier le plus élevé atteint (pas le premier)
+    let best = null;
     for (const r of RAPPELS) {
       if (age >= r.jours && r.depuis.includes(a.statut)) {
-        dus.push({ avis: a, label: r.label });
-        break;
+        best = r;
       }
     }
+    if (best) dus.push({ avis: a, label: best.label });
   }
   return dus;
 }
