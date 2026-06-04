@@ -202,11 +202,13 @@ async function submitAvis(e) {
 
   if (!fiche_nom || !auteur || !note || !date || !statut) return;
 
+  const today = new Date().toISOString().split('T')[0];
   const ok = await sbInsert('avis', {
     fiche_nom, auteur, note, date, statut, photo,
     texte: texte || null,
     lien: lien || null,
-    reponse: reponse || null
+    reponse: reponse || null,
+    statut_date: today
   });
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
 
@@ -324,7 +326,8 @@ async function renderListe(openMonths = null) {
 }
 
 async function updateStatut(id, newStatut) {
-  await sbUpdate('avis', id, { statut: newStatut });
+  const today = new Date().toISOString().split('T')[0];
+  await sbUpdate('avis', id, { statut: newStatut, statut_date: today });
   // Sauvegarder quels mois sont ouverts avant de re-rendre
   const openMonths = new Set();
   document.querySelectorAll('.month-group[open]').forEach(el => {
@@ -429,10 +432,10 @@ function formatDate(d) {
 
 // ── RAPPELS ──
 const RAPPELS = [
-  { jours: 7,  depuis: ['j0'],                 label: 'J+7'  },
-  { jours: 14, depuis: ['j0','j7'],             label: 'J+14' },
-  { jours: 21, depuis: ['j0','j7','j14'],       label: 'J+21' },
-  { jours: 30, depuis: ['j0','j7','j14','j21'], label: 'J+30' },
+  { jours: 8,  depuis: ['j0'],                 label: 'J+7'  },
+  { jours: 15, depuis: ['j0','j7'],             label: 'J+14' },
+  { jours: 22, depuis: ['j0','j7','j14'],       label: 'J+21' },
+  { jours: 31, depuis: ['j0','j7','j14','j21'], label: 'J+30' },
 ];
 
 function daysDiff(dateStr) {
@@ -447,8 +450,9 @@ function getRappelsDus(avis) {
   const dus = [];
   for (const a of avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
-    const age = daysDiff(a.date);
-    // On cherche le palier le plus élevé atteint (pas le premier)
+    // Utiliser statut_date si dispo, sinon date de l'avis
+    const refDate = a.statut_date || a.date;
+    const age = daysDiff(refDate);
     let best = null;
     for (const r of RAPPELS) {
       if (age >= r.jours && r.depuis.includes(a.statut)) {
