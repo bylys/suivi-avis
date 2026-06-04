@@ -119,6 +119,7 @@ function showTab(name) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
+  if (name === 'generateur') populateGenFiche();
 }
 
 // ── FICHES ──
@@ -304,6 +305,7 @@ async function renderListe(openMonths = null) {
     const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
     const suppCount = byMonth[m].filter(a => a.statut === 'supprime').length;
     const j30Count  = byMonth[m].filter(a => a.statut === 'j30').length;
+    // Ouvert si : état précédent connu → respecter, sinon premier mois ouvert par défaut
     const isOpen = openMonths ? openMonths.has(m) : idx === 0;
     return `<details class="month-group" data-month="${m}" ${isOpen ? 'open' : ''}>
       <summary class="month-summary">
@@ -323,6 +325,7 @@ async function renderListe(openMonths = null) {
 
 async function updateStatut(id, newStatut) {
   await sbUpdate('avis', id, { statut: newStatut });
+  // Sauvegarder quels mois sont ouverts avant de re-rendre
   const openMonths = new Set();
   document.querySelectorAll('.month-group[open]').forEach(el => {
     openMonths.add(el.dataset.month);
@@ -434,7 +437,7 @@ const RAPPELS = [
 
 function daysDiff(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
-  const posted = new Date(y, m - 1, d);
+  const posted = new Date(y, m - 1, d); // heure locale, évite le décalage UTC
   const now = new Date(); now.setHours(0,0,0,0);
   posted.setHours(0,0,0,0);
   return Math.floor((now - posted) / 86400000);
@@ -445,6 +448,7 @@ function getRappelsDus(avis) {
   for (const a of avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
     const age = daysDiff(a.date);
+    // On cherche le palier le plus élevé atteint (pas le premier)
     let best = null;
     for (const r of RAPPELS) {
       if (age >= r.jours && r.depuis.includes(a.statut)) {
@@ -486,6 +490,176 @@ function renderRappelsBanner(dus) {
   if (!dus.length) { count.innerHTML = ''; return; }
   const nb = dus.length;
   count.innerHTML = `<div class="rappels-summary">🔔 <strong>${nb} avis</strong> ${nb > 1 ? 'nécessitent' : 'nécessite'} une vérification de statut — surlignés en orange ci-dessous.</div>`;
+}
+
+// ── GÉNÉRATEUR D'AVIS ──
+// Basé sur US20170221111A1 (anti-détection : variété texte, longueur, ton)
+// + mots-clés travaux/ville pour boost ranking local (US8046371B2)
+
+function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+async function populateGenFiche() {
+  const fiches = await getFiches();
+  const dl = document.getElementById('datalist-gen-fiche');
+  if (dl) dl.innerHTML = fiches.map(f => `<option value="${f.nom.replace(/"/g,'&quot;')}">`).join('');
+}
+
+const GEN = {
+  decouvertes: [
+    "J'ai fait appel à {fiche} pour {travaux} à {ville}",
+    "Suite à un besoin de {travaux} sur {ville}, j'ai contacté {fiche}",
+    "Après avoir cherché un professionnel pour {travaux} à {ville}, j'ai choisi {fiche}",
+    "Notre maison à {ville} nécessitait des {travaux}. Nous avons sollicité {fiche}",
+    "Pour des travaux de {travaux} dans ma propriété à {ville}, j'ai fait confiance à {fiche}",
+    "J'avais besoin d'un spécialiste pour {travaux} à {ville} et j'ai trouvé {fiche}",
+    "Propriétaire à {ville}, j'ai eu recours à {fiche} pour {travaux}",
+    "C'est en cherchant une entreprise sérieuse pour {travaux} sur {ville} que j'ai découvert {fiche}",
+  ],
+  contacts: [
+    "Le premier contact a été rapide et professionnel.",
+    "Dès le premier appel, j'ai été bien renseigné.",
+    "La prise en charge a été immédiate.",
+    "Le devis est arrivé rapidement, clair et sans surprise.",
+    "Devis reçu dans la journée, très détaillé.",
+    "On m'a rappelé dans les deux heures, c'est appréciable.",
+    "",
+    "",
+  ],
+  interventions: [
+    "L'équipe est intervenue dans les délais convenus.",
+    "Les techniciens sont arrivés à l'heure prévue.",
+    "L'intervention a été réalisée proprement et dans les temps.",
+    "Le chantier a été mené de bout en bout avec sérieux.",
+    "Les ouvriers ont travaillé efficacement, sans laisser de désordre.",
+    "Le travail a été fait dans les délais annoncés, sans mauvaise surprise.",
+    "L'équipe était bien équipée et savait exactement ce qu'elle faisait.",
+    "Intervention rapide et bien organisée.",
+  ],
+  qualites: [
+    "Travail soigné et de qualité.",
+    "Prestation très propre, je suis satisfait du résultat.",
+    "La qualité du travail correspond exactement à ce qui avait été annoncé.",
+    "Résultat impeccable, conforme à mes attentes.",
+    "Excellent niveau de finition.",
+    "On voit que ce sont des gens du métier, le travail est bien fait.",
+    "Très bon rapport qualité-prix.",
+    "Le résultat est là et c'est ce qui compte.",
+  ],
+  details: [
+    "Ils ont pris le temps d'expliquer chaque étape.",
+    "Le chef de chantier était disponible pour répondre à mes questions.",
+    "L'équipe a fait preuve d'un vrai sens du détail.",
+    "Ils ont respecté mes contraintes et ma propriété.",
+    "Tout a été nettoyé avant de partir.",
+    "On sentait une vraie expérience dans ce domaine.",
+    "La communication tout au long du projet était bonne.",
+    "",
+    "",
+  ],
+  recommandations: [
+    "Je recommande sans hésitation.",
+    "Je n'hésiterai pas à les recontacter.",
+    "Je recommande vivement {fiche} pour ce type de prestation.",
+    "Je ferai à nouveau appel à eux.",
+    "À recommander à tous ceux qui cherchent un professionnel sérieux à {ville}.",
+    "Une adresse à retenir pour {travaux} dans la région de {ville}.",
+    "Très satisfait, je passerai par eux pour mes prochains travaux.",
+    "Bonne expérience globale, je recommande.",
+  ],
+
+  // Variantes courtes
+  courts: [
+    "Très bonne prestation de {fiche} pour {travaux} à {ville}. Travail sérieux, délais respectés. Je recommande.",
+    "{fiche} est intervenu pour {travaux} chez moi à {ville}. Efficace et propre. Satisfait.",
+    "Bon professionnel pour {travaux} à {ville}. Devis honnête, travail de qualité. À recommander.",
+    "Fait appel à {fiche} pour {travaux} à {ville}. RAS, tout s'est bien passé. Je recommande.",
+    "Prestation {travaux} à {ville} par {fiche}. Sérieux et efficace. Bonne expérience.",
+  ],
+
+  // Variantes détaillées
+  intro_details: [
+    "Je tenais à laisser un avis sur {fiche} après {travaux} réalisés à {ville}.",
+    "Voici mon retour d'expérience après avoir fait appel à {fiche} pour {travaux} à {ville}.",
+    "J'utilise rarement les avis en ligne mais l'intervention de {fiche} pour {travaux} à {ville} mérite d'être signalée.",
+  ],
+  contextes: [
+    "Nous avions un projet un peu complexe qui demandait de l'expertise.",
+    "Le chantier n'était pas simple, mais tout a été géré avec professionnalisme.",
+    "Les contraintes d'accès étaient importantes, mais l'équipe s'est adaptée.",
+    "C'était une intervention urgente et ils ont su réagir rapidement.",
+    "Le projet prenait un certain volume mais tout a été organisé efficacement.",
+  ],
+};
+
+function genererAvis() {
+  const fiche   = document.getElementById('gen-fiche').value.trim();
+  const travaux = document.getElementById('gen-travaux').value.trim();
+  const ville   = document.getElementById('gen-ville').value.trim();
+  const ton     = document.getElementById('gen-ton').value;
+
+  if (!fiche || !travaux || !ville) {
+    alert('Merci de remplir les 3 champs obligatoires.');
+    return;
+  }
+
+  const fill = s => s.replace(/{fiche}/g, fiche).replace(/{travaux}/g, travaux).replace(/{ville}/g, ville);
+
+  let texte = '';
+
+  if (ton === 'court') {
+    texte = fill(rnd(GEN.courts));
+
+  } else if (ton === 'detaille') {
+    const intro   = fill(rnd(GEN.intro_details));
+    const contexte = rnd(GEN.contextes);
+    const interv  = rnd(GEN.interventions);
+    const qualite = rnd(GEN.qualites);
+    const detail  = rnd(GEN.details.filter(d => d));
+    const reco    = fill(rnd(GEN.recommandations));
+    texte = [intro, contexte, interv, qualite, detail, reco].filter(Boolean).join(' ');
+
+  } else if (ton === 'enthousiaste') {
+    const decouverte = fill(rnd(GEN.decouvertes));
+    const contact    = rnd(GEN.contacts.filter(c => c));
+    const interv     = rnd(GEN.interventions);
+    const qualite    = rnd(GEN.qualites);
+    const reco       = fill(rnd(GEN.recommandations));
+    const enthousiasteSuffix = rnd([
+      ' Une vraie bonne surprise !',
+      ' Exactement ce dont j\'avais besoin.',
+      ' Je suis vraiment content du résultat.',
+      ' Ça change des mauvaises expériences qu\'on peut avoir.',
+      '',
+    ]);
+    texte = [decouverte + '.', contact, interv, qualite, reco + enthousiasteSuffix].filter(Boolean).join(' ');
+
+  } else { // neutre
+    const decouverte = fill(rnd(GEN.decouvertes));
+    const contact    = rnd(GEN.contacts);
+    const interv     = rnd(GEN.interventions);
+    const qualite    = rnd(GEN.qualites);
+    const detail     = Math.random() > 0.4 ? rnd(GEN.details) : '';
+    const reco       = fill(rnd(GEN.recommandations));
+    texte = [decouverte + '.', contact, interv, qualite, detail, reco].filter(Boolean).join(' ');
+  }
+
+  // Nettoyer les doubles espaces
+  texte = texte.replace(/\s+/g, ' ').trim();
+
+  const result = document.getElementById('gen-result');
+  const textEl = document.getElementById('gen-texte');
+  result.classList.remove('hidden');
+  textEl.textContent = texte;
+  document.getElementById('gen-copy-confirm').classList.add('hidden');
+}
+
+function copierAvis() {
+  const texte = document.getElementById('gen-texte').textContent;
+  navigator.clipboard.writeText(texte).then(() => {
+    const confirm = document.getElementById('gen-copy-confirm');
+    confirm.classList.remove('hidden');
+    setTimeout(() => confirm.classList.add('hidden'), 2500);
+  });
 }
 
 // ── AUTO-LOGIN ──
