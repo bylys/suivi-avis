@@ -304,7 +304,6 @@ async function renderListe(openMonths = null) {
     const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
     const suppCount = byMonth[m].filter(a => a.statut === 'supprime').length;
     const j30Count  = byMonth[m].filter(a => a.statut === 'j30').length;
-    // Ouvert si : état précédent connu → respecter, sinon premier mois ouvert par défaut
     const isOpen = openMonths ? openMonths.has(m) : idx === 0;
     return `<details class="month-group" data-month="${m}" ${isOpen ? 'open' : ''}>
       <summary class="month-summary">
@@ -324,7 +323,6 @@ async function renderListe(openMonths = null) {
 
 async function updateStatut(id, newStatut) {
   await sbUpdate('avis', id, { statut: newStatut });
-  // Sauvegarder quels mois sont ouverts avant de re-rendre
   const openMonths = new Set();
   document.querySelectorAll('.month-group[open]').forEach(el => {
     openMonths.add(el.dataset.month);
@@ -436,7 +434,7 @@ const RAPPELS = [
 
 function daysDiff(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
-  const posted = new Date(y, m - 1, d); // heure locale, évite le décalage UTC
+  const posted = new Date(y, m - 1, d);
   const now = new Date(); now.setHours(0,0,0,0);
   posted.setHours(0,0,0,0);
   return Math.floor((now - posted) / 86400000);
@@ -447,7 +445,6 @@ function getRappelsDus(avis) {
   for (const a of avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
     const age = daysDiff(a.date);
-    // On cherche le palier le plus élevé atteint (pas le premier)
     let best = null;
     for (const r of RAPPELS) {
       if (age >= r.jours && r.depuis.includes(a.statut)) {
