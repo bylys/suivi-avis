@@ -243,6 +243,37 @@ form select option { background: #1e293b; color: #f1f5f9; }
 .statut-inline option { background: #1e293b; color: #f1f5f9; }
 .statut-inline:focus { box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
 
+/* ── GROUPES PAR MOIS ── */
+.month-group {
+  margin-bottom: 0.8rem;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.month-summary {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1.1rem;
+  background: #1e293b;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.month-summary::-webkit-details-marker { display: none; }
+.month-summary::before {
+  content: '▶';
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-right: 0.6rem;
+  transition: transform 0.2s;
+}
+details[open] .month-summary::before { transform: rotate(90deg); }
+.month-label { font-weight: 600; font-size: 0.97rem; color: #e2e8f0; }
+.month-badges { display: flex; gap: 0.5rem; align-items: center; }
+.badge-total   { background: #1a73e822; color: #60a5fa; border: 1px solid #1a73e855; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-supprime{ background: #e5393522; color: #f87171; border: 1px solid #e5393555; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.badge-j30     { background: #43a04722; color: #4ade80; border: 1px solid #43a04755; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+.month-group .avis-table { border-radius: 0; border: none; }
+
 /* ── RAPPELS ── */
 .rappels-summary {
   background: #1c1708; border: 1.5px solid #fbbf24;
