@@ -504,52 +504,266 @@ async function populateGenFiche() {
   if (dl) dl.innerHTML = fiches.map(f => `<option value="${f.nom.replace(/"/g,'&quot;')}">`).join('');
 }
 
-const GEN = {
-  decouvertes: [
-    "J'ai fait appel à {fiche} pour {travaux} à {ville}",
-    "Suite à un besoin de {travaux} sur {ville}, j'ai contacté {fiche}",
-    "Après avoir cherché un professionnel pour {travaux} à {ville}, j'ai choisi {fiche}",
-    "Notre maison à {ville} nécessitait des {travaux}. Nous avons sollicité {fiche}",
-    "Pour des travaux de {travaux} dans ma propriété à {ville}, j'ai fait confiance à {fiche}",
-    "J'avais besoin d'un spécialiste pour {travaux} à {ville} et j'ai trouvé {fiche}",
-    "Propriétaire à {ville}, j'ai eu recours à {fiche} pour {travaux}",
-    "C'est en cherchant une entreprise sérieuse pour {travaux} sur {ville} que j'ai découvert {fiche}",
-  ],
+// Détection du métier à partir du nom de fiche
+function detecterMetier(fiche) {
+  const f = fiche.toLowerCase();
+  if (/élag|elag|abatt|paysag|arborist|haie|taille.*arbre/.test(f)) return 'elagage';
+  if (/ravel|façade|facade|enduit|crépi|isolation.*façade/.test(f)) return 'ravalement';
+  if (/couvreur|toiture|toit|zingu|ardoise|tuile|charpente/.test(f)) return 'couvreur';
+  if (/nettoy.*toit|démous|demouth|mousse/.test(f)) return 'nettoyage_toiture';
+  if (/terrassement|terras|excavat|nivelle|vrd/.test(f)) return 'terrassement';
+  if (/maçon|macon|béton|beton|dalle|parpaing/.test(f)) return 'maconnerie';
+  if (/carrel/.test(f)) return 'carreleur';
+  if (/peintr|peinture/.test(f)) return 'peintre';
+  if (/débarras|debarras|vide.*maison|enlève/.test(f)) return 'debarras';
+  if (/plomb|fuite|sanitaire|chauffe/.test(f)) return 'plomberie';
+  if (/électr|electr|tableau|câblag/.test(f)) return 'electricite';
+  if (/dépann|depann|auto|voiture|mécanic|mecanic|garage/.test(f)) return 'auto';
+  if (/nettoy/.test(f)) return 'nettoyage';
+  return 'generic';
+}
+
+const METIERS = {
+  elagage: {
+    contextes: [
+      "Un grand arbre dans notre jardin menaçait la toiture et les lignes électriques.",
+      "Plusieurs arbres de notre propriété nécessitaient une taille sérieuse.",
+      "Un chêne imposant devait être abattu en toute sécurité.",
+      "Nos arbres n'avaient pas été entretenus depuis plusieurs années.",
+      "Une branche maîtresse menaçait de tomber sur la clôture du voisin.",
+    ],
+    specifiques: [
+      "L'élagueur a travaillé en hauteur avec une précision impressionnante.",
+      "Le bois a été débité et les branchages évacués sans laisser de trace.",
+      "La taille a été réalisée dans les règles de l'art, en respectant la croissance naturelle de l'arbre.",
+      "L'abattage s'est fait en toute sécurité malgré l'accès difficile.",
+      "Les grumes ont été soigneusement évacuées, le jardin était impeccable en fin de chantier.",
+    ],
+  },
+  ravalement: {
+    contextes: [
+      "Notre façade était très dégradée après plusieurs hivers difficiles.",
+      "Des fissures apparaissaient sur l'enduit extérieur depuis quelque temps.",
+      "La peinture de façade s'écaillait et le crépi était à refaire.",
+      "Notre maison à {ville} avait besoin d'un ravalement complet.",
+      "L'humidité s'infiltrait à travers la façade, il fallait agir.",
+    ],
+    specifiques: [
+      "La préparation du support a été faite sérieusement avant l'application de l'enduit.",
+      "Le résultat est bluffant, la maison semble neuve.",
+      "Les finitions sont soignées, même dans les recoins difficiles d'accès.",
+      "L'isolation thermique par l'extérieur a également été bien gérée.",
+      "Le choix des teintes et des matériaux a été fait avec nous, c'est appréciable.",
+    ],
+  },
+  couvreur: {
+    contextes: [
+      "Après une tempête, plusieurs tuiles étaient cassées et la toiture fuyait.",
+      "Notre toiture avait plus de 30 ans et nécessitait une réfection complète.",
+      "Une infiltration d'eau au niveau de la charpente nous a alertés.",
+      "La zinguerie était oxydée et des gouttières à remplacer.",
+      "Un devis pour réfection partielle de toiture suite à des dégâts.",
+    ],
+    specifiques: [
+      "La charpente a été vérifiée en profondeur avant la pose des tuiles.",
+      "Les solins et la zinguerie ont été refaits proprement.",
+      "Les tuiles ont été sélectionnées avec soin pour correspondre à l'existant.",
+      "La toiture est maintenant parfaitement étanche, les tests l'ont confirmé.",
+      "Le nettoyage du chantier a été soigné, pas une tuile cassée au sol.",
+    ],
+  },
+  nettoyage_toiture: {
+    contextes: [
+      "La toiture était couverte de mousse et de lichen depuis plusieurs années.",
+      "Les tuiles avaient noirci avec le temps et la mousse commençait à les soulever.",
+      "Avant la vente de la maison, nous voulions un nettoyage complet de la toiture.",
+      "Le démoussage était urgent pour éviter des dégâts plus importants.",
+    ],
+    specifiques: [
+      "Le nettoyage haute pression a été réalisé avec soin pour ne pas endommager les tuiles.",
+      "Un traitement hydrofuge a été appliqué après le démoussage.",
+      "La toiture est méconnaissable, les tuiles ont retrouvé leur couleur d'origine.",
+      "Les gouttières ont été nettoyées en même temps, c'était inclus dans le devis.",
+      "Résultat visible de loin, la toiture est vraiment propre.",
+    ],
+  },
+  terrassement: {
+    contextes: [
+      "Nous avions besoin d'un terrassement pour la création d'une terrasse.",
+      "Un affaissement de terrain nécessitait une intervention rapide.",
+      "La création d'un accès au garage demandait un terrassement conséquent.",
+      "Nivellement de terrain pour la pose d'une dalle béton.",
+    ],
+    specifiques: [
+      "Les engins étaient adaptés au terrain et à l'accès restreint.",
+      "Le nivellement a été précis, exactement selon les plans.",
+      "Les terres excédentaires ont été évacuées sans laisser de désordre.",
+      "Le compactage a été bien réalisé, la dalle ne bougera pas.",
+      "L'accès difficile n'a pas posé de problème à l'équipe.",
+    ],
+  },
+  maconnerie: {
+    contextes: [
+      "Une fissure inquiétante était apparue dans un mur porteur.",
+      "Nous faisions construire une extension nécessitant des travaux de maçonnerie.",
+      "Une reprise en sous-œuvre était nécessaire suite à un tassement.",
+      "La création d'une ouverture dans un mur porteur demandait un vrai professionnel.",
+    ],
+    specifiques: [
+      "Le travail de maçonnerie est solide et bien fini.",
+      "Les joints ont été soignés, le résultat est propre.",
+      "Le ferraillage et le coulage du béton ont été réalisés dans les règles.",
+      "La pose du linteau a été faite correctement, aucun doute sur la solidité.",
+    ],
+  },
+  carreleur: {
+    contextes: [
+      "Notre carrelage de salle de bain était fissuré et décollé par endroits.",
+      "Rénovation complète de la cuisine avec pose d'un nouveau carrelage.",
+      "La terrasse extérieure nécessitait un nouveau revêtement antidérapant.",
+      "Pose de carrelage grand format dans le salon.",
+    ],
+    specifiques: [
+      "La pose est impeccable, les joints sont parfaitement réguliers.",
+      "Les découpes ont été faites avec précision, même dans les coins difficiles.",
+      "Le ragréage du sol a été réalisé avant la pose, c'est du travail bien fait.",
+      "Le choix du carrelage et les conseils prodigués ont été très utiles.",
+      "Aucune tuile ne sonne creux, la pose est solide.",
+    ],
+  },
+  peintre: {
+    contextes: [
+      "Notre intérieur n'avait pas été repeint depuis plus de dix ans.",
+      "Suite à des travaux, toutes les pièces étaient à repeindre.",
+      "Une rénovation complète de la façade avec une peinture de qualité.",
+      "Les murs avaient des taches et des marques difficiles à effacer.",
+    ],
+    specifiques: [
+      "La préparation des surfaces a été faite sérieusement avant la peinture.",
+      "Les finitions aux angles et autour des fenêtres sont précises.",
+      "Deux couches ont été appliquées comme convenu, le résultat est uniforme.",
+      "Le mobilier a été soigneusement protégé pendant les travaux.",
+      "Les couleurs choisies rendent parfaitement, l'ambiance est transformée.",
+    ],
+  },
+  debarras: {
+    contextes: [
+      "Suite à un décès, nous devions vider entièrement la maison.",
+      "Un déménagement urgent nécessitait un débarras rapide.",
+      "La cave et le grenier étaient pleins d'affaires accumulées sur des années.",
+      "Débarras complet avant mise en vente du bien.",
+    ],
+    specifiques: [
+      "L'équipe a travaillé vite et avec respect, c'est important dans ces moments-là.",
+      "Tout a été trié, le recyclable séparé des encombrants.",
+      "La maison a été laissée propre après le débarras.",
+      "Le tarif était transparent, pas de mauvaise surprise.",
+    ],
+  },
+  plomberie: {
+    contextes: [
+      "Une fuite importante sous l'évier nécessitait une intervention rapide.",
+      "Notre chauffe-eau tombait en panne régulièrement, il fallait le changer.",
+      "Une rupture de canalisation avait causé des dégâts des eaux.",
+      "Rénovation complète de la salle de bain avec nouveau système de plomberie.",
+    ],
+    specifiques: [
+      "Le diagnostic a été rapide et précis, la cause trouvée immédiatement.",
+      "Les pièces nécessaires étaient dans le camion, pas besoin de repasser.",
+      "La réparation a été solide, aucune fuite depuis.",
+      "L'intervention a été nette, les joints et raccords bien posés.",
+    ],
+  },
+  electricite: {
+    contextes: [
+      "Notre tableau électrique était vétuste et non conforme aux normes.",
+      "Mise aux normes de l'installation électrique avant vente.",
+      "Installation de prises et d'éclairage dans une pièce rénovée.",
+      "Un court-circuit répété nous a poussés à faire vérifier l'installation.",
+    ],
+    specifiques: [
+      "Le diagnostic de l'installation a été complet et documenté.",
+      "Le tableau a été refait proprement, tout est étiqueté.",
+      "Les gaines ont été posées soigneusement, le travail est invisible.",
+      "Un certificat de conformité nous a été remis à la fin des travaux.",
+    ],
+  },
+  auto: {
+    contextes: [
+      "En panne sur le bord de la route, j'ai appelé {fiche} en urgence.",
+      "Mon véhicule ne démarrait plus, une intervention rapide était nécessaire.",
+      "Suite à un accident, mon véhicule devait être remorqué.",
+      "Une panne moteur imprévue sur la route à {ville}.",
+    ],
+    specifiques: [
+      "Le dépanneur est arrivé en moins de 30 minutes, très réactif.",
+      "Le diagnostic a été fait sur place, clairement expliqué.",
+      "Le véhicule a été pris en charge avec soin.",
+      "Le prix annoncé au téléphone correspondait à la facture finale.",
+    ],
+  },
+  nettoyage: {
+    contextes: [
+      "Notre local professionnel nécessitait un nettoyage en profondeur.",
+      "Fin de chantier, un nettoyage complet était nécessaire avant livraison.",
+      "Notre terrasse et nos allées étaient à nettoyer après l'hiver.",
+    ],
+    specifiques: [
+      "Le matériel utilisé était professionnel et adapté.",
+      "Chaque recoin a été traité, le résultat est vraiment propre.",
+      "Le produit utilisé n'a pas abîmé les surfaces.",
+    ],
+  },
+  generic: {
+    contextes: [
+      "Nous avions un besoin urgent d'un professionnel sérieux.",
+      "Après plusieurs devis, nous avons choisi {fiche} pour sa réactivité.",
+      "Notre projet demandait une vraie expertise.",
+    ],
+    specifiques: [
+      "L'équipe s'est montrée compétente et sérieuse tout au long du chantier.",
+      "Le travail réalisé était conforme au devis et aux attentes.",
+      "La prestation était de qualité, sans mauvaise surprise.",
+    ],
+  },
+};
+
+const GEN_COMMUN = {
   contacts: [
     "Le premier contact a été rapide et professionnel.",
-    "Dès le premier appel, j'ai été bien renseigné.",
+    "Dès le premier appel, j'ai été bien orienté.",
     "La prise en charge a été immédiate.",
-    "Le devis est arrivé rapidement, clair et sans surprise.",
-    "Devis reçu dans la journée, très détaillé.",
-    "On m'a rappelé dans les deux heures, c'est appréciable.",
+    "Devis reçu dans la journée, clair et sans surprise.",
+    "On m'a rappelé rapidement, c'est appréciable.",
+    "Réactivité au rendez-vous dès le départ.",
     "",
     "",
   ],
   interventions: [
     "L'équipe est intervenue dans les délais convenus.",
-    "Les techniciens sont arrivés à l'heure prévue.",
+    "Les professionnels sont arrivés à l'heure prévue.",
     "L'intervention a été réalisée proprement et dans les temps.",
     "Le chantier a été mené de bout en bout avec sérieux.",
-    "Les ouvriers ont travaillé efficacement, sans laisser de désordre.",
-    "Le travail a été fait dans les délais annoncés, sans mauvaise surprise.",
+    "Travail réalisé efficacement, sans laisser de désordre.",
+    "Le travail a été fait dans les délais annoncés.",
     "L'équipe était bien équipée et savait exactement ce qu'elle faisait.",
     "Intervention rapide et bien organisée.",
   ],
   qualites: [
     "Travail soigné et de qualité.",
     "Prestation très propre, je suis satisfait du résultat.",
-    "La qualité du travail correspond exactement à ce qui avait été annoncé.",
+    "La qualité correspond exactement à ce qui avait été annoncé.",
     "Résultat impeccable, conforme à mes attentes.",
     "Excellent niveau de finition.",
-    "On voit que ce sont des gens du métier, le travail est bien fait.",
+    "On voit que ce sont des gens du métier.",
     "Très bon rapport qualité-prix.",
-    "Le résultat est là et c'est ce qui compte.",
+    "Le résultat parle de lui-même.",
   ],
   details: [
     "Ils ont pris le temps d'expliquer chaque étape.",
-    "Le chef de chantier était disponible pour répondre à mes questions.",
+    "Le responsable était disponible pour répondre à mes questions.",
     "L'équipe a fait preuve d'un vrai sens du détail.",
-    "Ils ont respecté mes contraintes et ma propriété.",
+    "Ils ont respecté ma propriété.",
     "Tout a été nettoyé avant de partir.",
     "On sentait une vraie expérience dans ce domaine.",
     "La communication tout au long du projet était bonne.",
@@ -562,32 +776,29 @@ const GEN = {
     "Je recommande vivement {fiche} pour ce type de prestation.",
     "Je ferai à nouveau appel à eux.",
     "À recommander à tous ceux qui cherchent un professionnel sérieux à {ville}.",
-    "Une adresse à retenir pour {travaux} dans la région de {ville}.",
+    "Une bonne adresse à retenir sur {ville}.",
     "Très satisfait, je passerai par eux pour mes prochains travaux.",
     "Bonne expérience globale, je recommande.",
   ],
-
-  // Variantes courtes
+  decouvertes: [
+    "J'ai fait appel à {fiche} pour {travaux} à {ville}",
+    "Suite à un besoin de {travaux} à {ville}, j'ai contacté {fiche}",
+    "Après recherche d'un professionnel pour {travaux} à {ville}, j'ai choisi {fiche}",
+    "Pour {travaux} dans ma propriété à {ville}, j'ai fait confiance à {fiche}",
+    "J'avais besoin d'un spécialiste pour {travaux} à {ville} et j'ai trouvé {fiche}",
+    "C'est en cherchant un artisan sérieux à {ville} que j'ai découvert {fiche}",
+  ],
   courts: [
     "Très bonne prestation de {fiche} pour {travaux} à {ville}. Travail sérieux, délais respectés. Je recommande.",
-    "{fiche} est intervenu pour {travaux} chez moi à {ville}. Efficace et propre. Satisfait.",
+    "{fiche} est intervenu pour {travaux} à {ville}. Efficace et propre. Satisfait.",
     "Bon professionnel pour {travaux} à {ville}. Devis honnête, travail de qualité. À recommander.",
-    "Fait appel à {fiche} pour {travaux} à {ville}. RAS, tout s'est bien passé. Je recommande.",
-    "Prestation {travaux} à {ville} par {fiche}. Sérieux et efficace. Bonne expérience.",
+    "Fait appel à {fiche} pour {travaux} à {ville}. Tout s'est très bien passé. Je recommande.",
+    "Prestation sérieuse de {fiche} pour {travaux} à {ville}. Bonne expérience.",
   ],
-
-  // Variantes détaillées
   intro_details: [
-    "Je tenais à laisser un avis sur {fiche} après {travaux} réalisés à {ville}.",
-    "Voici mon retour d'expérience après avoir fait appel à {fiche} pour {travaux} à {ville}.",
-    "J'utilise rarement les avis en ligne mais l'intervention de {fiche} pour {travaux} à {ville} mérite d'être signalée.",
-  ],
-  contextes: [
-    "Nous avions un projet un peu complexe qui demandait de l'expertise.",
-    "Le chantier n'était pas simple, mais tout a été géré avec professionnalisme.",
-    "Les contraintes d'accès étaient importantes, mais l'équipe s'est adaptée.",
-    "C'était une intervention urgente et ils ont su réagir rapidement.",
-    "Le projet prenait un certain volume mais tout a été organisé efficacement.",
+    "Je tenais à laisser un avis sur {fiche} suite à {travaux} réalisés à {ville}.",
+    "Voici mon retour après avoir fait appel à {fiche} pour {travaux} à {ville}.",
+    "J'utilise rarement les avis en ligne mais l'intervention de {fiche} pour {travaux} à {ville} mérite d'être saluée.",
   ],
 };
 
@@ -604,46 +815,48 @@ function genererAvis() {
 
   const fill = s => s.replace(/{fiche}/g, fiche).replace(/{travaux}/g, travaux).replace(/{ville}/g, ville);
 
+  // Détecter le métier et charger les phrases adaptées
+  const metier = detecterMetier(fiche);
+  const M = METIERS[metier] || METIERS.generic;
+  const contexteMetier = fill(rnd(M.contextes));
+  const specifiqueMetier = rnd(M.specifiques);
+
   let texte = '';
 
   if (ton === 'court') {
-    texte = fill(rnd(GEN.courts));
+    texte = fill(rnd(GEN_COMMUN.courts));
 
   } else if (ton === 'detaille') {
-    const intro   = fill(rnd(GEN.intro_details));
-    const contexte = rnd(GEN.contextes);
-    const interv  = rnd(GEN.interventions);
-    const qualite = rnd(GEN.qualites);
-    const detail  = rnd(GEN.details.filter(d => d));
-    const reco    = fill(rnd(GEN.recommandations));
-    texte = [intro, contexte, interv, qualite, detail, reco].filter(Boolean).join(' ');
+    const intro      = fill(rnd(GEN_COMMUN.intro_details));
+    const interv     = rnd(GEN_COMMUN.interventions);
+    const qualite    = rnd(GEN_COMMUN.qualites);
+    const detail     = rnd(GEN_COMMUN.details.filter(d => d));
+    const reco       = fill(rnd(GEN_COMMUN.recommandations));
+    texte = [intro, contexteMetier, interv, specifiqueMetier, qualite, detail, reco].filter(Boolean).join(' ');
 
   } else if (ton === 'enthousiaste') {
-    const decouverte = fill(rnd(GEN.decouvertes));
-    const contact    = rnd(GEN.contacts.filter(c => c));
-    const interv     = rnd(GEN.interventions);
-    const qualite    = rnd(GEN.qualites);
-    const reco       = fill(rnd(GEN.recommandations));
-    const enthousiasteSuffix = rnd([
+    const decouverte = fill(rnd(GEN_COMMUN.decouvertes));
+    const contact    = rnd(GEN_COMMUN.contacts.filter(c => c));
+    const qualite    = rnd(GEN_COMMUN.qualites);
+    const reco       = fill(rnd(GEN_COMMUN.recommandations));
+    const suffix = rnd([
       ' Une vraie bonne surprise !',
       ' Exactement ce dont j\'avais besoin.',
       ' Je suis vraiment content du résultat.',
-      ' Ça change des mauvaises expériences qu\'on peut avoir.',
+      ' Ça change des mauvaises expériences qu\'on peut avoir !',
       '',
     ]);
-    texte = [decouverte + '.', contact, interv, qualite, reco + enthousiasteSuffix].filter(Boolean).join(' ');
+    texte = [decouverte + '.', contexteMetier, contact, specifiqueMetier, qualite, reco + suffix].filter(Boolean).join(' ');
 
   } else { // neutre
-    const decouverte = fill(rnd(GEN.decouvertes));
-    const contact    = rnd(GEN.contacts);
-    const interv     = rnd(GEN.interventions);
-    const qualite    = rnd(GEN.qualites);
-    const detail     = Math.random() > 0.4 ? rnd(GEN.details) : '';
-    const reco       = fill(rnd(GEN.recommandations));
-    texte = [decouverte + '.', contact, interv, qualite, detail, reco].filter(Boolean).join(' ');
+    const decouverte = fill(rnd(GEN_COMMUN.decouvertes));
+    const contact    = rnd(GEN_COMMUN.contacts);
+    const qualite    = rnd(GEN_COMMUN.qualites);
+    const detail     = Math.random() > 0.4 ? rnd(GEN_COMMUN.details) : '';
+    const reco       = fill(rnd(GEN_COMMUN.recommandations));
+    texte = [decouverte + '.', contact, specifiqueMetier, qualite, detail, reco].filter(Boolean).join(' ');
   }
 
-  // Nettoyer les doubles espaces
   texte = texte.replace(/\s+/g, ' ').trim();
 
   const result = document.getElementById('gen-result');
