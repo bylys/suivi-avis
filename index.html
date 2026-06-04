@@ -34,6 +34,7 @@
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
+      <button class="tab-btn" onclick="showTab('generateur')">Générateur d'avis</button>
     </nav>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </header>
@@ -203,6 +204,43 @@
     <div id="rappels-banner"></div>
     <div id="rappels-count"></div>
     <div id="liste-avis"></div>
+  </section>
+
+  <!-- GÉNÉRATEUR -->
+  <section id="tab-generateur" class="tab-content hidden">
+    <h2>✍️ Générateur d'avis Google</h2>
+    <div class="gen-form">
+      <label>Nom de la fiche Google Business *
+        <input type="text" id="gen-fiche" list="datalist-gen-fiche" placeholder="Ex : Élagage Caen" autocomplete="off" />
+        <datalist id="datalist-gen-fiche"></datalist>
+      </label>
+      <label>Travaux effectués *
+        <input type="text" id="gen-travaux" placeholder="Ex : élagage d'un chêne, nettoyage toiture, ravalement façade..." />
+      </label>
+      <label>Ville d'intervention *
+        <input type="text" id="gen-ville" placeholder="Ex : Caen, Paris, Lyon..." />
+      </label>
+      <label>Ton de l'avis
+        <select id="gen-ton">
+          <option value="neutre">Neutre & factuel</option>
+          <option value="enthousiaste">Enthousiaste</option>
+          <option value="detaille">Détaillé & précis</option>
+          <option value="court">Court & direct</option>
+        </select>
+      </label>
+      <div class="gen-actions">
+        <button class="btn-primary" onclick="genererAvis()">✨ Générer l'avis</button>
+        <button class="btn-secondary" onclick="genererAvis()">🔄 Régénérer</button>
+      </div>
+    </div>
+    <div id="gen-result" class="gen-result hidden">
+      <div class="gen-result-header">
+        <span>Avis généré</span>
+        <button class="btn-copy" onclick="copierAvis()">📋 Copier</button>
+      </div>
+      <div id="gen-texte" class="gen-texte"></div>
+      <p id="gen-copy-confirm" class="success hidden">✅ Copié dans le presse-papiers !</p>
+    </div>
   </section>
 
   <!-- FICHES -->
