@@ -292,8 +292,52 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 .empty-state { color: #475569; text-align: center; padding: 2.5rem; font-size: 0.9rem; }
 
 /* ── GÉNÉRATEUR ── */
-.gen-form { max-width: 640px; }
+#tab-generateur h2 { margin-bottom: 1.5rem; }
+
+.gen-form {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.gen-form label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.45rem;
+  font-size: 0.82rem !important;
+  color: #94a3b8 !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gen-form input,
+.gen-form select {
+  width: 100% !important;
+  padding: 0.75rem 1rem !important;
+  border: 1.5px solid #334155 !important;
+  border-radius: 10px !important;
+  font-size: 0.95rem !important;
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 400 !important;
+}
+
+.gen-form input:focus,
+.gen-form select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.gen-form input::placeholder { color: #475569; }
+
 .gen-actions { display: flex; gap: 0.8rem; margin-top: 0.5rem; flex-wrap: wrap; }
+
 .btn-secondary {
   padding: 0.72rem 1.5rem;
   background: #1e293b; color: #94a3b8;
@@ -303,7 +347,7 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 .btn-secondary:hover { border-color: #6366f1; color: #f1f5f9; }
 
 .gen-result {
-  margin-top: 1.8rem; max-width: 700px;
+  margin-top: 1.8rem; max-width: 640px;
   background: #1e293b; border: 1.5px solid #334155;
   border-radius: 14px; overflow: hidden;
 }
@@ -311,7 +355,8 @@ details[open] .month-summary::before { transform: rotate(90deg); }
   display: flex; justify-content: space-between; align-items: center;
   padding: 0.75rem 1.2rem;
   background: #0f172a; border-bottom: 1px solid #334155;
-  font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: 0.82rem; color: #64748b; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
 }
 .btn-copy {
   padding: 0.35rem 0.9rem; background: #6366f122; color: #818cf8;
@@ -321,7 +366,7 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 .btn-copy:hover { background: #6366f133; color: #a5b4fc; }
 .gen-texte {
   padding: 1.4rem 1.5rem;
-  font-size: 1rem; line-height: 1.75;
+  font-size: 1rem; line-height: 1.85;
   color: #e2e8f0; white-space: pre-wrap;
   font-style: italic;
 }
