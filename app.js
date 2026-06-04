@@ -224,6 +224,8 @@ async function submitAvis(e) {
 }
 
 // ── LISTE ──
+const MOIS_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
 const STATUT_LABELS = {
   supprime: { label: 'Supprimé (à été fait)', color: '#e53935' },
   j0:       { label: 'Posté J+0',  color: '#9c27b0' },
@@ -232,6 +234,30 @@ const STATUT_LABELS = {
   j21:      { label: 'Posté J+21', color: '#43a047' },
   j30:      { label: 'Posté J+30', color: '#1a73e8' },
 };
+
+function buildAvisRow(a, rappelsDus, aVerif) {
+  const st = STATUT_LABELS[a.statut] || { label: a.statut || '–', color: '#999' };
+  const needsVerif = aVerif.includes(a.id);
+  const verifLabel = needsVerif ? rappelsDus.find(d => d.avis.id === a.id)?.label : null;
+  return `<tr class="${needsVerif ? 'avis-a-verifier' : ''}">
+    <td class="avis-date">${formatDate(a.date)}</td>
+    <td><span class="avis-fiche">${a.fiche_nom}</span></td>
+    <td class="avis-auteur">${a.auteur}</td>
+    <td class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
+    <td>
+      <select class="statut-inline" onchange="updateStatut('${a.id}', this.value)" style="border-color:${st.color};color:${st.color}">
+        ${Object.entries(STATUT_LABELS).map(([k,v]) =>
+          `<option value="${k}" ${a.statut===k?'selected':''} style="color:${v.color}">${v.label}</option>`
+        ).join('')}
+      </select>
+    </td>
+    <td>${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
+    <td style="text-align:center">${a.photo ? '📷' : ''}</td>
+    <td style="text-align:center">${a.lien ? `<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
+    <td class="col-texte">${a.texte || ''}</td>
+    <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
+  </tr>`;
+}
 
 async function renderListe() {
   let avis = await getAvis();
@@ -257,40 +283,39 @@ async function renderListe() {
   const rappelsDus = getRappelsDus(avis);
   const aVerif = rappelsDus.map(d => d.avis.id);
 
-  el.innerHTML = `
-  <table class="avis-table">
-    <thead>
-      <tr>
-        <th>Date</th><th>Fiche GMB</th><th>Gmail</th><th>Note</th>
-        <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
-      </tr>
-    </thead>
-    <tbody>
-      ${avis.map(a => {
-        const st = STATUT_LABELS[a.statut] || { label: a.statut || '–', color: '#999' };
-        const needsVerif = aVerif.includes(a.id);
-        const verifLabel = needsVerif ? rappelsDus.find(d => d.avis.id === a.id)?.label : null;
-        return `<tr class="${needsVerif ? 'avis-a-verifier' : ''}">
-          <td class="avis-date">${formatDate(a.date)}</td>
-          <td><span class="avis-fiche">${a.fiche_nom}</span></td>
-          <td class="avis-auteur">${a.auteur}</td>
-          <td class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
-          <td>
-            <select class="statut-inline" onchange="updateStatut('${a.id}', this.value)" style="border-color:${st.color};color:${st.color}">
-              ${Object.entries(STATUT_LABELS).map(([k,v]) =>
-                `<option value="${k}" ${a.statut===k?'selected':''} style="color:${v.color}">${v.label}</option>`
-              ).join('')}
-            </select>
-          </td>
-          <td>${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
-          <td style="text-align:center">${a.photo ? '📷' : ''}</td>
-          <td style="text-align:center">${a.lien ? `<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
-          <td class="col-texte">${a.texte || ''}</td>
-          <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table>`;
+  // Grouper par mois
+  const byMonth = {};
+  avis.forEach(a => {
+    const m = a.date.slice(0, 7);
+    if (!byMonth[m]) byMonth[m] = [];
+    byMonth[m].push(a);
+  });
+  const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+
+  const tableHead = `<table class="avis-table">
+    <thead><tr>
+      <th>Date</th><th>Fiche GMB</th><th>Gmail</th><th>Note</th>
+      <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
+    </tr></thead>`;
+
+  el.innerHTML = sortedMonths.map((m, idx) => {
+    const [year, mo] = m.split('-');
+    const label = `${MOIS_LABELS[parseInt(mo)-1]} ${year}`;
+    const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
+    const suppCount = byMonth[m].filter(a => a.statut === 'supprime').length;
+    const j30Count  = byMonth[m].filter(a => a.statut === 'j30').length;
+    return `<details class="month-group" ${idx === 0 ? 'open' : ''}>
+      <summary class="month-summary">
+        <span class="month-label">📅 ${label}</span>
+        <span class="month-badges">
+          <span class="badge-total">${byMonth[m].length} avis</span>
+          <span class="badge-supprime">${suppCount} supprimés</span>
+          <span class="badge-j30">${j30Count} J+30</span>
+        </span>
+      </summary>
+      ${tableHead}<tbody>${rows}</tbody></table>
+    </details>`;
+  }).join('');
 
   renderRappelsBanner(rappelsDus);
 }
@@ -319,10 +344,8 @@ async function renderDashboard() {
   if (fiche) avis = avis.filter(a => a.fiche_nom === fiche);
   avis = avis.filter(a => parseInt(a.date.slice(0, 4)) === year);
 
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const selectedMonth = month ? `${year}-${month}` : currentMonth;
-  const moisAvis = avis.filter(a => a.date.startsWith(selectedMonth));
+  const selectedMonth = month ? `${year}-${month}` : '';
+  const moisAvis = selectedMonth ? avis.filter(a => a.date.startsWith(selectedMonth)) : avis;
   const moyenne = moisAvis.length ? (moisAvis.reduce((s,a) => s+a.note, 0) / moisAvis.length).toFixed(1) : '–';
 
   document.getElementById('stat-total').textContent     = moisAvis.length;
@@ -340,11 +363,8 @@ async function renderDashboard() {
 
   const months = Array.from({length: 12}, (_, i) => `${year}-${String(i+1).padStart(2,'0')}`);
   const labels = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
-  const volumes  = months.map(m => avis.filter(a => a.date.startsWith(m)).length);
-  const moyennes = months.map(m => {
-    const ma = avis.filter(a => a.date.startsWith(m));
-    return ma.length ? +(ma.reduce((s,a) => s+a.note, 0) / ma.length).toFixed(2) : null;
-  });
+  const volumes   = months.map(m => avis.filter(a => a.date.startsWith(m)).length);
+  const supprimes = months.map(m => avis.filter(a => a.date.startsWith(m) && a.statut === 'supprime').length);
   const repartition = [1,2,3,4,5].map(n => avis.filter(a => a.note === n).length);
 
   if (chartVolume) chartVolume.destroy();
@@ -356,9 +376,9 @@ async function renderDashboard() {
 
   if (chartNote) chartNote.destroy();
   chartNote = new Chart(document.getElementById('chart-note'), {
-    type: 'line',
-    data: { labels, datasets: [{ label: 'Note moy.', data: moyennes, borderColor: '#f4b942', backgroundColor: '#f4b94222', tension: 0.3, fill: true, pointBackgroundColor: '#f4b942' }] },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 5 } } }
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Supprimés', data: supprimes, backgroundColor: '#e5393588', borderRadius: 6 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
   if (chartRep) chartRep.destroy();
