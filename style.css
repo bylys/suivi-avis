@@ -291,6 +291,41 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 .btn-delete:hover { color: #ef4444; }
 .empty-state { color: #475569; text-align: center; padding: 2.5rem; font-size: 0.9rem; }
 
+/* ── GÉNÉRATEUR ── */
+.gen-form { max-width: 640px; }
+.gen-actions { display: flex; gap: 0.8rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.btn-secondary {
+  padding: 0.72rem 1.5rem;
+  background: #1e293b; color: #94a3b8;
+  border: 1.5px solid #334155; border-radius: 10px;
+  font-size: 0.95rem; cursor: pointer; transition: all .2s;
+}
+.btn-secondary:hover { border-color: #6366f1; color: #f1f5f9; }
+
+.gen-result {
+  margin-top: 1.8rem; max-width: 700px;
+  background: #1e293b; border: 1.5px solid #334155;
+  border-radius: 14px; overflow: hidden;
+}
+.gen-result-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.75rem 1.2rem;
+  background: #0f172a; border-bottom: 1px solid #334155;
+  font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.btn-copy {
+  padding: 0.35rem 0.9rem; background: #6366f122; color: #818cf8;
+  border: 1px solid #6366f144; border-radius: 8px;
+  font-size: 0.82rem; cursor: pointer; transition: all .2s;
+}
+.btn-copy:hover { background: #6366f133; color: #a5b4fc; }
+.gen-texte {
+  padding: 1.4rem 1.5rem;
+  font-size: 1rem; line-height: 1.75;
+  color: #e2e8f0; white-space: pre-wrap;
+  font-style: italic;
+}
+
 /* ── FICHES ── */
 .inline-form { display: flex; gap: 0.8rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .inline-form input {
