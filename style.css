@@ -388,12 +388,18 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 }
 
 /* ── TOOLTIP INFO ── */
+.label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .info-tooltip {
   position: relative;
   display: inline-flex;
   align-items: center;
   cursor: pointer;
-  margin-left: 6px;
   font-size: 0.85rem;
   vertical-align: middle;
 }
