@@ -234,6 +234,22 @@ form select option { background: #1e293b; color: #f1f5f9; }
 .avis-a-verifier td:first-child { border-left: 3px solid #fbbf24; padding-left: calc(0.9rem - 3px); }
 
 /* ── STATUT INLINE ── */
+.date-inline {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  padding: 0.2rem 0.3rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s, background .15s;
+  width: 120px;
+  color-scheme: dark;
+}
+.date-inline:hover { border-color: #334155; background: #1e293b; }
+.date-inline:focus { border-color: #6366f1; background: #1e293b; color: #f1f5f9; }
+
 .statut-inline {
   font-size: 0.74rem; font-weight: 600; padding: 3px 7px;
   border-radius: 8px; border: 1.5px solid; background: #0f172a;
