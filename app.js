@@ -508,9 +508,6 @@ function renderRappelsBanner(dus) {
 }
 
 // ── GÉNÉRATEUR D'AVIS ──
-// Basé sur US20170221111A1 (anti-détection : variété texte, longueur, ton)
-// + mots-clés travaux/ville pour boost ranking local (US8046371B2)
-
 function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 async function populateGenFiche() {
@@ -518,6 +515,269 @@ async function populateGenFiche() {
   const dl = document.getElementById('datalist-gen-fiche');
   if (dl) dl.innerHTML = fiches.map(f => `<option value="${f.nom.replace(/"/g,'&quot;')}">`).join('');
 }
+
+// ── TEMPLATES D'AVIS COMPLETS PAR TON ──
+// {f}=fiche, {t}=travaux, {v}=ville
+// Chaque avis est écrit d'un bloc, cohérent et grammaticalement correct.
+
+const TEMPLATES = {
+  elagage: {
+    neutre: [
+      "J'avais un arbre dans mon jardin à {v} qui commençait à poser problème. J'ai contacté {f} pour des {t} et le travail a été fait sérieusement. Devis clair, intervention propre, tout le bois évacué en fin de journée. Je recommande.",
+      "Plusieurs arbres de ma propriété à {v} avaient besoin d'une taille sérieuse. {f} est intervenu pour les {t} et le résultat est vraiment bien. L'élagueur connaissait son métier et a bien respecté la forme naturelle des arbres. Très satisfait.",
+      "Je cherchais quelqu'un de fiable pour des {t} à {v}, on m'a recommandé {f}. Intervention rapide, équipe compétente, prix honnête. Les arbres ont été taillés correctement, tout nettoyé avant de partir. Rien à redire.",
+      "Voici mon retour après avoir sollicité {f} pour des {t} à {v}. Contact agréable, devis rapide et conforme à ce qui avait été discuté. Sur le chantier, l'équipe a travaillé efficacement et dans le respect de la propriété. Je recommande.",
+    ],
+    enthousiaste: [
+      "Je suis vraiment content d'avoir fait appel à {f} pour des {t} à {v} ! L'équipe est arrivée à l'heure, bien équipée, et le résultat est bluffant. Le jardin est méconnaissable. Tarif honnête et travail impeccable. Je les recommande les yeux fermés !",
+      "Franchement, quelle bonne surprise avec {f} ! J'appréhendais un peu les {t} à {v} mais tout s'est passé parfaitement. L'équipe était sympa, professionnelle, et le bois a été évacué en un rien de temps. Je referai appel à eux sans hésiter.",
+      "Top prestation de {f} pour des {t} à {v} ! Réactifs, efficaces, et vraiment soigneux avec la propriété. Le jardin est nickel, on est ravis du résultat. Une adresse à garder précieusement.",
+    ],
+    detaille: [
+      "Suite à une tempête, une grosse branche menaçait de tomber sur ma clôture à {v}. J'ai contacté {f} pour les {t}. Le couvreur est passé évaluer la situation le lendemain, a proposé une solution adaptée et l'intervention a eu lieu dans la semaine. Le travail a été réalisé avec soin, en toute sécurité, et les branchages ont été entièrement évacués. Prix conforme au devis, aucune mauvaise surprise. Je recommande sans hésiter.",
+      "Propriétaire à {v}, j'avais plusieurs arbres à traiter en même temps. J'ai demandé des devis à plusieurs entreprises avant de choisir {f} pour les {t}. Le prix était compétitif et le sérieux de l'équipe lors de la visite m'a convaincu. Sur le chantier, ils ont travaillé méthodiquement, en commençant par sécuriser les accès. Résultat impeccable, jardin laissé propre. Je recommande.",
+    ],
+    court: [
+      "{f} pour des {t} à {v}. Sérieux, efficace, prix honnête. Je recommande.",
+      "Très bonne prestation de {f} pour {t} à {v}. Travail propre et soigné.",
+      "{t} à {v} par {f}. Délais respectés, résultat nickel. À recommander.",
+    ],
+  },
+
+  ravalement: {
+    neutre: [
+      "Notre façade à {v} était en mauvais état depuis quelques années. Après plusieurs devis, nous avons choisi {f} pour le {t}. L'équipe a bien préparé le support avant d'appliquer l'enduit, les finitions sont soignées. La maison semble rénovée. Très satisfait.",
+      "J'ai fait appel à {f} pour un {t} à {v}. Dès la visite technique, j'ai senti que c'était des professionnels sérieux. Ils ont traité les fissures correctement et appliqué un enduit de qualité. Le rendu final est vraiment beau. Je recommande.",
+      "Pour notre {t} à {v}, nous avons choisi {f} après comparaison de plusieurs entreprises. Travail propre, délais respectés, résultat impeccable. Le prix correspondait au devis. À recommander.",
+    ],
+    enthousiaste: [
+      "Wow, quelle transformation ! {f} a réalisé notre {t} à {v} et la façade est méconnaissable. L'équipe était au top, les finitions sont parfaites et le chantier s'est déroulé sans accroc. On est vraiment ravis du résultat !",
+      "Vraiment bluffant le travail de {f} pour notre {t} à {v}. La maison semble neuve, les voisins nous ont tous félicités ! Équipe sérieuse, prix honnête, et un résultat qui dépasse nos attentes. Je recommande chaleureusement.",
+    ],
+    detaille: [
+      "Nous avions des problèmes d'humidité dus à une façade dégradée à {v}. {f} est intervenu pour le {t} : ils ont commencé par un diagnostic complet, traité les remontées capillaires, puis appliqué un enduit hydrofuge adapté. Les teintes ont été choisies avec nous. Le résultat est excellent et le problème d'humidité réglé. Je recommande.",
+      "Le {t} de notre maison à {v} était un chantier conséquent. {f} nous a accompagnés de A à Z : visite technique, choix des matériaux, planning détaillé. Sur le chantier, l'équipe était organisée et soigneuse. Les finitions aux encadrements et autour des fenêtres sont précises. Délais tenus, prix conforme. Très satisfait.",
+    ],
+    court: [
+      "{f} pour notre {t} à {v}. Travail soigné, bon rapport qualité-prix. Je recommande.",
+      "Bon professionnel pour {t} à {v}. Devis honnête, résultat impeccable.",
+      "Très satisfait du {t} réalisé par {f} à {v}. Sérieux et efficace.",
+    ],
+  },
+
+  couvreur: {
+    neutre: [
+      "J'ai contacté {f} pour des {t} à {v} suite à une infiltration. Le couvreur est venu rapidement, a identifié le problème et l'a réparé proprement. Plus aucune infiltration depuis. Je recommande pour leur réactivité et leur sérieux.",
+      "Notre toiture avait besoin d'une réfection. {f} a réalisé les {t} à {v} dans les délais convenus et pour le prix du devis. La charpente a été vérifiée, les tuiles posées avec soin. Travail solide. Très satisfait.",
+      "Voici mon retour sur l'intervention de {f} pour des {t} à {v}. Du premier contact à la fin du chantier, tout s'est bien passé. Devis détaillé, intervention soignée, nettoyage avant départ. Je recommande.",
+    ],
+    enthousiaste: [
+      "Vraiment top ! {f} est intervenu pour des {t} à {v} en urgence et l'équipe a été au rendez-vous. Réactifs, compétents, et le travail est nickel. La toiture est comme neuve. Je les recommande sans hésitation à tous les propriétaires de {v} !",
+      "Excellente expérience avec {f} pour nos {t} à {v}. Le couvreur a pris le temps d'inspecter toute la surface, nous a bien expliqué ce qu'il allait faire et pourquoi. Résultat parfait, plus aucun souci d'étanchéité. Vraiment content !",
+    ],
+    detaille: [
+      "Après plusieurs hivers difficiles, notre toiture à {v} nécessitait une réfection sérieuse. {f} est passé évaluer l'état de la charpente et des tuiles avant de nous proposer un devis détaillé. L'intervention a duré deux jours : vérification de la charpente, remplacement des tuiles abîmées, réfection de la zinguerie. Tout a été nettoyé avant de partir. Facture conforme au devis. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Réactif, sérieux, bon travail. Je recommande.",
+      "Très bonne intervention de {f} pour {t} à {v}. Efficace et propre.",
+      "{t} à {v} par {f}. Résultat impeccable, prix honnête.",
+    ],
+  },
+
+  nettoyage_toiture: {
+    neutre: [
+      "La toiture de notre maison à {v} était couverte de mousse. {f} est intervenu pour le {t} et le résultat est vraiment bien. Les tuiles ont retrouvé leur couleur et un traitement préventif a été appliqué. Bon travail, prix honnête.",
+      "Nous avons fait appel à {f} pour le {t} à {v}. Le nettoyage haute pression a été bien maîtrisé, les tuiles n'ont pas été abîmées. Un traitement hydrofuge a été appliqué en finition. Résultat propre, on est contents.",
+      "Suite aux recommandations d'un voisin, j'ai contacté {f} pour le {t} de notre maison à {v}. Travail propre, équipe sérieuse et tarif raisonnable. Les gouttières ont été nettoyées en même temps. Je recommande.",
+    ],
+    enthousiaste: [
+      "Impressionnant le résultat ! {f} a fait le {t} de notre maison à {v} et la toiture est comme neuve. On ne s'attendait pas à une telle différence. Équipe sérieuse, propre et efficace. On recommande vraiment !",
+      "Vraiment content d'avoir fait appel à {f} pour le {t} à {v}. Le résultat est bluffant, les tuiles ont retrouvé leur couleur d'origine. L'équipe était ponctuelle et a tout nettoyé avant de partir. Parfait !",
+    ],
+    detaille: [
+      "Notre toiture à {v} n'avait pas été entretenue depuis des années, la mousse commençait à soulever les tuiles. {f} est intervenu pour le {t} : nettoyage haute pression avec réglage adapté pour ne pas endommager les tuiles, puis application d'un traitement hydrofuge longue durée. Les gouttières ont également été nettoyées. Résultat visible de loin, la toiture est propre et protégée. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Résultat nickel, bon rapport qualité-prix.",
+      "Très bon {t} réalisé par {f} à {v}. Propre et efficace.",
+      "{f} à {v}, {t} impeccable. Je recommande.",
+    ],
+  },
+
+  terrassement: {
+    neutre: [
+      "Nous avions besoin d'un terrassement pour aménager notre jardin à {v}. {f} a réalisé les {t} avec des engins adaptés. Le nivellement est précis et tout a été laissé propre. Très bonne expérience.",
+      "J'ai contacté {f} pour des {t} à {v} dans le cadre d'une création de terrasse. Devis rapide, travail soigné, délais respectés. L'équipe a bien géré les contraintes du terrain. Résultat conforme à mes attentes.",
+    ],
+    enthousiaste: [
+      "Super travail de {f} pour nos {t} à {v} ! L'équipe est arrivée avec le bon matériel et a tout réalisé en une journée. Le terrain est parfaitement nivelé. On est ravis, on recommande !",
+    ],
+    detaille: [
+      "Pour la création d'une terrasse à {v}, nous avions besoin de {t} conséquents. {f} est passé évaluer le terrain, a proposé un planning et un devis détaillé. L'intervention s'est déroulée sur deux jours : terrassement, évacuation des terres, compactage. Le résultat est précis, conforme aux plans. Tarif compétitif et équipe sérieuse. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Travail propre et soigné. Je recommande.",
+      "Très satisfait des {t} réalisés par {f} à {v}. Sérieux et efficace.",
+    ],
+  },
+
+  maconnerie: {
+    neutre: [
+      "Nous avions une fissure sur un mur porteur à {v}. {f} est intervenu pour les {t} avec sérieux. Diagnostic précis, travail solide, explications claires. La réparation est bien faite. Je recommande.",
+      "J'ai sollicité {f} pour des {t} à {v} dans le cadre d'une extension. L'équipe était compétente et le travail bien organisé. Les murs sont droits, les joints bien faits. Bonne expérience.",
+    ],
+    enthousiaste: [
+      "Vraiment satisfait de l'intervention de {f} pour nos {t} à {v} ! On appréhendait un peu ce type de travaux mais l'équipe a tout géré avec professionnalisme. Résultat solide et bien fini. On recommande sans hésiter !",
+    ],
+    detaille: [
+      "Une reprise en sous-œuvre était nécessaire pour notre maison à {v} suite à un tassement. {f} a d'abord réalisé un diagnostic complet avant de proposer une solution adaptée. Les {t} ont été réalisés méthodiquement : étaiement, terrassement localisé, coulage du béton de fondation. Travail sérieux, sans précipitation. La structure est maintenant stabilisée. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Travail solide et bien fait. Je recommande.",
+      "Très bon travail de {f} pour {t} à {v}. Sérieux et professionnel.",
+    ],
+  },
+
+  carreleur: {
+    neutre: [
+      "J'ai fait poser un carrelage dans ma cuisine à {v} par {f}. Les joints sont réguliers, les découpes précises même dans les angles. L'artisan a bien préparé le support avant la pose. Travail soigné, je recommande.",
+      "Pour les {t} dans ma salle de bain à {v}, j'ai choisi {f}. Bon travail : carrelage bien posé, joints propres, aucune tuile qui sonne creux. Artisan ponctuel, chantier laissé propre. Satisfait.",
+    ],
+    enthousiaste: [
+      "Superbe travail de {f} pour les {t} à {v} ! Le résultat est vraiment beau, on est bluffés par la précision des découpes et la régularité des joints. L'artisan était de bon conseil sur le choix des matériaux. On recommande chaleureusement !",
+    ],
+    detaille: [
+      "Rénovation complète de notre salle de bain à {v} avec {f} pour les {t}. L'artisan a commencé par un ragréage soigneux du sol avant la pose, ce qui est indispensable pour un bon résultat. Les carreaux grand format ont été posés avec soin, les joints sont impeccables et homogènes. Les découpes autour des tuyaux et dans les angles sont précises. Aucune tuile ne sonne creux. Je recommande ce professionnel.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Pose soignée, joints parfaits. Je recommande.",
+      "Très satisfait des {t} réalisés par {f} à {v}. Propre et précis.",
+    ],
+  },
+
+  peintre: {
+    neutre: [
+      "Notre appartement à {v} avait besoin d'un rafraîchissement. {f} a réalisé les {t} proprement. Les finitions aux angles sont nettes, la peinture est uniforme. Le mobilier avait été protégé. Très satisfait.",
+      "Pour les {t} de notre maison à {v}, nous avons choisi {f}. L'artisan a bien préparé les surfaces avant de peindre. Deux couches appliquées comme convenu, rendu impeccable. Prix honnête, je recommande.",
+    ],
+    enthousiaste: [
+      "Super résultat avec {f} pour les {t} à {v} ! L'appartement est transformé, les couleurs rendent parfaitement et les finitions sont vraiment soignées. L'artisan était ponctuel et avait bien protégé tout le mobilier. On est ravis, on recommande !",
+    ],
+    detaille: [
+      "Nous avons confié les {t} de notre maison à {v} à {f} après rénovation. L'artisan a d'abord rebouché les trous et ponçé les surfaces avant toute mise en peinture, ce qui se voit sur le résultat final. Les bords et les angles ont été masqués avec soin. Deux couches ont été appliquées sur l'ensemble, les couleurs que nous avions choisies rendent très bien. Chantier propre, délais respectés. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Propre, soigné, résultat nickel.",
+      "Très satisfait des {t} de {f} à {v}. Finitions impeccables.",
+    ],
+  },
+
+  debarras: {
+    neutre: [
+      "J'avais besoin de vider rapidement un appartement à {v}. {f} est intervenu dans les deux jours pour le {t}. Tout a été trié et évacué proprement, le logement était vide et nettoyé à la fin. Je recommande.",
+      "Pour le {t} de la maison de famille à {v}, nous avons fait appel à {f}. Équipe respectueuse et efficace. Tout a été évacué dans la journée, prix transparent. Bonne expérience.",
+    ],
+    enthousiaste: [
+      "Vraiment top le service de {f} pour le {t} à {v} ! L'équipe est venue rapidement, a travaillé vite et bien, et a laissé les lieux propres. On avait des années d'affaires accumulées et tout a été géré en une journée. On recommande !",
+    ],
+    detaille: [
+      "Suite à un déménagement, je devais faire le {t} d'un grand appartement à {v}. {f} est passé estimer le volume, puis est intervenu avec une équipe de trois personnes. Tout a été trié méthodiquement : les objets récupérables ont été mis de côté, les encombrants chargés dans le camion. L'appartement a été balayé avant leur départ. Tarif conforme à l'estimation, bonne organisation. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Rapide, efficace, résultat propre.",
+      "Très satisfait du {t} par {f} à {v}. Sérieux et ponctuel.",
+    ],
+  },
+
+  plomberie: {
+    neutre: [
+      "J'avais une fuite chez moi à {v}. {f} est intervenu rapidement pour les {t}. Le plombier a trouvé la cause rapidement et a réparé proprement. Plus de problème depuis. Prix raisonnable, je recommande.",
+      "Notre chauffe-eau était en fin de vie à {v}. {f} a géré les {t} du début à la fin : dépose, installation, vérification des raccords. Travail soigné, intervention rapide. Je recommande.",
+    ],
+    enthousiaste: [
+      "Super réactivité de {f} pour les {t} à {v} ! En urgence, le plombier est arrivé rapidement, a trouvé le problème et l'a réglé proprement. On était stressés mais tout s'est très bien passé. On recommande !",
+    ],
+    detaille: [
+      "Dégât des eaux chez nous à {v}, j'ai appelé {f} en urgence pour les {t}. Le plombier est arrivé dans l'heure, a localisé la fuite avec précision, découpé le minimum nécessaire pour accéder à la canalisation et réparé proprement. Il a vérifié l'étanchéité avant de repartir et m'a expliqué comment éviter ce type de problème. Facture conforme à ce qui avait été annoncé. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Réactif, efficace. Je recommande.",
+      "Très bon plombier pour {t} à {v}. Sérieux et propre.",
+    ],
+  },
+
+  electricite: {
+    neutre: [
+      "Notre installation électrique à {v} n'était plus aux normes. {f} a réalisé les {t} sérieusement : tableau refait, gaines bien posées, tout étiqueté. Un certificat de conformité nous a été remis. Je recommande.",
+      "Pour la mise aux normes électriques à {v}, nous avons choisi {f}. Très bon travail : diagnostic complet, devis détaillé, intervention propre. L'électricien a été transparent tout au long du chantier. Je recommande.",
+    ],
+    enthousiaste: [
+      "Vraiment satisfait de {f} pour les {t} à {v} ! L'électricien connaissait parfaitement son métier, a tout bien expliqué et le résultat est impeccable. Le tableau est refait proprement et tout est aux normes. On recommande !",
+    ],
+    detaille: [
+      "Notre maison à {v} avait un tableau électrique vétuste et une installation non conforme. {f} a commencé par un diagnostic complet de l'installation existante avant de proposer un devis détaillé pour les {t}. L'intervention a duré deux jours : remplacement du tableau, mise en conformité des circuits, pose de nouvelles prises. Tout est étiqueté, le travail est invisible une fois les goulettes en place. Certificat de conformité remis. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Travail soigné et conforme. Je recommande.",
+      "Très satisfait des {t} de {f} à {v}. Professionnel et sérieux.",
+    ],
+  },
+
+  auto: {
+    neutre: [
+      "En panne à {v}, j'ai appelé {f} pour les {t}. Le dépanneur est arrivé en moins de 30 minutes, a diagnostiqué le problème et m'a dépanné sur place. Professionnel et prix correct. Je recommande.",
+      "Suite à une panne à {v}, j'ai contacté {f}. Prise en charge rapide, le technicien m'a bien expliqué le problème. Intervention soignée et tarif conforme à ce qui avait été annoncé. Bonne expérience.",
+    ],
+    enthousiaste: [
+      "Super service de {f} pour les {t} à {v} ! Arrivée rapide, diagnostic immédiat et dépannage efficace. Le technicien était sympa et compétent. Je me suis senti en de bonnes mains. Je recommande !",
+    ],
+    detaille: [
+      "Ma voiture est tombée en panne sur la route à {v}. J'ai appelé {f} pour les {t}. Le dépanneur est arrivé en 25 minutes, a d'abord fait un diagnostic complet du véhicule, puis m'a expliqué clairement d'où venait le problème et les options disponibles. La réparation a pu être faite sur place, ce qui m'a évité un remorquage. Prix annoncé avant intervention, facture conforme. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Réactif et efficace. Je recommande.",
+      "Très bon dépannage par {f} à {v}. Rapide et professionnel.",
+    ],
+  },
+
+  nettoyage: {
+    neutre: [
+      "Nous avons fait appel à {f} pour le {t} à {v}. L'équipe est venue avec le matériel adapté et le résultat est vraiment propre. Intervention dans les délais, prix honnête. Je recommande.",
+      "Pour le {t} de notre terrasse à {v}, j'ai choisi {f}. Nettoyage bien réalisé sans abîmer le revêtement. Résultat impeccable. Équipe sérieuse, je referai appel à eux.",
+    ],
+    enthousiaste: [
+      "Super travail de {f} pour le {t} à {v} ! On ne s'attendait pas à un tel résultat. Tout est comme neuf. L'équipe était efficace et a tout nettoyé derrière elle. On recommande !",
+    ],
+    detaille: [
+      "Nos locaux à {v} avaient besoin d'un {t} en profondeur avant une remise en location. {f} est venu évaluer le travail, puis est intervenu avec une équipe équipée de matériel professionnel. Chaque surface a été traitée méthodiquement. Résultat impeccable, les locaux étaient prêts pour l'état des lieux. Tarif conforme au devis. Je recommande.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Résultat propre, équipe sérieuse.",
+      "Très satisfait du {t} par {f} à {v}. Efficace et soigné.",
+    ],
+  },
+
+  generic: {
+    neutre: [
+      "J'ai fait appel à {f} pour des {t} à {v} et j'en suis très satisfait. Devis clair, travail réalisé dans les délais, résultat conforme à ce qui avait été convenu. Je recommande.",
+      "Très bonne expérience avec {f} pour des {t} à {v}. Professionnalisme, ponctualité et travail soigné. Le prix correspondait au devis. Je referai appel à eux.",
+      "Pour des {t} à {v}, j'ai choisi {f}. Équipe compétente, intervention bien organisée et résultat à la hauteur. Prix honnête, aucune mauvaise surprise. Je recommande.",
+    ],
+    enthousiaste: [
+      "Vraiment satisfait de {f} pour les {t} à {v} ! Équipe réactive, travail soigné et résultat au-delà de mes attentes. Je recommande sans hésitation !",
+      "Excellente prestation de {f} pour des {t} à {v}. Du premier contact à la fin du chantier, tout était parfait. Je referai appel à eux les yeux fermés !",
+    ],
+    detaille: [
+      "Voici mon retour après avoir sollicité {f} pour des {t} à {v}. Dès le premier contact, j'ai apprécié le sérieux de l'équipe : devis détaillé, planning respecté, communication claire tout au long du chantier. Le travail a été réalisé proprement et dans les délais prévus. Résultat conforme à nos attentes et prix conforme au devis. Je recommande cette entreprise.",
+    ],
+    court: [
+      "{f} pour {t} à {v}. Sérieux, efficace, je recommande.",
+      "Très bonne prestation de {f} pour {t} à {v}. Travail propre.",
+      "{t} à {v} par {f}. Délais respectés, résultat nickel.",
+    ],
+  },
+};
 
 // Détection du métier à partir du nom de fiche
 function detecterMetier(fiche) {
@@ -538,7 +798,7 @@ function detecterMetier(fiche) {
   return 'generic';
 }
 
-const METIERS = {
+const _UNUSED = {
   elagage: {
     contextes: [
       "Un grand arbre dans notre jardin menaçait la toiture et les lignes électriques.",
@@ -743,7 +1003,7 @@ const METIERS = {
   },
 };
 
-const GEN_COMMUN = {
+const _GEN_COMMUN_UNUSED = {
   contacts: [
     "Le premier contact a été rapide et professionnel.",
     "Dès le premier appel, j'ai été bien orienté.",
@@ -817,6 +1077,45 @@ const GEN_COMMUN = {
   ],
 };
 
+// Introduit des imperfections humaines naturelles (accents manquants, pluriel oublié)
+function humaniser(texte) {
+  // ~40% de chance d'appliquer des imperfections
+  if (Math.random() > 0.6) return texte;
+
+  let t = texte;
+
+  // Supprimer aléatoirement des accents (1 ou 2 par avis max)
+  const accents = [
+    [/é/g, 'e'], [/è/g, 'e'], [/ê/g, 'e'], [/ë/g, 'e'],
+    [/à/g, 'a'], [/â/g, 'a'],
+    [/ô/g, 'o'], [/û/g, 'u'], [/î/g, 'i'], [/ù/g, 'u'],
+  ];
+  // On choisit 1 ou 2 types d'accents à supprimer
+  const nb = rnd([1, 1, 1, 2]);
+  for (let i = 0; i < nb; i++) {
+    const [regex, replace] = rnd(accents);
+    // On ne supprime pas TOUS les accents de ce type, seulement certains
+    t = t.replace(regex, (match) => Math.random() < 0.45 ? replace : match);
+  }
+
+  // Oublier le 's' du pluriel sur certains mots (~20% de chance)
+  if (Math.random() < 0.2) {
+    const motsPluriels = [
+      'délais', 'résultats', 'finitions', 'travaux', 'ouvriers',
+      'joints', 'tuiles', 'matériaux', 'raccords', 'surfaces',
+      'gaines', 'murs', 'angles', 'arbres', 'branches',
+    ];
+    const mot = rnd(motsPluriels);
+    // Remplace seulement la première occurrence
+    t = t.replace(mot, mot.slice(0, -1));
+  }
+
+  return t;
+}
+
+// Historique des derniers avis générés pour éviter les doublons
+let _genHistory = [];
+
 function genererAvis() {
   const fiche   = document.getElementById('gen-fiche').value.trim();
   const travaux = document.getElementById('gen-travaux').value.trim();
@@ -828,51 +1127,26 @@ function genererAvis() {
     return;
   }
 
-  const fill = s => s.replace(/{fiche}/g, fiche).replace(/{travaux}/g, travaux).replace(/{ville}/g, ville);
+  const fill = s => s
+    .replace(/{f}/g, fiche)
+    .replace(/{t}/g, travaux)
+    .replace(/{v}/g, ville);
 
-  // Détecter le métier et charger les phrases adaptées
   const metier = detecterMetier(fiche);
-  const M = METIERS[metier] || METIERS.generic;
-  const contexteMetier = fill(rnd(M.contextes));
-  const specifiqueMetier = rnd(M.specifiques);
+  const cat = TEMPLATES[metier] || TEMPLATES.generic;
 
-  let texte = '';
+  // Choisir le pool selon le ton, fallback sur neutre si ton non défini
+  const pool = cat[ton] || cat.neutre || cat[Object.keys(cat)[0]];
 
-  if (ton === 'court') {
-    texte = fill(rnd(GEN_COMMUN.courts));
+  // Éviter de retomber sur le même avis
+  const disponibles = pool.filter(t => !_genHistory.includes(t));
+  const source = disponibles.length > 0 ? disponibles : pool;
+  const template = rnd(source);
 
-  } else if (ton === 'detaille') {
-    const intro      = fill(rnd(GEN_COMMUN.intro_details));
-    const interv     = rnd(GEN_COMMUN.interventions);
-    const qualite    = rnd(GEN_COMMUN.qualites);
-    const detail     = rnd(GEN_COMMUN.details.filter(d => d));
-    const reco       = fill(rnd(GEN_COMMUN.recommandations));
-    texte = [intro, contexteMetier, interv, specifiqueMetier, qualite, detail, reco].filter(Boolean).join(' ');
+  _genHistory.push(template);
+  if (_genHistory.length > Math.max(1, pool.length - 1)) _genHistory.shift();
 
-  } else if (ton === 'enthousiaste') {
-    const decouverte = fill(rnd(GEN_COMMUN.decouvertes));
-    const contact    = rnd(GEN_COMMUN.contacts.filter(c => c));
-    const qualite    = rnd(GEN_COMMUN.qualites);
-    const reco       = fill(rnd(GEN_COMMUN.recommandations));
-    const suffix = rnd([
-      ' Une vraie bonne surprise !',
-      ' Exactement ce dont j\'avais besoin.',
-      ' Je suis vraiment content du résultat.',
-      ' Ça change des mauvaises expériences qu\'on peut avoir !',
-      '',
-    ]);
-    texte = [decouverte + '.', contexteMetier, contact, specifiqueMetier, qualite, reco + suffix].filter(Boolean).join(' ');
-
-  } else { // neutre
-    const decouverte = fill(rnd(GEN_COMMUN.decouvertes));
-    const contact    = rnd(GEN_COMMUN.contacts);
-    const qualite    = rnd(GEN_COMMUN.qualites);
-    const detail     = Math.random() > 0.4 ? rnd(GEN_COMMUN.details) : '';
-    const reco       = fill(rnd(GEN_COMMUN.recommandations));
-    texte = [decouverte + '.', contact, specifiqueMetier, qualite, detail, reco].filter(Boolean).join(' ');
-  }
-
-  texte = texte.replace(/\s+/g, ' ').trim();
+  const texte = humaniser(fill(template).replace(/\s+/g, ' ').trim());
 
   const result = document.getElementById('gen-result');
   const textEl = document.getElementById('gen-texte');
