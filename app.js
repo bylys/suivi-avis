@@ -243,7 +243,9 @@ function buildAvisRow(a, rappelsDus, aVerif) {
   const needsVerif = aVerif.includes(a.id);
   const verifLabel = needsVerif ? rappelsDus.find(d => d.avis.id === a.id)?.label : null;
   return `<tr class="${needsVerif ? 'avis-a-verifier' : ''}">
-    <td class="avis-date">${formatDate(a.date)}</td>
+    <td class="avis-date">
+      <input type="date" class="date-inline" value="${a.date}" onchange="updateDate('${a.id}', this.value)" />
+    </td>
     <td><span class="avis-fiche">${a.fiche_nom}</span></td>
     <td class="avis-auteur">${a.auteur}</td>
     <td class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
@@ -323,6 +325,15 @@ async function renderListe(openMonths = null) {
   }).join('');
 
   renderRappelsBanner(rappelsDus);
+}
+
+async function updateDate(id, newDate) {
+  await sbUpdate('avis', id, { date: newDate });
+  const openMonths = new Set();
+  document.querySelectorAll('.month-group[open]').forEach(el => {
+    openMonths.add(el.dataset.month);
+  });
+  await renderListe(openMonths);
 }
 
 async function updateStatut(id, newStatut) {
