@@ -1127,9 +1127,13 @@ function genererAvis() {
     return;
   }
 
+  // Supprime les articles définis/indéfinis juste avant {t} pour que
+  // l'utilisateur puisse écrire librement sa propre formulation avec article
+  // ex: "l'élagage de mon pin", "le nettoyage de ma toiture", "des travaux de couverture"
   const fill = s => s
+    .replace(/\b(des|les|le|la|l'|un|une|nos|notre|du)\s+\{t\}/gi, '{t}')
+    .replace(/{t}/g, travaux.toLowerCase())
     .replace(/{f}/g, fiche)
-    .replace(/{t}/g, travaux)
     .replace(/{v}/g, ville);
 
   const metier = detecterMetier(fiche);
