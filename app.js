@@ -170,11 +170,41 @@ async function renderFiches() {
     const nomLink = f.lien
       ? `<a href="${f.lien}" target="_blank" rel="noopener">${f.nom} 🔗</a>`
       : f.nom;
-    li.innerHTML = `<span>${nomLink}</span>
-      <span><span class="count">${count} avis</span>
-      <button class="btn-delete" onclick="deleteFiche('${f.nom.replace(/'/g,"\\'")}')">🗑</button></span>`;
+    const safeId = f.id;
+    li.innerHTML = `
+      <div class="fiche-row">
+        <span class="fiche-nom">${nomLink}</span>
+        <span class="fiche-actions">
+          <span class="count">${count} avis</span>
+          <button class="btn-edit-lien" onclick="toggleLienEdit(${safeId})">✏️ Lien</button>
+          <button class="btn-delete" onclick="deleteFiche('${f.nom.replace(/'/g,"\\'")}')">🗑</button>
+        </span>
+      </div>
+      <div class="fiche-lien-edit hidden" id="lien-edit-${safeId}">
+        <input type="url" class="lien-input" id="lien-val-${safeId}" value="${f.lien || ''}" placeholder="https://maps.google.com/..." />
+        <button class="btn-save-lien" onclick="saveLien(${safeId}, '${f.nom.replace(/'/g,"\\'")}')">✅ Sauvegarder</button>
+      </div>`;
     ul.appendChild(li);
   });
+}
+
+function toggleLienEdit(id) {
+  const div = document.getElementById(`lien-edit-${id}`);
+  div.classList.toggle('hidden');
+  if (!div.classList.contains('hidden')) {
+    document.getElementById(`lien-val-${id}`).focus();
+  }
+}
+
+async function saveLien(id, nom) {
+  const lien = document.getElementById(`lien-val-${id}`).value.trim();
+  const ok = await sbUpdate('fiches', id, { lien: lien || null });
+  if (ok) {
+    renderFiches();
+    await populateFicheSelects();
+  } else {
+    alert('Erreur lors de la sauvegarde du lien.');
+  }
 }
 
 // ── SAISIE ──
