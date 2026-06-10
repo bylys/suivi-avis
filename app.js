@@ -156,6 +156,9 @@ async function deleteFiche(nom) {
   renderFiches();
 }
 
+// Map globale id → fiche pour éviter les problèmes d'échappement dans les onclick
+const _ficheData = {};
+
 async function renderFiches() {
   const [fiches, avis] = await Promise.all([getFiches(), getAvis()]);
   const ul = document.getElementById('liste-fiches');
@@ -165,35 +168,98 @@ async function renderFiches() {
     return;
   }
   fiches.forEach(f => {
+    // Stocker les données dans la map globale (pas d'échappement nécessaire)
+    _ficheData[f.id] = f;
+
     const count = avis.filter(a => a.fiche_nom === f.nom).length;
     const li = document.createElement('li');
-    const nomLink = f.lien
-      ? `<a href="${f.lien}" target="_blank" rel="noopener">${f.nom} 🔗</a>`
-      : f.nom;
-    const safeId = f.id;
-    const autresFiches = fiches.filter(x => x.id !== f.id);
-    const optionsFusion = autresFiches.map(x =>
-      `<option value="${x.nom.replace(/"/g,'&quot;')}">${x.nom}</option>`
-    ).join('');
-    li.innerHTML = `
-      <div class="fiche-row">
-        <span class="fiche-nom">${nomLink}</span>
-        <span class="fiche-actions">
-          <span class="count">${count} avis</span>
-          <button class="btn-edit-lien" onclick="toggleLienEdit(${safeId})">✏️ Lien</button>
-          <button class="btn-merge" onclick="toggleMerge(${safeId})">🔀 Fusionner</button>
-          <button class="btn-delete" onclick="deleteFiche('${f.nom.replace(/'/g,"\\'")}')">🗑</button>
-        </span>
-      </div>
-      <div class="fiche-lien-edit hidden" id="lien-edit-${safeId}">
-        <input type="url" class="lien-input" id="lien-val-${safeId}" value="${f.lien || ''}" placeholder="https://maps.google.com/..." />
-        <button class="btn-save-lien" onclick="saveLien(${safeId}, '${f.nom.replace(/'/g,"\\'")}')">✅ Sauvegarder</button>
-      </div>
-      <div class="fiche-merge-edit hidden" id="merge-edit-${safeId}">
-        <span class="merge-label">Fusionner les avis de <b>${f.nom}</b> vers :</span>
-        <select class="merge-select" id="merge-val-${safeId}">${optionsFusion}</select>
-        <button class="btn-save-lien btn-merge-confirm" onclick="mergeFiche(${safeId}, '${f.nom.replace(/'/g,"\\'")}')">✅ Fusionner & supprimer</button>
-      </div>`;
+
+    // Ligne principale
+    const row = document.createElement('div');
+    row.className = 'fiche-row';
+
+    const nomSpan = document.createElement('span');
+    nomSpan.className = 'fiche-nom';
+    if (f.lien) {
+      const a = document.createElement('a');
+      a.href = f.lien; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = f.nom + ' 🔗';
+      nomSpan.appendChild(a);
+    } else {
+      nomSpan.textContent = f.nom;
+    }
+
+    const actions = document.createElement('span');
+    actions.className = 'fiche-actions';
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'count';
+    countSpan.textContent = count + ' avis';
+
+    const btnLien = document.createElement('button');
+    btnLien.className = 'btn-edit-lien';
+    btnLien.textContent = '✏️ Lien';
+    btnLien.onclick = () => toggleLienEdit(f.id);
+
+    const btnMerge = document.createElement('button');
+    btnMerge.className = 'btn-merge';
+    btnMerge.textContent = '🔀 Fusionner';
+    btnMerge.onclick = () => toggleMerge(f.id);
+
+    const btnDel = document.createElement('button');
+    btnDel.className = 'btn-delete';
+    btnDel.textContent = '🗑';
+    btnDel.onclick = () => deleteFiche(f.nom);
+
+    actions.append(countSpan, btnLien, btnMerge, btnDel);
+    row.append(nomSpan, actions);
+
+    // Zone édition lien
+    const lienEdit = document.createElement('div');
+    lienEdit.className = 'fiche-lien-edit hidden';
+    lienEdit.id = 'lien-edit-' + f.id;
+
+    const lienInput = document.createElement('input');
+    lienInput.type = 'url';
+    lienInput.className = 'lien-input';
+    lienInput.id = 'lien-val-' + f.id;
+    lienInput.value = f.lien || '';
+    lienInput.placeholder = 'https://maps.google.com/...';
+
+    const btnSaveLien = document.createElement('button');
+    btnSaveLien.className = 'btn-save-lien';
+    btnSaveLien.textContent = '✅ Sauvegarder';
+    btnSaveLien.onclick = () => saveLien(f.id);
+
+    lienEdit.append(lienInput, btnSaveLien);
+
+    // Zone fusion
+    const mergeEdit = document.createElement('div');
+    mergeEdit.className = 'fiche-merge-edit hidden';
+    mergeEdit.id = 'merge-edit-' + f.id;
+
+    const mergeLabel = document.createElement('span');
+    mergeLabel.className = 'merge-label';
+    mergeLabel.innerHTML = 'Fusionner les avis de <b>' + f.nom + '</b> vers :';
+
+    const mergeSelect = document.createElement('select');
+    mergeSelect.className = 'merge-select';
+    mergeSelect.id = 'merge-val-' + f.id;
+    fiches.filter(x => x.id !== f.id).forEach(x => {
+      const opt = document.createElement('option');
+      opt.value = x.nom;
+      opt.textContent = x.nom;
+      mergeSelect.appendChild(opt);
+    });
+
+    const btnMergeConfirm = document.createElement('button');
+    btnMergeConfirm.className = 'btn-save-lien btn-merge-confirm';
+    btnMergeConfirm.textContent = '✅ Fusionner & supprimer';
+    btnMergeConfirm.onclick = () => mergeFiche(f.id);
+
+    mergeEdit.append(mergeLabel, mergeSelect, btnMergeConfirm);
+
+    li.append(row, lienEdit, mergeEdit);
     ul.appendChild(li);
   });
 }
@@ -203,13 +269,16 @@ function toggleMerge(id) {
   div.classList.toggle('hidden');
 }
 
-async function mergeFiche(id, nomSource) {
-  const nomCible = document.getElementById(`merge-val-${id}`).value;
+async function mergeFiche(id) {
+  const fiche = _ficheData[id];
+  if (!fiche) return;
+  const nomSource = fiche.nom;
+  const nomCible = document.getElementById('merge-val-' + id).value;
   if (!nomCible) return;
-  if (!confirm(`Réassigner tous les avis de "${nomSource}" vers "${nomCible}" et supprimer "${nomSource}" ?`)) return;
+  if (!confirm('Réassigner tous les avis de "' + nomSource + '" vers "' + nomCible + '" et supprimer "' + nomSource + '" ?')) return;
 
   // Récupérer tous les avis de la fiche source
-  const avisSource = await sbGet('avis', `select=id&fiche_nom=eq.${encodeURIComponent(nomSource)}`);
+  const avisSource = await sbGet('avis', 'select=id&fiche_nom=eq.' + encodeURIComponent(nomSource));
 
   // Réassigner chaque avis vers la fiche cible
   for (const a of avisSource) {
@@ -217,7 +286,7 @@ async function mergeFiche(id, nomSource) {
   }
 
   // Supprimer la fiche source
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/fiches?id=eq.${id}`, {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/fiches?id=eq.' + id, {
     method: 'DELETE', headers: SB_HEADERS
   });
 
@@ -237,12 +306,12 @@ function toggleLienEdit(id) {
   }
 }
 
-async function saveLien(id, nom) {
-  const lien = document.getElementById(`lien-val-${id}`).value.trim();
+async function saveLien(id) {
+  const lien = document.getElementById('lien-val-' + id).value.trim();
   const ok = await sbUpdate('fiches', id, { lien: lien || null });
   if (ok) {
-    renderFiches();
     await populateFicheSelects();
+    renderFiches();
   } else {
     alert('Erreur lors de la sauvegarde du lien.');
   }
