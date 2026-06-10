@@ -456,13 +456,35 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 #liste-fiches { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
 #liste-fiches li {
   background: #1e293b; padding: 0.75rem 1.2rem; border-radius: 10px;
-  border: 1px solid #334155; display: flex; justify-content: space-between;
-  align-items: center; font-size: 0.9rem; color: #f1f5f9; transition: border-color .15s;
+  border: 1px solid #334155; display: flex; flex-direction: column;
+  gap: 0.5rem; font-size: 0.9rem; color: #f1f5f9; transition: border-color .15s;
 }
 #liste-fiches li:hover { border-color: #6366f1; }
 #liste-fiches li a { color: #a5b4fc; text-decoration: none; font-weight: 500; }
 #liste-fiches li a:hover { text-decoration: underline; }
 #liste-fiches .count { font-size: 0.78rem; color: #64748b; margin-right: 0.6rem; }
+.fiche-row { display: flex; justify-content: space-between; align-items: center; }
+.fiche-nom { flex: 1; }
+.fiche-actions { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.btn-edit-lien {
+  background: none; border: 1px solid #334155; color: #94a3b8;
+  border-radius: 6px; padding: 0.25rem 0.6rem; font-size: 0.78rem;
+  cursor: pointer; transition: border-color .15s, color .15s;
+}
+.btn-edit-lien:hover { border-color: #6366f1; color: #a5b4fc; }
+.fiche-lien-edit { display: flex; gap: 0.6rem; align-items: center; }
+.lien-input {
+  flex: 1; padding: 0.4rem 0.75rem; border: 1.5px solid #334155;
+  border-radius: 8px; font-size: 0.85rem; background: #0f172a;
+  color: #f1f5f9; outline: none; transition: border-color .15s;
+}
+.lien-input:focus { border-color: #6366f1; }
+.btn-save-lien {
+  background: #6366f1; color: #fff; border: none; border-radius: 8px;
+  padding: 0.4rem 0.9rem; font-size: 0.82rem; cursor: pointer;
+  white-space: nowrap; transition: background .15s;
+}
+.btn-save-lien:hover { background: #4f46e5; }
 
 /* ── DATALIST ── */
 datalist { display: none; }
