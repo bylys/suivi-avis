@@ -171,21 +171,62 @@ async function renderFiches() {
       ? `<a href="${f.lien}" target="_blank" rel="noopener">${f.nom} 🔗</a>`
       : f.nom;
     const safeId = f.id;
+    const autresFiches = fiches.filter(x => x.id !== f.id);
+    const optionsFusion = autresFiches.map(x =>
+      `<option value="${x.nom.replace(/"/g,'&quot;')}">${x.nom}</option>`
+    ).join('');
     li.innerHTML = `
       <div class="fiche-row">
         <span class="fiche-nom">${nomLink}</span>
         <span class="fiche-actions">
           <span class="count">${count} avis</span>
           <button class="btn-edit-lien" onclick="toggleLienEdit(${safeId})">✏️ Lien</button>
+          <button class="btn-merge" onclick="toggleMerge(${safeId})">🔀 Fusionner</button>
           <button class="btn-delete" onclick="deleteFiche('${f.nom.replace(/'/g,"\\'")}')">🗑</button>
         </span>
       </div>
       <div class="fiche-lien-edit hidden" id="lien-edit-${safeId}">
         <input type="url" class="lien-input" id="lien-val-${safeId}" value="${f.lien || ''}" placeholder="https://maps.google.com/..." />
         <button class="btn-save-lien" onclick="saveLien(${safeId}, '${f.nom.replace(/'/g,"\\'")}')">✅ Sauvegarder</button>
+      </div>
+      <div class="fiche-merge-edit hidden" id="merge-edit-${safeId}">
+        <span class="merge-label">Fusionner les avis de <b>${f.nom}</b> vers :</span>
+        <select class="merge-select" id="merge-val-${safeId}">${optionsFusion}</select>
+        <button class="btn-save-lien btn-merge-confirm" onclick="mergeFiche(${safeId}, '${f.nom.replace(/'/g,"\\'")}')">✅ Fusionner & supprimer</button>
       </div>`;
     ul.appendChild(li);
   });
+}
+
+function toggleMerge(id) {
+  const div = document.getElementById(`merge-edit-${id}`);
+  div.classList.toggle('hidden');
+}
+
+async function mergeFiche(id, nomSource) {
+  const nomCible = document.getElementById(`merge-val-${id}`).value;
+  if (!nomCible) return;
+  if (!confirm(`Réassigner tous les avis de "${nomSource}" vers "${nomCible}" et supprimer "${nomSource}" ?`)) return;
+
+  // Récupérer tous les avis de la fiche source
+  const avisSource = await sbGet('avis', `select=id&fiche_nom=eq.${encodeURIComponent(nomSource)}`);
+
+  // Réassigner chaque avis vers la fiche cible
+  for (const a of avisSource) {
+    await sbUpdate('avis', a.id, { fiche_nom: nomCible });
+  }
+
+  // Supprimer la fiche source
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/fiches?id=eq.${id}`, {
+    method: 'DELETE', headers: SB_HEADERS
+  });
+
+  if (res.ok) {
+    await populateFicheSelects();
+    renderFiches();
+  } else {
+    alert('Erreur lors de la fusion.');
+  }
 }
 
 function toggleLienEdit(id) {
