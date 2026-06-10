@@ -472,7 +472,23 @@ details[open] .month-summary::before { transform: rotate(90deg); }
   cursor: pointer; transition: border-color .15s, color .15s;
 }
 .btn-edit-lien:hover { border-color: #6366f1; color: #a5b4fc; }
+.btn-merge {
+  background: none; border: 1px solid #334155; color: #94a3b8;
+  border-radius: 6px; padding: 0.25rem 0.6rem; font-size: 0.78rem;
+  cursor: pointer; transition: border-color .15s, color .15s;
+}
+.btn-merge:hover { border-color: #f59e0b; color: #fbbf24; }
 .fiche-lien-edit { display: flex; gap: 0.6rem; align-items: center; }
+.fiche-merge-edit { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding-top: 0.2rem; }
+.merge-label { font-size: 0.82rem; color: #94a3b8; white-space: nowrap; }
+.merge-select {
+  flex: 1; padding: 0.4rem 0.75rem; border: 1.5px solid #334155;
+  border-radius: 8px; font-size: 0.85rem; background: #0f172a;
+  color: #f1f5f9; outline: none; transition: border-color .15s; min-width: 180px;
+}
+.merge-select:focus { border-color: #f59e0b; }
+.btn-merge-confirm { background: #d97706 !important; }
+.btn-merge-confirm:hover { background: #b45309 !important; }
 .lien-input {
   flex: 1; padding: 0.4rem 0.75rem; border: 1.5px solid #334155;
   border-radius: 8px; font-size: 0.85rem; background: #0f172a;
