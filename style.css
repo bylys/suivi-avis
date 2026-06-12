@@ -445,6 +445,25 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 }
 
 /* ── FICHES ── */
+.sync-box {
+  background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+  padding: 1rem 1.2rem; margin-bottom: 1.4rem;
+}
+.sync-box-header {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; flex-wrap: wrap;
+  font-size: 0.9rem; font-weight: 600; color: #e2e8f0; margin-bottom: 0.4rem;
+}
+.btn-sync {
+  background: #6366f1; color: #fff; border: none; border-radius: 8px;
+  padding: 0.45rem 1rem; font-size: 0.85rem; cursor: pointer;
+  transition: background .15s; white-space: nowrap;
+}
+.btn-sync:hover { background: #4f46e5; }
+.btn-sync:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+.sync-hint { font-size: 0.78rem; color: #64748b; margin-bottom: 0.3rem; }
+#sync-status { font-size: 0.85rem; font-weight: 500; min-height: 1.2em; }
+
 .inline-form { display: flex; gap: 0.8rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .inline-form input {
   padding: 0.62rem 1rem; border: 1.5px solid #334155;
@@ -453,7 +472,28 @@ details[open] .month-summary::before { transform: rotate(90deg); }
 }
 .inline-form input:focus { border-color: #6366f1; }
 
-#liste-fiches { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+/* Catégories déroulantes */
+#liste-fiches { display: flex; flex-direction: column; gap: 0.8rem; }
+
+.fiche-category { border: 1px solid #334155; border-radius: 12px; overflow: hidden; }
+.fiche-category-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1.2rem; background: #1e293b;
+  font-size: 0.88rem; font-weight: 700; color: #e2e8f0;
+  cursor: pointer; user-select: none; list-style: none;
+  gap: 0.5rem;
+}
+.fiche-category-header::-webkit-details-marker { display: none; }
+.fiche-category-header::after { content: '▾'; font-size: 0.85rem; color: #64748b; margin-left: auto; }
+.fiche-category[open] .fiche-category-header::after { content: '▴'; }
+.fiche-category:hover .fiche-category-header { background: #243044; }
+.cat-count {
+  background: #334155; color: #94a3b8; font-size: 0.72rem;
+  padding: 0.15rem 0.55rem; border-radius: 99px; font-weight: 600;
+}
+.fiche-category-list { list-style: none; display: flex; flex-direction: column; gap: 0; padding: 0.4rem 0.6rem 0.6rem; background: #0f172a; }
+
+#liste-fiches li {
 #liste-fiches li {
   background: #1e293b; padding: 0.75rem 1.2rem; border-radius: 10px;
   border: 1px solid #334155; display: flex; flex-direction: column;
