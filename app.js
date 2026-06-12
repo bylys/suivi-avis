@@ -132,6 +132,85 @@ async function populateFicheSelects() {
   });
 }
 
+// ── SYNC GOOGLE SHEET ──
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1AFawMjlZBCMj6Rq9q6cm9dqmzqNIz5vwtL181Cw3xpg/pub?output=csv&gid=0';
+
+function parseCSV(text) {
+  return text.split('\n').map(line => {
+    const cols = [];
+    let inQuote = false, cur = '';
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuote = !inQuote;
+      } else if (ch === ',' && !inQuote) {
+        cols.push(cur.trim()); cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+async function syncFromSheet() {
+  const btn = document.getElementById('btn-sync-sheet');
+  const status = document.getElementById('sync-status');
+  btn.disabled = true;
+  btn.textContent = '⏳ Synchronisation...';
+  status.textContent = '';
+
+  try {
+    const resp = await fetch(SHEET_CSV_URL);
+    if (!resp.ok) throw new Error('Impossible de lire le sheet (vérifier la publication)');
+    const text = await resp.text();
+    const rows = parseCSV(text).slice(1); // skip header
+
+    const fiches = await getFiches();
+    const ficheMap = {};
+    fiches.forEach(f => ficheMap[f.nom.toLowerCase()] = f);
+
+    let added = 0, updated = 0, skipped = 0;
+
+    for (const row of rows) {
+      const nom  = (row[9]  || '').trim(); // Colonne J
+      const lien = (row[10] || '').trim(); // Colonne K
+
+      // Ignorer si pas de nom ou pas d'URL valide
+      if (!nom || !lien.startsWith('http')) { skipped++; continue; }
+
+      const existing = ficheMap[nom.toLowerCase()];
+      if (existing) {
+        // Mettre à jour le lien si différent
+        if (existing.lien !== lien) {
+          await sbUpdate('fiches', existing.id, { lien });
+          updated++;
+        } else {
+          skipped++;
+        }
+      } else {
+        await sbInsert('fiches', { nom, lien });
+        ficheMap[nom.toLowerCase()] = { nom, lien };
+        added++;
+      }
+    }
+
+    btn.textContent = '🔄 Synchroniser depuis le Sheet';
+    btn.disabled = false;
+    status.textContent = `✅ ${added} ajoutée(s), ${updated} mise(s) à jour, ${skipped} ignorée(s)`;
+    status.style.color = '#34d399';
+    await populateFicheSelects();
+    renderFiches();
+  } catch (e) {
+    btn.textContent = '🔄 Synchroniser depuis le Sheet';
+    btn.disabled = false;
+    status.textContent = '❌ ' + e.message;
+    status.style.color = '#f87171';
+  }
+}
+
 async function addFiche(e) {
   e.preventDefault();
   const nom  = document.getElementById('fiche-nom').value.trim();
@@ -159,109 +238,153 @@ async function deleteFiche(nom) {
 // Map globale id → fiche pour éviter les problèmes d'échappement dans les onclick
 const _ficheData = {};
 
+const CATEGORIES_FICHES = [
+  { key: 'elagage',    label: '🌿 Élagage / Abattage',         regex: /élag|elag|abatt|paysag|arborist|émondeur|emondeur|taille.*haie|jardinage/i },
+  { key: 'ravalement', label: '🏠 Ravalement / Façade / Peinture', regex: /ravel|façade|facade|enduit|crépi|peintr|isolation.*façade/i },
+  { key: 'toiture',    label: '🔨 Couvreur / Toiture / Rénovation', regex: /couvreur|toiture|toit|zingu|ardoise|tuile|charpente|rénovation.*toit|renovation.*toit|reparation.*toit|réparation.*toit|étanchéité|etancheite|infiltration/i },
+  { key: 'nettoyage',  label: '🧹 Nettoyage / Démoussage',     regex: /nettoy|démous|demouth|mousse/i },
+  { key: 'terrassement', label: '🏗️ Terrassement',             regex: /terrassement|terras|excavat|nivelle/i },
+  { key: 'maconnerie', label: '🪨 Maçonnerie',                  regex: /maçon|macon|béton|beton|dalle|parpaing/i },
+  { key: 'carreleur',  label: '🪟 Carreleur',                   regex: /carrel/i },
+  { key: 'paysagiste', label: '🌳 Paysagiste',                  regex: /paysagiste|artisan.*paysage/i },
+  { key: 'depannage',  label: '🚗 Dépannage / Remorquage',      regex: /dépann|depann|remorquage|auto|voiture/i },
+  { key: 'debarras',   label: '📦 Débarras',                    regex: /débarras|debarras/i },
+  { key: 'autre',      label: '🔧 Autres',                      regex: /./ },
+];
+
+function categoriserFiche(nom) {
+  for (const cat of CATEGORIES_FICHES) {
+    if (cat.regex.test(nom)) return cat.key;
+  }
+  return 'autre';
+}
+
+function buildFicheLi(f, fiches, avis) {
+  _ficheData[f.id] = f;
+  const count = avis.filter(a => a.fiche_nom === f.nom).length;
+  const li = document.createElement('li');
+
+  const row = document.createElement('div');
+  row.className = 'fiche-row';
+
+  const nomSpan = document.createElement('span');
+  nomSpan.className = 'fiche-nom';
+  if (f.lien) {
+    const a = document.createElement('a');
+    a.href = f.lien; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = f.nom + ' 🔗';
+    nomSpan.appendChild(a);
+  } else {
+    nomSpan.textContent = f.nom;
+  }
+
+  const actions = document.createElement('span');
+  actions.className = 'fiche-actions';
+
+  const countSpan = document.createElement('span');
+  countSpan.className = 'count';
+  countSpan.textContent = count + ' avis';
+
+  const btnLien = document.createElement('button');
+  btnLien.className = 'btn-edit-lien';
+  btnLien.textContent = '✏️ Lien';
+  btnLien.onclick = () => toggleLienEdit(f.id);
+
+  const btnMerge = document.createElement('button');
+  btnMerge.className = 'btn-merge';
+  btnMerge.textContent = '🔀 Fusionner';
+  btnMerge.onclick = () => toggleMerge(f.id);
+
+  const btnDel = document.createElement('button');
+  btnDel.className = 'btn-delete';
+  btnDel.textContent = '🗑';
+  btnDel.onclick = () => deleteFiche(f.nom);
+
+  actions.append(countSpan, btnLien, btnMerge, btnDel);
+  row.append(nomSpan, actions);
+
+  const lienEdit = document.createElement('div');
+  lienEdit.className = 'fiche-lien-edit hidden';
+  lienEdit.id = 'lien-edit-' + f.id;
+
+  const lienInput = document.createElement('input');
+  lienInput.type = 'url';
+  lienInput.className = 'lien-input';
+  lienInput.id = 'lien-val-' + f.id;
+  lienInput.value = f.lien || '';
+  lienInput.placeholder = 'https://maps.google.com/...';
+
+  const btnSaveLien = document.createElement('button');
+  btnSaveLien.className = 'btn-save-lien';
+  btnSaveLien.textContent = '✅ Sauvegarder';
+  btnSaveLien.onclick = () => saveLien(f.id);
+  lienEdit.append(lienInput, btnSaveLien);
+
+  const mergeEdit = document.createElement('div');
+  mergeEdit.className = 'fiche-merge-edit hidden';
+  mergeEdit.id = 'merge-edit-' + f.id;
+
+  const mergeLabel = document.createElement('span');
+  mergeLabel.className = 'merge-label';
+  mergeLabel.innerHTML = 'Fusionner vers :';
+
+  const mergeSelect = document.createElement('select');
+  mergeSelect.className = 'merge-select';
+  mergeSelect.id = 'merge-val-' + f.id;
+  fiches.filter(x => x.id !== f.id).forEach(x => {
+    const opt = document.createElement('option');
+    opt.value = x.nom;
+    opt.textContent = x.nom;
+    mergeSelect.appendChild(opt);
+  });
+
+  const btnMergeConfirm = document.createElement('button');
+  btnMergeConfirm.className = 'btn-save-lien btn-merge-confirm';
+  btnMergeConfirm.textContent = '✅ Fusionner & supprimer';
+  btnMergeConfirm.onclick = () => mergeFiche(f.id);
+  mergeEdit.append(mergeLabel, mergeSelect, btnMergeConfirm);
+
+  li.append(row, lienEdit, mergeEdit);
+  return li;
+}
+
 async function renderFiches() {
   const [fiches, avis] = await Promise.all([getFiches(), getAvis()]);
-  const ul = document.getElementById('liste-fiches');
-  ul.innerHTML = '';
+  const container = document.getElementById('liste-fiches');
+  container.innerHTML = '';
   if (!fiches.length) {
-    ul.innerHTML = '<p class="empty-state">Aucune fiche ajoutée.</p>';
+    container.innerHTML = '<p class="empty-state">Aucune fiche ajoutée.</p>';
     return;
   }
+
+  // Grouper par catégorie
+  const groups = {};
+  CATEGORIES_FICHES.forEach(c => groups[c.key] = []);
   fiches.forEach(f => {
-    // Stocker les données dans la map globale (pas d'échappement nécessaire)
-    _ficheData[f.id] = f;
-
-    const count = avis.filter(a => a.fiche_nom === f.nom).length;
-    const li = document.createElement('li');
-
-    // Ligne principale
-    const row = document.createElement('div');
-    row.className = 'fiche-row';
-
-    const nomSpan = document.createElement('span');
-    nomSpan.className = 'fiche-nom';
-    if (f.lien) {
-      const a = document.createElement('a');
-      a.href = f.lien; a.target = '_blank'; a.rel = 'noopener';
-      a.textContent = f.nom + ' 🔗';
-      nomSpan.appendChild(a);
-    } else {
-      nomSpan.textContent = f.nom;
-    }
-
-    const actions = document.createElement('span');
-    actions.className = 'fiche-actions';
-
-    const countSpan = document.createElement('span');
-    countSpan.className = 'count';
-    countSpan.textContent = count + ' avis';
-
-    const btnLien = document.createElement('button');
-    btnLien.className = 'btn-edit-lien';
-    btnLien.textContent = '✏️ Lien';
-    btnLien.onclick = () => toggleLienEdit(f.id);
-
-    const btnMerge = document.createElement('button');
-    btnMerge.className = 'btn-merge';
-    btnMerge.textContent = '🔀 Fusionner';
-    btnMerge.onclick = () => toggleMerge(f.id);
-
-    const btnDel = document.createElement('button');
-    btnDel.className = 'btn-delete';
-    btnDel.textContent = '🗑';
-    btnDel.onclick = () => deleteFiche(f.nom);
-
-    actions.append(countSpan, btnLien, btnMerge, btnDel);
-    row.append(nomSpan, actions);
-
-    // Zone édition lien
-    const lienEdit = document.createElement('div');
-    lienEdit.className = 'fiche-lien-edit hidden';
-    lienEdit.id = 'lien-edit-' + f.id;
-
-    const lienInput = document.createElement('input');
-    lienInput.type = 'url';
-    lienInput.className = 'lien-input';
-    lienInput.id = 'lien-val-' + f.id;
-    lienInput.value = f.lien || '';
-    lienInput.placeholder = 'https://maps.google.com/...';
-
-    const btnSaveLien = document.createElement('button');
-    btnSaveLien.className = 'btn-save-lien';
-    btnSaveLien.textContent = '✅ Sauvegarder';
-    btnSaveLien.onclick = () => saveLien(f.id);
-
-    lienEdit.append(lienInput, btnSaveLien);
-
-    // Zone fusion
-    const mergeEdit = document.createElement('div');
-    mergeEdit.className = 'fiche-merge-edit hidden';
-    mergeEdit.id = 'merge-edit-' + f.id;
-
-    const mergeLabel = document.createElement('span');
-    mergeLabel.className = 'merge-label';
-    mergeLabel.innerHTML = 'Fusionner les avis de <b>' + f.nom + '</b> vers :';
-
-    const mergeSelect = document.createElement('select');
-    mergeSelect.className = 'merge-select';
-    mergeSelect.id = 'merge-val-' + f.id;
-    fiches.filter(x => x.id !== f.id).forEach(x => {
-      const opt = document.createElement('option');
-      opt.value = x.nom;
-      opt.textContent = x.nom;
-      mergeSelect.appendChild(opt);
-    });
-
-    const btnMergeConfirm = document.createElement('button');
-    btnMergeConfirm.className = 'btn-save-lien btn-merge-confirm';
-    btnMergeConfirm.textContent = '✅ Fusionner & supprimer';
-    btnMergeConfirm.onclick = () => mergeFiche(f.id);
-
-    mergeEdit.append(mergeLabel, mergeSelect, btnMergeConfirm);
-
-    li.append(row, lienEdit, mergeEdit);
-    ul.appendChild(li);
+    const cat = categoriserFiche(f.nom);
+    groups[cat].push(f);
   });
+
+  CATEGORIES_FICHES.forEach(cat => {
+    const items = groups[cat.key];
+    if (!items.length) return;
+
+    const details = document.createElement('details');
+    details.className = 'fiche-category';
+    details.open = true;
+
+    const summary = document.createElement('summary');
+    summary.className = 'fiche-category-header';
+    summary.innerHTML = cat.label + ' <span class="cat-count">' + items.length + '</span>';
+    details.appendChild(summary);
+
+    const ul = document.createElement('ul');
+    ul.className = 'fiche-category-list';
+    items.forEach(f => ul.appendChild(buildFicheLi(f, fiches, avis)));
+    details.appendChild(ul);
+    container.appendChild(details);
+  });
+
 }
 
 function toggleMerge(id) {
