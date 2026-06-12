@@ -371,7 +371,7 @@ async function renderFiches() {
 
     const details = document.createElement('details');
     details.className = 'fiche-category';
-    details.open = true;
+    details.open = false;
 
     const summary = document.createElement('summary');
     summary.className = 'fiche-category-header';
