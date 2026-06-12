@@ -285,9 +285,14 @@ function buildFicheLi(f, fiches, avis) {
   countSpan.className = 'count';
   countSpan.textContent = count + ' avis';
 
+  const btnNom = document.createElement('button');
+  btnNom.className = 'btn-edit-lien';
+  btnNom.textContent = '✏️ Nom';
+  btnNom.onclick = () => toggleNomEdit(f.id);
+
   const btnLien = document.createElement('button');
   btnLien.className = 'btn-edit-lien';
-  btnLien.textContent = '✏️ Lien';
+  btnLien.textContent = '🔗 Lien';
   btnLien.onclick = () => toggleLienEdit(f.id);
 
   const btnMerge = document.createElement('button');
@@ -300,8 +305,25 @@ function buildFicheLi(f, fiches, avis) {
   btnDel.textContent = '🗑';
   btnDel.onclick = () => deleteFiche(f.nom);
 
-  actions.append(countSpan, btnLien, btnMerge, btnDel);
+  actions.append(countSpan, btnNom, btnLien, btnMerge, btnDel);
   row.append(nomSpan, actions);
+
+  const nomEdit = document.createElement('div');
+  nomEdit.className = 'fiche-lien-edit hidden';
+  nomEdit.id = 'nom-edit-' + f.id;
+
+  const nomInput = document.createElement('input');
+  nomInput.type = 'text';
+  nomInput.className = 'lien-input';
+  nomInput.id = 'nom-val-' + f.id;
+  nomInput.value = f.nom;
+  nomInput.placeholder = 'Nouveau nom de la fiche';
+
+  const btnSaveNom = document.createElement('button');
+  btnSaveNom.className = 'btn-save-lien';
+  btnSaveNom.textContent = '✅ Renommer';
+  btnSaveNom.onclick = () => saveNom(f.id);
+  nomEdit.append(nomInput, btnSaveNom);
 
   const lienEdit = document.createElement('div');
   lienEdit.className = 'fiche-lien-edit hidden';
@@ -344,13 +366,18 @@ function buildFicheLi(f, fiches, avis) {
   btnMergeConfirm.onclick = () => mergeFiche(f.id);
   mergeEdit.append(mergeLabel, mergeSelect, btnMergeConfirm);
 
-  li.append(row, lienEdit, mergeEdit);
+  li.append(row, nomEdit, lienEdit, mergeEdit);
   return li;
 }
 
 async function renderFiches() {
   const [fiches, avis] = await Promise.all([getFiches(), getAvis()]);
   const container = document.getElementById('liste-fiches');
+  // Mémoriser les catégories ouvertes avant de re-rendre
+  const openCats = new Set();
+  container.querySelectorAll('details[data-cat]').forEach(d => {
+    if (d.open) openCats.add(d.dataset.cat);
+  });
   container.innerHTML = '';
   if (!fiches.length) {
     container.innerHTML = '<p class="empty-state">Aucune fiche ajoutée.</p>';
@@ -371,7 +398,8 @@ async function renderFiches() {
 
     const details = document.createElement('details');
     details.className = 'fiche-category';
-    details.open = false;
+    details.dataset.cat = cat.key;
+    details.open = openCats.has(cat.key);
 
     const summary = document.createElement('summary');
     summary.className = 'fiche-category-header';
@@ -419,6 +447,35 @@ async function mergeFiche(id) {
   } else {
     alert('Erreur lors de la fusion.');
   }
+}
+
+function toggleNomEdit(id) {
+  const div = document.getElementById(`nom-edit-${id}`);
+  div.classList.toggle('hidden');
+  if (!div.classList.contains('hidden')) {
+    document.getElementById(`nom-val-${id}`).focus();
+  }
+}
+
+async function saveNom(id) {
+  const oldNom = _ficheData[id].nom;
+  const newNom = document.getElementById('nom-val-' + id).value.trim();
+  if (!newNom || newNom === oldNom) { toggleNomEdit(id); return; }
+  if (!confirm(`Renommer "${oldNom}" en "${newNom}" ?\n\nTous les avis associés seront mis à jour.`)) return;
+
+  // Mettre à jour le nom de la fiche
+  const ok = await sbUpdate('fiches', id, { nom: newNom });
+  if (!ok) { alert('Erreur lors du renommage.'); return; }
+
+  // Mettre à jour en masse tous les avis liés à l'ancien nom
+  await fetch(`${SUPABASE_URL}/rest/v1/avis?fiche_nom=eq.${encodeURIComponent(oldNom)}`, {
+    method: 'PATCH',
+    headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ fiche_nom: newNom })
+  });
+
+  await populateFicheSelects();
+  renderFiches();
 }
 
 function toggleLienEdit(id) {
