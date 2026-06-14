@@ -590,6 +590,23 @@ datalist { display: none; }
   .avis-table { min-width: 650px; font-size: 0.8rem; }
   .avis-table th, .avis-table td { padding: 0.4rem 0.6rem; }
 
+  /* Top table */
+  .top-table { min-width: 400px; }
+
+/* ── TOP SUPPRESSIONS TABLE ── */
+.top-table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; }
+.top-table thead tr { background: #1e293b; }
+.top-table th { padding: 0.6rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+.top-table tbody tr { border-bottom: 1px solid #1e293b; transition: background 0.15s; }
+.top-table tbody tr:hover { background: #1e293b; }
+.top-table td { padding: 0.75rem 1rem; font-size: 0.88rem; color: #e2e8f0; }
+.top-rank { font-weight: 800; color: #64748b; width: 2rem; }
+.top-rank:first-child { color: #fbbf24; }
+.top-nom { font-weight: 500; }
+.top-suppr { font-weight: 700; color: #ef4444; }
+.top-total { color: #94a3b8; }
+.top-taux { font-weight: 600; color: #f97316; }
+
   /* Export btn */
   .btn-export { width: 100%; text-align: center; }
   .btn-primary { width: 100%; text-align: center; }
