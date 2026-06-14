@@ -594,18 +594,27 @@ datalist { display: none; }
   .top-table { min-width: 400px; }
 
 /* ── TOP SUPPRESSIONS TABLE ── */
-.top-table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; }
-.top-table thead tr { background: #1e293b; }
-.top-table th { padding: 0.6rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
-.top-table tbody tr { border-bottom: 1px solid #1e293b; transition: background 0.15s; }
-.top-table tbody tr:hover { background: #1e293b; }
-.top-table td { padding: 0.75rem 1rem; font-size: 0.88rem; color: #e2e8f0; }
-.top-rank { font-weight: 800; color: #64748b; width: 2rem; }
-.top-rank:first-child { color: #fbbf24; }
-.top-nom { font-weight: 500; }
-.top-suppr { font-weight: 700; color: #ef4444; }
-.top-total { color: #94a3b8; }
-.top-taux { font-weight: 600; color: #f97316; }
+.top-table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; table-layout: fixed; }
+.top-table col.col-rank  { width: 3rem; }
+.top-table col.col-nom   { width: auto; }
+.top-table col.col-suppr { width: 7rem; }
+.top-table col.col-total { width: 7rem; }
+.top-table col.col-taux  { width: 6rem; }
+.top-table thead tr { background: #1e293b; border-radius: 8px; }
+.top-table th { padding: 0.7rem 1rem; text-align: left; font-size: 0.72rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 2px solid #334155; }
+.top-table th:not(:first-child) { text-align: right; }
+.top-table tbody tr { border-bottom: 1px solid #1e293b22; transition: background 0.15s; }
+.top-table tbody tr:hover { background: #1e293b88; }
+.top-table td { padding: 0.85rem 1rem; font-size: 0.9rem; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.top-table td:not(:first-child) { text-align: right; }
+.top-rank { font-weight: 800; color: #475569; font-size: 1rem; }
+.top-nom { font-weight: 500; color: #f1f5f9; }
+.top-suppr { font-weight: 700; color: #ef4444; font-size: 1rem; }
+.top-total { color: #64748b; }
+.top-taux { font-weight: 700; color: #f97316; }
+.top-table tbody tr:nth-child(1) .top-rank { color: #fbbf24; font-size: 1.1rem; }
+.top-table tbody tr:nth-child(2) .top-rank { color: #94a3b8; }
+.top-table tbody tr:nth-child(3) .top-rank { color: #92400e; }
 
   /* Export btn */
   .btn-export { width: 100%; text-align: center; }
