@@ -109,8 +109,11 @@
       </div>
     </div>
     <div class="chart-box wide">
-      <h3>Répartition des notes</h3>
-      <canvas id="chart-repartition"></canvas>
+      <h3>🔴 Top 5 fiches — avis supprimés</h3>
+      <table id="top-supprimes" class="top-table">
+        <thead><tr><th>#</th><th>Fiche GMB</th><th>Supprimés</th><th>Total avis</th><th>Taux</th></tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
     <button class="btn-export" onclick="exportExcel()">📥 Exporter en Excel (mois en cours)</button>
   </section>
@@ -246,11 +249,19 @@
   <!-- FICHES -->
   <section id="tab-fiches" class="tab-content hidden">
     <h2>Gérer les fiches GMB</h2>
+    <div class="sync-box">
+      <div class="sync-box-header">
+        <span>🔄 Synchronisation Google Sheet</span>
+        <button id="btn-sync-sheet" class="btn-sync" onclick="syncFromSheet()">🔄 Synchroniser depuis le Sheet</button>
+      </div>
+      <p class="sync-hint">Importe les fiches depuis le Sheet (colonnes J = nom, K = lien). Seules les lignes avec un lien valide sont importées.</p>
+      <p id="sync-status"></p>
+    </div>
     <form onsubmit="addFiche(event)">
       <div class="inline-form">
         <input type="text" id="fiche-nom" placeholder="Nom de la fiche (ex: Restaurant Paris 12e)" required />
         <input type="url" id="fiche-lien" placeholder="Lien GMB (optionnel)" />
-        <button type="submit" class="btn-primary">Ajouter</button>
+        <button type="submit" class="btn-primary">Ajouter manuellement</button>
       </div>
     </form>
     <ul id="liste-fiches"></ul>
