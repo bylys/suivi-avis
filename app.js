@@ -675,7 +675,7 @@ async function deleteAvis(id) {
 }
 
 // ── DASHBOARD ──
-let chartVolume, chartNote, chartRep;
+let chartVolume, chartNote;
 
 async function renderDashboard() {
   let avis = await getAvis();
@@ -707,8 +707,6 @@ async function renderDashboard() {
   const labels = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
   const volumes   = months.map(m => avis.filter(a => a.date.startsWith(m)).length);
   const supprimes = months.map(m => avis.filter(a => a.date.startsWith(m) && a.statut === 'supprime').length);
-  const repartition = [1,2,3,4,5].map(n => avis.filter(a => a.note === n).length);
-
   if (chartVolume) chartVolume.destroy();
   chartVolume = new Chart(document.getElementById('chart-volume'), {
     type: 'bar',
@@ -723,15 +721,36 @@ async function renderDashboard() {
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
-  if (chartRep) chartRep.destroy();
-  chartRep = new Chart(document.getElementById('chart-repartition'), {
-    type: 'bar',
-    data: {
-      labels: ['1★','2★','3★','4★','5★'],
-      datasets: [{ data: repartition, backgroundColor: ['#e53935','#fb8c00','#fdd835','#43a047','#1a73e8'], borderRadius: 6 }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  // Top 5 fiches avec le plus d'avis supprimés (sur la période filtrée, toutes fiches)
+  const allAvis = await getAvis();
+  const allFiltered = allAvis.filter(a =>
+    parseInt(a.date.slice(0,4)) === year &&
+    (!selectedMonth || a.date.startsWith(selectedMonth))
+  );
+  const fichesMap = {};
+  allFiltered.forEach(a => {
+    if (!fichesMap[a.fiche_nom]) fichesMap[a.fiche_nom] = { total: 0, supprimes: 0 };
+    fichesMap[a.fiche_nom].total++;
+    if (a.statut === 'supprime') fichesMap[a.fiche_nom].supprimes++;
   });
+  const top5 = Object.entries(fichesMap)
+    .map(([nom, d]) => ({ nom, ...d }))
+    .filter(d => d.supprimes > 0)
+    .sort((a, b) => b.supprimes - a.supprimes)
+    .slice(0, 5);
+
+  const tbody = document.querySelector('#top-supprimes tbody');
+  tbody.innerHTML = '';
+  if (!top5.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:1.5rem">Aucun avis supprimé cette année</td></tr>';
+  } else {
+    top5.forEach((d, i) => {
+      const taux = d.total > 0 ? Math.round((d.supprimes / d.total) * 100) + ' %' : '–';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="top-rank">${i + 1}</td><td class="top-nom">${d.nom}</td><td class="top-suppr">${d.supprimes}</td><td class="top-total">${d.total}</td><td class="top-taux">${taux}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
 }
 
 // ── EXPORT EXCEL ──
