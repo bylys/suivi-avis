@@ -120,6 +120,7 @@ function showTab(name) {
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
   if (name === 'generateur') populateGenFiche();
+  if (name === 'reco') renderRecommandations();
 }
 
 // ── FICHES ──
@@ -1518,6 +1519,402 @@ function copierAvis() {
     confirm.classList.remove('hidden');
     setTimeout(() => confirm.classList.add('hidden'), 2500);
   });
+}
+
+// ── RECOMMANDATIONS ──
+const ASSETS_URL       = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=0';
+const ASSETS_DATES_URL = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=583203849';
+let _assetsCache = null;
+let _datesCache  = null;
+let _recoOffset  = 0;
+
+function parseCSVLine(line) {
+  const cols = []; let cur = ''; let inQ = false;
+  for (const c of line) {
+    if (c === '"') inQ = !inQ;
+    else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
+async function getAssets() {
+  if (_assetsCache) return _assetsCache;
+  try {
+    const res = await fetch(ASSETS_URL);
+    const text = await res.text();
+    const rows = text.split('\n').filter(l => l.trim()).map(l => {
+      const c = parseCSVLine(l);
+      const rawGmail = (c[2] || '').split(/[\s\/,\n]/)[0].trim();
+      const gmail = rawGmail.includes('@') ? rawGmail : '';
+      return { domain: (c[0] || '').trim(), gmail, statut: (c[3] || '').trim() };
+    }).filter(r => r.statut === 'Enable' && r.gmail);
+    _assetsCache = rows;
+    return rows;
+  } catch(e) { return []; }
+}
+
+async function getOpeningDates() {
+  if (_datesCache) return _datesCache;
+  try {
+    const res = await fetch(ASSETS_DATES_URL);
+    const text = await res.text();
+    const map = {};
+    text.split('\n').slice(1).filter(l => l.trim()).forEach(l => {
+      const c = parseCSVLine(l);
+      if (c[0] && c[1]) map[c[0].trim()] = c[1].trim();
+    });
+    _datesCache = map;
+    return map;
+  } catch(e) { return {}; }
+}
+
+// ── Cooldown J+8 (localStorage) ──
+function getRecoHistory() {
+  try { return JSON.parse(localStorage.getItem('reco_history') || '{}'); } catch { return {}; }
+}
+function markGmailUsed(gmail) {
+  const h = getRecoHistory();
+  h[gmail] = Math.floor(Date.now() / 86400000);
+  localStorage.setItem('reco_history', JSON.stringify(h));
+}
+function isGmailAvailable(gmail, dayNum) {
+  const h = getRecoHistory();
+  return !h[gmail] || (dayNum - h[gmail]) >= 8;
+}
+function daysUntilAvailable(gmail, dayNum) {
+  const h = getRecoHistory();
+  if (!h[gmail]) return 0;
+  return Math.max(0, 8 - (dayNum - h[gmail]));
+}
+
+// ── Géographie ──
+function normalizeReco(s) {
+  return (s || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/['''\-]/g, ' ').replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+const SVC_WORDS = ['elagage','abattage','nettoyage','couvreur','couverture','renovation','toiture','facade','ravalement','paysagiste','etancheite','terrassement','vitrier','demoussage','reparation','entretien','artisan','paysage','emondage','debarras','depannage','remorquage','service','services','express','infiltration','fuite','ets','grimpeur','arboriste'];
+
+function extractCity(str) {
+  let s = normalizeReco(str).replace(/\.(fr|be|lu|ch|ca|com|org|net)$/, '');
+  SVC_WORDS.forEach(w => { s = s.replace(new RegExp('\\b' + w + '\\b', 'g'), ' '); });
+  return s.replace(/\b\d{2,3}\b/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+// Villes principales → villes voisines à ~50-100km
+const CITY_NEIGHBORS = {
+  'bordeaux':     ['merignac','pessac','libourne','bergerac','perigueux','agen','saintes','angouleme','bayonne','arcachon','langon','blaye'],
+  'bayonne':      ['biarritz','anglet','pau','dax','bordeaux','mont de marsan'],
+  'pau':          ['bayonne','tarbes','oloron','lourdes','dax'],
+  'toulouse':     ['montauban','carcassonne','foix','pamiers','auch','albi','castres','muret','saint gaudens'],
+  'montpellier':  ['nimes','beziers','lunel','sete','ales','arles'],
+  'nimes':        ['montpellier','ales','avignon','arles','uzas','bagnols sur ceze'],
+  'marseille':    ['aix en provence','toulon','aubagne','salon de provence','martigues','arles','istres'],
+  'toulon':       ['marseille','hyeres','brignoles','draguignan','la seyne'],
+  'nice':         ['cannes','antibes','menton','monaco','grasse','vence'],
+  'lyon':         ['villeurbanne','vienne','bourgoin jallieu','saint etienne','amberlieu','bourg en bresse','macon','tarare'],
+  'saint etienne':['lyon','roanne','le puy','firminy','rive de gier'],
+  'grenoble':     ['voiron','chambery','gap','valence','vienne','pontcharra'],
+  'annecy':       ['chambery','albertville','thonon','cluses','grenoble'],
+  'chambery':     ['annecy','grenoble','albertville','aix les bains'],
+  'paris':        ['versailles','boulogne billancourt','saint denis','montreuil','nanterre','creteil','vincennes','argenteuil','vitry','ivry','colombes','levallois','neuilly','melun','evry','cergy','meaux'],
+  'versailles':   ['paris','mantes la jolie','rambouillet','poissy','saint germain en laye'],
+  'lille':        ['tourcoing','roubaix','villeneuve dascq','bethune','lens','douai','arras','valencienness'],
+  'arras':        ['lille','lens','saint quentin','cambrai','amiens'],
+  'amiens':       ['arras','beauvais','abbeville','saint quentin','compiegne'],
+  'rouen':        ['le havre','caen','evreux','dieppe','elbeuf','louviers'],
+  'le havre':     ['rouen','caen','fecamp','yvetot'],
+  'caen':         ['rouen','cherbourg','saint lo','lisieux','bayeux','falaise'],
+  'rennes':       ['saint malo','fougeres','vitres','redon','vannes','laval'],
+  'nantes':       ['saint nazaire','angers','laval','rennes','cholet','la roche sur yon'],
+  'angers':       ['nantes','saumur','laval','le mans','cholet'],
+  'brest':        ['quimper','saint brieuc','morlaix','landerneau'],
+  'quimper':      ['brest','lorient','douarnenez','concarneau'],
+  'lorient':      ['quimper','vannes','pontivy'],
+  'vannes':       ['lorient','rennes','nantes','ploermel'],
+  'strasbourg':   ['colmar','mulhouse','haguenau','saverne','selestat'],
+  'mulhouse':     ['strasbourg','colmar','belfort','altkirch'],
+  'metz':         ['nancy','thionville','sarreguemines','verdun'],
+  'nancy':        ['metz','epinal','toul','bar le duc'],
+  'dijon':        ['chalon sur saone','macon','auxerre','beaune','dole'],
+  'besancon':     ['dole','pontarlier','lons le saunier','belfort','montbeliard'],
+  'clermont ferrand':['riom','vichy','thiers','issoire','moulins'],
+  'limoges':      ['brive','gueret','perigueux','angouleme','tulle'],
+  'tours':        ['blois','amboise','chinon','loches','vendome'],
+  'orleans':      ['blois','chartres','montargis','chateauroux','gien'],
+  'reims':        ['chalons en champagne','epernay','laon','soissons','troyes'],
+  'troyes':       ['reims','chaumont','sens','auxerre'],
+  'le mans':      ['tours','laval','alencon','angers','chartres'],
+  'chartres':     ['orleans','le mans','evreux','dreux','versailles'],
+};
+
+// Départements → villes principales (pour Local Guide étendu)
+const DEPT_CITIES = {
+  33:['bordeaux','merignac','pessac','libourne','arcachon','langon','blaye'],
+  31:['toulouse','muret','saint gaudens','colomiers','blagnac'],
+  69:['lyon','villeurbanne','bron','venissieux','givors','caluire'],
+  13:['marseille','aix en provence','arles','martigues','salon de provence','aubagne','istres'],
+  59:['lille','tourcoing','roubaix','dunkerque','valenciennes','douai','lens'],
+  75:['paris'],76:['rouen','le havre','dieppe','fecamp'],
+  44:['nantes','saint nazaire','cholet','ancenis'],
+  67:['strasbourg','haguenau','saverne'],
+  35:['rennes','saint malo','fougeres'],
+  29:['brest','quimper','morlaix','lorient'],
+  34:['montpellier','beziers','sete','lunel'],
+  06:['nice','cannes','antibes','grasse'],
+  83:['toulon','draguignan','hyeres','frejus'],
+  38:['grenoble','vienne','voiron','bourgoin jallieu'],
+  21:['dijon','beaune','chenove'],
+  63:['clermont ferrand','riom','issoire','thiers'],
+  87:['limoges','saint junien'],
+  37:['tours','amboise','chinon'],
+  45:['orleans','montargis','gien'],
+};
+
+function getLocalGuides() {
+  try { return JSON.parse(localStorage.getItem('local_guides') || '[]'); } catch { return []; }
+}
+function toggleLocalGuide(gmail) {
+  const lgs = getLocalGuides();
+  const idx = lgs.indexOf(gmail);
+  if (idx >= 0) lgs.splice(idx, 1); else lgs.push(gmail);
+  localStorage.setItem('local_guides', JSON.stringify(lgs));
+}
+function isLocalGuide(gmail) {
+  return getLocalGuides().includes(gmail);
+}
+
+function cityMatchScore(city1, city2) {
+  // 1 si même mot significatif en commun
+  const w1 = city1.split(' ').filter(w => w.length > 3);
+  const w2 = city2.split(' ').filter(w => w.length > 3);
+  if (!w1.length || !w2.length) return 0;
+  const common = w1.filter(w => w2.includes(w));
+  return common.length / Math.max(w1.length, w2.length);
+}
+
+function getGeoScore(gmailCity, ficheName, localGuide) {
+  const ficheCity = extractCity(ficheName);
+
+  // Niveau 1 : même ville (+800)
+  if (cityMatchScore(gmailCity, ficheCity) >= 0.5) return 800;
+
+  // Niveau 2 : ville voisine à ~50-100km (+400)
+  const neighbors = CITY_NEIGHBORS[gmailCity] || [];
+  if (neighbors.some(n => ficheCity.includes(n) || n.split(' ').every(w => ficheCity.includes(w)))) return 400;
+  // Symétrique : fiche est la ville principale, gmail est dans ses voisins
+  for (const [mainCity, nbs] of Object.entries(CITY_NEIGHBORS)) {
+    if ((ficheCity.includes(mainCity) || mainCity.split(' ').every(w => ficheCity.includes(w))) &&
+        nbs.some(n => gmailCity.includes(n) || n.split(' ').every(w => gmailCity.includes(w)))) return 400;
+  }
+
+  // Niveau 3 : même département (seulement Local Guide) (+200)
+  if (localGuide) {
+    for (const [dept, cities] of Object.entries(DEPT_CITIES)) {
+      const gmailInDept = cities.some(c => gmailCity.includes(c) || c.split(' ').every(w => gmailCity.includes(w)));
+      const ficheInDept = cities.some(c => ficheCity.includes(c) || c.split(' ').every(w => ficheCity.includes(w)));
+      if (gmailInDept && ficheInDept) return 200;
+    }
+  }
+
+  return 0;
+}
+
+function ficheMatchScore(ficheName, domainCity) {
+  const fn = normalizeReco(ficheName);
+  const words = domainCity.split(' ').filter(w => w.length > 3);
+  if (!words.length) return 0;
+  return words.filter(w => fn.includes(w)).length / words.length;
+}
+
+async function computeRecos(offset) {
+  const [assets, fiches, avis, openDates] = await Promise.all([
+    getAssets(), getFiches(), getAvis(), getOpeningDates()
+  ]);
+  if (!assets.length || !fiches.length) return null;
+
+  const now = Date.now();
+  const dayNum = Math.floor(now / 86400000) + offset;
+
+  const avisCount = {};
+  avis.forEach(a => { avisCount[a.fiche_nom] = (avisCount[a.fiche_nom] || 0) + 1; });
+
+  const ficheData = fiches.map(f => {
+    const openDate = openDates[f.nom];
+    const ref = openDate ? new Date(openDate).getTime() : new Date(f.created_at).getTime();
+    const ageDays = Math.round((now - ref) / 86400000);
+    return { ...f, ageDays, count: avisCount[f.nom] || 0, maxPerDay: ageDays > 42 ? 2 : 1 };
+  });
+
+  const available = assets.filter(a => isGmailAvailable(a.gmail, dayNum));
+  if (!available.length) return [];
+
+  const start = ((dayNum % available.length) + available.length) % available.length;
+  const selected = Array.from({length: 20}, (_, i) => available[(start + i) % available.length]);
+
+  const ficheSlots = {};
+  const recos = [];
+
+  for (const acct of selected) {
+    const city = extractCity(acct.domain);
+    const lg = isLocalGuide(acct.gmail);
+
+    const ownFiche = ficheData
+      .map(f => ({ f, s: ficheMatchScore(f.nom, city) }))
+      .filter(x => x.s >= 0.5)
+      .sort((a, b) => b.s - a.s)[0]?.f;
+
+    const candidates = ficheData
+      .filter(f => f.nom !== ownFiche?.nom && (ficheSlots[f.nom] || 0) < f.maxPerDay)
+      .map(f => {
+        const geoBonus = getGeoScore(city, f.nom, lg);
+        const score = (500 - f.count * 10) + (f.ageDays * 2) + geoBonus;
+        return { ...f, score, geoBonus };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    if (candidates[0]) {
+      ficheSlots[candidates[0].nom] = (ficheSlots[candidates[0].nom] || 0) + 1;
+      recos.push({ acct, target: candidates[0], ownFiche, dayNum, lg });
+    }
+  }
+  return recos;
+}
+
+function changeRecoDay(delta) {
+  if (delta === 0) _recoOffset = 0;
+  else _recoOffset += delta;
+  renderRecommandations();
+}
+
+async function renderRecommandations() {
+  const container = document.getElementById('reco-list');
+  const dateEl    = document.getElementById('reco-date');
+  container.innerHTML = '<p style="color:#64748b;padding:1rem 0">Chargement...</p>';
+
+  const today = new Date(Date.now() + _recoOffset * 86400000);
+  const jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const mois  = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+  dateEl.textContent = `${jours[today.getDay()]} ${today.getDate()} ${mois[today.getMonth()]} ${today.getFullYear()}`;
+
+  const day = today.getDay();
+  if (day === 0 || day === 6) {
+    container.innerHTML = '<div style="text-align:center;color:#64748b;padding:3rem;font-size:1rem">📅 Pas de recommandations le weekend</div>';
+    return;
+  }
+
+  try {
+    const recos = await computeRecos(_recoOffset);
+    if (!recos) {
+      container.innerHTML = '<p style="color:#ef4444;padding:1rem 0">Impossible de charger le Sheet. Vérifiez qu\'il est partagé en lecture publique.</p>';
+      return;
+    }
+    if (!recos.length) {
+      container.innerHTML = '<p style="color:#f97316;padding:1rem 0">Tous les comptes sont en cooldown. Revenez demain ou consultez un jour différent.</p>';
+      return;
+    }
+
+    container.innerHTML = '';
+    container.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+
+    // Panneau Local Guide (collapsible)
+    const lgPanel = document.createElement('details');
+    lgPanel.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 16px;margin-bottom:4px;';
+    const lgSummary = document.createElement('summary');
+    lgSummary.style.cssText = 'cursor:pointer;color:#94a3b8;font-size:13px;font-weight:600;list-style:none;user-select:none;';
+    lgSummary.textContent = '⭐ Gérer les comptes Local Guide';
+    lgPanel.appendChild(lgSummary);
+
+    const lgNote = document.createElement('p');
+    lgNote.style.cssText = 'font-size:11px;color:#475569;margin:8px 0 10px;';
+    lgNote.textContent = 'Les comptes Local Guide ont accès à un rayon étendu au département entier (niveau 3).';
+    lgPanel.appendChild(lgNote);
+
+    const lgGrid = document.createElement('div');
+    lgGrid.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+
+    const allGmails = [...new Set(recos.map(r => r.acct.gmail))];
+    allGmails.forEach(gmail => {
+      const isLG = isLocalGuide(gmail);
+      const chip = document.createElement('button');
+      chip.style.cssText = `background:${isLG ? '#14532d' : '#0f172a'};color:${isLG ? '#4ade80' : '#64748b'};border:1px solid ${isLG ? '#166534' : '#334155'};border-radius:99px;padding:3px 10px;font-size:11px;cursor:pointer;`;
+      chip.textContent = (isLG ? '⭐ ' : '') + gmail.split('@')[0];
+      chip.title = gmail;
+      chip.onclick = () => {
+        toggleLocalGuide(gmail);
+        _assetsCache = null;
+        renderRecommandations();
+      };
+      lgGrid.appendChild(chip);
+    });
+    lgPanel.appendChild(lgGrid);
+    container.appendChild(lgPanel);
+
+    recos.forEach((r, i) => {
+      const row = document.createElement('div');
+      row.id = 'reco-row-' + i;
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px 16px;flex-wrap:wrap;transition:opacity .3s;';
+
+      const num = document.createElement('span');
+      num.style.cssText = 'width:22px;flex-shrink:0;font-weight:700;color:#475569;font-size:13px;text-align:right;';
+      num.textContent = i + 1;
+
+      const gmailWrap = document.createElement('div');
+      gmailWrap.style.cssText = 'flex:1;min-width:180px;';
+      const lgBadge = r.lg ? ' <span style="font-size:10px;color:#fbbf24;">⭐ LG</span>' : '';
+      gmailWrap.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Gmail</div><div style="font-size:13px;color:#93c5fd;font-weight:500;word-break:break-all">${r.acct.gmail}${lgBadge}</div>`;
+
+      const arrow = document.createElement('span');
+      arrow.style.cssText = 'color:#334155;font-size:20px;flex-shrink:0;';
+      arrow.textContent = '→';
+
+      const ficheWrap = document.createElement('div');
+      ficheWrap.style.cssText = 'flex:2;min-width:200px;';
+      const lienHTML = r.target.lien
+        ? `<a href="${r.target.lien}" target="_blank" rel="noopener" style="color:#4ade80;font-size:13px;font-weight:600;text-decoration:none;">${r.target.nom} 🔗</a>`
+        : `<span style="font-size:13px;font-weight:600;color:#f1f5f9;">${r.target.nom}</span>`;
+      const ageBadge = r.target.ageDays > 42
+        ? `<span style="background:#14532d30;color:#4ade80;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:6px;">×2/j</span>`
+        : `<span style="background:#1e3a8a30;color:#93c5fd;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:6px;">×1/j</span>`;
+      const geoLabel = r.target.geoBonus >= 800 ? '📍 Même ville'
+        : r.target.geoBonus >= 400 ? '📍 Ville proche'
+        : r.target.geoBonus >= 200 ? '🗺 Même dép.' : '';
+      const geoBadge = geoLabel ? `<span style="font-size:10px;color:#f59e0b;margin-left:6px;">${geoLabel}</span>` : '';
+      ficheWrap.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Fiche cible</div>${lienHTML}${ageBadge}${geoBadge}<div style="font-size:11px;color:#475569;margin-top:3px;">${r.target.count} avis · ${r.target.ageDays} j</div>`;
+
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.style.cssText = 'background:#172554;color:#93c5fd;border:1px solid #1e40af;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;';
+      copyBtn.textContent = '📋 Gmail';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(r.acct.gmail);
+        copyBtn.textContent = '✅';
+        setTimeout(() => { copyBtn.textContent = '📋 Gmail'; }, 1500);
+      };
+
+      const doneBtn = document.createElement('button');
+      doneBtn.style.cssText = 'background:#14532d;color:#4ade80;border:1px solid #166534;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;';
+      doneBtn.textContent = '✅ Fait';
+      doneBtn.onclick = () => {
+        markGmailUsed(r.acct.gmail);
+        row.style.opacity = '0.35';
+        doneBtn.textContent = `⏳ J+${daysUntilAvailable(r.acct.gmail, r.dayNum + 1)}`;
+        doneBtn.disabled = true;
+      };
+
+      btns.append(copyBtn, doneBtn);
+      row.append(num, gmailWrap, arrow, ficheWrap, btns);
+      container.appendChild(row);
+    });
+  } catch(e) {
+    container.innerHTML = `<p style="color:#ef4444;padding:1rem 0">Erreur : ${e.message}</p>`;
+  }
 }
 
 // ── AUTO-LOGIN ──
