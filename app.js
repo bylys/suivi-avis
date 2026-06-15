@@ -739,16 +739,26 @@ async function renderDashboard() {
     .sort((a, b) => b.supprimes - a.supprimes)
     .slice(0, 5);
 
-  const tbody = document.querySelector('#top-supprimes tbody');
-  tbody.innerHTML = '';
+  const container = document.getElementById('top-supprimes');
+  container.innerHTML = '';
   if (!top5.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#64748b;padding:1.5rem">Aucun avis supprimé cette année</td></tr>';
+    container.innerHTML = '<p style="text-align:center;color:#64748b;padding:2rem">Aucun avis supprimé sur cette période</p>';
   } else {
+    const rankColors = ['#fbbf24','#94a3b8','#b45309','#475569','#475569'];
     top5.forEach((d, i) => {
-      const taux = d.total > 0 ? Math.round((d.supprimes / d.total) * 100) + ' %' : '–';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="top-rank">${i + 1}</td><td class="top-nom">${d.nom}</td><td class="top-suppr">${d.supprimes}</td><td class="top-total">${d.total}</td><td class="top-taux">${taux}</td>`;
-      tbody.appendChild(tr);
+      const taux = d.total > 0 ? Math.round((d.supprimes / d.total) * 100) : 0;
+      const tauxColor = taux === 100 ? '#ef4444' : taux >= 50 ? '#f97316' : '#eab308';
+      const row = document.createElement('div');
+      row.className = 'top-row';
+      row.innerHTML = `
+        <span class="top-badge" style="background:${rankColors[i]}22;color:${rankColors[i]}">${i + 1}</span>
+        <span class="top-row-nom">${d.nom}</span>
+        <span class="top-row-stats">
+          <span class="top-pill suppr">${d.supprimes} supprimés</span>
+          <span class="top-pill total">${d.total} avis</span>
+          <span class="top-pill taux" style="background:${tauxColor}22;color:${tauxColor}">${taux} %</span>
+        </span>`;
+      container.appendChild(row);
     });
   }
 }
