@@ -35,6 +35,7 @@
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
+      <button class="tab-btn" onclick="showTab('reco')">📋 Recommandations</button>
     </nav>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </header>
@@ -241,6 +242,20 @@
       <div id="gen-texte" class="gen-texte"></div>
       <p id="gen-copy-confirm" class="success hidden">✅ Copié dans le presse-papiers !</p>
     </div>
+  </section>
+
+  <!-- RECOMMANDATIONS -->
+  <section id="tab-reco" class="tab-content hidden">
+    <h2>📋 Recommandations du jour</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.8rem;">
+      <div id="reco-date" style="font-size:0.9rem;color:#94a3b8;"></div>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn-secondary" onclick="changeRecoDay(-1)">← Hier</button>
+        <button class="btn-secondary" onclick="changeRecoDay(0)">Aujourd'hui</button>
+        <button class="btn-secondary" onclick="changeRecoDay(1)">Demain →</button>
+      </div>
+    </div>
+    <div id="reco-list"></div>
   </section>
 
   <!-- FICHES -->
