@@ -1754,12 +1754,16 @@ async function computeRecos(offset) {
   if (!available.length) return [];
 
   const start = ((dayNum % available.length) + available.length) % available.length;
-  const selected = Array.from({length: 20}, (_, i) => available[(start + i) % available.length]);
 
   const ficheSlots = {};
   const recos = [];
+  const usedGmails = new Set();
 
-  for (const acct of selected) {
+  // On itère jusqu'à 20 avis (pas 20 gmails)
+  for (let i = 0; recos.length < 20 && i < available.length; i++) {
+    const acct = available[(start + i) % available.length];
+    if (usedGmails.has(acct.gmail)) continue;
+    usedGmails.add(acct.gmail);
     const city = extractCity(acct.domain);
     const lg = isLocalGuide(acct.gmail);
 
