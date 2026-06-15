@@ -261,14 +261,6 @@
   <!-- FICHES -->
   <section id="tab-fiches" class="tab-content hidden">
     <h2>Gérer les fiches GMB</h2>
-    <div class="sync-box">
-      <div class="sync-box-header">
-        <span>🔄 Synchronisation Google Sheet</span>
-        <button id="btn-sync-sheet" class="btn-sync" onclick="syncFromSheet()">🔄 Synchroniser depuis le Sheet</button>
-      </div>
-      <p class="sync-hint">Importe les fiches depuis le Sheet (colonnes J = nom, K = lien). Seules les lignes avec un lien valide sont importées.</p>
-      <p id="sync-status"></p>
-    </div>
     <form onsubmit="addFiche(event)">
       <div class="inline-form">
         <input type="text" id="fiche-nom" placeholder="Nom de la fiche (ex: Restaurant Paris 12e)" required />
