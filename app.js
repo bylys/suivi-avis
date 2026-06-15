@@ -1757,9 +1757,10 @@ async function computeRecos(offset) {
 
   const ficheSlots = {};
   const recos = [];
+  let totalAvis = 0;
 
-  // Pour chaque gmail, on lui assigne jusqu'à 2 fiches avant de passer au suivant
-  for (let i = 0; recos.length < 20 && i < available.length; i++) {
+  // 1 gmail → 1 fiche, mais compte pour 1 ou 2 avis selon l'âge de la fiche
+  for (let i = 0; totalAvis < 20 && i < available.length; i++) {
     const acct = available[(start + i) % available.length];
     const city = extractCity(acct.domain);
     const lg = isLocalGuide(acct.gmail);
@@ -1769,25 +1770,21 @@ async function computeRecos(offset) {
       .filter(x => x.s >= 0.5)
       .sort((a, b) => b.s - a.s)[0]?.f;
 
-    // Assigne jusqu'à 2 fiches à ce gmail
-    for (let slot = 0; slot < 2 && recos.length < 20; slot++) {
-      const gmailFiches = recos.filter(r => r.acct.gmail === acct.gmail).map(r => r.target.nom);
+    const candidates = ficheData
+      .filter(f =>
+        f.nom !== ownFiche?.nom &&
+        (ficheSlots[f.nom] || 0) < f.maxPerDay
+      )
+      .map(f => {
+        const geoBonus = getGeoScore(city, f.nom, lg);
+        const score = (500 - f.count * 10) + (f.ageDays * 2) + geoBonus;
+        return { ...f, score, geoBonus };
+      })
+      .sort((a, b) => b.score - a.score);
 
-      const candidates = ficheData
-        .filter(f =>
-          f.nom !== ownFiche?.nom &&
-          !gmailFiches.includes(f.nom) &&
-          (ficheSlots[f.nom] || 0) < f.maxPerDay
-        )
-        .map(f => {
-          const geoBonus = getGeoScore(city, f.nom, lg);
-          const score = (500 - f.count * 10) + (f.ageDays * 2) + geoBonus;
-          return { ...f, score, geoBonus };
-        })
-        .sort((a, b) => b.score - a.score);
-
-      if (!candidates[0]) break;
+    if (candidates[0]) {
       ficheSlots[candidates[0].nom] = (ficheSlots[candidates[0].nom] || 0) + 1;
+      totalAvis += candidates[0].maxPerDay;
       recos.push({ acct, target: candidates[0], ownFiche, dayNum, lg });
     }
   }
