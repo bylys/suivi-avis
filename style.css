@@ -608,7 +608,7 @@ datalist { display: none; }
 .top-table td { padding: 0.85rem 1rem; font-size: 0.9rem; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .top-table td:not(:first-child) { text-align: right; }
 .top-rank { font-weight: 800; color: #475569; font-size: 1rem; }
-.top-nom { font-weight: 500; color: #f1f5f9; }
+.top-nom { font-weight: 500; color: #f1f5f9; max-width: 0; }
 .top-suppr { font-weight: 700; color: #ef4444; font-size: 1rem; }
 .top-total { color: #64748b; }
 .top-taux { font-weight: 700; color: #f97316; }
