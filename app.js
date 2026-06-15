@@ -741,22 +741,25 @@ async function renderDashboard() {
 
   const container = document.getElementById('top-supprimes');
   container.innerHTML = '';
+  container.style.cssText = 'display:flex;flex-direction:column;gap:8px;margin-top:12px';
   if (!top5.length) {
     container.innerHTML = '<p style="text-align:center;color:#64748b;padding:2rem">Aucun avis supprimé sur cette période</p>';
   } else {
-    const rankColors = ['#fbbf24','#94a3b8','#b45309','#475569','#475569'];
+    const rankBg   = ['#fbbf2425','#94a3b825','#92400e25','#47556925','#47556925'];
+    const rankClr  = ['#d97706',  '#94a3b8',  '#b45309',  '#64748b',  '#64748b'];
     top5.forEach((d, i) => {
       const taux = d.total > 0 ? Math.round((d.supprimes / d.total) * 100) : 0;
-      const tauxColor = taux === 100 ? '#ef4444' : taux >= 50 ? '#f97316' : '#eab308';
+      const tauxBg  = taux === 100 ? '#ef444420' : taux >= 50 ? '#f9731620' : '#eab30820';
+      const tauxClr = taux === 100 ? '#ef4444'   : taux >= 50 ? '#f97316'   : '#eab308';
       const row = document.createElement('div');
-      row.className = 'top-row';
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px 16px;';
       row.innerHTML = `
-        <span class="top-badge" style="background:${rankColors[i]}22;color:${rankColors[i]}">${i + 1}</span>
-        <span class="top-row-nom">${d.nom}</span>
-        <span class="top-row-stats">
-          <span class="top-pill suppr">${d.supprimes} supprimés</span>
-          <span class="top-pill total">${d.total} avis</span>
-          <span class="top-pill taux" style="background:${tauxColor}22;color:${tauxColor}">${taux} %</span>
+        <span style="width:32px;height:32px;border-radius:50%;background:${rankBg[i]};color:${rankClr[i]};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${i + 1}</span>
+        <span style="flex:1;font-size:14px;font-weight:500;color:#f1f5f9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.nom}</span>
+        <span style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <span style="background:#ef444420;color:#ef4444;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;white-space:nowrap">${d.supprimes} supprimés</span>
+          <span style="background:#33415540;color:#94a3b8;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;white-space:nowrap">${d.total} avis</span>
+          <span style="background:${tauxBg};color:${tauxClr};font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap;min-width:52px;text-align:center">${taux} %</span>
         </span>`;
       container.appendChild(row);
     });
