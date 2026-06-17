@@ -1525,10 +1525,12 @@ function copierAvis() {
 }
 
 // ── RECOMMANDATIONS ──
-const ASSETS_URL       = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=0';
-const ASSETS_DATES_URL = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=583203849';
+const ASSETS_URL        = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=0';
+const ASSETS_DATES_URL  = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=583203849';
+const ASSETS_CITIES_URL = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=987118741';
 let _assetsCache = null;
 let _datesCache  = null;
+let _citiesCache = null;
 let _recoOffset  = 0;
 
 function parseCSVLine(line) {
@@ -1545,16 +1547,34 @@ function parseCSVLine(line) {
 async function getAssets() {
   if (_assetsCache) return _assetsCache;
   try {
+    // Tab 1 : comptes avec domaine (ville extraite du domaine)
     const res = await fetch(ASSETS_URL);
     const text = await res.text();
     const rows = text.split('\n').filter(l => l.trim()).map(l => {
       const c = parseCSVLine(l);
       const rawGmail = (c[2] || '').split(/[\s\/,\n]/)[0].trim();
       const gmail = rawGmail.includes('@') ? rawGmail : '';
-      return { domain: (c[0] || '').trim(), gmail, statut: (c[3] || '').trim() };
+      return { domain: (c[0] || '').trim(), gmail, statut: (c[3] || '').trim(), city: null };
     }).filter(r => r.statut === 'Enable' && r.gmail);
-    _assetsCache = rows;
-    return rows;
+
+    // Tab 3 : comptes avec ville explicite (col A = gmail, col B = ville)
+    let extra = [];
+    try {
+      const res2 = await fetch(ASSETS_CITIES_URL);
+      const text2 = await res2.text();
+      extra = text2.split('\n').filter(l => l.trim()).map(l => {
+        const c = parseCSVLine(l);
+        const gmail = (c[0] || '').trim().toLowerCase();
+        const city  = normalizeReco((c[1] || '').replace(/_/g, ' '));
+        return gmail.includes('@gmail.com') ? { domain: '', gmail, statut: 'Enable', city } : null;
+      }).filter(Boolean);
+    } catch(e) {}
+
+    // Fusion — les gmails du tab 3 déjà présents dans tab 1 ne sont pas doublonnés
+    const existingGmails = new Set(rows.map(r => r.gmail.toLowerCase()));
+    const merged = [...rows, ...extra.filter(r => !existingGmails.has(r.gmail.toLowerCase()))];
+    _assetsCache = merged;
+    return merged;
   } catch(e) { return []; }
 }
 
@@ -1765,7 +1785,7 @@ async function computeRecos(offset) {
   // 1 gmail → 1 fiche, mais compte pour 1 ou 2 avis selon l'âge de la fiche
   for (let i = 0; totalAvis < 20 && i < available.length; i++) {
     const acct = available[(start + i) % available.length];
-    const city = extractCity(acct.domain);
+    const city = acct.city || extractCity(acct.domain);
     const lg = isLocalGuide(acct.gmail);
 
     const ownFiche = ficheData
