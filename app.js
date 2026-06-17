@@ -1535,21 +1535,27 @@ Avis :`;
   document.getElementById('gen-copy-confirm').classList.add('hidden');
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
 
-    if (res.status === 400 || res.status === 403) {
-      textEl.textContent = '❌ Clé API invalide.';
-      localStorage.removeItem('gemini_api_key');
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data?.error?.message || `Erreur ${res.status}`;
+      if (res.status === 400 || res.status === 403) localStorage.removeItem('gemini_api_key');
+      textEl.textContent = `❌ ${msg}`;
       return;
     }
 
-    const data = await res.json();
     const texte = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if (!texte) { textEl.textContent = '❌ Réponse vide, réessaie.'; return; }
+    if (!texte) {
+      const reason = data?.candidates?.[0]?.finishReason || JSON.stringify(data).slice(0, 100);
+      textEl.textContent = `❌ Réponse vide (${reason}). Réessaie.`;
+      return;
+    }
     textEl.textContent = texte;
   } catch(e) {
     textEl.textContent = '❌ Erreur réseau, vérifie ta connexion.';
