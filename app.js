@@ -1571,6 +1571,13 @@ function copierAvis() {
   });
 }
 
+function changerCleGemini() {
+  localStorage.removeItem('gemini_api_key');
+  if (promptGeminiKey()) {
+    alert('✅ Clé API mise à jour.');
+  }
+}
+
 // ── RECOMMANDATIONS ──
 const ASSETS_URL        = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=0';
 const ASSETS_DATES_URL  = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=583203849';
@@ -1867,6 +1874,66 @@ function changeRecoDay(delta) {
   renderRecommandations();
 }
 
+// ── RECOS MANUELLES URGENTES ──
+function getRecosManuelles() {
+  try { return JSON.parse(localStorage.getItem('recos_manuelles') || '[]'); } catch { return []; }
+}
+function saveRecosManuelles(list) {
+  localStorage.setItem('recos_manuelles', JSON.stringify(list));
+}
+function supprimerRecoManuelle(idx) {
+  const list = getRecosManuelles();
+  list.splice(idx, 1);
+  saveRecosManuelles(list);
+  renderRecommandations();
+}
+
+async function afficherFormulaireRecoManuelle() {
+  const fiches = await getFiches();
+  const assets = await getAssets();
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:#0008;z-index:1000;display:flex;align-items:center;justify-content:center;';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:14px;padding:24px;width:90%;max-width:480px;display:flex;flex-direction:column;gap:14px;';
+
+  box.innerHTML = `
+    <div style="font-size:15px;font-weight:700;color:#f1f5f9;">🔴 Ajouter une reco urgente</div>
+    <div>
+      <div style="font-size:11px;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Gmail *</div>
+      <input id="modal-gmail" list="modal-gmail-list" placeholder="compte@gmail.com" autocomplete="off"
+        style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;color:#f1f5f9;font-size:13px;box-sizing:border-box;">
+      <datalist id="modal-gmail-list">${assets.map(a=>`<option value="${a.gmail}">`).join('')}</datalist>
+    </div>
+    <div>
+      <div style="font-size:11px;color:#475569;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Fiche cible *</div>
+      <input id="modal-fiche" list="modal-fiche-list" placeholder="Nom de la fiche..." autocomplete="off"
+        style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;color:#f1f5f9;font-size:13px;box-sizing:border-box;">
+      <datalist id="modal-fiche-list">${fiches.map(f=>`<option value="${f.nom.replace(/"/g,'&quot;')}">`).join('')}</datalist>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+      <button id="modal-cancel" style="background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;">Annuler</button>
+      <button id="modal-save" style="background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;">🔴 Ajouter urgent</button>
+    </div>`;
+
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  document.getElementById('modal-cancel').onclick = () => modal.remove();
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+  document.getElementById('modal-save').onclick = () => {
+    const gmail = document.getElementById('modal-gmail').value.trim();
+    const fiche = document.getElementById('modal-fiche').value.trim();
+    if (!gmail || !fiche) { alert('Gmail et fiche requis.'); return; }
+    const list = getRecosManuelles();
+    list.push({ gmail, fiche, urgent: true });
+    saveRecosManuelles(list);
+    modal.remove();
+    renderRecommandations();
+  };
+}
+
 async function renderRecommandations() {
   const container = document.getElementById('reco-list');
   const dateEl    = document.getElementById('reco-date');
@@ -1896,6 +1963,50 @@ async function renderRecommandations() {
 
     container.innerHTML = '';
     container.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+
+    // Recos manuelles urgentes
+    const manuelles = getRecosManuelles();
+    manuelles.forEach((m, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;background:#450a0a;border:2px solid #991b1b;border-radius:10px;padding:12px 16px;flex-wrap:wrap;';
+
+      const badge = document.createElement('span');
+      badge.style.cssText = 'background:#7f1d1d;color:#fca5a5;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;flex-shrink:0;';
+      badge.textContent = '🔴 URGENT';
+
+      const gmailWrap = document.createElement('div');
+      gmailWrap.style.cssText = 'flex:1;min-width:180px;';
+      gmailWrap.innerHTML = `<div style="font-size:11px;color:#f87171;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Gmail</div><div style="font-size:13px;color:#fca5a5;font-weight:500;word-break:break-all">${m.gmail}</div>`;
+
+      const arrow = document.createElement('span');
+      arrow.style.cssText = 'color:#991b1b;font-size:20px;flex-shrink:0;';
+      arrow.textContent = '→';
+
+      const ficheWrap = document.createElement('div');
+      ficheWrap.style.cssText = 'flex:2;min-width:200px;';
+      ficheWrap.innerHTML = `<div style="font-size:11px;color:#f87171;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Fiche cible</div><span style="font-size:13px;font-weight:600;color:#fef2f2;">${m.fiche}</span>`;
+
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.style.cssText = 'background:#172554;color:#93c5fd;border:1px solid #1e40af;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;';
+      copyBtn.textContent = '📋 Gmail';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(m.gmail);
+        copyBtn.textContent = '✅';
+        setTimeout(() => { copyBtn.textContent = '📋 Gmail'; }, 1500);
+      };
+
+      const delBtn = document.createElement('button');
+      delBtn.style.cssText = 'background:#1c1917;color:#a8a29e;border:1px solid #44403c;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;white-space:nowrap;';
+      delBtn.textContent = '🗑 Supprimer';
+      delBtn.onclick = () => { supprimerRecoManuelle(idx); renderRecommandations(); };
+
+      btns.append(copyBtn, delBtn);
+      row.append(badge, gmailWrap, arrow, ficheWrap, btns);
+      container.appendChild(row);
+    });
 
     // Panneau Local Guide (collapsible)
     const lgPanel = document.createElement('details');
