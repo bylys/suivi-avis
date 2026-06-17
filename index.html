@@ -232,6 +232,7 @@
       <div class="gen-actions">
         <button class="btn-primary" onclick="genererAvis()">✨ Générer l'avis</button>
         <button class="btn-secondary" onclick="genererAvis()">🔄 Régénérer</button>
+        <button class="btn-secondary" onclick="changerCleGemini()" style="font-size:0.75rem;padding:6px 10px;">🔑 Changer la clé API</button>
       </div>
     </div>
     <div id="gen-result" class="gen-result hidden">
@@ -254,6 +255,9 @@
         <button class="btn-secondary" onclick="changeRecoDay(0)">Aujourd'hui</button>
         <button class="btn-secondary" onclick="changeRecoDay(1)">Demain →</button>
       </div>
+    </div>
+    <div style="margin-bottom:0.8rem;">
+      <button class="btn-secondary" onclick="afficherFormulaireRecoManuelle()" style="background:#7f1d1d;color:#fca5a5;border-color:#991b1b;">🔴 + Ajouter une reco urgente</button>
     </div>
     <div id="reco-list"></div>
   </section>
