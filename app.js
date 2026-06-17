@@ -586,7 +586,8 @@ function buildAvisRow(a, rappelsDus, aVerif) {
 }
 
 async function renderListe(openMonths = null) {
-  let avis = await getAvis();
+  const allAvisForRappels = await getAvis(); // tous les avis pour les rappels (pas filtrés)
+  let avis = [...allAvisForRappels];
   const fiche  = document.getElementById('list-fiche').value.trim();
   const month  = document.getElementById('list-month').value;
   const note   = document.getElementById('list-note').value;
@@ -602,11 +603,11 @@ async function renderListe(openMonths = null) {
   const el = document.getElementById('liste-avis');
   if (!avis.length) {
     el.innerHTML = '<p class="empty-state">Aucun avis pour ces filtres.</p>';
-    renderRappelsBanner([]);
+    renderRappelsBanner(getRappelsDus(allAvisForRappels));
     return;
   }
 
-  const rappelsDus = getRappelsDus(avis);
+  const rappelsDus = getRappelsDus(allAvisForRappels);
   const aVerif = rappelsDus.map(d => d.avis.id);
 
   // Grouper par mois
@@ -1472,7 +1473,20 @@ function humaniser(texte) {
 // Historique des derniers avis générés pour éviter les doublons
 let _genHistory = [];
 
-function genererAvis() {
+function getGeminiKey() {
+  return localStorage.getItem('gemini_api_key') || '';
+}
+
+function promptGeminiKey() {
+  const existing = getGeminiKey();
+  const key = prompt(existing ? 'Clé API Gemini (laisser vide pour annuler) :' : '🔑 Entre ta clé API Google AI Studio pour activer le générateur :', existing || '');
+  if (key === null) return false;
+  const k = key.trim();
+  if (k) { localStorage.setItem('gemini_api_key', k); return true; }
+  return !!existing;
+}
+
+async function genererAvis() {
   const fiche   = document.getElementById('gen-fiche').value.trim();
   const travaux = document.getElementById('gen-travaux').value.trim();
   const ville   = document.getElementById('gen-ville').value.trim();
@@ -1483,36 +1497,63 @@ function genererAvis() {
     return;
   }
 
-  // Supprime les articles définis/indéfinis juste avant {t} pour que
-  // l'utilisateur puisse écrire librement sa propre formulation avec article
-  // ex: "l'élagage de mon pin", "le nettoyage de ma toiture", "des travaux de couverture"
-  const fill = s => s
-    .replace(/\b(des|les|le|la|l'|un|une|nos|notre|du)\s+\{t\}/gi, '{t}')
-    .replace(/{t}/g, travaux.toLowerCase())
-    .replace(/{f}/g, fiche)
-    .replace(/{v}/g, ville);
+  let apiKey = getGeminiKey();
+  if (!apiKey) {
+    if (!promptGeminiKey()) return;
+    apiKey = getGeminiKey();
+  }
 
-  const metier = detecterMetier(fiche);
-  const cat = TEMPLATES[metier] || TEMPLATES.generic;
+  const tonLabel = { neutre: 'neutre et factuel', enthousiaste: 'enthousiaste et chaleureux', detaille: 'détaillé et précis', court: 'court et direct' }[ton] || 'neutre';
 
-  // Choisir le pool selon le ton, fallback sur neutre si ton non défini
-  const pool = cat[ton] || cat.neutre || cat[Object.keys(cat)[0]];
+  const prompt = `Tu es un vrai client français qui laisse un avis Google après une intervention à domicile.
 
-  // Éviter de retomber sur le même avis
-  const disponibles = pool.filter(t => !_genHistory.includes(t));
-  const source = disponibles.length > 0 ? disponibles : pool;
-  const template = rnd(source);
+Informations :
+- Entreprise : ${fiche}
+- Travaux : ${travaux}
+- Ville : ${ville}
+- Ton : ${tonLabel}
 
-  _genHistory.push(template);
-  if (_genHistory.length > Math.max(1, pool.length - 1)) _genHistory.shift();
+Règles de rédaction strictes :
+1. Écris à la première personne (je, on, nous) — style humain, naturel, pas de formulation marketing
+2. Langage familier modéré OK ("les gars", "nickel", "rien à redire", "boulot", "sympa") — INTERDIT : "franchement", "le matos", "vachement", "trop bien", "au top"
+3. Tu PEUX commencer par le nom de l'entreprise suivi d'une observation directe (ex : "Super boulot de la part de [entreprise] !") ou par une situation concrète
+4. Structure narrative : situation ou observation → intervention → résultat → impression finale (varie l'ordre)
+5. Inclure au moins un détail concret : voisins qui réagissent, propreté du chantier, ponctualité, conformité du devis, qualité des finitions, protection du mobilier
+6. Les fautes de frappe légères et petites erreurs grammaticales sont acceptées et souhaitées pour l'authenticité
+7. Exclamations naturelles OK (1-2 max)
+8. Signaux d'authenticité Google : pas de superlatifs répétés, une observation précise et spécifique, nom de l'entreprise max 1-2 fois
+9. Longueur : court = 2-3 phrases / neutre = 3-4 phrases / détaillé = 5-7 phrases / enthousiaste = 4-5 phrases avec émotion sincère
+10. Conclusions variées : "Une adresse qu'on garde précieusement", "On repassera par eux sans hésiter", "Je recommande vivement pour leur sérieux", "Le résultat parle de lui-même" — jamais deux fois la même
+11. Réponds UNIQUEMENT avec le texte de l'avis — aucun guillemet, aucune introduction, aucune explication
 
-  const texte = humaniser(fill(template).replace(/\s+/g, ' ').trim());
+Avis :`;
 
   const result = document.getElementById('gen-result');
   const textEl = document.getElementById('gen-texte');
   result.classList.remove('hidden');
-  textEl.textContent = texte;
+  textEl.textContent = '✨ Génération en cours...';
   document.getElementById('gen-copy-confirm').classList.add('hidden');
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+
+    if (res.status === 400 || res.status === 403) {
+      textEl.textContent = '❌ Clé API invalide.';
+      localStorage.removeItem('gemini_api_key');
+      return;
+    }
+
+    const data = await res.json();
+    const texte = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!texte) { textEl.textContent = '❌ Réponse vide, réessaie.'; return; }
+    textEl.textContent = texte;
+  } catch(e) {
+    textEl.textContent = '❌ Erreur réseau, vérifie ta connexion.';
+  }
 }
 
 function copierAvis() {
