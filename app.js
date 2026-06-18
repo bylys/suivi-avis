@@ -262,7 +262,8 @@ function categoriserFiche(nom) {
 
 function buildFicheLi(f, fiches, avis) {
   _ficheData[f.id] = f;
-  const count = avis.filter(a => a.fiche_nom === f.nom).length;
+  const ficheAvis = avis.filter(a => a.fiche_nom === f.nom);
+  const count = ficheAvis.length;
   const li = document.createElement('li');
 
   const row = document.createElement('div');
@@ -308,6 +309,15 @@ function buildFicheLi(f, fiches, avis) {
 
   actions.append(countSpan, btnNom, btnLien, btnMerge, btnDel);
   row.append(nomSpan, actions);
+
+  const statsBar = document.createElement('div');
+  statsBar.className = 'fiche-stats-bar';
+  const dateOuv = f.date_ouverture ? new Date(f.date_ouverture).toLocaleDateString('fr-FR') : '–';
+  const avisInit = f.avis_initiaux != null ? f.avis_initiaux : '–';
+  statsBar.innerHTML =
+    `<span>📅 ${dateOuv}</span>` +
+    `<span>🏁 ${avisInit} initiaux</span>` +
+    `<span>✍️ ${count} postés Kevin</span>`;
 
   const nomEdit = document.createElement('div');
   nomEdit.className = 'fiche-lien-edit hidden';
@@ -367,7 +377,7 @@ function buildFicheLi(f, fiches, avis) {
   btnMergeConfirm.onclick = () => mergeFiche(f.id);
   mergeEdit.append(mergeLabel, mergeSelect, btnMergeConfirm);
 
-  li.append(row, nomEdit, lienEdit, mergeEdit);
+  li.append(row, statsBar, nomEdit, lienEdit, mergeEdit);
   return li;
 }
 
