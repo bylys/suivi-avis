@@ -286,6 +286,7 @@ function buildFicheLi(f, fiches, avis) {
   const supprimes = ficheAvis.filter(a => a.statut === 'supprime').length;
   const total = (f.avis_initiaux || 0) + count - supprimes;
   const li = document.createElement('li');
+  li.dataset.nom = f.nom;
 
   const row = document.createElement('div');
   row.className = 'fiche-row';
@@ -388,21 +389,44 @@ function buildFicheLi(f, fiches, avis) {
   mergeLabel.className = 'merge-label';
   mergeLabel.innerHTML = 'Fusionner vers :';
 
-  const mergeSelect = document.createElement('select');
-  mergeSelect.className = 'merge-select';
-  mergeSelect.id = 'merge-val-' + f.id;
-  fiches.filter(x => x.id !== f.id).forEach(x => {
-    const opt = document.createElement('option');
-    opt.value = x.nom;
-    opt.textContent = x.nom;
-    mergeSelect.appendChild(opt);
+  const mergeWrap = document.createElement('div');
+  mergeWrap.className = 'merge-autocomplete-wrap';
+
+  const mergeInput = document.createElement('input');
+  mergeInput.type = 'text';
+  mergeInput.className = 'lien-input merge-search';
+  mergeInput.id = 'merge-val-' + f.id;
+  mergeInput.placeholder = 'Rechercher n\'importe où dans le nom...';
+  mergeInput.autocomplete = 'off';
+
+  const mergeDropdown = document.createElement('div');
+  mergeDropdown.className = 'merge-dropdown hidden';
+  const otherFiches = fiches.filter(x => x.id !== f.id);
+
+  mergeInput.addEventListener('input', () => {
+    const q = mergeInput.value.trim().toLowerCase();
+    mergeDropdown.innerHTML = '';
+    if (!q) { mergeDropdown.classList.add('hidden'); return; }
+    const matches = otherFiches.filter(x => x.nom.toLowerCase().includes(q)).slice(0, 20);
+    if (!matches.length) { mergeDropdown.classList.add('hidden'); return; }
+    matches.forEach(x => {
+      const item = document.createElement('div');
+      item.className = 'merge-dropdown-item';
+      item.textContent = x.nom;
+      item.onmousedown = (e) => { e.preventDefault(); mergeInput.value = x.nom; mergeDropdown.classList.add('hidden'); };
+      mergeDropdown.appendChild(item);
+    });
+    mergeDropdown.classList.remove('hidden');
   });
+  mergeInput.addEventListener('blur', () => setTimeout(() => mergeDropdown.classList.add('hidden'), 150));
+
+  mergeWrap.append(mergeInput, mergeDropdown);
 
   const btnMergeConfirm = document.createElement('button');
   btnMergeConfirm.className = 'btn-save-lien btn-merge-confirm';
   btnMergeConfirm.textContent = '✅ Fusionner & supprimer';
   btnMergeConfirm.onclick = () => mergeFiche(f.id);
-  mergeEdit.append(mergeLabel, mergeSelect, btnMergeConfirm);
+  mergeEdit.append(mergeLabel, mergeWrap, btnMergeConfirm);
 
   li.append(row, statsBar, nomEdit, lienEdit, mergeEdit);
   return li;
@@ -421,6 +445,25 @@ async function renderFiches() {
     container.innerHTML = '<p class="empty-state">Aucune fiche ajoutée.</p>';
     return;
   }
+
+  // Tri
+  const sortVal = (document.getElementById('fiches-sort') || {}).value || 'nom-asc';
+  const avisCount = {};
+  const avisPostes = {};
+  avis.forEach(a => { avisCount[a.fiche_nom] = (avisCount[a.fiche_nom] || 0) + (a.statut !== 'supprime' ? 1 : 0); avisPostes[a.fiche_nom] = (avisPostes[a.fiche_nom] || 0) + 1; });
+  fiches.sort((a, b) => {
+    const totalA = (a.avis_initiaux || 0) + (avisPostes[a.nom] || 0) - ((avisPostes[a.nom] || 0) - (avisCount[a.nom] || 0));
+    const totalB = (b.avis_initiaux || 0) + (avisPostes[b.nom] || 0) - ((avisPostes[b.nom] || 0) - (avisCount[b.nom] || 0));
+    if (sortVal === 'nom-asc')     return a.nom.localeCompare(b.nom, 'fr');
+    if (sortVal === 'nom-desc')    return b.nom.localeCompare(a.nom, 'fr');
+    if (sortVal === 'total-desc')  return totalB - totalA;
+    if (sortVal === 'total-asc')   return totalA - totalB;
+    if (sortVal === 'posted-desc') return (avisPostes[b.nom] || 0) - (avisPostes[a.nom] || 0);
+    if (sortVal === 'posted-asc')  return (avisPostes[a.nom] || 0) - (avisPostes[b.nom] || 0);
+    if (sortVal === 'init-desc')   return (b.avis_initiaux || 0) - (a.avis_initiaux || 0);
+    if (sortVal === 'init-asc')    return (a.avis_initiaux || 0) - (b.avis_initiaux || 0);
+    return 0;
+  });
 
   // Grouper par catégorie
   const groups = {};
@@ -453,9 +496,27 @@ async function renderFiches() {
 
 }
 
+function filterFiches(q) {
+  const query = q.trim().toLowerCase();
+  document.querySelectorAll('#liste-fiches details[data-cat]').forEach(details => {
+    let anyVisible = false;
+    details.querySelectorAll('li[data-nom]').forEach(li => {
+      const match = !query || li.dataset.nom.toLowerCase().includes(query);
+      li.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    details.style.display = anyVisible ? '' : 'none';
+    if (query && anyVisible) details.open = true;
+  });
+}
+
 function toggleMerge(id) {
   const div = document.getElementById(`merge-edit-${id}`);
   div.classList.toggle('hidden');
+  if (!div.classList.contains('hidden')) {
+    const input = div.querySelector('.merge-search');
+    if (input) input.focus();
+  }
 }
 
 async function mergeFiche(id) {
@@ -834,10 +895,10 @@ function formatDate(d) {
 
 // ── RAPPELS ──
 const RAPPELS = [
-  { jours: 8,  depuis: ['j0'],                 label: 'J+7'  },
-  { jours: 15, depuis: ['j0','j7'],             label: 'J+14' },
-  { jours: 22, depuis: ['j0','j7','j14'],       label: 'J+21' },
-  { jours: 31, depuis: ['j0','j7','j14','j21'], label: 'J+30' },
+  { jours: 8, depuis: ['j0'],  label: 'J+7'  },
+  { jours: 7, depuis: ['j7'],  label: 'J+14' },
+  { jours: 7, depuis: ['j14'], label: 'J+21' },
+  { jours: 9, depuis: ['j21'], label: 'J+30' },
 ];
 
 function daysDiff(dateStr) {
