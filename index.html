@@ -272,6 +272,19 @@
         <button type="submit" class="btn-primary">Ajouter manuellement</button>
       </div>
     </form>
+    <div class="fiches-search-bar">
+      <input type="text" id="fiches-search" placeholder="🔍 Rechercher une fiche..." oninput="filterFiches(this.value)" autocomplete="off" />
+      <select id="fiches-sort" onchange="renderFiches()" style="background:#1e293b;color:#f1f5f9;border:1.5px solid #334155;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;">
+        <option value="nom-asc">Nom A→Z</option>
+        <option value="nom-desc">Nom Z→A</option>
+        <option value="total-desc">Total avis ↓</option>
+        <option value="total-asc">Total avis ↑</option>
+        <option value="posted-desc">Postés Kevin ↓</option>
+        <option value="posted-asc">Postés Kevin ↑</option>
+        <option value="init-desc">Initiaux ↓</option>
+        <option value="init-asc">Initiaux ↑</option>
+      </select>
+    </div>
     <ul id="liste-fiches"></ul>
   </section>
 </div>
