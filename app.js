@@ -240,20 +240,39 @@ async function deleteFiche(nom) {
 const _ficheData = {};
 
 const CATEGORIES_FICHES = [
-  { key: 'elagage',    label: '🌿 Élagage / Abattage',         regex: /élag|elag|abatt|paysag|arborist|émondeur|emondeur|taille.*haie|jardinage/i },
-  { key: 'ravalement', label: '🏠 Ravalement / Façade / Peinture', regex: /ravel|façade|facade|enduit|crépi|peintr|isolation.*façade/i },
-  { key: 'toiture',    label: '🔨 Couvreur / Toiture / Rénovation', regex: /couvreur|toiture|toit|zingu|ardoise|tuile|charpente|rénovation.*toit|renovation.*toit|reparation.*toit|réparation.*toit|étanchéité|etancheite|infiltration/i },
-  { key: 'nettoyage',  label: '🧹 Nettoyage / Démoussage',     regex: /nettoy|démous|demouth|mousse/i },
-  { key: 'terrassement', label: '🏗️ Terrassement',             regex: /terrassement|terras|excavat|nivelle/i },
-  { key: 'maconnerie', label: '🪨 Maçonnerie',                  regex: /maçon|macon|béton|beton|dalle|parpaing/i },
-  { key: 'carreleur',  label: '🪟 Carreleur',                   regex: /carrel/i },
-  { key: 'paysagiste', label: '🌳 Paysagiste',                  regex: /paysagiste|artisan.*paysage/i },
-  { key: 'depannage',  label: '🚗 Dépannage / Remorquage',      regex: /dépann|depann|remorquage|auto|voiture/i },
-  { key: 'debarras',   label: '📦 Débarras',                    regex: /débarras|debarras/i },
-  { key: 'autre',      label: '🔧 Autres',                      regex: /./ },
+  { key: 'elagage',      label: '🌿 Élagage / Abattage / Émondage', regex: /élag|elag|abatt|arborist|émondeur|emondeur|taille.*haie|dessouchage/i },
+  { key: 'paysagiste',   label: '🌳 Paysagiste / Jardinage',         regex: /paysag|jardinage/i },
+  { key: 'nettoyage',    label: '🧹 Nettoyage / Démoussage',         regex: /nettoy|démous|demouth|mousse/i },
+  { key: 'ravalement',   label: '🏠 Ravalement / Façade',            regex: /ravel|façade|facade|enduit|crépi|isolation.*façade/i },
+  { key: 'peintre',      label: '🎨 Peintre / Peinture',             regex: /peintr/i },
+  { key: 'toiture',      label: '🔨 Couvreur / Toiture / Rénovation', regex: /couvreur|toiture|toit|zingu|ardoise|tuile|charpente|rénovation.*toit|renovation.*toit|reparation.*toit|réparation.*toit|étanchéité|etancheite|infiltration/i },
+  { key: 'terrassement', label: '🏗️ Terrassement / VRD',            regex: /terrassement|terras|excavat|nivelle|vrd|assainissement/i },
+  { key: 'carreleur',    label: '🪟 Carreleur',                       regex: /carrel/i },
+  { key: 'vitrier',      label: '🪟 Vitrier / Miroiterie',            regex: /vitrier|vitri|miroiter|miroiterie|vitre/i },
+  { key: 'depannage',    label: '🚗 Dépannage / Remorquage',          regex: /dépann|depann|remorquage/i },
+  { key: 'debarras',     label: '📦 Débarras / Vide maison',          regex: /débarras|debarras|vide.*maison|vide.*appart|vide.*cave/i },
+  { key: 'maconnerie',   label: '🪨 Maçonnerie',                      regex: /maçon|macon|béton|beton|dalle|parpaing/i },
+  { key: 'autre',        label: '🔧 Autres',                          regex: /./ },
 ];
 
-function categoriserFiche(nom) {
+function getCatOverrides() {
+  return JSON.parse(localStorage.getItem('cat_overrides') || '{}');
+}
+
+function setCatOverride(ficheId, catKey) {
+  const ov = getCatOverrides();
+  if (catKey === '') delete ov[ficheId];
+  else ov[ficheId] = catKey;
+  localStorage.setItem('cat_overrides', JSON.stringify(ov));
+}
+
+function categoriserFiche(f) {
+  const nom = typeof f === 'string' ? f : f.nom;
+  const id  = typeof f === 'string' ? null : f.id;
+  if (id) {
+    const ov = getCatOverrides();
+    if (ov[id]) return ov[id];
+  }
   for (const cat of CATEGORIES_FICHES) {
     if (cat.regex.test(nom)) return cat.key;
   }
@@ -316,11 +335,16 @@ function buildFicheLi(f, fiches, avis) {
   statsBar.className = 'fiche-stats-bar';
   const dateOuv = f.date_ouverture ? new Date(f.date_ouverture).toLocaleDateString('fr-FR') : '–';
   const avisInit = f.avis_initiaux != null ? f.avis_initiaux : '–';
+  const currentCat = categoriserFiche(f);
+  const catOptions = CATEGORIES_FICHES.filter(c => c.key !== 'autre')
+    .map(c => `<option value="${c.key}" ${currentCat === c.key ? 'selected' : ''}>${c.label}</option>`)
+    .join('');
   statsBar.innerHTML =
     `<span>📅 ${dateOuv}</span>` +
     `<span>🏁 ${avisInit} initiaux</span>` +
     `<span>✍️ ${count} postés Kevin</span>` +
-    `<span style="color:#38bdf8;font-weight:600;">= ${total} avis total</span>`;
+    `<span style="color:#38bdf8;font-weight:600;">= ${total} avis total</span>` +
+    `<select class="cat-override-select" data-id="${f.id}" onchange="setCatOverride(this.dataset.id, this.value); renderFiches();" style="margin-left:auto;font-size:0.75rem;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:4px;padding:2px 4px;">${catOptions}</select>`;
 
   const nomEdit = document.createElement('div');
   nomEdit.className = 'fiche-lien-edit hidden';
@@ -402,7 +426,7 @@ async function renderFiches() {
   const groups = {};
   CATEGORIES_FICHES.forEach(c => groups[c.key] = []);
   fiches.forEach(f => {
-    const cat = categoriserFiche(f.nom);
+    const cat = categoriserFiche(f);
     groups[cat].push(f);
   });
 
