@@ -517,6 +517,8 @@ details[open] .month-summary::before { transform: rotate(90deg); }
   cursor: pointer; transition: border-color .15s, color .15s;
 }
 .btn-merge:hover { border-color: #f59e0b; color: #fbbf24; }
+.fiche-stats-bar { display: flex; gap: 1rem; padding: 0.25rem 0 0.1rem 0.2rem; font-size: 0.78rem; color: #94a3b8; flex-wrap: wrap; }
+.fiche-stats-bar span { white-space: nowrap; }
 .fiche-lien-edit { display: flex; gap: 0.6rem; align-items: center; }
 .fiche-merge-edit { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; padding-top: 0.2rem; }
 .merge-label { font-size: 0.82rem; color: #94a3b8; white-space: nowrap; }
