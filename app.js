@@ -264,6 +264,8 @@ function buildFicheLi(f, fiches, avis) {
   _ficheData[f.id] = f;
   const ficheAvis = avis.filter(a => a.fiche_nom === f.nom);
   const count = ficheAvis.length;
+  const supprimes = ficheAvis.filter(a => a.statut === 'supprime').length;
+  const total = (f.avis_initiaux || 0) + count - supprimes;
   const li = document.createElement('li');
 
   const row = document.createElement('div');
@@ -317,7 +319,8 @@ function buildFicheLi(f, fiches, avis) {
   statsBar.innerHTML =
     `<span>📅 ${dateOuv}</span>` +
     `<span>🏁 ${avisInit} initiaux</span>` +
-    `<span>✍️ ${count} postés Kevin</span>`;
+    `<span>✍️ ${count} postés Kevin</span>` +
+    `<span style="color:#38bdf8;font-weight:600;">= ${total} avis total</span>`;
 
   const nomEdit = document.createElement('div');
   nomEdit.className = 'fiche-lien-edit hidden';
