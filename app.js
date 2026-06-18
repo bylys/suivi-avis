@@ -1821,8 +1821,9 @@ async function computeRecos(offset) {
   avis.forEach(a => { avisCount[a.fiche_nom] = (avisCount[a.fiche_nom] || 0) + 1; });
 
   const ficheData = fiches.map(f => {
-    const openDate = openDates[f.nom];
-    const ref = openDate ? new Date(openDate).getTime() : new Date(f.created_at).getTime();
+    const ref = (f.date_ouverture || openDates[f.nom])
+      ? new Date(f.date_ouverture || openDates[f.nom]).getTime()
+      : new Date(f.created_at).getTime();
     const ageDays = Math.round((now - ref) / 86400000);
     return { ...f, ageDays, count: avisCount[f.nom] || 0, maxPerDay: ageDays > 42 ? 2 : 1 };
   });
