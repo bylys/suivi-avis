@@ -319,6 +319,11 @@ function buildFicheLi(f, fiches, avis) {
   btnLien.textContent = '🔗 Lien';
   btnLien.onclick = () => toggleLienEdit(f.id);
 
+  const btnDate = document.createElement('button');
+  btnDate.className = 'btn-edit-lien';
+  btnDate.textContent = '📅 Date';
+  btnDate.onclick = () => toggleDateEdit(f.id);
+
   const btnMerge = document.createElement('button');
   btnMerge.className = 'btn-merge';
   btnMerge.textContent = '🔀 Fusionner';
@@ -329,7 +334,7 @@ function buildFicheLi(f, fiches, avis) {
   btnDel.textContent = '🗑';
   btnDel.onclick = () => deleteFiche(f.nom);
 
-  actions.append(countSpan, btnNom, btnLien, btnMerge, btnDel);
+  actions.append(countSpan, btnNom, btnLien, btnDate, btnMerge, btnDel);
   row.append(nomSpan, actions);
 
   const statsBar = document.createElement('div');
@@ -363,6 +368,22 @@ function buildFicheLi(f, fiches, avis) {
   btnSaveNom.textContent = '✅ Renommer';
   btnSaveNom.onclick = () => saveNom(f.id);
   nomEdit.append(nomInput, btnSaveNom);
+
+  const dateEdit = document.createElement('div');
+  dateEdit.className = 'fiche-lien-edit hidden';
+  dateEdit.id = 'date-edit-' + f.id;
+
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.className = 'lien-input';
+  dateInput.id = 'date-val-' + f.id;
+  dateInput.value = f.date_ouverture || '';
+
+  const btnSaveDate = document.createElement('button');
+  btnSaveDate.className = 'btn-save-lien';
+  btnSaveDate.textContent = '✅ Sauvegarder';
+  btnSaveDate.onclick = () => saveDateOuverture(f.id);
+  dateEdit.append(dateInput, btnSaveDate);
 
   const lienEdit = document.createElement('div');
   lienEdit.className = 'fiche-lien-edit hidden';
@@ -428,7 +449,7 @@ function buildFicheLi(f, fiches, avis) {
   btnMergeConfirm.onclick = () => mergeFiche(f.id);
   mergeEdit.append(mergeLabel, mergeWrap, btnMergeConfirm);
 
-  li.append(row, statsBar, nomEdit, lienEdit, mergeEdit);
+  li.append(row, statsBar, nomEdit, lienEdit, dateEdit, mergeEdit);
   return li;
 }
 
@@ -582,6 +603,24 @@ function toggleLienEdit(id) {
   div.classList.toggle('hidden');
   if (!div.classList.contains('hidden')) {
     document.getElementById(`lien-val-${id}`).focus();
+  }
+}
+
+function toggleDateEdit(id) {
+  const div = document.getElementById(`date-edit-${id}`);
+  div.classList.toggle('hidden');
+  if (!div.classList.contains('hidden')) {
+    document.getElementById(`date-val-${id}`).focus();
+  }
+}
+
+async function saveDateOuverture(id) {
+  const val = document.getElementById('date-val-' + id).value;
+  const ok = await sbUpdate('fiches', id, { date_ouverture: val || null });
+  if (ok) {
+    renderFiches();
+  } else {
+    alert('Erreur lors de la sauvegarde de la date.');
   }
 }
 
@@ -2208,4 +2247,34 @@ if (sessionStorage.getItem('gmb_auth')) {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   init();
+}
+
+// ── NOTES FLOTTANTES ──
+function toggleNotes() {
+  const panel = document.getElementById('notes-panel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    const ta = document.getElementById('notes-textarea');
+    ta.value = localStorage.getItem('gmb_notes') || '';
+    updateNotesLines();
+    ta.focus();
+  }
+}
+
+function saveNotes() {
+  localStorage.setItem('gmb_notes', document.getElementById('notes-textarea').value);
+}
+
+function updateNotesLines() {
+  const val = document.getElementById('notes-textarea').value;
+  const n = val.trim() === '' ? 0 : val.split('\n').filter(l => l.trim() !== '').length;
+  const el = document.getElementById('notes-lines');
+  if (el) el.textContent = n + (n <= 1 ? ' ligne' : ' lignes');
+}
+
+function clearNotes() {
+  if (!confirm('Effacer toutes les notes ?')) return;
+  document.getElementById('notes-textarea').value = '';
+  localStorage.removeItem('gmb_notes');
+  updateNotesLines();
 }
