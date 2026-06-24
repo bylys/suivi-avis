@@ -666,7 +666,7 @@ async function submitAvis(e) {
     texte: texte || null,
     lien: lien || null,
     reponse: reponse || null,
-    statut_date: today
+    statut_date: date
   });
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
 
@@ -933,11 +933,12 @@ function formatDate(d) {
 }
 
 // ── RAPPELS ──
+// Seuils calculés depuis a.date (date de l'avis), statut indique le palier attendu
 const RAPPELS = [
-  { jours: 8,  depuis: ['j0'],  label: 'J+7'  },
-  { jours: 8,  depuis: ['j7'],  label: 'J+14' },
-  { jours: 8,  depuis: ['j14'], label: 'J+21' },
-  { jours: 10, depuis: ['j21'], label: 'J+30' },
+  { joursDepuisAvis: 8,  statut: 'j0',  label: 'J+8'  },
+  { joursDepuisAvis: 15, statut: 'j7',  label: 'J+15' },
+  { joursDepuisAvis: 22, statut: 'j14', label: 'J+22' },
+  { joursDepuisAvis: 31, statut: 'j21', label: 'J+31' },
 ];
 
 function daysDiff(dateStr) {
@@ -952,16 +953,10 @@ function getRappelsDus(avis) {
   const dus = [];
   for (const a of avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
-    // Utiliser statut_date si dispo, sinon date de l'avis
-    const refDate = a.statut_date || a.date;
-    const age = daysDiff(refDate);
-    let best = null;
-    for (const r of RAPPELS) {
-      if (age >= r.jours && r.depuis.includes(a.statut)) {
-        best = r;
-      }
-    }
-    if (best) dus.push({ avis: a, label: best.label });
+    const st = a.statut || 'j0';
+    const age = daysDiff(a.date); // toujours depuis la date de l'avis
+    const r = RAPPELS.find(r => r.statut === st && age >= r.joursDepuisAvis);
+    if (r) dus.push({ avis: a, label: r.label });
   }
   return dus;
 }
