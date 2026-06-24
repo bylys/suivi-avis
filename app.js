@@ -1901,6 +1901,33 @@ function toggleLocalGuide(gmail) {
 function isLocalGuide(gmail) {
   return getLocalGuides().includes(gmail);
 }
+function refreshLGPanel() {
+  const countEl = document.getElementById('lg-panel-count');
+  const bodyEl  = document.getElementById('lg-panel-body');
+  if (!countEl || !bodyEl) return;
+  const allLGs = getLocalGuides();
+  countEl.style.color = allLGs.length ? '#fbbf24' : '#475569';
+  countEl.textContent = allLGs.length;
+  const note = bodyEl.querySelector('p');
+  bodyEl.innerHTML = '';
+  if (note) bodyEl.appendChild(note);
+  if (allLGs.length === 0) {
+    const empty = document.createElement('p');
+    empty.style.cssText = 'font-size:12px;color:#334155;font-style:italic;';
+    empty.textContent = 'Aucun compte Local Guide pour l\'instant.';
+    bodyEl.appendChild(empty);
+  } else {
+    const chips = document.createElement('div');
+    chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    allLGs.forEach(gmail => {
+      const chip = document.createElement('div');
+      chip.style.cssText = 'background:#422006;color:#fcd34d;border:1px solid #92400e;border-radius:99px;padding:3px 10px;font-size:11px;display:flex;align-items:center;gap:6px;';
+      chip.innerHTML = `<span>⭐ ${gmail}</span><button title="Retirer" onclick="toggleLocalGuide('${gmail}');_assetsCache=null;refreshLGPanel();document.querySelectorAll('[data-lg-gmail]').forEach(b=>{if(b.dataset.lgGmail==='${gmail}'){b.dataset.lgActive='false';b.__applyLG&&b.__applyLG(false);}});" style="background:none;border:none;color:#b45309;cursor:pointer;font-size:13px;padding:0;line-height:1;">✕</button>`;
+      chips.appendChild(chip);
+    });
+    bodyEl.appendChild(chips);
+  }
+}
 
 function cityMatchScore(city1, city2) {
   // 1 si même mot significatif en commun
@@ -2160,17 +2187,27 @@ async function renderRecommandations() {
       const gmailWrap = document.createElement('div');
       gmailWrap.style.cssText = 'flex:1;min-width:180px;display:flex;align-items:center;gap:8px;';
       const lgInner = document.createElement('div');
-      const lgBadge = r.lg ? ' <span style="font-size:10px;color:#fbbf24;background:#422006;padding:1px 6px;border-radius:99px;">⭐ Local Guide</span>' : '';
-      lgInner.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Gmail</div><div style="font-size:13px;color:#93c5fd;font-weight:500;word-break:break-all">${r.acct.gmail}${lgBadge}</div>`;
+      lgInner.style.cssText = 'flex:1;min-width:0;';
+      lgInner.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Gmail</div><div style="font-size:13px;color:#93c5fd;font-weight:500;word-break:break-all">${r.acct.gmail}</div>`;
+
       const lgToggle = document.createElement('button');
-      lgToggle.title = r.lg ? 'Retirer Local Guide' : 'Marquer comme Local Guide';
-      lgToggle.style.cssText = `flex-shrink:0;display:flex;align-items:center;gap:3px;background:${r.lg ? '#422006' : 'transparent'};color:${r.lg ? '#fbbf24' : '#475569'};border:1px solid ${r.lg ? '#92400e' : '#334155'};border-radius:99px;padding:2px 7px;font-size:10px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;`;
-      lgToggle.innerHTML = r.lg
-        ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LG`
-        : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LG`;
-      lgToggle.onmouseenter = () => { lgToggle.style.borderColor = r.lg ? '#b45309' : '#475569'; };
-      lgToggle.onmouseleave = () => { lgToggle.style.borderColor = r.lg ? '#92400e' : '#334155'; };
-      lgToggle.onclick = () => { toggleLocalGuide(r.acct.gmail); _assetsCache = null; renderRecommandations(); };
+      let lgActive = r.lg;
+      const starSVG = (filled) => `<svg width="11" height="11" viewBox="0 0 24 24" fill="${filled ? '#fbbf24' : 'none'}" stroke="${filled ? '#fbbf24' : '#64748b'}" stroke-width="2" style="flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+      const applyLGStyle = (active) => {
+        lgToggle.style.cssText = `flex-shrink:0;display:flex;align-items:center;justify-content:center;width:26px;height:26px;background:${active ? '#422006' : 'transparent'};border:1px solid ${active ? '#92400e' : '#334155'};border-radius:8px;cursor:pointer;transition:all .15s;`;
+        lgToggle.innerHTML = starSVG(active);
+        lgToggle.title = active ? 'Retirer Local Guide' : 'Marquer comme Local Guide';
+      };
+      applyLGStyle(lgActive);
+      lgToggle.dataset.lgGmail = r.acct.gmail;
+      lgToggle.__applyLG = (val) => { lgActive = val; applyLGStyle(val); };
+      lgToggle.onclick = () => {
+        lgActive = !lgActive;
+        toggleLocalGuide(r.acct.gmail);
+        applyLGStyle(lgActive);
+        _assetsCache = null;
+        refreshLGPanel();
+      };
       gmailWrap.append(lgInner, lgToggle);
 
       const arrow = document.createElement('span');
@@ -2224,10 +2261,12 @@ async function renderRecommandations() {
     lgDetails.style.cssText = 'margin-top:20px;background:#0f172a;border:1px solid #334155;border-radius:10px;overflow:hidden;';
     const lgSummary = document.createElement('summary');
     lgSummary.style.cssText = 'cursor:pointer;padding:10px 14px;font-size:12px;font-weight:600;color:#64748b;letter-spacing:.04em;text-transform:uppercase;list-style:none;display:flex;align-items:center;gap:8px;user-select:none;';
-    lgSummary.innerHTML = `⭐ Comptes Local Guide <span style="background:#1e293b;color:${allLGs.length ? '#fbbf24' : '#475569'};border-radius:99px;padding:1px 8px;font-size:11px;">${allLGs.length}</span>`;
+    lgSummary.id = 'lg-panel-summary';
+    lgSummary.innerHTML = `⭐ Comptes Local Guide <span id="lg-panel-count" style="background:#1e293b;color:${allLGs.length ? '#fbbf24' : '#475569'};border-radius:99px;padding:1px 8px;font-size:11px;">${allLGs.length}</span>`;
     lgDetails.appendChild(lgSummary);
 
     const lgBody = document.createElement('div');
+    lgBody.id = 'lg-panel-body';
     lgBody.style.cssText = 'padding:10px 14px 14px;border-top:1px solid #1e293b;';
     const lgNote = document.createElement('p');
     lgNote.style.cssText = 'font-size:11px;color:#334155;margin-bottom:10px;';
@@ -2245,7 +2284,7 @@ async function renderRecommandations() {
       allLGs.forEach(gmail => {
         const chip = document.createElement('div');
         chip.style.cssText = 'background:#422006;color:#fcd34d;border:1px solid #92400e;border-radius:99px;padding:3px 10px;font-size:11px;display:flex;align-items:center;gap:6px;';
-        chip.innerHTML = `<span>⭐ ${gmail}</span><button title="Retirer" onclick="toggleLocalGuide('${gmail}');_assetsCache=null;renderRecommandations();" style="background:none;border:none;color:#b45309;cursor:pointer;font-size:13px;padding:0;line-height:1;">✕</button>`;
+        chip.innerHTML = `<span>⭐ ${gmail}</span><button title="Retirer" onclick="toggleLocalGuide('${gmail}');_assetsCache=null;refreshLGPanel();" style="background:none;border:none;color:#b45309;cursor:pointer;font-size:13px;padding:0;line-height:1;">✕</button>`;
         chips.appendChild(chip);
       });
       lgBody.appendChild(chips);
