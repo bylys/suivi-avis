@@ -933,12 +933,12 @@ function formatDate(d) {
 }
 
 // ── RAPPELS ──
-// Seuils calculés depuis a.date (date de l'avis), statut indique le palier attendu
+// Timer depuis statut_date (ou a.date pour j0). Labels corrélés à la timeline Google.
 const RAPPELS = [
-  { joursDepuisAvis: 8,  statut: 'j0',  label: 'J+8'  },
-  { joursDepuisAvis: 15, statut: 'j7',  label: 'J+15' },
-  { joursDepuisAvis: 22, statut: 'j14', label: 'J+22' },
-  { joursDepuisAvis: 31, statut: 'j21', label: 'J+31' },
+  { jours: 8,  depuis: ['j0'],  label: 'J+7'  },
+  { jours: 8,  depuis: ['j7'],  label: 'J+14' },
+  { jours: 8,  depuis: ['j14'], label: 'J+21' },
+  { jours: 10, depuis: ['j21'], label: 'J+30' },
 ];
 
 function daysDiff(dateStr) {
@@ -954,8 +954,11 @@ function getRappelsDus(avis) {
   for (const a of avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
     const st = a.statut || 'j0';
-    const age = daysDiff(a.date); // toujours depuis la date de l'avis
-    const r = RAPPELS.find(r => r.statut === st && age >= r.joursDepuisAvis);
+    // j0 : timer depuis la date de l'avis (statut_date = date de saisie, pas fiable)
+    // j7/j14/j21 : timer depuis statut_date (date du dernier changement de statut)
+    const refDate = (st === 'j0') ? a.date : (a.statut_date || a.date);
+    const age = daysDiff(refDate);
+    const r = RAPPELS.find(r => r.depuis.includes(st) && age >= r.jours);
     if (r) dus.push({ avis: a, label: r.label });
   }
   return dus;
