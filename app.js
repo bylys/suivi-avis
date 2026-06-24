@@ -934,11 +934,13 @@ function formatDate(d) {
 
 // ── RAPPELS ──
 // Timer depuis statut_date (ou a.date pour j0). Labels corrélés à la timeline Google.
+// Timers depuis a.date (date de l'avis). Seuils : J+8, J+15, J+22, J+31.
+// Labels : J+7, J+14, J+21, J+30 (corrélation timeline Google).
 const RAPPELS = [
-  { jours: 8,  depuis: ['j0'],  label: 'J+7'  },
-  { jours: 8,  depuis: ['j7'],  label: 'J+14' },
-  { jours: 8,  depuis: ['j14'], label: 'J+21' },
-  { jours: 10, depuis: ['j21'], label: 'J+30' },
+  { joursDepuisAvis: 8,  statut: 'j0',  label: 'J+7'  },
+  { joursDepuisAvis: 15, statut: 'j7',  label: 'J+14' },
+  { joursDepuisAvis: 22, statut: 'j14', label: 'J+21' },
+  { joursDepuisAvis: 31, statut: 'j21', label: 'J+30' },
 ];
 
 function daysDiff(dateStr) {
@@ -954,11 +956,8 @@ function getRappelsDus(avis) {
   for (const a of avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
     const st = a.statut || 'j0';
-    // j0 : timer depuis la date de l'avis (statut_date = date de saisie, pas fiable)
-    // j7/j14/j21 : timer depuis statut_date (date du dernier changement de statut)
-    const refDate = (st === 'j0') ? a.date : (a.statut_date || a.date);
-    const age = daysDiff(refDate);
-    const r = RAPPELS.find(r => r.depuis.includes(st) && age >= r.jours);
+    const age = daysDiff(a.date); // toujours depuis la date de l'avis
+    const r = RAPPELS.find(r => r.statut === st && age >= r.joursDepuisAvis);
     if (r) dus.push({ avis: a, label: r.label });
   }
   return dus;
