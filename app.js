@@ -934,10 +934,10 @@ function formatDate(d) {
 
 // ── RAPPELS ──
 const RAPPELS = [
-  { jours: 8, depuis: ['j0'],  label: 'J+7'  },
-  { jours: 7, depuis: ['j7'],  label: 'J+14' },
-  { jours: 7, depuis: ['j14'], label: 'J+21' },
-  { jours: 9, depuis: ['j21'], label: 'J+30' },
+  { jours: 8,  depuis: ['j0'],  label: 'J+7'  },
+  { jours: 8,  depuis: ['j7'],  label: 'J+14' },
+  { jours: 8,  depuis: ['j14'], label: 'J+21' },
+  { jours: 10, depuis: ['j21'], label: 'J+30' },
 ];
 
 function daysDiff(dateStr) {
@@ -2146,38 +2146,7 @@ async function renderRecommandations() {
       container.appendChild(row);
     });
 
-    // Panneau Local Guide (collapsible)
-    const lgPanel = document.createElement('details');
-    lgPanel.style.cssText = 'background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 16px;margin-bottom:4px;';
-    const lgSummary = document.createElement('summary');
-    lgSummary.style.cssText = 'cursor:pointer;color:#94a3b8;font-size:13px;font-weight:600;list-style:none;user-select:none;';
-    lgSummary.textContent = '⭐ Gérer les comptes Local Guide';
-    lgPanel.appendChild(lgSummary);
 
-    const lgNote = document.createElement('p');
-    lgNote.style.cssText = 'font-size:11px;color:#475569;margin:8px 0 10px;';
-    lgNote.textContent = 'Les comptes Local Guide ont accès à un rayon étendu au département entier (niveau 3).';
-    lgPanel.appendChild(lgNote);
-
-    const lgGrid = document.createElement('div');
-    lgGrid.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
-
-    const allGmails = [...new Set(recos.map(r => r.acct.gmail))];
-    allGmails.forEach(gmail => {
-      const isLG = isLocalGuide(gmail);
-      const chip = document.createElement('button');
-      chip.style.cssText = `background:${isLG ? '#14532d' : '#0f172a'};color:${isLG ? '#4ade80' : '#64748b'};border:1px solid ${isLG ? '#166534' : '#334155'};border-radius:99px;padding:3px 10px;font-size:11px;cursor:pointer;`;
-      chip.textContent = (isLG ? '⭐ ' : '') + gmail.split('@')[0];
-      chip.title = gmail;
-      chip.onclick = () => {
-        toggleLocalGuide(gmail);
-        _assetsCache = null;
-        renderRecommandations();
-      };
-      lgGrid.appendChild(chip);
-    });
-    lgPanel.appendChild(lgGrid);
-    container.appendChild(lgPanel);
 
     recos.forEach((r, i) => {
       const row = document.createElement('div');
@@ -2189,9 +2158,16 @@ async function renderRecommandations() {
       num.textContent = i + 1;
 
       const gmailWrap = document.createElement('div');
-      gmailWrap.style.cssText = 'flex:1;min-width:180px;';
-      const lgBadge = r.lg ? ' <span style="font-size:10px;color:#fbbf24;">⭐ LG</span>' : '';
-      gmailWrap.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Gmail</div><div style="font-size:13px;color:#93c5fd;font-weight:500;word-break:break-all">${r.acct.gmail}${lgBadge}</div>`;
+      gmailWrap.style.cssText = 'flex:1;min-width:180px;display:flex;align-items:center;gap:8px;';
+      const lgInner = document.createElement('div');
+      const lgBadge = r.lg ? ' <span style="font-size:10px;color:#fbbf24;background:#422006;padding:1px 6px;border-radius:99px;">⭐ Local Guide</span>' : '';
+      lgInner.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Gmail</div><div style="font-size:13px;color:#93c5fd;font-weight:500;word-break:break-all">${r.acct.gmail}${lgBadge}</div>`;
+      const lgToggle = document.createElement('button');
+      lgToggle.title = r.lg ? 'Retirer Local Guide' : 'Marquer Local Guide';
+      lgToggle.style.cssText = `flex-shrink:0;background:${r.lg ? '#422006' : '#0f172a'};color:${r.lg ? '#fbbf24' : '#334155'};border:1px solid ${r.lg ? '#92400e' : '#334155'};border-radius:8px;padding:4px 8px;font-size:14px;cursor:pointer;transition:all .15s;`;
+      lgToggle.textContent = '⭐';
+      lgToggle.onclick = () => { toggleLocalGuide(r.acct.gmail); _assetsCache = null; renderRecommandations(); };
+      gmailWrap.append(lgInner, lgToggle);
 
       const arrow = document.createElement('span');
       arrow.style.cssText = 'color:#334155;font-size:20px;flex-shrink:0;';
@@ -2237,6 +2213,43 @@ async function renderRecommandations() {
       row.append(num, gmailWrap, arrow, ficheWrap, btns);
       container.appendChild(row);
     });
+
+    // Section Local Guide collapsible en bas
+    const allLGs = getLocalGuides();
+    const lgDetails = document.createElement('details');
+    lgDetails.style.cssText = 'margin-top:20px;background:#0f172a;border:1px solid #334155;border-radius:10px;overflow:hidden;';
+    const lgSummary = document.createElement('summary');
+    lgSummary.style.cssText = 'cursor:pointer;padding:10px 14px;font-size:12px;font-weight:600;color:#64748b;letter-spacing:.04em;text-transform:uppercase;list-style:none;display:flex;align-items:center;gap:8px;user-select:none;';
+    lgSummary.innerHTML = `⭐ Comptes Local Guide <span style="background:#1e293b;color:${allLGs.length ? '#fbbf24' : '#475569'};border-radius:99px;padding:1px 8px;font-size:11px;">${allLGs.length}</span>`;
+    lgDetails.appendChild(lgSummary);
+
+    const lgBody = document.createElement('div');
+    lgBody.style.cssText = 'padding:10px 14px 14px;border-top:1px solid #1e293b;';
+    const lgNote = document.createElement('p');
+    lgNote.style.cssText = 'font-size:11px;color:#334155;margin-bottom:10px;';
+    lgNote.textContent = 'Les comptes Local Guide ont accès à un rayon étendu (département entier). Marque ⭐ directement sur une ligne pour ajouter un compte.';
+    lgBody.appendChild(lgNote);
+
+    if (allLGs.length === 0) {
+      const empty = document.createElement('p');
+      empty.style.cssText = 'font-size:12px;color:#334155;font-style:italic;';
+      empty.textContent = 'Aucun compte Local Guide pour l\'instant.';
+      lgBody.appendChild(empty);
+    } else {
+      const chips = document.createElement('div');
+      chips.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+      allLGs.forEach(gmail => {
+        const chip = document.createElement('div');
+        chip.style.cssText = 'background:#422006;color:#fcd34d;border:1px solid #92400e;border-radius:99px;padding:3px 10px;font-size:11px;display:flex;align-items:center;gap:6px;';
+        chip.innerHTML = `<span>⭐ ${gmail}</span><button title="Retirer" onclick="toggleLocalGuide('${gmail}');_assetsCache=null;renderRecommandations();" style="background:none;border:none;color:#b45309;cursor:pointer;font-size:13px;padding:0;line-height:1;">✕</button>`;
+        chips.appendChild(chip);
+      });
+      lgBody.appendChild(chips);
+    }
+
+    lgDetails.appendChild(lgBody);
+    container.appendChild(lgDetails);
+
   } catch(e) {
     container.innerHTML = `<p style="color:#ef4444;padding:1rem 0">Erreur : ${e.message}</p>`;
   }
