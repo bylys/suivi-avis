@@ -2163,9 +2163,13 @@ async function renderRecommandations() {
       const lgBadge = r.lg ? ' <span style="font-size:10px;color:#fbbf24;background:#422006;padding:1px 6px;border-radius:99px;">⭐ Local Guide</span>' : '';
       lgInner.innerHTML = `<div style="font-size:11px;color:#475569;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em">Gmail</div><div style="font-size:13px;color:#93c5fd;font-weight:500;word-break:break-all">${r.acct.gmail}${lgBadge}</div>`;
       const lgToggle = document.createElement('button');
-      lgToggle.title = r.lg ? 'Retirer Local Guide' : 'Marquer Local Guide';
-      lgToggle.style.cssText = `flex-shrink:0;background:${r.lg ? '#422006' : '#0f172a'};color:${r.lg ? '#fbbf24' : '#334155'};border:1px solid ${r.lg ? '#92400e' : '#334155'};border-radius:8px;padding:4px 8px;font-size:14px;cursor:pointer;transition:all .15s;`;
-      lgToggle.textContent = '⭐';
+      lgToggle.title = r.lg ? 'Retirer Local Guide' : 'Marquer comme Local Guide';
+      lgToggle.style.cssText = `flex-shrink:0;display:flex;align-items:center;gap:5px;background:${r.lg ? '#422006' : 'transparent'};color:${r.lg ? '#fbbf24' : '#334155'};border:1.5px solid ${r.lg ? '#92400e' : '#1e293b'};border-radius:99px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:all .18s;letter-spacing:.02em;white-space:nowrap;`;
+      lgToggle.innerHTML = r.lg
+        ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LG`
+        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> LG`;
+      lgToggle.onmouseenter = () => { if (!r.lg) lgToggle.style.borderColor = '#475569'; lgToggle.style.color = r.lg ? '#fbbf24' : '#64748b'; };
+      lgToggle.onmouseleave = () => { lgToggle.style.borderColor = r.lg ? '#92400e' : '#1e293b'; lgToggle.style.color = r.lg ? '#fbbf24' : '#334155'; };
       lgToggle.onclick = () => { toggleLocalGuide(r.acct.gmail); _assetsCache = null; renderRecommandations(); };
       gmailWrap.append(lgInner, lgToggle);
 
