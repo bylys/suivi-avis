@@ -326,7 +326,7 @@ async function syncFromSheets() {
         if (m) lien = m[1];
         else if (raw.startsWith('http')) lien = raw;
       }
-      console.log(`[SYNC DEBUG] row ${i} | nomSite="${cellText(cells[idx.nomSite])}" | lien="${lien}" | etat="${cellText(cells[idx.etat])}"`);
+      console.log(`[SYNC DEBUG] row ${i} | nomSite="${cellText(cells[idx.nomSite])}" | nomGmb="${cellText(cells[idx.nomGmb])}" | nom="${nom}" | lien="${lien}" | etat="${cellText(cells[idx.etat])}" | idxNomGmb=${idx.nomGmb}`);;
 
       const dateRaw = cellText(cells[idx.dateOuv]);
 
