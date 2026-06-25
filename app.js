@@ -250,19 +250,27 @@ async function syncFromSheets() {
   preview.innerHTML = '<p style="color:#64748b;font-size:13px;">⏳ Chargement du sheet…</p>';
 
   try {
-    const range = 'A:AJ';
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+    // includeGridData=true pour récupérer les vraies URLs des smartchips
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?includeGridData=true&key=${apiKey}`;
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err?.error?.message || `HTTP ${res.status}`);
     }
     const data = await res.json();
-    const rows = data.values || [];
-    if (rows.length < 2) throw new Error('Sheet vide ou inaccessible.');
+    const sheet = data.sheets?.[0];
+    if (!sheet) throw new Error('Sheet vide ou inaccessible.');
+    const gridData = sheet.data?.[0]?.rowData || [];
+    if (gridData.length < 2) throw new Error('Sheet vide.');
 
-    // Trouver les indices de colonnes depuis la ligne header
-    const headers = rows[0].map(h => h.trim().toLowerCase());
+    // Helper : valeur texte d'une cellule
+    const cellText = cell => cell?.formattedValue?.trim() || '';
+    // Helper : URL réelle d'une cellule (smartchip ou hyperlien)
+    const cellLink = cell => cell?.hyperlink || cell?.formattedValue?.trim() || '';
+
+    // Trouver indices depuis la ligne header
+    const headerRow = gridData[0]?.values || [];
+    const headers = headerRow.map(c => cellText(c).toLowerCase());
     const idx = {
       etat:         headers.findIndex(h => h.includes('etat gmb')),
       nom:          headers.findIndex(h => h.includes('nom du gmb')),
@@ -270,8 +278,6 @@ async function syncFromSheets() {
       dateOuv:      headers.findIndex(h => h.includes("date d'ouverture")),
       avisInitiaux: headers.findIndex(h => h.includes('reviews') || h.includes('# reviews')),
     };
-
-    // Fallback indices si headers non trouvés (positions fixes du sheet)
     if (idx.etat < 0)         idx.etat = 9;
     if (idx.nom < 0)          idx.nom = 10;
     if (idx.lien < 0)         idx.lien = 11;
@@ -280,16 +286,15 @@ async function syncFromSheets() {
 
     // Parser les lignes éligibles
     const fromSheet = [];
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      const etat = row[idx.etat] || '';
-      const nom  = (row[idx.nom] || '').trim();
-      const lien = (row[idx.lien] || '').trim();
-      const dateRaw = (row[idx.dateOuv] || '').trim();
+    for (let i = 1; i < gridData.length; i++) {
+      const cells = gridData[i]?.values || [];
+      const etat    = cellText(cells[idx.etat]);
+      const nom     = cellText(cells[idx.nom]);
+      const lien    = cellLink(cells[idx.lien]);   // vraie URL du smartchip
+      const dateRaw = cellText(cells[idx.dateOuv]);
 
-      // Règle : Ouvert OU en cours de validation → obligatoirement nom + lien + date
       if (!etatEligible(etat) || !nom || !lien || !dateRaw) continue;
-      const avisRaw = parseInt(row[idx.avisInitiaux] || '0', 10);
+      const avisRaw = parseInt(cellText(cells[idx.avisInitiaux]) || '0', 10);
       fromSheet.push({
         nom,
         lien,
