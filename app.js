@@ -250,23 +250,47 @@ async function syncFromSheets() {
   preview.innerHTML = '<p style="color:#64748b;font-size:13px;">⏳ Chargement du sheet…</p>';
 
   try {
-    // includeGridData=true pour récupérer les vraies URLs des smartchips
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?includeGridData=true&key=${apiKey}`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    // Double fetch : includeGridData pour hyperlinks + FORMULA pour =HYPERLINK()
+    const [resGrid, resFormula] = await Promise.all([
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?includeGridData=true&key=${apiKey}`),
+      fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A:AJ?valueRenderOption=FORMULA&key=${apiKey}`)
+    ]);
+    if (!resGrid.ok) {
+      const err = await resGrid.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${resGrid.status}`);
     }
-    const data = await res.json();
+    const data = await resGrid.json();
     const sheet = data.sheets?.[0];
     if (!sheet) throw new Error('Sheet vide ou inaccessible.');
     const gridData = sheet.data?.[0]?.rowData || [];
     if (gridData.length < 2) throw new Error('Sheet vide.');
 
+    // Formules brutes pour extraire les HYPERLINK()
+    const formulaRows = resFormula.ok ? (await resFormula.json()).values || [] : [];
+
     // Helper : valeur texte d'une cellule
     const cellText = cell => cell?.formattedValue?.trim() || '';
     // Helper : URL réelle d'une cellule (smartchip ou hyperlien)
-    const cellLink = cell => cell?.hyperlink || cell?.formattedValue?.trim() || '';
+    const cellLink = cell => {
+      if (!cell) return '';
+      // 1. Hyperlien direct
+      if (cell.hyperlink) return cell.hyperlink;
+      // 2. Formule =HYPERLINK("url","texte")
+      const formula = cell.userEnteredValue?.formulaValue || '';
+      if (formula.toUpperCase().includes('HYPERLINK')) {
+        const m = formula.match(/HYPERLINK\s*\(\s*"([^"]+)"/i);
+        if (m) return m[1];
+      }
+      // 3. Richtext runs (smartchips)
+      for (const run of (cell.richTextValue?.runs || [])) {
+        const uri = run.textFormat?.link?.uri;
+        if (uri) return uri;
+      }
+      // 4. Valeur texte si c'est une URL
+      const fv = cell.formattedValue?.trim() || '';
+      if (fv.startsWith('http')) return fv;
+      return '';
+    };
 
     // Trouver indices depuis la ligne header
     const headerRow = gridData[0]?.values || [];
@@ -294,10 +318,19 @@ async function syncFromSheets() {
       const nomSite = cellText(cells[idx.nomSite]);  // nom court = clé de dédup
       const nomGmb  = cellText(cells[idx.nomGmb]);   // nom complet GMB
       const nom     = nomGmb || nomSite;             // préférer le nom GMB complet
-      const lien    = cellLink(cells[idx.lien]);
+      // Extraire URL : cellLink (hyperlink/richtext) puis fallback formule brute
+      let lien = cellLink(cells[idx.lien]);
+      if (!lien && formulaRows[i]) {
+        const raw = formulaRows[i][idx.lien] || '';
+        const m = raw.match(/HYPERLINK\s*\(\s*"([^"]+)"/i);
+        if (m) lien = m[1];
+        else if (raw.startsWith('http')) lien = raw;
+      }
+      console.log(`[SYNC DEBUG] row ${i} | nomSite="${cellText(cells[idx.nomSite])}" | lien="${lien}" | etat="${cellText(cells[idx.etat])}"`);
+
       const dateRaw = cellText(cells[idx.dateOuv]);
 
-      if (!etatEligible(etat) || !nom || !lien || !dateRaw) continue;
+      if (!etatEligible(etat) || !nomSite || !dateRaw) continue; // lien optionnel pour l'import
       const avisRaw = parseInt(cellText(cells[idx.avisInitiaux]) || '0', 10);
       fromSheet.push({
         nom,
@@ -309,15 +342,21 @@ async function syncFromSheets() {
       });
     }
 
-    // Upsert : classer chaque fiche du sheet en "à insérer" ou "à mettre à jour"
+    // Upsert : classer par Nom Site (clé principale) puis lien
     const existantes = await getFiches();
+    const existantesParNom  = {};
     const existantesParLien = {};
-    existantes.forEach(f => { if (f.lien) existantesParLien[f.lien.trim().toLowerCase()] = f; });
+    existantes.forEach(f => {
+      existantesParNom[f.nom.trim().toLowerCase()] = f;
+      if (f.lien) existantesParLien[f.lien.trim().toLowerCase()] = f;
+    });
 
-    const aInserer  = [];
-    const aUpdater  = [];
+    const aInserer = [];
+    const aUpdater = [];
     fromSheet.forEach(f => {
-      const match = existantesParLien[f.lien.trim().toLowerCase()];
+      const matchParNom  = existantesParNom[f.nomSite.trim().toLowerCase()];
+      const matchParLien = f.lien ? existantesParLien[f.lien.trim().toLowerCase()] : null;
+      const match = matchParNom || matchParLien;
       if (match) aUpdater.push({ ...f, supabaseId: match.id, ancienNom: match.nom });
       else       aInserer.push(f);
     });
