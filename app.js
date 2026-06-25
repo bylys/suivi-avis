@@ -96,6 +96,12 @@ async function init() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('form-date').value = today;
 
+  // Restaurer clé API et ID sheet depuis localStorage
+  const savedKey = localStorage.getItem('sheets_api_key');
+  const savedId  = localStorage.getItem('sheets_id');
+  if (savedKey) { const el = document.getElementById('sheets-api-key'); if (el) el.value = savedKey; }
+  if (savedId)  { const el = document.getElementById('sheets-id');      if (el) el.value = savedId; }
+
   const yearSel = document.getElementById('dash-year');
   const currentYear = new Date().getFullYear();
   for (let y = currentYear; y >= currentYear - 4; y--) {
@@ -210,6 +216,193 @@ async function syncFromSheet() {
     status.textContent = '❌ ' + e.message;
     status.style.color = '#f87171';
   }
+}
+
+// ── SYNC GOOGLE SHEETS ──
+const SHEETS_SHEET_NAME = 'Sheet1';
+
+function getSheetsApiKey() {
+  const el = document.getElementById('sheets-api-key');
+  return el?.value.trim() || localStorage.getItem('sheets_api_key') || '';
+}
+function getSheetsId() {
+  const el = document.getElementById('sheets-id');
+  return el?.value.trim() || localStorage.getItem('sheets_id') || '';
+}
+
+// Statuts Etat GMB qui déclenchent l'import
+function etatEligible(etat) {
+  if (!etat) return false;
+  const e = etat.trim().toLowerCase();
+  return e === 'ouvert' || e.includes('cours') || e.includes('validation');
+}
+
+async function syncFromSheets() {
+  const apiKey = getSheetsApiKey();
+  const sheetId = getSheetsId();
+  const preview = document.getElementById('sync-preview');
+
+  if (!apiKey) {
+    preview.innerHTML = '<p style="color:#f87171;font-size:13px;">⚠️ Clé API Google Sheets manquante.</p>';
+    return;
+  }
+
+  preview.innerHTML = '<p style="color:#64748b;font-size:13px;">⏳ Chargement du sheet…</p>';
+
+  try {
+    const range = 'A:AJ';
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const rows = data.values || [];
+    if (rows.length < 2) throw new Error('Sheet vide ou inaccessible.');
+
+    // Trouver les indices de colonnes depuis la ligne header
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const idx = {
+      etat:         headers.findIndex(h => h.includes('etat gmb')),
+      nom:          headers.findIndex(h => h.includes('nom du gmb')),
+      lien:         headers.findIndex(h => h.includes('lien du gmb')),
+      dateOuv:      headers.findIndex(h => h.includes("date d'ouverture")),
+      avisInitiaux: headers.findIndex(h => h.includes('reviews') || h.includes('# reviews')),
+    };
+
+    // Fallback indices si headers non trouvés (positions fixes du sheet)
+    if (idx.etat < 0)         idx.etat = 9;
+    if (idx.nom < 0)          idx.nom = 10;
+    if (idx.lien < 0)         idx.lien = 11;
+    if (idx.dateOuv < 0)      idx.dateOuv = 13;
+    if (idx.avisInitiaux < 0) idx.avisInitiaux = 14;
+
+    // Parser les lignes éligibles
+    const fromSheet = [];
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const etat = row[idx.etat] || '';
+      const nom  = (row[idx.nom] || '').trim();
+      const lien = (row[idx.lien] || '').trim();
+      const dateRaw = (row[idx.dateOuv] || '').trim();
+
+      // Règle : Ouvert OU en cours de validation → obligatoirement nom + lien + date
+      if (!etatEligible(etat) || !nom || !lien || !dateRaw) continue;
+      const avisRaw = parseInt(row[idx.avisInitiaux] || '0', 10);
+      fromSheet.push({
+        nom,
+        lien,
+        date_ouverture: dateRaw || null,
+        avis_initiaux:  isNaN(avisRaw) ? 0 : avisRaw,
+        etat:           etat.trim(),
+      });
+    }
+
+    // Comparer avec les fiches existantes
+    const existantes = await getFiches();
+    const existantesNoms = new Set(existantes.map(f => f.nom.trim().toLowerCase()));
+    const nouvelles = fromSheet.filter(f => !existantesNoms.has(f.nom.toLowerCase()));
+    const dejaPresentes = fromSheet.filter(f => existantesNoms.has(f.nom.toLowerCase()));
+
+    // Badge
+    const badge = document.getElementById('sync-badge');
+    if (badge && nouvelles.length > 0) {
+      badge.style.display = 'inline-block';
+      badge.textContent = `${nouvelles.length} nouvelles`;
+    } else if (badge) {
+      badge.style.display = 'none';
+    }
+
+    // Afficher le preview
+    if (nouvelles.length === 0) {
+      preview.innerHTML = `
+        <p style="color:#22c55e;font-size:13px;">✅ Toutes les fiches éligibles sont déjà dans l'outil (${dejaPresentes.length} présentes).</p>`;
+      return;
+    }
+
+    const rows_html = nouvelles.map((f, i) => `
+      <tr style="border-bottom:1px solid #1e293b;">
+        <td style="padding:8px 10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" checked data-idx="${i}" style="accent-color:#3b82f6;width:14px;height:14px;" />
+            <span style="font-weight:500;color:#f1f5f9;">${f.nom}</span>
+          </label>
+        </td>
+        <td style="padding:8px 10px;">
+          <span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${f.etat.toLowerCase()==='ouvert'?'#14532d':'#78350f'};color:${f.etat.toLowerCase()==='ouvert'?'#4ade80':'#fbbf24'};">${f.etat}</span>
+        </td>
+        <td style="padding:8px 10px;font-size:12px;color:#64748b;">${f.date_ouverture || '–'}</td>
+        <td style="padding:8px 10px;font-size:12px;color:#64748b;">${f.avis_initiaux}</td>
+        <td style="padding:8px 10px;"><a href="${f.lien}" target="_blank" style="color:#3b82f6;font-size:12px;">🔗 GMB</a></td>
+      </tr>`).join('');
+
+    preview.innerHTML = `
+      <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:13px;color:#94a3b8;">
+          <strong style="color:#f1f5f9;">${nouvelles.length}</strong> nouvelles fiches à importer
+          ${dejaPresentes.length ? `· <span style="color:#475569;">${dejaPresentes.length} déjà présentes</span>` : ''}
+        </span>
+        <div style="display:flex;gap:8px;">
+          <button onclick="selectAllSync(true)" style="background:none;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">Tout cocher</button>
+          <button onclick="selectAllSync(false)" style="background:none;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">Tout décocher</button>
+        </div>
+      </div>
+      <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;overflow:hidden;margin-bottom:12px;max-height:340px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#1e293b;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">
+              <th style="padding:8px 10px;text-align:left;">Nom du GMB</th>
+              <th style="padding:8px 10px;text-align:left;">Statut</th>
+              <th style="padding:8px 10px;text-align:left;">Date ouverture</th>
+              <th style="padding:8px 10px;text-align:left;">Avis initiaux</th>
+              <th style="padding:8px 10px;text-align:left;">Lien</th>
+            </tr>
+          </thead>
+          <tbody id="sync-rows">${rows_html}</tbody>
+        </table>
+      </div>
+      <button onclick="confirmSyncImport(${JSON.stringify(nouvelles).split('"').join('&quot;')})" class="btn-primary">
+        ✅ Importer les fiches cochées
+      </button>
+      <span id="sync-status" style="margin-left:12px;font-size:13px;"></span>`;
+
+    // Stocker les données pour confirmSyncImport
+    window._syncNouvellesData = nouvelles;
+
+  } catch(e) {
+    preview.innerHTML = `<p style="color:#f87171;font-size:13px;">❌ Erreur : ${e.message}</p>`;
+  }
+}
+
+function selectAllSync(val) {
+  document.querySelectorAll('#sync-rows input[type=checkbox]').forEach(cb => cb.checked = val);
+}
+
+async function confirmSyncImport() {
+  const checkboxes = document.querySelectorAll('#sync-rows input[type=checkbox]');
+  const status = document.getElementById('sync-status');
+  const nouvelles = window._syncNouvellesData || [];
+  const selected = [];
+  checkboxes.forEach((cb, i) => { if (cb.checked && nouvelles[i]) selected.push(nouvelles[i]); });
+
+  if (!selected.length) { status.textContent = 'Aucune fiche sélectionnée.'; return; }
+  status.textContent = `⏳ Import de ${selected.length} fiches…`;
+
+  let ok = 0, err = 0;
+  for (const f of selected) {
+    const success = await sbInsert('fiches', {
+      nom:           f.nom,
+      lien:          f.lien || null,
+      date_ouverture: f.date_ouverture || null,
+      avis_initiaux:  f.avis_initiaux || 0,
+    });
+    if (success) ok++; else err++;
+  }
+
+  status.innerHTML = `<span style="color:#22c55e;">✅ ${ok} importées</span>${err ? ` <span style="color:#f87171;">· ${err} erreurs</span>` : ''}`;
+  await populateFicheSelects();
+  renderFiches();
 }
 
 async function addFiche(e) {
