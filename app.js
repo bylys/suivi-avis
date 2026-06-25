@@ -296,6 +296,7 @@ async function syncFromSheets() {
     const headerRow = gridData[0]?.values || [];
     const headers = headerRow.map(c => cellText(c).toLowerCase());
     const idx = {
+      siteUrl:      1, // Colonne B : URL du site
       nomSite:      headers.findIndex(h => h === 'nom site' || h.includes('nom site')),
       etat:         headers.findIndex(h => h.includes('etat gmb')),
       nomGmb:       headers.findIndex(h => h.includes('nom du gmb')),
@@ -319,6 +320,7 @@ async function syncFromSheets() {
       const nomGmb  = cellText(cells[idx.nomGmb])
                    || (formulaRows[i] ? (formulaRows[i][idx.nomGmb] || '').toString().trim() : '');
       const nom     = nomGmb || nomSite;
+      const siteUrl = cellLink(cells[idx.siteUrl]) || cellText(cells[idx.siteUrl]) || '';
       // Extraire URL : cellLink (hyperlink/richtext) puis fallback formule brute
       let lien = cellLink(cells[idx.lien]);
       if (!lien && formulaRows[i]) {
@@ -335,7 +337,8 @@ async function syncFromSheets() {
       const avisRaw = parseInt(cellText(cells[idx.avisInitiaux]) || '0', 10);
       fromSheet.push({
         nom,
-        nomSite,    // gardé pour la déduplication
+        nomSite,
+        siteUrl,
         lien,
         date_ouverture: dateRaw || null,
         avis_initiaux:  isNaN(avisRaw) ? 0 : avisRaw,
@@ -357,15 +360,27 @@ async function syncFromSheets() {
     function findMatch(f) {
       if (f.lien && existantesParLien[normLien(f.lien)]) return existantesParLien[normLien(f.lien)];
       if (existantesParNom[normStr(f.nom)]) return existantesParNom[normStr(f.nom)];
-      // Match par mots-clés : tous les mots du nomSite doivent être dans le nom Supabase
+      // Match par mots-clés : tous les mots du nomSite dans le nom Supabase
       const words = normStr(f.nomSite).split(/\s+/).filter(w => w.length > 2);
-      if (words.length >= 2) {
-        return existantes.find(sb => {
+      if (words.length < 2) return null;
+      const candidates = existantes.filter(sb => {
+        const sbNorm = normStr(sb.nom);
+        return words.every(w => sbNorm.includes(w));
+      });
+      if (candidates.length === 0) return null;
+      if (candidates.length === 1) return candidates[0];
+      // Plusieurs candidats : départager avec l'URL du site (colonne B)
+      if (f.siteUrl) {
+        const siteWords = normStr(f.siteUrl).split(/\s+|\/|\.|-/).filter(w => w.length > 3);
+        let best = null, bestScore = -1;
+        for (const sb of candidates) {
           const sbNorm = normStr(sb.nom);
-          return words.every(w => sbNorm.includes(w));
-        }) || null;
+          const score = siteWords.filter(w => sbNorm.includes(w)).length;
+          if (score > bestScore) { bestScore = score; best = sb; }
+        }
+        if (best) return best;
       }
-      return null;
+      return candidates[0];
     }
 
     const aInserer = [];
