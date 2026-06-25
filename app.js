@@ -342,21 +342,23 @@ async function syncFromSheets() {
       });
     }
 
-    // Upsert : classer par Nom Site (clé principale) puis lien
+    // Upsert : lien en priorité, puis nom
     const existantes = await getFiches();
-    const existantesParNom  = {};
     const existantesParLien = {};
+    const existantesParNom  = {};
+    const normLien = l => l.trim().toLowerCase().replace(/\/$/, '');
     existantes.forEach(f => {
+      if (f.lien) existantesParLien[normLien(f.lien)] = f;
       existantesParNom[f.nom.trim().toLowerCase()] = f;
-      if (f.lien) existantesParLien[f.lien.trim().toLowerCase()] = f;
     });
 
     const aInserer = [];
     const aUpdater = [];
     fromSheet.forEach(f => {
-      const matchParNom  = existantesParNom[f.nomSite.trim().toLowerCase()];
-      const matchParLien = f.lien ? existantesParLien[f.lien.trim().toLowerCase()] : null;
-      const match = matchParNom || matchParLien;
+      const matchParLien = f.lien ? existantesParLien[normLien(f.lien)] : null;
+      const matchParNom  = existantesParNom[f.nomSite.trim().toLowerCase()]
+                        || existantesParNom[f.nom.trim().toLowerCase()];
+      const match = matchParLien || matchParNom;
       if (match) aUpdater.push({ ...f, supabaseId: match.id, ancienNom: match.nom });
       else       aInserer.push(f);
     });
