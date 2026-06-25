@@ -356,8 +356,7 @@ async function syncFromSheets() {
     const aUpdater = [];
     fromSheet.forEach(f => {
       const matchParLien = f.lien ? existantesParLien[normLien(f.lien)] : null;
-      const matchParNom  = existantesParNom[f.nomSite.trim().toLowerCase()]
-                        || existantesParNom[f.nom.trim().toLowerCase()];
+      const matchParNom  = existantesParNom[f.nom.trim().toLowerCase()];
       const match = matchParLien || matchParNom;
       if (match) aUpdater.push({ ...f, supabaseId: match.id, ancienNom: match.nom });
       else       aInserer.push(f);
