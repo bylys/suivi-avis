@@ -299,11 +299,19 @@ async function syncFromSheets() {
       });
     }
 
-    // Comparer avec les fiches existantes
+    // Comparer avec les fiches existantes — par lien (priorité) OU par nom exact
     const existantes = await getFiches();
-    const existantesNoms = new Set(existantes.map(f => f.nom.trim().toLowerCase()));
-    const nouvelles = fromSheet.filter(f => !existantesNoms.has(f.nom.toLowerCase()));
-    const dejaPresentes = fromSheet.filter(f => existantesNoms.has(f.nom.toLowerCase()));
+    const existantesLiens = new Set(existantes.map(f => (f.lien || '').trim().toLowerCase()).filter(Boolean));
+    const existantesNoms  = new Set(existantes.map(f => f.nom.trim().toLowerCase()));
+
+    function dejaExistante(f) {
+      if (f.lien && existantesLiens.has(f.lien.trim().toLowerCase())) return true;
+      if (existantesNoms.has(f.nom.toLowerCase())) return true;
+      return false;
+    }
+
+    const nouvelles    = fromSheet.filter(f => !dejaExistante(f));
+    const dejaPresentes = fromSheet.filter(f => dejaExistante(f));
 
     // Badge
     const badge = document.getElementById('sync-badge');
