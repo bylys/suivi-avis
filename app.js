@@ -315,9 +315,10 @@ async function syncFromSheets() {
     for (let i = 1; i < gridData.length; i++) {
       const cells   = gridData[i]?.values || [];
       const etat    = cellText(cells[idx.etat]);
-      const nomSite = cellText(cells[idx.nomSite]);  // nom court = clé de dédup
-      const nomGmb  = cellText(cells[idx.nomGmb]);   // nom complet GMB
-      const nom     = nomGmb || nomSite;             // préférer le nom GMB complet
+      const nomSite = cellText(cells[idx.nomSite]);
+      const nomGmb  = cellText(cells[idx.nomGmb])
+                   || (formulaRows[i] ? (formulaRows[i][idx.nomGmb] || '').toString().trim() : '');
+      const nom     = nomGmb || nomSite;
       // Extraire URL : cellLink (hyperlink/richtext) puis fallback formule brute
       let lien = cellLink(cells[idx.lien]);
       if (!lien && formulaRows[i]) {
