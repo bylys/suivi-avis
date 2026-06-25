@@ -343,22 +343,35 @@ async function syncFromSheets() {
       });
     }
 
-    // Upsert : lien en priorité, puis nom
+    // Upsert : lien > nom exact > mots-clés (ville + métier)
     const existantes = await getFiches();
+    const normLien = l => l.trim().toLowerCase().replace(/\/$/, '');
+    const normStr  = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ');
     const existantesParLien = {};
     const existantesParNom  = {};
-    const normLien = l => l.trim().toLowerCase().replace(/\/$/, '');
     existantes.forEach(f => {
       if (f.lien) existantesParLien[normLien(f.lien)] = f;
-      existantesParNom[f.nom.trim().toLowerCase()] = f;
+      existantesParNom[normStr(f.nom)] = f;
     });
+
+    function findMatch(f) {
+      if (f.lien && existantesParLien[normLien(f.lien)]) return existantesParLien[normLien(f.lien)];
+      if (existantesParNom[normStr(f.nom)]) return existantesParNom[normStr(f.nom)];
+      // Match par mots-clés : tous les mots du nomSite doivent être dans le nom Supabase
+      const words = normStr(f.nomSite).split(/\s+/).filter(w => w.length > 2);
+      if (words.length >= 2) {
+        return existantes.find(sb => {
+          const sbNorm = normStr(sb.nom);
+          return words.every(w => sbNorm.includes(w));
+        }) || null;
+      }
+      return null;
+    }
 
     const aInserer = [];
     const aUpdater = [];
     fromSheet.forEach(f => {
-      const matchParLien = f.lien ? existantesParLien[normLien(f.lien)] : null;
-      const matchParNom  = existantesParNom[f.nom.trim().toLowerCase()];
-      const match = matchParLien || matchParNom;
+      const match = findMatch(f);
       if (match) aUpdater.push({ ...f, supabaseId: match.id, ancienNom: match.nom });
       else       aInserer.push(f);
     });
@@ -471,7 +484,7 @@ async function confirmSyncUpsert() {
 
   for (const f of toUpdate) {
     const ok = await sbUpdate('fiches', f.supabaseId, {
-      nom: f.nom,
+      nom: f.ancienNom,
       date_ouverture: f.date_ouverture || null,
     });
     if (ok) updated++; else err++;
