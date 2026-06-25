@@ -274,7 +274,7 @@
     </form>
     <div class="fiches-search-bar">
       <input type="text" id="fiches-search" placeholder="🔍 Rechercher une fiche..." oninput="filterFiches(this.value)" autocomplete="off" />
-      <select id="fiches-sort" onchange="renderFiches()">
+      <select id="fiches-sort" onchange="renderFiches()" style="background:#1e293b;color:#f1f5f9;border:1.5px solid #334155;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;">
         <option value="nom-asc">Nom A→Z</option>
         <option value="nom-desc">Nom Z→A</option>
         <option value="total-desc">Total avis ↓</option>
@@ -286,6 +286,42 @@
       </select>
     </div>
     <ul id="liste-fiches"></ul>
+
+    <!-- ── SYNC GOOGLE SHEETS ── -->
+    <details id="sync-sheets-panel" style="margin-top:24px;background:#0f172a;border:1px solid #334155;border-radius:12px;overflow:hidden;">
+      <summary style="cursor:pointer;padding:12px 16px;font-size:13px;font-weight:600;color:#64748b;letter-spacing:.04em;text-transform:uppercase;list-style:none;display:flex;align-items:center;gap:8px;user-select:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Synchroniser depuis Google Sheets
+        <span id="sync-badge" style="display:none;background:#1d4ed8;color:#fff;border-radius:99px;padding:1px 8px;font-size:11px;"></span>
+      </summary>
+      <div style="padding:16px;border-top:1px solid #1e293b;">
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">Clé API Google Sheets</label>
+            <input id="sheets-api-key" type="password" placeholder="AIza..." autocomplete="off"
+              style="width:100%;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:8px;padding:8px 10px;font-size:13px;"
+              oninput="localStorage.setItem('sheets_api_key',this.value)" />
+          </div>
+          <div style="flex:2;min-width:280px;">
+            <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">ID du Google Sheet</label>
+            <input id="sheets-id" type="text" autocomplete="off"
+              value="1AFawMjlZBCMj6Rq9q6cm9dqmzqNIz5vwtL181Cw3xpg"
+              style="width:100%;background:#1e293b;color:#f1f5f9;border:1px solid #334155;border-radius:8px;padding:8px 10px;font-size:13px;"
+              oninput="localStorage.setItem('sheets_id',this.value)" />
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button onclick="syncFromSheets()" class="btn-primary" style="white-space:nowrap;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:5px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Lancer la sync
+            </button>
+          </div>
+        </div>
+        <p style="font-size:11px;color:#475569;margin-bottom:12px;">
+          Importe les GMB avec statut <strong style="color:#22c55e;">Ouvert</strong> ou <strong style="color:#f59e0b;">En cours de validation</strong> qui n'existent pas encore dans l'outil.
+        </p>
+        <div id="sync-preview"></div>
+      </div>
+    </details>
   </section>
 </div>
 
