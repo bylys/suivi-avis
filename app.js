@@ -484,7 +484,7 @@ async function confirmSyncUpsert() {
 
   for (const f of toUpdate) {
     const ok = await sbUpdate('fiches', f.supabaseId, {
-      nom: f.nom,
+      nom: f.ancienNom,
       date_ouverture: f.date_ouverture || null,
     });
     if (ok) updated++; else err++;
