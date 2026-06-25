@@ -272,14 +272,16 @@ async function syncFromSheets() {
     const headerRow = gridData[0]?.values || [];
     const headers = headerRow.map(c => cellText(c).toLowerCase());
     const idx = {
+      nomSite:      headers.findIndex(h => h === 'nom site' || h.includes('nom site')),
       etat:         headers.findIndex(h => h.includes('etat gmb')),
-      nom:          headers.findIndex(h => h.includes('nom du gmb')),
+      nomGmb:       headers.findIndex(h => h.includes('nom du gmb')),
       lien:         headers.findIndex(h => h.includes('lien du gmb')),
       dateOuv:      headers.findIndex(h => h.includes("date d'ouverture")),
       avisInitiaux: headers.findIndex(h => h.includes('reviews') || h.includes('# reviews')),
     };
+    if (idx.nomSite < 0)      idx.nomSite = 0;
     if (idx.etat < 0)         idx.etat = 9;
-    if (idx.nom < 0)          idx.nom = 10;
+    if (idx.nomGmb < 0)       idx.nomGmb = 10;
     if (idx.lien < 0)         idx.lien = 11;
     if (idx.dateOuv < 0)      idx.dateOuv = 13;
     if (idx.avisInitiaux < 0) idx.avisInitiaux = 14;
@@ -287,16 +289,19 @@ async function syncFromSheets() {
     // Parser les lignes éligibles
     const fromSheet = [];
     for (let i = 1; i < gridData.length; i++) {
-      const cells = gridData[i]?.values || [];
+      const cells   = gridData[i]?.values || [];
       const etat    = cellText(cells[idx.etat]);
-      const nom     = cellText(cells[idx.nom]);
-      const lien    = cellLink(cells[idx.lien]);   // vraie URL du smartchip
+      const nomSite = cellText(cells[idx.nomSite]);  // nom court = clé de dédup
+      const nomGmb  = cellText(cells[idx.nomGmb]);   // nom complet GMB
+      const nom     = nomGmb || nomSite;             // préférer le nom GMB complet
+      const lien    = cellLink(cells[idx.lien]);
       const dateRaw = cellText(cells[idx.dateOuv]);
 
       if (!etatEligible(etat) || !nom || !lien || !dateRaw) continue;
       const avisRaw = parseInt(cellText(cells[idx.avisInitiaux]) || '0', 10);
       fromSheet.push({
         nom,
+        nomSite,    // gardé pour la déduplication
         lien,
         date_ouverture: dateRaw || null,
         avis_initiaux:  isNaN(avisRaw) ? 0 : avisRaw,
@@ -304,84 +309,86 @@ async function syncFromSheets() {
       });
     }
 
-    // Comparer avec les fiches existantes — par lien (priorité) OU par nom exact
+    // Upsert : classer chaque fiche du sheet en "à insérer" ou "à mettre à jour"
     const existantes = await getFiches();
-    const existantesLiens = new Set(existantes.map(f => (f.lien || '').trim().toLowerCase()).filter(Boolean));
-    const existantesNoms  = new Set(existantes.map(f => f.nom.trim().toLowerCase()));
+    const existantesParLien = {};
+    existantes.forEach(f => { if (f.lien) existantesParLien[f.lien.trim().toLowerCase()] = f; });
 
-    function dejaExistante(f) {
-      if (f.lien && existantesLiens.has(f.lien.trim().toLowerCase())) return true;
-      if (existantesNoms.has(f.nom.toLowerCase())) return true;
-      return false;
-    }
-
-    const nouvelles    = fromSheet.filter(f => !dejaExistante(f));
-    const dejaPresentes = fromSheet.filter(f => dejaExistante(f));
+    const aInserer  = [];
+    const aUpdater  = [];
+    fromSheet.forEach(f => {
+      const match = existantesParLien[f.lien.trim().toLowerCase()];
+      if (match) aUpdater.push({ ...f, supabaseId: match.id, ancienNom: match.nom });
+      else       aInserer.push(f);
+    });
 
     // Badge
     const badge = document.getElementById('sync-badge');
-    if (badge && nouvelles.length > 0) {
-      badge.style.display = 'inline-block';
-      badge.textContent = `${nouvelles.length} nouvelles`;
-    } else if (badge) {
-      badge.style.display = 'none';
-    }
+    const total = aInserer.length + aUpdater.length;
+    if (badge && total > 0) { badge.style.display = 'inline-block'; badge.textContent = `${total} fiches`; }
+    else if (badge) badge.style.display = 'none';
 
-    // Afficher le preview
-    if (nouvelles.length === 0) {
-      preview.innerHTML = `
-        <p style="color:#22c55e;font-size:13px;">✅ Toutes les fiches éligibles sont déjà dans l'outil (${dejaPresentes.length} présentes).</p>`;
+    if (total === 0) {
+      preview.innerHTML = `<p style="color:#22c55e;font-size:13px;">✅ Tout est déjà à jour (${existantes.length} fiches en base).</p>`;
       return;
     }
 
-    const rows_html = nouvelles.map((f, i) => `
+    const rowsInsert = aInserer.map((f, i) => `
       <tr style="border-bottom:1px solid #1e293b;">
         <td style="padding:8px 10px;">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" checked data-idx="${i}" style="accent-color:#3b82f6;width:14px;height:14px;" />
+            <input type="checkbox" checked data-type="insert" data-idx="${i}" style="accent-color:#22c55e;width:14px;height:14px;" />
+            <span style="color:#4ade80;font-size:10px;font-weight:600;background:#14532d;border-radius:4px;padding:1px 5px;">NOUVEAU</span>
             <span style="font-weight:500;color:#f1f5f9;">${f.nom}</span>
           </label>
         </td>
-        <td style="padding:8px 10px;">
-          <span style="font-size:11px;padding:2px 8px;border-radius:99px;background:${f.etat.toLowerCase()==='ouvert'?'#14532d':'#78350f'};color:${f.etat.toLowerCase()==='ouvert'?'#4ade80':'#fbbf24'};">${f.etat}</span>
-        </td>
+        <td style="padding:8px 10px;font-size:11px;padding:2px 8px;"><span style="border-radius:99px;background:${f.etat.toLowerCase()==='ouvert'?'#14532d':'#78350f'};color:${f.etat.toLowerCase()==='ouvert'?'#4ade80':'#fbbf24'};padding:2px 8px;">${f.etat}</span></td>
         <td style="padding:8px 10px;font-size:12px;color:#64748b;">${f.date_ouverture || '–'}</td>
-        <td style="padding:8px 10px;font-size:12px;color:#64748b;">${f.avis_initiaux}</td>
-        <td style="padding:8px 10px;"><a href="${f.lien}" target="_blank" style="color:#3b82f6;font-size:12px;">🔗 GMB</a></td>
+        <td style="padding:8px 10px;"><a href="${f.lien}" target="_blank" style="color:#3b82f6;font-size:12px;">🔗</a></td>
+      </tr>`).join('');
+
+    const rowsUpdate = aUpdater.map((f, i) => `
+      <tr style="border-bottom:1px solid #1e293b;">
+        <td style="padding:8px 10px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" checked data-type="update" data-idx="${i}" style="accent-color:#f59e0b;width:14px;height:14px;" />
+            <span style="color:#fbbf24;font-size:10px;font-weight:600;background:#78350f;border-radius:4px;padding:1px 5px;">MAJ</span>
+            <span style="font-weight:500;color:#f1f5f9;">${f.nom}</span>
+            ${f.ancienNom !== f.nom ? `<span style="font-size:11px;color:#475569;">← ${f.ancienNom}</span>` : ''}
+          </label>
+        </td>
+        <td style="padding:8px 10px;font-size:11px;"><span style="border-radius:99px;background:${f.etat.toLowerCase()==='ouvert'?'#14532d':'#78350f'};color:${f.etat.toLowerCase()==='ouvert'?'#4ade80':'#fbbf24'};padding:2px 8px;">${f.etat}</span></td>
+        <td style="padding:8px 10px;font-size:12px;color:#64748b;">${f.date_ouverture || '–'}</td>
+        <td style="padding:8px 10px;"><a href="${f.lien}" target="_blank" style="color:#3b82f6;font-size:12px;">🔗</a></td>
       </tr>`).join('');
 
     preview.innerHTML = `
       <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <span style="font-size:13px;color:#94a3b8;">
-          <strong style="color:#f1f5f9;">${nouvelles.length}</strong> nouvelles fiches à importer
-          ${dejaPresentes.length ? `· <span style="color:#475569;">${dejaPresentes.length} déjà présentes</span>` : ''}
+          <span style="color:#4ade80;font-weight:600;">${aInserer.length} nouvelles</span>
+          · <span style="color:#fbbf24;font-weight:600;">${aUpdater.length} à mettre à jour</span>
         </span>
         <div style="display:flex;gap:8px;">
-          <button onclick="selectAllSync(true)" style="background:none;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">Tout cocher</button>
+          <button onclick="selectAllSync(true)"  style="background:none;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">Tout cocher</button>
           <button onclick="selectAllSync(false)" style="background:none;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">Tout décocher</button>
         </div>
       </div>
-      <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;overflow:hidden;margin-bottom:12px;max-height:340px;overflow-y:auto;">
+      <div style="background:#0a0f1a;border:1px solid #1e293b;border-radius:8px;overflow:hidden;margin-bottom:12px;max-height:380px;overflow-y:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead>
-            <tr style="background:#1e293b;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">
-              <th style="padding:8px 10px;text-align:left;">Nom du GMB</th>
-              <th style="padding:8px 10px;text-align:left;">Statut</th>
-              <th style="padding:8px 10px;text-align:left;">Date ouverture</th>
-              <th style="padding:8px 10px;text-align:left;">Avis initiaux</th>
-              <th style="padding:8px 10px;text-align:left;">Lien</th>
-            </tr>
-          </thead>
-          <tbody id="sync-rows">${rows_html}</tbody>
+          <thead><tr style="background:#1e293b;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">
+            <th style="padding:8px 10px;text-align:left;">Nom du GMB</th>
+            <th style="padding:8px 10px;text-align:left;">Statut</th>
+            <th style="padding:8px 10px;text-align:left;">Date ouverture</th>
+            <th style="padding:8px 10px;text-align:left;">Lien</th>
+          </tr></thead>
+          <tbody id="sync-rows">${rowsInsert}${rowsUpdate}</tbody>
         </table>
       </div>
-      <button onclick="confirmSyncImport(${JSON.stringify(nouvelles).split('"').join('&quot;')})" class="btn-primary">
-        ✅ Importer les fiches cochées
-      </button>
+      <button onclick="confirmSyncUpsert()" class="btn-primary">✅ Synchroniser</button>
       <span id="sync-status" style="margin-left:12px;font-size:13px;"></span>`;
 
-    // Stocker les données pour confirmSyncImport
-    window._syncNouvellesData = nouvelles;
+    window._syncInsert = aInserer;
+    window._syncUpdate = aUpdater;
 
   } catch(e) {
     preview.innerHTML = `<p style="color:#f87171;font-size:13px;">❌ Erreur : ${e.message}</p>`;
@@ -392,28 +399,49 @@ function selectAllSync(val) {
   document.querySelectorAll('#sync-rows input[type=checkbox]').forEach(cb => cb.checked = val);
 }
 
-async function confirmSyncImport() {
-  const checkboxes = document.querySelectorAll('#sync-rows input[type=checkbox]');
+async function confirmSyncUpsert() {
   const status = document.getElementById('sync-status');
-  const nouvelles = window._syncNouvellesData || [];
-  const selected = [];
-  checkboxes.forEach((cb, i) => { if (cb.checked && nouvelles[i]) selected.push(nouvelles[i]); });
+  const checkboxes = document.querySelectorAll('#sync-rows input[type=checkbox]');
 
-  if (!selected.length) { status.textContent = 'Aucune fiche sélectionnée.'; return; }
-  status.textContent = `⏳ Import de ${selected.length} fiches…`;
+  const toInsert = [];
+  const toUpdate = [];
+  checkboxes.forEach(cb => {
+    if (!cb.checked) return;
+    const type = cb.dataset.type;
+    const i    = parseInt(cb.dataset.idx);
+    if (type === 'insert' && window._syncInsert?.[i]) toInsert.push(window._syncInsert[i]);
+    if (type === 'update' && window._syncUpdate?.[i]) toUpdate.push(window._syncUpdate[i]);
+  });
 
-  let ok = 0, err = 0;
-  for (const f of selected) {
-    const success = await sbInsert('fiches', {
-      nom:           f.nom,
-      lien:          f.lien || null,
+  const total = toInsert.length + toUpdate.length;
+  if (!total) { status.textContent = 'Aucune fiche sélectionnée.'; return; }
+  status.textContent = `⏳ Synchronisation de ${total} fiches…`;
+
+  let inserted = 0, updated = 0, err = 0;
+
+  for (const f of toInsert) {
+    const ok = await sbInsert('fiches', {
+      nom: f.nom, lien: f.lien || null,
       date_ouverture: f.date_ouverture || null,
-      avis_initiaux:  f.avis_initiaux || 0,
+      avis_initiaux:  f.avis_initiaux  || 0,
     });
-    if (success) ok++; else err++;
+    if (ok) inserted++; else err++;
   }
 
-  status.innerHTML = `<span style="color:#22c55e;">✅ ${ok} importées</span>${err ? ` <span style="color:#f87171;">· ${err} erreurs</span>` : ''}`;
+  for (const f of toUpdate) {
+    const ok = await sbUpdate('fiches', f.supabaseId, {
+      nom: f.nom,
+      date_ouverture: f.date_ouverture || null,
+    });
+    if (ok) updated++; else err++;
+  }
+
+  status.innerHTML = [
+    inserted ? `<span style="color:#22c55e;">✅ ${inserted} insérées</span>` : '',
+    updated  ? `<span style="color:#fbbf24;">🔄 ${updated} mises à jour</span>` : '',
+    err      ? `<span style="color:#f87171;">❌ ${err} erreurs</span>` : '',
+  ].filter(Boolean).join(' · ');
+
   await populateFicheSelects();
   renderFiches();
 }
