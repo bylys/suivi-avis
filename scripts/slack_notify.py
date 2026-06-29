@@ -103,79 +103,114 @@ def daily():
 def survival():
     today = date.today()
 
-    # Cohorte analysée : tous les avis >30j (ont eu le temps d'être confirmés ou supprimés)
-    j30_cutoff = (today - timedelta(days=30)).isoformat()
-    avis_old = sb_get(f"avis?select=id,fiche_nom,date,statut&date=lte.{j30_cutoff}&limit=10000")
-
-    total      = len(avis_old)
-    survivants = sum(1 for a in avis_old if a["statut"] == "j30")
-    supprimes  = sum(1 for a in avis_old if a["statut"] == "supprime")
-    taux       = round(survivants / total * 100, 1) if total else 0
-
-    # Cohorte précédente (J-60 à J-30) pour la tendance
-    j60_cutoff = (today - timedelta(days=60)).isoformat()
-    avis_prev  = sb_get(
-        f"avis?select=id,statut&date=gte.{j60_cutoff}&date=lte.{j30_cutoff}&limit=5000"
-    )
-    prev_total = len(avis_prev)
-    prev_surv  = sum(1 for a in avis_prev if a["statut"] == "j30")
-    taux_prev  = round(prev_surv / prev_total * 100, 1) if prev_total else 0
-    tendance   = "📈" if taux > taux_prev else "📉" if taux < taux_prev else "➡️"
-
-    # Top 3 fiches avec le plus d'avis encore en ligne (j30)
-    top_fiches = Counter(
-        a["fiche_nom"] for a in avis_old if a["statut"] == "j30"
-    ).most_common(3)
-    top_text = "\n".join(
-        f"• {nom[:50]} — *{n}* en ligne" for nom, n in top_fiches
-    ) if top_fiches else "_Aucune donnée_"
-
-    emoji_taux = "🟢" if taux >= 30 else "🟡" if taux >= 15 else "🔴"
-
-    # Label période : 1er du mois = rapport du mois précédent
     if today.day == 1:
-        import calendar
-        prev_month = (today.replace(day=1) - timedelta(days=1))
-        periode_label = f"Rapport survie — {prev_month.strftime('%B %Y').capitalize()}"
-    else:
-        periode_label = f"Rapport survie — mi {today.strftime('%B %Y').capitalize()}"
+        # ── 1er du mois : rapport complet sur le mois J-2 ───────────────────
+        # Ex: 1er juillet → rapport de mai (avis de juin pas encore tous à J+30)
+        cohort_end   = today.replace(day=1) - timedelta(days=1)   # dernier jour du mois précédent
+        cohort_end   = cohort_end.replace(day=1) - timedelta(days=1)  # dernier jour de J-2
+        cohort_start = cohort_end.replace(day=1)
+        mois_label   = cohort_start.strftime("%B %Y").capitalize()
+        titre        = f"Rapport survie — {mois_label}"
 
-    blocks = [
-        {
-            "type": "header",
-            "text": {"type": "plain_text", "text": f"🛡️ {periode_label}"}
-        },
-        {
-            "type": "section",
-            "fields": [
-                {
+        avis_cohort = sb_get(
+            f"avis?select=id,fiche_nom,statut"
+            f"&date=gte.{cohort_start.isoformat()}"
+            f"&date=lte.{cohort_end.isoformat()}&limit=10000"
+        )
+        total      = len(avis_cohort)
+        survivants = sum(1 for a in avis_cohort if a["statut"] == "j30")
+        supprimes  = sum(1 for a in avis_cohort if a["statut"] == "supprime")
+        taux       = round(survivants / total * 100, 1) if total else 0
+
+        # Tendance : mois d'avant (J-3)
+        prev2_end   = cohort_start - timedelta(days=1)
+        prev2_start = prev2_end.replace(day=1)
+        avis_prev = sb_get(
+            f"avis?select=id,statut"
+            f"&date=gte.{prev2_start.isoformat()}"
+            f"&date=lte.{prev2_end.isoformat()}&limit=5000"
+        )
+        prev_total = len(avis_prev)
+        prev_surv  = sum(1 for a in avis_prev if a["statut"] == "j30")
+        taux_prev  = round(prev_surv / prev_total * 100, 1) if prev_total else 0
+        tendance   = "📈" if taux > taux_prev else "📉" if taux < taux_prev else "➡️"
+
+        # Top 3 fiches
+        top_fiches = Counter(
+            a["fiche_nom"] for a in avis_cohort if a["statut"] == "j30"
+        ).most_common(3)
+        top_text = "\n".join(
+            f"• {nom[:50]} — *{n}* en ligne" for nom, n in top_fiches
+        ) if top_fiches else "_Aucune donnée_"
+
+        emoji_taux = "🟢" if taux >= 30 else "🟡" if taux >= 15 else "🔴"
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f"🛡️ {titre}"}
+            },
+            {
+                "type": "section",
+                "text": {
                     "type": "mrkdwn",
                     "text": (
-                        f"*{emoji_taux} Taux de survie J+30*\n"
-                        f"`{taux}%` {tendance} _(était {taux_prev}%)_"
-                    )
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": (
-                        f"*📦 Sur {total} avis analysés*\n"
-                        f"✅ {survivants} encore en ligne\n"
-                        f"❌ {supprimes} supprimés"
+                        f"*{emoji_taux} Taux de survie J+30 : {taux}%* {tendance} _(était {taux_prev}%)_\n\n"
+                        f"*Sur {total} avis analysés :*\n"
+                        f"• ✅ {survivants} encore en ligne\n"
+                        f"• ❌ {supprimes} supprimés"
                     )
                 }
-            ]
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*🏆 Top fiches (avis toujours en ligne) :*\n{top_text}"
-            }
-        },
-        {"type": "divider"}
-    ]
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*🏆 Top fiches (avis toujours en ligne) :*\n{top_text}"
+                }
+            },
+            {"type": "divider"}
+        ]
+        fallback = f"🛡️ {titre} — {taux}% survie | {survivants} en ligne, {supprimes} supprimés"
 
-    fallback = f"🛡️ {periode_label} — Taux J+30: {taux}% | {survivants} en ligne, {supprimes} supprimés"
+    else:
+        # ── 15 du mois : rapport léger sur les avis qui viennent d'atteindre J+30 ──
+        # Avis publiés il y a 30-45 jours (première quinzaine du mois dernier)
+        j30_date = today - timedelta(days=30)
+        j45_date = today - timedelta(days=45)
+        mois_label = j30_date.strftime("%B %Y").capitalize()
+        titre      = f"Rapport survie — mi-{mois_label}"
+
+        avis_cohort = sb_get(
+            f"avis?select=id,statut"
+            f"&date=gte.{j45_date.isoformat()}"
+            f"&date=lte.{j30_date.isoformat()}&limit=5000"
+        )
+        total      = len(avis_cohort)
+        survivants = sum(1 for a in avis_cohort if a["statut"] == "j30")
+        taux       = round(survivants / total * 100, 1) if total else 0
+        emoji_taux = "🟢" if taux >= 30 else "🟡" if taux >= 15 else "🔴"
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f"🛡️ {titre}"}
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*{emoji_taux} Taux de survie J+30 : {taux}%*\n\n"
+                        f"*Sur {total} avis analysés :*\n"
+                        f"• ✅ {survivants} encore en ligne à J+30"
+                    )
+                }
+            },
+            {"type": "divider"}
+        ]
+        fallback = f"🛡️ {titre} — {taux}% survie | {survivants}/{total} en ligne"
+
     post_slack(blocks, fallback)
     print(f"Survival sent — taux: {taux}%, survivants: {survivants}/{total}")
 
