@@ -104,24 +104,26 @@ def survival():
     today = date.today()
 
     if today.day == 1:
-        # ── 1er du mois : rapport complet sur le mois précédent ──────────────
-        prev_month_end   = today - timedelta(days=1)
-        prev_month_start = prev_month_end.replace(day=1)
-        mois_label       = prev_month_start.strftime("%B %Y").capitalize()
-        titre            = f"Rapport survie — {mois_label}"
+        # ── 1er du mois : rapport complet sur le mois J-2 ───────────────────
+        # Ex: 1er juillet → rapport de mai (avis de juin pas encore tous à J+30)
+        cohort_end   = today.replace(day=1) - timedelta(days=1)   # dernier jour du mois précédent
+        cohort_end   = cohort_end.replace(day=1) - timedelta(days=1)  # dernier jour de J-2
+        cohort_start = cohort_end.replace(day=1)
+        mois_label   = cohort_start.strftime("%B %Y").capitalize()
+        titre        = f"Rapport survie — {mois_label}"
 
         avis_cohort = sb_get(
             f"avis?select=id,fiche_nom,statut"
-            f"&date=gte.{prev_month_start.isoformat()}"
-            f"&date=lte.{prev_month_end.isoformat()}&limit=10000"
+            f"&date=gte.{cohort_start.isoformat()}"
+            f"&date=lte.{cohort_end.isoformat()}&limit=10000"
         )
         total      = len(avis_cohort)
         survivants = sum(1 for a in avis_cohort if a["statut"] == "j30")
         supprimes  = sum(1 for a in avis_cohort if a["statut"] == "supprime")
         taux       = round(survivants / total * 100, 1) if total else 0
 
-        # Tendance : mois d'avant
-        prev2_end   = prev_month_start - timedelta(days=1)
+        # Tendance : mois d'avant (J-3)
+        prev2_end   = cohort_start - timedelta(days=1)
         prev2_start = prev2_end.replace(day=1)
         avis_prev = sb_get(
             f"avis?select=id,statut"
