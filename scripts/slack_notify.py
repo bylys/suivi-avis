@@ -23,8 +23,8 @@ def sb_get(path):
         return json.loads(r.read())
 
 
-def post_slack(blocks):
-    data = json.dumps({"blocks": blocks}).encode()
+def post_slack(blocks, text_fallback):
+    data = json.dumps({"text": text_fallback, "blocks": blocks}).encode()
     req = urllib.request.Request(SLACK_WEBHOOK, data=data, method="POST")
     req.add_header("Content-Type", "application/json")
     try:
@@ -62,6 +62,7 @@ def daily():
     nb_mois_actifs  = sum(1 for a in avis_mois if a["statut"] != "supprime")
 
     emoji_day = "🟢" if nb_periode >= 10 else "🟡" if nb_periode >= 5 else "🔴"
+    taux_survie_mois = round(nb_mois_actifs / nb_mois * 100) if nb_mois else 0
 
     blocks = [
         {
@@ -70,29 +71,32 @@ def daily():
         },
         {
             "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": (
-                        f"*{emoji_day} Avis publiés ({periode_label})*\n"
-                        f"`{nb_periode}` publiés\n"
-                        f"{nb_actifs} toujours en ligne"
-                    )
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": (
-                        f"*📅 Cumul {mois_label}*\n"
-                        f"`{nb_mois}` publiés\n"
-                        f"{nb_mois_actifs} toujours en ligne"
-                    )
-                }
-            ]
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"*{emoji_day} Période {periode_label}*\n"
+                    f"• Avis publiés : *{nb_periode}*"
+                )
+            }
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"*📅 Cumul {mois_label}*\n"
+                    f"• Avis publiés : *{nb_mois}*\n"
+                    f"• Avis toujours en ligne : *{nb_mois_actifs}*\n"
+                    f"• Avis supprimés : *{nb_mois - nb_mois_actifs}*"
+                )
+            }
         },
         {"type": "divider"}
     ]
 
-    post_slack(blocks)
+    fallback = f"📊 Avis GMB {periode_label} — {nb_periode} publiés | Cumul {mois_label}: {nb_mois} publiés, {nb_mois_actifs} en ligne"
+    post_slack(blocks, fallback)
     print(f"Daily sent — période: {nb_periode}, mois: {nb_mois}")
 
 
@@ -171,7 +175,8 @@ def survival():
         {"type": "divider"}
     ]
 
-    post_slack(blocks)
+    fallback = f"🛡️ {periode_label} — Taux J+30: {taux}% | {survivants} en ligne, {supprimes} supprimés"
+    post_slack(blocks, fallback)
     print(f"Survival sent — taux: {taux}%, survivants: {survivants}/{total}")
 
 
