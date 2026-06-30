@@ -38,7 +38,6 @@ def post_slack(blocks, text_fallback):
 def daily():
     today = date.today()
 
-    # Lundi → couvrir vendredi + samedi + dimanche
     if today.weekday() == 0:
         date_from = today - timedelta(days=3)
         date_to   = today - timedelta(days=1)
@@ -49,12 +48,10 @@ def daily():
         periode_label = yesterday.strftime('%d/%m')
         date_filter = f"date=eq.{yesterday.isoformat()}"
 
-    # Avis de la période
     avis_periode = sb_get(f"avis?select=id,fiche_nom,statut&{date_filter}&limit=2000")
     nb_periode = len(avis_periode)
     nb_actifs  = sum(1 for a in avis_periode if a["statut"] != "supprime")
 
-    # Cumul du mois en cours
     month_start = today.replace(day=1).isoformat()
     mois_label  = today.strftime("%B %Y").capitalize()
     avis_mois   = sb_get(f"avis?select=id,statut&date=gte.{month_start}&limit=5000")
@@ -62,7 +59,6 @@ def daily():
     nb_mois_actifs  = sum(1 for a in avis_mois if a["statut"] != "supprime")
 
     emoji_day = "🟢" if nb_periode >= 10 else "🟡" if nb_periode >= 5 else "🔴"
-    taux_survie_mois = round(nb_mois_actifs / nb_mois * 100) if nb_mois else 0
 
     blocks = [
         {
@@ -104,10 +100,8 @@ def survival():
     today = date.today()
 
     if today.day == 1:
-        # ── 1er du mois : rapport complet sur le mois J-2 ───────────────────
-        # Ex: 1er juillet → rapport de mai (avis de juin pas encore tous à J+30)
-        cohort_end   = today.replace(day=1) - timedelta(days=1)   # dernier jour du mois précédent
-        cohort_end   = cohort_end.replace(day=1) - timedelta(days=1)  # dernier jour de J-2
+        cohort_end   = today.replace(day=1) - timedelta(days=1)
+        cohort_end   = cohort_end.replace(day=1) - timedelta(days=1)
         cohort_start = cohort_end.replace(day=1)
         mois_label   = cohort_start.strftime("%B %Y").capitalize()
         titre        = f"Rapport survie — {mois_label}"
@@ -122,7 +116,6 @@ def survival():
         supprimes  = sum(1 for a in avis_cohort if a["statut"] == "supprime")
         taux       = round(survivants / total * 100, 1) if total else 0
 
-        # Tendance : mois d'avant (J-3)
         prev2_end   = cohort_start - timedelta(days=1)
         prev2_start = prev2_end.replace(day=1)
         avis_prev = sb_get(
@@ -135,7 +128,6 @@ def survival():
         taux_prev  = round(prev_surv / prev_total * 100, 1) if prev_total else 0
         tendance   = "📈" if taux > taux_prev else "📉" if taux < taux_prev else "➡️"
 
-        # Top 3 fiches
         top_fiches = Counter(
             a["fiche_nom"] for a in avis_cohort if a["statut"] == "j30"
         ).most_common(3)
@@ -174,8 +166,6 @@ def survival():
         fallback = f"🛡️ {titre} — {taux}% survie | {survivants} en ligne, {supprimes} supprimés"
 
     else:
-        # ── 15 du mois : rapport léger sur les avis qui viennent d'atteindre J+30 ──
-        # Avis publiés il y a 30-45 jours (première quinzaine du mois dernier)
         j30_date = today - timedelta(days=30)
         j45_date = today - timedelta(days=45)
         mois_label = j30_date.strftime("%B %Y").capitalize()
