@@ -1,9 +1,6 @@
 name: Slack — Rapport survie J+30
 
 on:
-  schedule:
-    - cron: "30 2 1 * *"
-    - cron: "30 2 15 * *"
   workflow_dispatch:
 
 jobs:
