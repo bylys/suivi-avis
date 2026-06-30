@@ -2,8 +2,8 @@ name: Slack — Alertes avis GMB
 
 on:
   schedule:
-    # Rapport quotidien lun-ven à 9h00 heure TH (UTC+7) = 2h00 UTC
-    - cron: "0 2 * * 1-5"
+    # Rapport quotidien lun-ven à 11h00 heure TH (UTC+7) = 4h00 UTC
+    - cron: "0 4 * * 1-5"
     # Rapport survie J+30 — 1er du mois à 9h30 TH = 2h30 UTC
     - cron: "30 2 1 * *"
     # Rapport survie J+30 — 15 du mois à 9h30 TH = 2h30 UTC
@@ -22,9 +22,7 @@ on:
 jobs:
   daily:
     name: Rapport quotidien avis
-    if: |
-      (github.event_name == 'schedule' && github.event.schedule == '0 2 * * 1-5')
-      || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'daily')
+    if: (github.event_name == 'schedule' && github.event.schedule == '0 4 * * 1-5') || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'daily')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,9 +38,7 @@ jobs:
 
   survival:
     name: Rapport survie J+30
-    if: |
-      (github.event_name == 'schedule' && (github.event.schedule == '30 2 1 * *' || github.event.schedule == '30 2 15 * *'))
-      || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'survival')
+    if: (github.event_name == 'schedule' && (github.event.schedule == '30 2 1 * *' || github.event.schedule == '30 2 15 * *')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'survival')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
