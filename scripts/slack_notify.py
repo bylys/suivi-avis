@@ -54,15 +54,16 @@ def daily():
     nb_periode = len(avis_periode)
     nb_actifs  = sum(1 for a in avis_periode if a["statut"] != "supprime")
 
-    # Cumul du mois en cours
-    month_start = today.replace(day=1).isoformat()
-    mois_label  = today.strftime("%B %Y").capitalize()
-    avis_mois   = sb_get(f"avis?select=id,statut&date=gte.{month_start}&limit=5000")
-    nb_mois         = len(avis_mois)
-    nb_mois_actifs  = sum(1 for a in avis_mois if a["statut"] != "supprime")
+    # Fenêtre glissante 30 jours
+    j30_start     = today - timedelta(days=30)
+    avis_30j      = sb_get(f"avis?select=id,statut&date=gte.{j30_start.isoformat()}&date=lte.{today.isoformat()}&limit=5000")
+    nb_30j        = len(avis_30j)
+    nb_30j_actifs = sum(1 for a in avis_30j if a["statut"] != "supprime")
+    nb_30j_supp   = nb_30j - nb_30j_actifs
+    taux_30j      = round(nb_30j_actifs / nb_30j * 100) if nb_30j else 0
+    emoji_30j     = "🟢" if taux_30j >= 30 else "🟡" if taux_30j >= 15 else "🔴"
 
     emoji_day = "🟢" if nb_periode >= 10 else "🟡" if nb_periode >= 5 else "🔴"
-    taux_survie_mois = round(nb_mois_actifs / nb_mois * 100) if nb_mois else 0
 
     blocks = [
         {
@@ -85,19 +86,20 @@ def daily():
             "text": {
                 "type": "mrkdwn",
                 "text": (
-                    f"*📅 Cumul {mois_label}*\n"
-                    f"• Avis publiés : *{nb_mois}*\n"
-                    f"• Avis toujours en ligne : *{nb_mois_actifs}*\n"
-                    f"• Avis supprimés : *{nb_mois - nb_mois_actifs}*"
+                    f"*📅 30 derniers jours ({j30_start.strftime('%d/%m')} → {today.strftime('%d/%m')})*\n"
+                    f"• Avis publiés : *{nb_30j}*\n"
+                    f"• Encore en ligne : *{nb_30j_actifs}*\n"
+                    f"• Supprimés : *{nb_30j_supp}*\n"
+                    f"• {emoji_30j} Taux de succès : *{taux_30j}%* _({nb_30j_actifs}/{nb_30j})_"
                 )
             }
         },
         {"type": "divider"}
     ]
 
-    fallback = f"📊 Avis GMB {periode_label} — {nb_periode} publiés | Cumul {mois_label}: {nb_mois} publiés, {nb_mois_actifs} en ligne"
+    fallback = f"📊 Avis GMB {periode_label} — {nb_periode} publiés | 30j: {nb_30j} publiés, {nb_30j_actifs} en ligne ({taux_30j}%)"
     post_slack(blocks, fallback)
-    print(f"Daily sent — période: {nb_periode}, mois: {nb_mois}")
+    print(f"Daily sent — période: {nb_periode}, 30j: {nb_30j} publiés {taux_30j}% survie")
 
 
 def survival():
