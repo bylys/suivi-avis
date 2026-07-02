@@ -52,16 +52,23 @@ def daily():
     # Avis de la période
     avis_periode = sb_get(f"avis?select=id,fiche_nom,statut&{date_filter}&limit=2000")
     nb_periode = len(avis_periode)
-    nb_actifs  = sum(1 for a in avis_periode if a["statut"] != "supprime")
 
-    # Fenêtre glissante 30 jours
-    j30_start     = today - timedelta(days=30)
-    avis_30j      = sb_get(f"avis?select=id,statut&date=gte.{j30_start.isoformat()}&date=lte.{today.isoformat()}&limit=5000")
-    nb_30j        = len(avis_30j)
-    nb_30j_actifs = sum(1 for a in avis_30j if a["statut"] != "supprime")
-    nb_30j_supp   = nb_30j - nb_30j_actifs
-    taux_30j      = round(nb_30j_actifs / nb_30j * 100) if nb_30j else 0
-    emoji_30j     = "🟢" if taux_30j >= 30 else "🟡" if taux_30j >= 15 else "🔴"
+    # Cumul du mois calendaire (volume uniquement, pas de taux)
+    month_start  = today.replace(day=1).isoformat()
+    mois_label   = today.strftime("%B %Y").capitalize()
+    avis_mois    = sb_get(f"avis?select=id,statut&date=gte.{month_start}&date=lte.{today.isoformat()}&limit=5000")
+    nb_mois      = len(avis_mois)
+    nb_mois_supp = sum(1 for a in avis_mois if a["statut"] == "supprime")
+
+    # Taux de succès J+30 — J-60 à J-30 uniquement (avis ayant eu le temps d'être jugés)
+    j60_start    = today - timedelta(days=60)
+    j30_end      = today - timedelta(days=30)
+    avis_succes  = sb_get(f"avis?select=id,statut&date=gte.{j60_start.isoformat()}&date=lte.{j30_end.isoformat()}&limit=5000")
+    nb_succes    = len(avis_succes)
+    nb_en_ligne  = sum(1 for a in avis_succes if a["statut"] != "supprime")
+    nb_supp      = nb_succes - nb_en_ligne
+    taux_succes  = round(nb_en_ligne / nb_succes * 100) if nb_succes else 0
+    emoji_succes = "🟢" if taux_succes >= 50 else "🟡" if taux_succes >= 30 else "🔴"
 
     emoji_day = "🟢" if nb_periode >= 10 else "🟡" if nb_periode >= 5 else "🔴"
 
@@ -75,8 +82,8 @@ def daily():
             "text": {
                 "type": "mrkdwn",
                 "text": (
-                    f"*{emoji_day} Période {periode_label}*\n"
-                    f"• Avis publiés : *{nb_periode}*"
+                    f"*{emoji_day} Avis publiés — {periode_label}*\n"
+                    f"• Total : *{nb_periode}*"
                 )
             }
         },
@@ -86,20 +93,32 @@ def daily():
             "text": {
                 "type": "mrkdwn",
                 "text": (
-                    f"*📅 30 derniers jours ({j30_start.strftime('%d/%m')} → {today.strftime('%d/%m')})*\n"
-                    f"• Avis publiés : *{nb_30j}*\n"
-                    f"• Encore en ligne : *{nb_30j_actifs}*\n"
-                    f"• Supprimés : *{nb_30j_supp}*\n"
-                    f"• {emoji_30j} Taux de succès : *{taux_30j}%* _({nb_30j_actifs}/{nb_30j})_"
+                    f"*📅 Cumul {mois_label}*\n"
+                    f"• Avis publiés : *{nb_mois}*\n"
+                    f"• Supprimés : *{nb_mois_supp}*"
+                )
+            }
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"*🎯 Taux de succès J+30 ({j60_start.strftime('%d/%m')} → {j30_end.strftime('%d/%m')})*\n"
+                    f"• Avis analysés : *{nb_succes}*\n"
+                    f"• Encore en ligne : *{nb_en_ligne}*\n"
+                    f"• Supprimés : *{nb_supp}*\n"
+                    f"• {emoji_succes} Taux de succès : *{taux_succes}%* _({nb_en_ligne}/{nb_succes})_"
                 )
             }
         },
         {"type": "divider"}
     ]
 
-    fallback = f"📊 Avis GMB {periode_label} — {nb_periode} publiés | 30j: {nb_30j} publiés, {nb_30j_actifs} en ligne ({taux_30j}%)"
+    fallback = f"📊 Avis GMB {periode_label} — {nb_periode} publiés | Cumul {mois_label}: {nb_mois} | Succès J+30: {taux_succes}%"
     post_slack(blocks, fallback)
-    print(f"Daily sent — période: {nb_periode}, 30j: {nb_30j} publiés {taux_30j}% survie")
+    print(f"Daily sent — période: {nb_periode}, mois: {nb_mois}, taux succès: {taux_succes}%")
 
 
 def survival():
