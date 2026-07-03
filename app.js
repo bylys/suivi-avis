@@ -96,6 +96,9 @@ async function init() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('form-date').value = today;
 
+  const savedOperateur = localStorage.getItem('gmb_operateur');
+  if (savedOperateur) document.getElementById('form-operateur').value = savedOperateur;
+
   // Restaurer clé API et ID sheet depuis localStorage
   const savedKey = localStorage.getItem('sheets_api_key');
   const savedId  = localStorage.getItem('sheets_id');
@@ -951,21 +954,24 @@ function setNote(n) {
 
 async function submitAvis(e) {
   e.preventDefault();
-  const fiche_nom = document.getElementById('form-fiche').value.trim();
-  const auteur    = document.getElementById('form-auteur').value.trim();
-  const note      = parseInt(document.getElementById('form-note').value);
-  const date      = document.getElementById('form-date').value;
-  const statut    = document.getElementById('form-statut').value;
-  const texte     = document.getElementById('form-texte').value.trim();
-  const lien      = document.getElementById('form-lien').value.trim();
-  const reponse   = document.getElementById('form-reponse').value.trim();
-  const photo     = document.getElementById('form-photo').checked;
+  const fiche_nom  = document.getElementById('form-fiche').value.trim();
+  const operateur  = document.getElementById('form-operateur').value.trim();
+  const auteur     = document.getElementById('form-auteur').value.trim();
+  const note       = parseInt(document.getElementById('form-note').value);
+  const date       = document.getElementById('form-date').value;
+  const statut     = document.getElementById('form-statut').value;
+  const texte      = document.getElementById('form-texte').value.trim();
+  const lien       = document.getElementById('form-lien').value.trim();
+  const reponse    = document.getElementById('form-reponse').value.trim();
+  const photo      = document.getElementById('form-photo').checked;
 
-  if (!fiche_nom || !auteur || !note || !date || !statut) return;
+  if (!fiche_nom || !operateur || !auteur || !note || !date || !statut) return;
+
+  if (operateur) localStorage.setItem('gmb_operateur', operateur);
 
   const today = new Date().toISOString().split('T')[0];
   const ok = await sbInsert('avis', {
-    fiche_nom, auteur, note, date, statut, photo,
+    fiche_nom, operateur, auteur, note, date, statut, photo,
     texte: texte || null,
     lien: lien || null,
     reponse: reponse || null,
@@ -974,6 +980,7 @@ async function submitAvis(e) {
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
 
   document.getElementById('form-avis').reset();
+  document.getElementById('form-operateur').value = operateur;
   document.getElementById('form-photo').checked = false;
   selectedNote = 0;
   document.getElementById('star-display').textContent = '☆☆☆☆☆';
