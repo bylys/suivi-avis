@@ -1021,6 +1021,7 @@ function buildAvisRow(a, rappelsDus, aVerif) {
       <input type="date" class="date-inline" value="${a.date}" onchange="updateDate('${a.id}', this.value)" />
     </td>
     <td><span class="avis-fiche">${a.fiche_nom}</span></td>
+    <td style="color:#94a3b8;font-size:0.85rem;">${a.operateur || '–'}</td>
     <td class="avis-auteur">${a.auteur}</td>
     <td class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
     <td>
@@ -1074,7 +1075,7 @@ async function renderListe(openMonths = null) {
 
   const tableHead = `<table class="avis-table">
     <thead><tr>
-      <th>Date</th><th>Fiche GMB</th><th>Gmail</th><th>Note</th>
+      <th>Date</th><th>Fiche GMB</th><th>Opérateur</th><th>Gmail</th><th>Note</th>
       <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
     </tr></thead>`;
 
