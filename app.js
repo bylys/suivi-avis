@@ -19,6 +19,11 @@ async function sbInsert(table, data) {
     headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
     body: JSON.stringify(data)
   });
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('Supabase error:', err);
+    alert('Erreur Supabase : ' + err);
+  }
   return res.ok;
 }
 
