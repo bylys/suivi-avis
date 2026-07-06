@@ -123,11 +123,14 @@ async function init() {
   const savedOperateur = localStorage.getItem('gmb_operateur');
   if (savedOperateur) document.getElementById('form-operateur').value = savedOperateur;
 
-  // Restaurer clé API et ID sheet depuis localStorage
+  // Restaurer clés API depuis localStorage
   const savedKey = localStorage.getItem('sheets_api_key');
   const savedId  = localStorage.getItem('sheets_id');
   if (savedKey) { const el = document.getElementById('sheets-api-key'); if (el) el.value = savedKey; }
   if (savedId)  { const el = document.getElementById('sheets-id');      if (el) el.value = savedId; }
+  const savedOpenAI = localStorage.getItem('openai_key');
+  if (savedOpenAI) { const el = document.getElementById('openai-key'); if (el) el.value = savedOpenAI; }
+  if (_imgRows.length === 0) addImgRow(); // Ligne vide par défaut dans le planning
 
   const yearSel = document.getElementById('dash-year');
   const currentYear = new Date().getFullYear();
@@ -2872,4 +2875,206 @@ function closeGmbMap() {
   document.getElementById('gmb-map-panel').classList.remove('open');
   document.getElementById('gmb-map-overlay').classList.remove('open');
   if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+}
+
+// ── GÉNÉRATEUR D'IMAGES BULK ──
+let _imgRows    = [];   // [{id, fiche, travaux, nb, status, images:[]}]
+let _imgCounter = 0;
+let _generatedImages = []; // {filename, b64} pour le ZIP
+
+function addImgRow() {
+  const id = ++_imgCounter;
+  _imgRows.push({ id, fiche: '', travaux: '', nb: 3, status: 'pending', images: [] });
+  renderImgPlanning();
+}
+
+function removeImgRow(id) {
+  _imgRows = _imgRows.filter(r => r.id !== id);
+  renderImgPlanning();
+  updateCostEstimate();
+}
+
+function renderImgPlanning() {
+  const tbody = document.getElementById('img-planning-body');
+  if (!tbody) return;
+  tbody.innerHTML = _imgRows.map(row => `
+    <tr data-rowid="${row.id}">
+      <td>
+        <input type="text" list="datalist-form-fiche" value="${row.fiche}"
+          placeholder="Nom de la fiche GMB..."
+          oninput="_imgRows.find(r=>r.id===${row.id}).fiche=this.value;updateCostEstimate()" />
+      </td>
+      <td>
+        <input type="text" value="${row.travaux}"
+          placeholder="Ex : élagage, toiture, peinture..."
+          oninput="_imgRows.find(r=>r.id===${row.id}).travaux=this.value;updateCostEstimate()" />
+      </td>
+      <td style="text-align:center;">
+        <input type="number" min="1" max="10" value="${row.nb}"
+          oninput="_imgRows.find(r=>r.id===${row.id}).nb=Math.max(1,Math.min(10,parseInt(this.value)||1));updateCostEstimate()" />
+      </td>
+      <td>
+        <span class="img-row-status ${row.status}">
+          ${row.status === 'pending'  ? '–' :
+            row.status === 'running'  ? '⏳ En cours' :
+            row.status === 'done'     ? `✅ ${row.images.length} img` :
+                                        '❌ Erreur'}
+        </span>
+      </td>
+      <td>
+        <button class="btn-delete" onclick="removeImgRow(${row.id})" title="Supprimer">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateCostEstimate() {
+  const total = _imgRows.reduce((s, r) => s + (parseInt(r.nb) || 0), 0);
+  const cost  = (total * 0.04).toFixed(2);
+  const el    = document.getElementById('img-cost-estimate');
+  if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} · ~$${cost}` : '';
+}
+
+function buildDallePrompt(fiche, travaux) {
+  return `Authentic candid smartphone photo taken by a satisfied French customer, showing recently completed ${travaux} work, professional quality result clearly visible, natural outdoor lighting, realistic style like a genuine Google review photo, no text overlay, no watermark, no people visible, photorealistic`;
+}
+
+function slugify(str) {
+  return (str || 'image')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40);
+}
+
+async function generateAllImages() {
+  const key = document.getElementById('openai-key')?.value.trim();
+  if (!key) { alert('Renseigne ta clé API OpenAI (sk-...) en haut de la page.'); return; }
+
+  const rows = _imgRows.filter(r => r.travaux.trim());
+  if (!rows.length) { alert('Ajoute au moins une ligne avec un type de travaux.'); return; }
+
+  _generatedImages = [];
+  document.getElementById('img-results-grid').innerHTML = '';
+  document.getElementById('btn-download-zip').style.display = 'none';
+
+  const total = rows.reduce((s, r) => s + (parseInt(r.nb) || 1), 0);
+  let done = 0;
+
+  const progressWrap = document.getElementById('img-progress-wrap');
+  const progressBar  = document.getElementById('img-progress-bar');
+  const progressLbl  = document.getElementById('img-progress-label');
+  progressWrap.style.display = 'block';
+
+  const updateProgress = () => {
+    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+    progressBar.style.width  = pct + '%';
+    progressLbl.textContent  = `${done} / ${total} images générées`;
+  };
+  updateProgress();
+
+  document.getElementById('btn-generate-all').disabled = true;
+
+  for (const row of rows) {
+    row.status = 'running';
+    row.images = [];
+    renderImgPlanning();
+
+    const nb     = parseInt(row.nb) || 1;
+    const prompt = buildDallePrompt(row.fiche, row.travaux);
+    const slug   = slugify(row.fiche || row.travaux);
+
+    let rowOk = true;
+    for (let i = 0; i < nb; i++) {
+      try {
+        const resp = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'dall-e-3',
+            prompt,
+            n: 1,
+            size: '1024x1024',
+            response_format: 'b64_json',
+            quality: 'standard'
+          })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.error?.message || resp.statusText);
+        }
+
+        const data    = await resp.json();
+        const b64     = data.data[0].b64_json;
+        const revised = data.data[0].revised_prompt;
+        const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
+
+        row.images.push({ b64, filename });
+        _generatedImages.push({ b64, filename });
+
+        // Afficher la vignette
+        appendImgCard(b64, filename, row.fiche || row.travaux);
+
+        done++;
+        updateProgress();
+
+      } catch (e) {
+        rowOk = false;
+        console.error('DALL-E error:', e);
+        done++;
+        updateProgress();
+      }
+
+      // Pause entre requêtes pour respecter les rate limits DALL-E 3
+      if (i < nb - 1) await new Promise(r => setTimeout(r, 1200));
+    }
+
+    row.status = rowOk ? 'done' : 'error';
+    renderImgPlanning();
+  }
+
+  document.getElementById('btn-generate-all').disabled = false;
+
+  if (_generatedImages.length > 0) {
+    document.getElementById('btn-download-zip').style.display = 'inline-flex';
+  }
+}
+
+function appendImgCard(b64, filename, label) {
+  const grid = document.getElementById('img-results-grid');
+  const card = document.createElement('div');
+  card.className = 'img-result-card';
+  card.innerHTML = `
+    <img src="data:image/jpeg;base64,${b64}" alt="${label}" loading="lazy" />
+    <div class="img-result-card-info">
+      <div class="img-result-card-title">${label}</div>
+      <button class="img-result-card-dl" onclick="downloadSingleImg('${filename}', this.closest('.img-result-card').querySelector('img').src)">
+        ↓ Télécharger
+      </button>
+    </div>
+  `;
+  grid.appendChild(card);
+}
+
+function downloadSingleImg(filename, src) {
+  const a = document.createElement('a');
+  a.href = src;
+  a.download = filename;
+  a.click();
+}
+
+async function downloadImagesZip() {
+  if (!_generatedImages.length) return;
+  const zip = new JSZip();
+  const folder = zip.folder('images-gmb');
+  _generatedImages.forEach(({ b64, filename }) => {
+    folder.file(filename, b64, { base64: true });
+  });
+  const blob = await zip.generateAsync({ type: 'blob' });
+  saveAs(blob, 'images-gmb.zip');
 }
