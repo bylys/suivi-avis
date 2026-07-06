@@ -857,37 +857,171 @@ datalist { display: none; }
   letter-spacing: .04em;
 }
 
-.img-planning-table-wrap { overflow-x: auto; margin-bottom: 1.2rem; }
-.img-planning-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
-}
-.img-planning-table thead tr {
+/* ── Planning cards ── */
+#img-planning-body { margin-bottom: 1rem; }
+
+.img-plan-card {
   background: #1e293b;
-  color: #64748b;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .04em;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
 }
-.img-planning-table th { padding: 10px 12px; text-align: left; }
-.img-planning-table tbody tr { border-bottom: 1px solid #1e293b; }
-.img-planning-table tbody tr:hover { background: #0f172a44; }
-.img-planning-table td { padding: 8px 10px; vertical-align: middle; }
-.img-planning-table input[type="text"],
-.img-planning-table input[type="number"] {
+
+.img-plan-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: #0f172a55;
+  border-bottom: 1px solid #334155;
+}
+
+.img-plan-card-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #475569;
+  min-width: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.img-plan-fiche-input {
+  flex: 1;
+  min-width: 0;
   background: #0f172a;
   border: 1.5px solid #334155;
   border-radius: 8px;
   color: #f1f5f9;
   font-size: 0.88rem;
-  padding: 0.4rem 0.7rem;
+  padding: 0.35rem 0.7rem;
+  outline: none;
+  transition: border-color .15s;
+}
+.img-plan-fiche-input:focus { border-color: #6366f1; }
+
+.img-plan-nbwrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+.img-plan-nbwrap input[type="number"] {
+  width: 46px;
+  text-align: center;
+  background: #0f172a;
+  border: 1.5px solid #334155;
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 0.88rem;
+  padding: 0.35rem 0.4rem;
+  outline: none;
+  transition: border-color .15s;
+}
+.img-plan-nbwrap input[type="number"]:focus { border-color: #6366f1; }
+.img-plan-nblabel { font-size: 0.74rem; color: #475569; }
+
+.img-plan-card-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.img-plan-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.img-plan-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 120px;
+  flex: 1;
+}
+.img-plan-field-travaux { flex: 2.5; min-width: 220px; }
+
+.img-plan-field > label {
+  font-size: 0.69rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.img-plan-field input[type="text"],
+.img-plan-field select {
+  background: #0f172a;
+  border: 1.5px solid #334155;
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  padding: 0.38rem 0.7rem;
   outline: none;
   width: 100%;
   transition: border-color .15s;
+  box-sizing: border-box;
+  appearance: none;
 }
-.img-planning-table input:focus { border-color: #6366f1; }
-.img-planning-table input[type="number"] { width: 60px; text-align: center; }
+.img-plan-field input[type="text"]:focus,
+.img-plan-field select:focus { border-color: #6366f1; }
+
+.img-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+}
+.img-preset-chip {
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all .15s;
+}
+.img-preset-chip:hover { border-color: #6366f1; color: #a5b4fc; background: rgba(99,102,241,.1); }
+.img-preset-chip.active { border-color: #6366f1; color: #fff; background: #6366f1; }
+
+.img-plan-prompt-preview {
+  background: #0f172a55;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.img-plan-prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid #1e293b;
+}
+.img-plan-prompt-header > span:first-child {
+  font-size: 0.69rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.img-plan-prompt-chars { font-size: 0.7rem; color: #334155; }
+.img-plan-prompt-ta {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  line-height: 1.55;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  color: #64748b;
+  box-sizing: border-box;
+}
 
 .img-row-status {
   font-size: 0.8rem;
