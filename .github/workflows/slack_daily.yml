@@ -1,0 +1,20 @@
+name: Slack — Rapport quotidien avis
+
+on:
+  workflow_dispatch:
+
+jobs:
+  daily:
+    name: Rapport quotidien avis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Envoyer rapport quotidien
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python scripts/slack_notify.py daily

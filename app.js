@@ -19,6 +19,11 @@ async function sbInsert(table, data) {
     headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
     body: JSON.stringify(data)
   });
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('Supabase error:', err);
+    alert('Erreur Supabase : ' + err);
+  }
   return res.ok;
 }
 
@@ -76,13 +81,32 @@ function togglePwd() {
 }
 
 // ── DONNÉES ──
+let _avisCache = null;
+let _avisFetching = null;
+
 async function getAvis() {
-  return await sbGet('avis', 'select=*&order=date.desc');
+  if (_avisCache) return _avisCache;
+  if (_avisFetching) return _avisFetching;
+  _avisFetching = sbGet('avis', 'select=*&order=date.desc').then(data => {
+    _avisCache = data;
+    _avisFetching = null;
+    return data;
+  });
+  return _avisFetching;
 }
 
-async function getFiches() {
-  return await sbGet('fiches', 'select=*&order=nom.asc');
+function invalidateAvisCache() {
+  _avisCache = null;
+  _avisFetching = null;
 }
+
+let _fichesCache = null;
+async function getFiches() {
+  if (_fichesCache) return _fichesCache;
+  _fichesCache = await sbGet('fiches', 'select=*&order=nom.asc');
+  return _fichesCache;
+}
+function invalidateFichesCache() { _fichesCache = null; }
 
 // ── INIT ──
 async function init() {
@@ -96,11 +120,17 @@ async function init() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('form-date').value = today;
 
-  // Restaurer clé API et ID sheet depuis localStorage
+  const savedOperateur = localStorage.getItem('gmb_operateur');
+  if (savedOperateur) document.getElementById('form-operateur').value = savedOperateur;
+
+  // Restaurer clés API depuis localStorage
   const savedKey = localStorage.getItem('sheets_api_key');
   const savedId  = localStorage.getItem('sheets_id');
   if (savedKey) { const el = document.getElementById('sheets-api-key'); if (el) el.value = savedKey; }
   if (savedId)  { const el = document.getElementById('sheets-id');      if (el) el.value = savedId; }
+  const savedOpenAI = localStorage.getItem('openai_key');
+  if (savedOpenAI) { const el = document.getElementById('openai-key'); if (el) el.value = savedOpenAI; }
+  if (_imgRows.length === 0) addImgRow(); // Ligne vide par défaut dans le planning
 
   const yearSel = document.getElementById('dash-year');
   const currentYear = new Date().getFullYear();
@@ -126,7 +156,7 @@ function showTab(name) {
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
   if (name === 'generateur') populateGenFiche();
-  if (name === 'reco') renderRecommandations();
+  if (name === 'gmails') renderGmails();
 }
 
 // ── FICHES ──
@@ -523,6 +553,7 @@ async function addFiche(e) {
   const fiches = await getFiches();
   if (fiches.find(f => f.nom === nom)) return alert('Cette fiche existe déjà.');
   await sbInsert('fiches', { nom, lien: lien || null });
+  invalidateFichesCache();
   document.getElementById('fiche-nom').value = '';
   document.getElementById('fiche-lien').value = '';
   await populateFicheSelects();
@@ -535,6 +566,7 @@ async function deleteFiche(nom) {
   const fiche = fiches.find(f => f.nom === nom);
   if (!fiche) return;
   await sbDelete('fiches', fiche.id);
+  invalidateFichesCache();
   await populateFicheSelects();
   renderFiches();
 }
@@ -951,29 +983,35 @@ function setNote(n) {
 
 async function submitAvis(e) {
   e.preventDefault();
-  const fiche_nom = document.getElementById('form-fiche').value.trim();
-  const auteur    = document.getElementById('form-auteur').value.trim();
-  const note      = parseInt(document.getElementById('form-note').value);
-  const date      = document.getElementById('form-date').value;
-  const statut    = document.getElementById('form-statut').value;
-  const texte     = document.getElementById('form-texte').value.trim();
-  const lien      = document.getElementById('form-lien').value.trim();
-  const reponse   = document.getElementById('form-reponse').value.trim();
-  const photo     = document.getElementById('form-photo').checked;
+  const fiche_nom   = document.getElementById('form-fiche').value.trim();
+  const opEl        = document.getElementById('form-operateur');
+  const operateur   = opEl ? opEl.value.trim() : '';
+  const auteur      = document.getElementById('form-auteur').value.trim();
+  const note        = parseInt(document.getElementById('form-note').value);
+  const date        = document.getElementById('form-date').value;
+  const statut      = document.getElementById('form-statut').value;
+  const texte       = document.getElementById('form-texte').value.trim();
+  const lien        = document.getElementById('form-lien').value.trim();
+  const reponse     = document.getElementById('form-reponse').value.trim();
+  const photo       = document.getElementById('form-photo').checked;
 
   if (!fiche_nom || !auteur || !note || !date || !statut) return;
 
+  if (operateur) localStorage.setItem('gmb_operateur', operateur);
+
   const today = new Date().toISOString().split('T')[0];
   const ok = await sbInsert('avis', {
-    fiche_nom, auteur, note, date, statut, photo,
+    fiche_nom, operateur, auteur, note, date, statut, photo,
     texte: texte || null,
     lien: lien || null,
     reponse: reponse || null,
     statut_date: date
   });
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
+  invalidateAvisCache();
 
   document.getElementById('form-avis').reset();
+  if (opEl) opEl.value = operateur;
   document.getElementById('form-photo').checked = false;
   selectedNote = 0;
   document.getElementById('star-display').textContent = '☆☆☆☆☆';
@@ -1008,6 +1046,7 @@ function buildAvisRow(a, rappelsDus, aVerif) {
       <input type="date" class="date-inline" value="${a.date}" onchange="updateDate('${a.id}', this.value)" />
     </td>
     <td><span class="avis-fiche">${a.fiche_nom}</span></td>
+    <td style="color:#94a3b8;font-size:0.85rem;">${a.operateur || '–'}</td>
     <td class="avis-auteur">${a.auteur}</td>
     <td class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
     <td>
@@ -1061,7 +1100,7 @@ async function renderListe(openMonths = null) {
 
   const tableHead = `<table class="avis-table">
     <thead><tr>
-      <th>Date</th><th>Fiche GMB</th><th>Gmail</th><th>Note</th>
+      <th>Date</th><th>Fiche GMB</th><th>Opérateur</th><th>Gmail</th><th>Note</th>
       <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
     </tr></thead>`;
 
@@ -1091,6 +1130,7 @@ async function renderListe(openMonths = null) {
 
 async function updateDate(id, newDate) {
   await sbUpdate('avis', id, { date: newDate });
+  invalidateAvisCache();
   const openMonths = new Set();
   document.querySelectorAll('.month-group[open]').forEach(el => {
     openMonths.add(el.dataset.month);
@@ -1101,6 +1141,7 @@ async function updateDate(id, newDate) {
 async function updateStatut(id, newStatut) {
   const today = new Date().toISOString().split('T')[0];
   await sbUpdate('avis', id, { statut: newStatut, statut_date: today });
+  invalidateAvisCache();
   // Sauvegarder quels mois sont ouverts avant de re-rendre
   const openMonths = new Set();
   document.querySelectorAll('.month-group[open]').forEach(el => {
@@ -1112,6 +1153,7 @@ async function updateStatut(id, newStatut) {
 async function deleteAvis(id) {
   if (!confirm('Supprimer cet avis ?')) return;
   await sbDelete('avis', id);
+  invalidateAvisCache();
   renderListe();
   renderFiches();
 }
@@ -1133,9 +1175,8 @@ async function renderDashboard() {
   const moyenne = moisAvis.length ? (moisAvis.reduce((s,a) => s+a.note, 0) / moisAvis.length).toFixed(1) : '–';
 
   document.getElementById('stat-total').textContent     = moisAvis.length;
-  document.getElementById('stat-moyenne').textContent   = moyenne !== '–' ? moyenne + ' ★' : '–';
-  document.getElementById('stat-positifs').textContent  = moisAvis.filter(a => a.note >= 4).length;
-  document.getElementById('stat-negatifs').textContent  = moisAvis.filter(a => a.note <= 2).length;
+  document.getElementById('stat-kevin').textContent     = moisAvis.filter(a => a.operateur?.toLowerCase() === 'kevin').length;
+  document.getElementById('stat-fifaliana').textContent = moisAvis.filter(a => a.operateur?.toLowerCase() === 'fifaliana').length;
   const j30Count  = moisAvis.filter(a => a.statut === 'j30').length;
   const suppCount = moisAvis.filter(a => a.statut === 'supprime').length;
   const resolus = j30Count + suppCount;
@@ -2633,4 +2674,611 @@ function clearNotes() {
   document.getElementById('notes-textarea').value = '';
   localStorage.removeItem('gmb_notes');
   updateNotesLines();
+}
+
+// ── GMAILS ──
+
+async function getGmails() {
+  return await sbGet('gmails', 'select=*&order=ville.asc,email.asc');
+}
+
+async function renderGmails() {
+  const container = document.getElementById('gmails-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:#64748b;">Chargement...</p>';
+
+  const [gmails, avis] = await Promise.all([
+    getGmails(),
+    sbGet('avis', 'select=auteur,date&order=date.desc')
+  ]);
+
+  if (!gmails.length) {
+    container.innerHTML = '<p style="color:#64748b;">Aucun Gmail enregistré.</p>';
+    return;
+  }
+
+  const derniereUtilisation = {};
+  avis.forEach(a => {
+    if (!derniereUtilisation[a.auteur] || a.date > derniereUtilisation[a.auteur]) {
+      derniereUtilisation[a.auteur] = a.date;
+    }
+  });
+
+  const filterVille = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
+  const sort        = document.getElementById('gmail-filter-sort')?.value || 'az';
+
+  let list = gmails.filter(g => !filterVille || (g.ville || '').toLowerCase().includes(filterVille));
+
+  if (sort === 'az')      list.sort((a, b) => a.email.localeCompare(b.email));
+  if (sort === 'ville')   list.sort((a, b) => (a.ville || '').localeCompare(b.ville || ''));
+  if (sort === 'recent')  list.sort((a, b) => (derniereUtilisation[b.email] || '') > (derniereUtilisation[a.email] || '') ? 1 : -1);
+  if (sort === 'ancien')  list.sort((a, b) => (derniereUtilisation[a.email] || '9999') > (derniereUtilisation[b.email] || '9999') ? 1 : -1);
+
+  container.innerHTML = `
+    <p style="color:#64748b;font-size:0.82rem;margin-bottom:0.5rem;">${list.length} Gmail${list.length > 1 ? 's' : ''}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+      <thead><tr style="background:#1e293b;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">
+        <th style="padding:10px;text-align:left;">Email</th>
+        <th style="padding:10px;text-align:left;">Ville</th>
+        <th style="padding:10px;text-align:center;">Local Guide</th>
+        <th style="padding:10px;text-align:left;">Dernière utilisation</th>
+        <th style="padding:10px;"></th>
+      </tr></thead>
+      <tbody>
+        ${list.map(g => {
+          const lastUse = derniereUtilisation[g.email];
+          const lastLabel = lastUse ? lastUse.split('-').reverse().join('/') : '–';
+          const villeCell = g.ville
+            ? `<div style="display:flex;align-items:center;gap:6px;">
+                 <button class="ville-map-btn" onclick="showGmbMap('${g.ville.replace(/'/g, "\\'")}')">📍 ${g.ville}</button>
+                 <input type="text" value="${g.ville}" title="Modifier la ville"
+                   style="background:transparent;border:none;border-bottom:1px dashed #334155;color:#475569;font-size:0.75rem;width:70px;outline:none;padding:1px 2px;"
+                   onchange="updateGmailVille('${g.id}', this.value)" />
+               </div>`
+            : `<input type="text" value="" placeholder="Ajouter une ville..."
+                 style="background:transparent;border:none;border-bottom:1px solid #334155;color:#94a3b8;font-size:0.88rem;width:120px;outline:none;padding:2px 4px;"
+                 onchange="updateGmailVille('${g.id}', this.value)" />`;
+          return `<tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:10px;color:#f1f5f9;">${g.email}</td>
+            <td style="padding:10px;">${villeCell}</td>
+            <td style="padding:10px;text-align:center;">
+              <input type="checkbox" ${g.local_guide ? 'checked' : ''} onchange="toggleLocalGuide('${g.id}', this.checked)" style="accent-color:#f59e0b;width:16px;height:16px;" />
+            </td>
+            <td style="padding:10px;color:${lastUse ? '#22c55e' : '#475569'};">${lastLabel}</td>
+            <td style="padding:10px;text-align:center;">
+              <button class="btn-delete" onclick="deleteGmail('${g.id}')">🗑</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function addGmail(e) {
+  e.preventDefault();
+  const email       = document.getElementById('gmail-email').value.trim();
+  const ville       = document.getElementById('gmail-ville').value.trim();
+  const local_guide = document.getElementById('gmail-local-guide').checked;
+
+  const ok = await sbInsert('gmails', { email, ville: ville || null, local_guide });
+  if (!ok) return;
+
+  document.getElementById('form-gmail').reset();
+  renderGmails();
+}
+
+async function toggleLocalGuide(id, value) {
+  await sbUpdate('gmails', id, { local_guide: value });
+}
+
+async function updateGmailVille(id, ville) {
+  await sbUpdate('gmails', id, { ville: ville || null });
+}
+
+async function deleteGmail(id) {
+  if (!confirm('Supprimer ce Gmail ?')) return;
+  await fetch(`${SUPABASE_URL}/rest/v1/gmails?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: SB_HEADERS
+  });
+  renderGmails();
+}
+
+// ── GMB MAP PANEL ──
+function normalizeStr(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+const _geoCache = {};
+let   _leafletMap = null;
+
+async function geocodeVille(ville) {
+  if (_geoCache[ville]) return _geoCache[ville];
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ville + ', France')}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'fr' } }
+    );
+    const data = await r.json();
+    if (data.length) {
+      const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      _geoCache[ville] = result;
+      return result;
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function showGmbMap(ville) {
+  if (!ville) return;
+
+  const panel   = document.getElementById('gmb-map-panel');
+  const overlay = document.getElementById('gmb-map-overlay');
+
+  document.getElementById('gmb-map-city').textContent = ville;
+  document.getElementById('gmb-map-fiches').innerHTML =
+    '<p style="color:#64748b;font-size:0.85rem;">Chargement…</p>';
+
+  // Ouvrir le panel
+  overlay.classList.add('open');
+  panel.classList.add('open');
+
+  // Fiches correspondantes (texte dans le nom)
+  const fiches  = await getFiches();
+  const villeNorm = normalizeStr(ville);
+  const matches = fiches.filter(f => normalizeStr(f.nom).includes(villeNorm));
+
+  const fichesEl = document.getElementById('gmb-map-fiches');
+  const countLabel = matches.length
+    ? `<p style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:0.75rem;">${matches.length} fiche${matches.length > 1 ? 's' : ''} GMB trouvée${matches.length > 1 ? 's' : ''}</p>`
+    : `<p style="font-size:0.85rem;color:#475569;margin-bottom:0.75rem;">Aucune fiche trouvée pour « ${ville} ».</p>`;
+
+  fichesEl.innerHTML = countLabel + matches.map(f => `
+    <div class="gmb-fiche-item">
+      <div class="gmb-fiche-item-name">🏢 ${f.nom}</div>
+      ${f.lien ? `<a href="${f.lien}" target="_blank" rel="noopener">Voir sur Google Maps ↗</a>` : ''}
+    </div>
+  `).join('');
+
+  // Carte Leaflet (après transition pour que le conteneur soit visible)
+  setTimeout(async () => {
+    if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+
+    const geo    = await geocodeVille(ville);
+    const mapEl  = document.getElementById('gmb-map-leaflet');
+
+    if (geo && typeof L !== 'undefined') {
+      _leafletMap = L.map(mapEl, { zoomControl: true }).setView([geo.lat, geo.lon], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18
+      }).addTo(_leafletMap);
+
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:#6366f1;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      L.marker([geo.lat, geo.lon], { icon })
+        .addTo(_leafletMap)
+        .bindPopup(`<b>${ville}</b><br>${matches.length} fiche${matches.length > 1 ? 's' : ''} GMB`)
+        .openPopup();
+    } else {
+      mapEl.innerHTML = '<p style="color:#475569;text-align:center;padding:3rem 1rem;font-size:0.85rem;">Carte non disponible</p>';
+    }
+  }, 300);
+}
+
+function closeGmbMap() {
+  document.getElementById('gmb-map-panel').classList.remove('open');
+  document.getElementById('gmb-map-overlay').classList.remove('open');
+  if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+}
+
+// ── GÉNÉRATEUR D'IMAGES BULK ──
+let _imgRows         = [];
+let _imgCounter      = 0;
+let _generatedImages = [];
+
+const TRAVAUX_PRESETS = [
+  { label: 'Élagage',     value: 'élagage et taille de haie' },
+  { label: 'Abattage',    value: 'abattage d\'arbres' },
+  { label: 'Toiture',     value: 'réfection de toiture' },
+  { label: 'Peinture',    value: 'peinture extérieure' },
+  { label: 'Maçonnerie',  value: 'travaux de maçonnerie' },
+  { label: 'Ravalement',  value: 'ravalement de façade' },
+  { label: 'Carrelage',   value: 'pose de carrelage' },
+  { label: 'Plomberie',   value: 'travaux de plomberie' },
+];
+
+const LIEU_OPTIONS = [
+  { value: 'jardin',    label: 'Jardin résidentiel' },
+  { value: 'facade',    label: 'Façade de maison' },
+  { value: 'toit',      label: 'Toiture / Toit' },
+  { value: 'interieur', label: 'Intérieur' },
+  { value: 'commerce',  label: 'Local commercial' },
+  { value: 'voie',      label: 'Voie publique' },
+];
+
+const ETAT_OPTIONS = [
+  { value: 'desordre', label: '🔴 Désordonné / authentique' },
+  { value: 'encours',  label: '🟡 En cours de travaux' },
+  { value: 'propre',   label: '🟢 Terminé / propre' },
+];
+
+const METEO_OPTIONS = [
+  { value: 'soleil',   label: '☀️ Ensoleillé' },
+  { value: 'nuageux',  label: '⛅ Nuageux' },
+  { value: 'brumeux',  label: '🌫️ Brumeux / voilé' },
+  { value: 'pluie',    label: '🌧️ Après la pluie' },
+];
+
+const _workDetails = [
+  { keys: ['elag', 'haie', 'taille', 'arbust'],
+    desc: 'tree pruning and hedge trimming',
+    debris: 'a massive, disorganized pile of cut branches and thick hedge clippings, freshly cut logs and scattered bark on muddy grass, deep tire tracks from a loader, a thick layer of fresh yellow sawdust',
+    exclusions: 'No tools, no chainsaws, no helmets, no ropes, no brooms',
+    secteur: 'landscaping' },
+  { keys: ['abatt', 'abatage'],
+    desc: 'large tree felling',
+    debris: 'enormous trunk sections scattered across the ground, a thick carpet of wood chips and sawdust, deep ground marks from heavy machinery',
+    exclusions: 'No chainsaws, no safety gear, no ropes',
+    secteur: 'tree removal' },
+  { keys: ['toitur', 'couvreur', 'ardoise', 'tuile'],
+    desc: 'roof renovation',
+    debris: 'old broken clay roof tiles piled in the driveway, torn roofing felt, rusty nails scattered on the ground, bags of mortar and a stack of new tiles nearby',
+    exclusions: 'No workers, no scaffolding tools, no safety harnesses',
+    secteur: 'roofing' },
+  { keys: ['peintur', 'peint'],
+    desc: 'exterior painting',
+    debris: 'paint-splattered drop cloths on the ground, empty paint cans, masking tape residue on window frames, slight paint drips on the pavement below',
+    exclusions: 'No people, no ladders, no paint rollers visible',
+    secteur: 'painting' },
+  { keys: ['ravel', 'facade', 'enduit'],
+    desc: 'façade renovation',
+    debris: 'dark water runoff stains on the pavement below, scrubbing residue, patches of fresh render still drying on the wall',
+    exclusions: 'No pressure washers, no people, no hoses',
+    secteur: 'facade renovation' },
+  { keys: ['macon', 'beton', 'parpaing', 'pierre'],
+    desc: 'masonry work',
+    debris: 'broken bricks and mortar chunks scattered around, dried cement splashes on the ground, sand piles and rubble',
+    exclusions: 'No trowels, no workers, no scaffolding',
+    secteur: 'masonry' },
+  { keys: ['carrelage', 'parquet', 'sol'],
+    desc: 'flooring installation',
+    debris: 'tile offcuts and packaging on the floor, adhesive spatula marks, a thin film of tile dust, edge trimmings in a pile',
+    exclusions: 'No workers, no tools, no adhesive buckets',
+    secteur: 'flooring' },
+  { keys: ['plomb', 'sanitaire', 'salle de bain'],
+    desc: 'plumbing and sanitary work',
+    debris: 'old pipe sections piled nearby, plumber tape scraps, water stains on the floor around the installation area',
+    exclusions: 'No workers, no pipe wrenches, no tools',
+    secteur: 'plumbing' },
+  { keys: ['elect', 'cabl'],
+    desc: 'electrical work',
+    debris: 'cable offcuts on the floor, old switch boxes piled nearby, wall patching plaster traces around new outlets',
+    exclusions: 'No workers, no wire tools, no open electrical panels',
+    secteur: 'electrical work' },
+];
+
+function _getWorkDetail(travaux) {
+  const t = (travaux || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  for (const d of _workDetails) {
+    if (d.keys.some(k => t.includes(k))) return d;
+  }
+  return {
+    desc: travaux || 'renovation work',
+    debris: 'work materials and construction debris visible on the ground, completed work result clearly visible',
+    exclusions: 'No workers, no tools visible, no text',
+    secteur: 'home improvement'
+  };
+}
+
+function buildDallePromptV2(row) {
+  const detail = _getWorkDetail(row.travaux);
+
+  const lieuMap = {
+    jardin:    'in a residential garden on a typical French suburban street',
+    facade:    'on the façade of a typical French residential house',
+    toit:      'on the roof of a typical French house',
+    interieur: 'inside a typical French home or apartment',
+    commerce:  'at a small French commercial property',
+    voie:      'on a typical French street or public area',
+  };
+  const meteoMap = {
+    soleil:  'bright natural sunlight, warm afternoon tones',
+    nuageux: 'overcast grey sky, diffuse flat lighting, muted colors',
+    brumeux: 'bright hazy sunlight with soft glow and a slightly tilted horizon',
+    pluie:   'wet ground reflecting dull light, grey overcast sky, damp surfaces',
+  };
+  const etatMap = {
+    desordre: 'The site is in total disarray:',
+    encours:  'Work is in full progress:',
+    propre:   'The work has been neatly completed:',
+  };
+
+  const lieu    = lieuMap[row.lieu]  || 'in a typical French residential setting';
+  const meteo   = meteoMap[row.meteo] || 'natural daylight';
+  const etatPfx = etatMap[row.etat]  || '';
+  const villeStr = (row.ville || '').trim()
+    ? `in ${row.ville.trim()}, France`
+    : 'in a French town';
+
+  return `A grainy, realistic smartphone photo of a ${detail.desc} site ${lieu} ${villeStr}. Low-quality mobile camera aesthetic with ${meteo}. In the background, typical local French architecture. ${etatPfx} ${detail.debris}. ${detail.exclusions}. A mundane, raw, and authentic local ${detail.secteur} snapshot.`
+    .replace(/\s{2,}/g, ' ').trim();
+}
+
+function _escHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function addImgRow() {
+  const id = ++_imgCounter;
+  _imgRows.push({ id, fiche: '', travaux: '', ville: '', lieu: 'jardin', etat: 'desordre', meteo: 'soleil', nb: 3, status: 'pending', images: [] });
+  renderImgPlanning();
+}
+
+function removeImgRow(id) {
+  _imgRows = _imgRows.filter(r => r.id !== id);
+  renderImgPlanning();
+  updateCostEstimate();
+}
+
+function updateImgRow(id, field, value) {
+  const row = _imgRows.find(r => r.id === id);
+  if (!row) return;
+  row[field] = value;
+  const card = document.querySelector(`.img-plan-card[data-rowid="${id}"]`);
+  if (card) {
+    const prompt = buildDallePromptV2(row);
+    const ta = card.querySelector('.img-plan-prompt-ta');
+    const cc = card.querySelector('.img-plan-prompt-chars');
+    if (ta) ta.value = prompt;
+    if (cc) cc.textContent = prompt.length + ' chars';
+  }
+  updateCostEstimate();
+}
+
+function setImgRowTravaux(id, presetIdx) {
+  const preset = TRAVAUX_PRESETS[presetIdx];
+  if (!preset) return;
+  const row = _imgRows.find(r => r.id === id);
+  if (!row) return;
+  row.travaux = preset.value;
+  const card = document.querySelector(`.img-plan-card[data-rowid="${id}"]`);
+  if (card) {
+    const input = card.querySelector('.img-plan-travaux-input');
+    if (input) input.value = preset.value;
+    card.querySelectorAll('.img-preset-chip').forEach((c, i) => {
+      c.classList.toggle('active', i === presetIdx);
+    });
+    const prompt = buildDallePromptV2(row);
+    const ta = card.querySelector('.img-plan-prompt-ta');
+    const cc = card.querySelector('.img-plan-prompt-chars');
+    if (ta) ta.value = prompt;
+    if (cc) cc.textContent = prompt.length + ' chars';
+  }
+  updateCostEstimate();
+}
+
+function _renderImgCard(row, idx) {
+  const num    = String(idx + 1).padStart(2, '0');
+  const stTxt  = row.status === 'running' ? '⏳' :
+                 row.status === 'done'    ? `✅ ${row.images.length}` :
+                 row.status === 'error'   ? '❌' : '–';
+
+  const chipsHtml = TRAVAUX_PRESETS.map((p, i) =>
+    `<button class="img-preset-chip${row.travaux === p.value ? ' active' : ''}" onclick="setImgRowTravaux(${row.id},${i})">${p.label}</button>`
+  ).join('');
+
+  const lieuOpts  = LIEU_OPTIONS.map(o =>
+    `<option value="${o.value}"${row.lieu  === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+  const etatOpts  = ETAT_OPTIONS.map(o =>
+    `<option value="${o.value}"${row.etat  === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+  const meteoOpts = METEO_OPTIONS.map(o =>
+    `<option value="${o.value}"${row.meteo === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+
+  const prompt = buildDallePromptV2(row);
+
+  return `
+<div class="img-plan-card" data-rowid="${row.id}">
+  <div class="img-plan-card-header">
+    <span class="img-plan-card-num">${num}</span>
+    <input type="text" class="img-plan-fiche-input" list="datalist-form-fiche"
+      value="${_escHtml(row.fiche)}" placeholder="Fiche GMB..."
+      oninput="updateImgRow(${row.id},'fiche',this.value)" />
+    <div class="img-plan-nbwrap">
+      <span style="color:#64748b;">×</span>
+      <input type="number" min="1" max="10" value="${row.nb}"
+        oninput="updateImgRow(${row.id},'nb',Math.max(1,Math.min(10,parseInt(this.value)||1)))" />
+      <span class="img-plan-nblabel">img</span>
+    </div>
+    <span class="img-row-status ${row.status}">${stTxt}</span>
+    <button class="btn-delete" onclick="removeImgRow(${row.id})" title="Supprimer">🗑</button>
+  </div>
+  <div class="img-plan-card-body">
+    <div class="img-plan-fields">
+      <div class="img-plan-field img-plan-field-travaux">
+        <label>Type de travaux</label>
+        <input type="text" class="img-plan-travaux-input" value="${_escHtml(row.travaux)}"
+          placeholder="élagage, toiture, peinture..."
+          oninput="updateImgRow(${row.id},'travaux',this.value)" />
+        <div class="img-preset-chips">${chipsHtml}</div>
+      </div>
+      <div class="img-plan-field">
+        <label>Ville</label>
+        <input type="text" value="${_escHtml(row.ville||'')}" placeholder="Lyon, Bordeaux..."
+          oninput="updateImgRow(${row.id},'ville',this.value)" />
+      </div>
+      <div class="img-plan-field">
+        <label>Type de lieu</label>
+        <select onchange="updateImgRow(${row.id},'lieu',this.value)">${lieuOpts}</select>
+      </div>
+      <div class="img-plan-field">
+        <label>État du chantier</label>
+        <select onchange="updateImgRow(${row.id},'etat',this.value)">${etatOpts}</select>
+      </div>
+      <div class="img-plan-field">
+        <label>Météo</label>
+        <select onchange="updateImgRow(${row.id},'meteo',this.value)">${meteoOpts}</select>
+      </div>
+    </div>
+    <div class="img-plan-prompt-preview">
+      <div class="img-plan-prompt-header">
+        <span>Prompt DALL-E 3</span>
+        <span class="img-plan-prompt-chars">${prompt.length} chars</span>
+      </div>
+      <textarea class="img-plan-prompt-ta" readonly></textarea>
+    </div>
+  </div>
+</div>`;
+}
+
+function renderImgPlanning() {
+  const body = document.getElementById('img-planning-body');
+  if (!body) return;
+  body.innerHTML = _imgRows.map((row, idx) => _renderImgCard(row, idx)).join('');
+  // Set textarea values after render to avoid HTML-escaping issues
+  _imgRows.forEach(row => {
+    const card = body.querySelector(`.img-plan-card[data-rowid="${row.id}"]`);
+    if (card) {
+      const ta = card.querySelector('.img-plan-prompt-ta');
+      if (ta) ta.value = buildDallePromptV2(row);
+    }
+  });
+  updateCostEstimate();
+}
+
+function updateCostEstimate() {
+  const total = _imgRows.reduce((s, r) => s + (parseInt(r.nb) || 0), 0);
+  const cost  = (total * 0.04).toFixed(2);
+  const el    = document.getElementById('img-cost-estimate');
+  if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} · ~$${cost}` : '';
+}
+
+function slugify(str) {
+  return (str || 'image')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40);
+}
+
+async function generateAllImages() {
+  const key = document.getElementById('openai-key')?.value.trim();
+  if (!key) { alert('Renseigne ta clé API OpenAI (sk-...) en haut de la page.'); return; }
+
+  const rows = _imgRows.filter(r => (r.travaux || '').trim());
+  if (!rows.length) { alert('Ajoute au moins une ligne avec un type de travaux.'); return; }
+
+  _generatedImages = [];
+  document.getElementById('img-results-grid').innerHTML = '';
+  document.getElementById('btn-download-zip').style.display = 'none';
+
+  const total = rows.reduce((s, r) => s + (parseInt(r.nb) || 1), 0);
+  let done = 0;
+
+  const progressWrap = document.getElementById('img-progress-wrap');
+  const progressBar  = document.getElementById('img-progress-bar');
+  const progressLbl  = document.getElementById('img-progress-label');
+  progressWrap.style.display = 'block';
+
+  const updateProgress = () => {
+    const pct = total > 0 ? Math.round(done / total * 100) : 0;
+    progressBar.style.width = pct + '%';
+    progressLbl.textContent = `${done} / ${total} images générées`;
+  };
+  updateProgress();
+
+  document.getElementById('btn-generate-all').disabled = true;
+
+  for (const row of rows) {
+    row.status = 'running';
+    row.images = [];
+    renderImgPlanning();
+
+    const nb     = parseInt(row.nb) || 1;
+    const prompt = buildDallePromptV2(row);
+    const slug   = slugify(row.fiche || row.travaux);
+
+    let rowOk = true;
+    for (let i = 0; i < nb; i++) {
+      try {
+        const resp = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'dall-e-3', prompt, n: 1,
+            size: '1024x1024', response_format: 'b64_json', quality: 'standard'
+          })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.error?.message || resp.statusText);
+        }
+
+        const data     = await resp.json();
+        const b64      = data.data[0].b64_json;
+        const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
+
+        row.images.push({ b64, filename });
+        _generatedImages.push({ b64, filename });
+        appendImgCard(b64, filename, row.fiche || row.travaux);
+
+        done++;
+        updateProgress();
+      } catch (e) {
+        rowOk = false;
+        console.error('DALL-E error:', e);
+        done++;
+        updateProgress();
+      }
+
+      if (i < nb - 1) await new Promise(r => setTimeout(r, 1200));
+    }
+
+    row.status = rowOk ? 'done' : 'error';
+    renderImgPlanning();
+  }
+
+  document.getElementById('btn-generate-all').disabled = false;
+  if (_generatedImages.length > 0) {
+    document.getElementById('btn-download-zip').style.display = 'inline-flex';
+  }
+}
+
+function appendImgCard(b64, filename, label) {
+  const grid = document.getElementById('img-results-grid');
+  const card = document.createElement('div');
+  card.className = 'img-result-card';
+  card.innerHTML = `
+    <img src="data:image/jpeg;base64,${b64}" alt="${_escHtml(label)}" loading="lazy" />
+    <div class="img-result-card-info">
+      <div class="img-result-card-title">${_escHtml(label)}</div>
+      <button class="img-result-card-dl" onclick="downloadSingleImg('${_escHtml(filename)}', this.closest('.img-result-card').querySelector('img').src)">
+        ↓ Télécharger
+      </button>
+    </div>
+  `;
+  grid.appendChild(card);
+}
+
+function downloadSingleImg(filename, src) {
+  const a = document.createElement('a');
+  a.href = src;
+  a.download = filename;
+  a.click();
+}
+
+async function downloadImagesZip() {
+  if (!_generatedImages.length) return;
+  const zip = new JSZip();
+  const folder = zip.folder('images-gmb');
+  _generatedImages.forEach(({ b64, filename }) => folder.file(filename, b64, { base64: true }));
+  const blob = await zip.generateAsync({ type: 'blob' });
+  saveAs(blob, 'images-gmb.zip');
 }

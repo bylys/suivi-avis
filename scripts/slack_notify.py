@@ -52,17 +52,25 @@ def daily():
     # Avis de la période
     avis_periode = sb_get(f"avis?select=id,fiche_nom,statut&{date_filter}&limit=2000")
     nb_periode = len(avis_periode)
-    nb_actifs  = sum(1 for a in avis_periode if a["statut"] != "supprime")
 
-    # Cumul du mois en cours
-    month_start = today.replace(day=1).isoformat()
-    mois_label  = today.strftime("%B %Y").capitalize()
-    avis_mois   = sb_get(f"avis?select=id,statut&date=gte.{month_start}&limit=5000")
-    nb_mois         = len(avis_mois)
-    nb_mois_actifs  = sum(1 for a in avis_mois if a["statut"] != "supprime")
+    # Cumul du mois calendaire (volume uniquement, pas de taux)
+    month_start  = today.replace(day=1).isoformat()
+    mois_label   = today.strftime("%B %Y").capitalize()
+    avis_mois    = sb_get(f"avis?select=id,statut&date=gte.{month_start}&date=lte.{today.isoformat()}&limit=5000")
+    nb_mois      = len(avis_mois)
+    nb_mois_supp = sum(1 for a in avis_mois if a["statut"] == "supprime")
+
+    # Taux de succès J+30 — J-60 à J-30 uniquement (avis ayant eu le temps d'être jugés)
+    j60_start    = today - timedelta(days=60)
+    j30_end      = today - timedelta(days=30)
+    avis_succes  = sb_get(f"avis?select=id,statut&date=gte.{j60_start.isoformat()}&date=lte.{j30_end.isoformat()}&limit=5000")
+    nb_succes    = len(avis_succes)
+    nb_en_ligne  = sum(1 for a in avis_succes if a["statut"] != "supprime")
+    nb_supp      = nb_succes - nb_en_ligne
+    taux_succes  = round(nb_en_ligne / nb_succes * 100) if nb_succes else 0
+    emoji_succes = "🟢" if taux_succes >= 50 else "🟡" if taux_succes >= 30 else "🔴"
 
     emoji_day = "🟢" if nb_periode >= 10 else "🟡" if nb_periode >= 5 else "🔴"
-    taux_survie_mois = round(nb_mois_actifs / nb_mois * 100) if nb_mois else 0
 
     blocks = [
         {
@@ -74,8 +82,8 @@ def daily():
             "text": {
                 "type": "mrkdwn",
                 "text": (
-                    f"*{emoji_day} Période {periode_label}*\n"
-                    f"• Avis publiés : *{nb_periode}*"
+                    f"*{emoji_day} Avis publiés — {periode_label}*\n"
+                    f"• Total : *{nb_periode}*"
                 )
             }
         },
@@ -87,17 +95,30 @@ def daily():
                 "text": (
                     f"*📅 Cumul {mois_label}*\n"
                     f"• Avis publiés : *{nb_mois}*\n"
-                    f"• Avis toujours en ligne : *{nb_mois_actifs}*\n"
-                    f"• Avis supprimés : *{nb_mois - nb_mois_actifs}*"
+                    f"• Supprimés : *{nb_mois_supp}*"
+                )
+            }
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"*🎯 Taux de succès J+30 ({j60_start.strftime('%d/%m')} → {j30_end.strftime('%d/%m')})*\n"
+                    f"• Avis analysés : *{nb_succes}*\n"
+                    f"• Encore en ligne : *{nb_en_ligne}*\n"
+                    f"• Supprimés : *{nb_supp}*\n"
+                    f"• {emoji_succes} Taux de succès : *{taux_succes}%* _({nb_en_ligne}/{nb_succes})_"
                 )
             }
         },
         {"type": "divider"}
     ]
 
-    fallback = f"📊 Avis GMB {periode_label} — {nb_periode} publiés | Cumul {mois_label}: {nb_mois} publiés, {nb_mois_actifs} en ligne"
+    fallback = f"📊 Avis GMB {periode_label} — {nb_periode} publiés | Cumul {mois_label}: {nb_mois} | Succès J+30: {taux_succes}%"
     post_slack(blocks, fallback)
-    print(f"Daily sent — période: {nb_periode}, mois: {nb_mois}")
+    print(f"Daily sent — période: {nb_periode}, mois: {nb_mois}, taux succès: {taux_succes}%")
 
 
 def survival():

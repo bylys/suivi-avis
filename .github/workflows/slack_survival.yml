@@ -1,0 +1,20 @@
+name: Slack — Rapport survie J+30
+
+on:
+  workflow_dispatch:
+
+jobs:
+  survival:
+    name: Rapport survie J+30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Envoyer rapport survie J+30
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python scripts/slack_notify.py survival

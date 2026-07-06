@@ -7,6 +7,10 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📍</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -32,10 +36,11 @@
     <nav>
       <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
       <button class="tab-btn" onclick="showTab('generateur')">Générateur d'avis</button>
+      <button class="tab-btn" onclick="showTab('images')">🖼️ Images</button>
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
-      <button class="tab-btn" onclick="showTab('reco')">📋 Recommandations</button>
+      <button class="tab-btn" onclick="showTab('gmails')">📧 GMails</button>
     </nav>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </header>
@@ -75,16 +80,12 @@
         <label>Avis ce mois</label>
       </div>
       <div class="stat-card">
-        <span id="stat-moyenne">–</span>
-        <label>Note moyenne</label>
+        <span id="stat-kevin">0</span>
+        <label>Avis Kevin</label>
       </div>
       <div class="stat-card">
-        <span id="stat-positifs">0</span>
-        <label>Avis positifs (4-5★)</label>
-      </div>
-      <div class="stat-card">
-        <span id="stat-negatifs">0</span>
-        <label>Avis négatifs (1-2★)</label>
+        <span id="stat-fifaliana">0</span>
+        <label>Avis Fifaliana</label>
       </div>
       <div class="stat-card highlight">
         <span id="stat-j30">0</span>
@@ -123,6 +124,9 @@
       <label>Fiche GMB *
         <input type="text" id="form-fiche" list="datalist-form-fiche" placeholder="Rechercher une fiche..." autocomplete="off" required />
         <datalist id="datalist-form-fiche"></datalist>
+      </label>
+      <label>Ton prénom *
+        <input type="text" id="form-operateur" placeholder="Kevin, Mailys..." required />
       </label>
       <label>Gmail de l'auteur *
         <input type="email" id="form-auteur" placeholder="client@gmail.com" required />
@@ -245,21 +249,78 @@
     </div>
   </section>
 
-  <!-- RECOMMANDATIONS -->
-  <section id="tab-reco" class="tab-content hidden">
-    <h2>📋 Recommandations du jour</h2>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.8rem;">
-      <div id="reco-date" style="font-size:0.9rem;color:#94a3b8;"></div>
-      <div style="display:flex;gap:0.5rem;">
-        <button class="btn-secondary" onclick="changeRecoDay(-1)">← Hier</button>
-        <button class="btn-secondary" onclick="changeRecoDay(0)">Aujourd'hui</button>
-        <button class="btn-secondary" onclick="changeRecoDay(1)">Demain →</button>
+  <!-- GMAILS -->
+  <section id="tab-gmails" class="tab-content hidden">
+    <h2>📧 Liste des GMails</h2>
+    <form id="form-gmail" onsubmit="addGmail(event)" style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;align-items:center;">
+      <input type="email" id="gmail-email" placeholder="exemple@gmail.com" required style="flex:2;min-width:180px;width:auto;display:inline-block;" />
+      <input type="text" id="gmail-ville" placeholder="Ville (optionnel)" style="flex:1;min-width:120px;width:auto;display:inline-block;" />
+      <label class="checkbox-label" style="margin:0;white-space:nowrap;flex-shrink:0;">
+        <input type="checkbox" id="gmail-local-guide" />
+        ⭐ Local Guide
+      </label>
+      <button type="submit" class="btn-primary" style="white-space:nowrap;flex-shrink:0;">+ Ajouter</button>
+    </form>
+    <div class="gmail-toolbar">
+      <div class="gmail-search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="gmail-filter-ville" placeholder="Filtrer par ville..." oninput="renderGmails()" />
+      </div>
+      <div class="gmail-toolbar-sep"></div>
+      <div class="gmail-sort-wrap">
+        <select id="gmail-filter-sort" onchange="renderGmails()">
+          <option value="az">A → Z</option>
+          <option value="recent">Récemment utilisés</option>
+          <option value="ancien">Anciennement utilisés</option>
+          <option value="ville">Ville A → Z</option>
+        </select>
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </div>
-    <div style="margin-bottom:0.8rem;">
-      <button class="btn-secondary" onclick="afficherFormulaireRecoManuelle()" style="background:#7f1d1d;color:#fca5a5;border-color:#991b1b;">🔴 + Ajouter une reco urgente</button>
+    <div id="gmails-list"></div>
+  </section>
+
+  <!-- IMAGES -->
+  <section id="tab-images" class="tab-content hidden">
+    <h2>🖼️ Générateur d'images bulk</h2>
+
+    <!-- Clé API -->
+    <div class="img-api-bar">
+      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:#64748b;fill:none;stroke-width:2;flex-shrink:0;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      <input type="password" id="openai-key" placeholder="Clé API OpenAI (sk-...)" autocomplete="off"
+        oninput="localStorage.setItem('openai_key', this.value)" />
+      <span id="img-cost-estimate" class="img-cost-badge"></span>
     </div>
-    <div id="reco-list"></div>
+
+    <!-- Planning -->
+    <div class="img-planning-header">
+      <span>Planning de génération</span>
+      <button class="btn-secondary" onclick="addImgRow()">+ Ajouter</button>
+    </div>
+    <div id="img-planning-body"></div>
+
+    <!-- Actions -->
+    <div class="img-actions-bar">
+      <button class="btn-primary" id="btn-generate-all" onclick="generateAllImages()">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:6px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Générer tout
+      </button>
+      <button class="btn-secondary" id="btn-download-zip" onclick="downloadImagesZip()" style="display:none;">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Télécharger ZIP
+      </button>
+    </div>
+
+    <!-- Barre de progression -->
+    <div id="img-progress-wrap" style="display:none;">
+      <div class="img-progress-bar-track">
+        <div id="img-progress-bar" class="img-progress-bar-fill"></div>
+      </div>
+      <p id="img-progress-label" class="img-progress-label">0 / 0</p>
+    </div>
+
+    <!-- Grille de résultats -->
+    <div id="img-results-grid" class="img-results-grid"></div>
   </section>
 
   <!-- FICHES -->
@@ -323,6 +384,22 @@
       </div>
     </details>
   </section>
+</div>
+
+<!-- ── GMB MAP PANEL ── -->
+<div id="gmb-map-overlay" onclick="closeGmbMap()"></div>
+<div id="gmb-map-panel">
+  <div class="gmb-map-header">
+    <div class="gmb-map-title-row">
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#6366f1;fill:none;stroke-width:2;flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="gmb-map-city">–</span>
+    </div>
+    <button class="gmb-map-close" onclick="closeGmbMap()">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div id="gmb-map-leaflet"></div>
+  <div id="gmb-map-fiches"></div>
 </div>
 
 <!-- ── NOTES FLOTTANTES ── -->
