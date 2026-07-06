@@ -705,3 +705,97 @@ datalist { display: none; }
 .notes-lines { font-size: 0.7rem; color: #334155; background: #1e293b; border-radius: 20px; padding: 2px 8px; }
 .notes-saved { font-size: 0.7rem; color: #334155; display: flex; align-items: center; gap: 4px; }
 .notes-saved svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 1.5; fill: none; }
+
+/* ── GMAILS FILTER BAR ── */
+.gmail-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+}
+
+.gmail-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+}
+.gmail-search-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  stroke: #475569;
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+.gmail-search-wrap input {
+  width: 100%;
+  padding: 0.52rem 0.9rem 0.52rem 2.2rem;
+  background: #0f172a !important;
+  border: 1.5px solid #334155;
+  border-radius: 9px;
+  color: #f1f5f9 !important;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-text-fill-color: #f1f5f9;
+}
+.gmail-search-wrap input::placeholder { color: #475569; }
+.gmail-search-wrap input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.gmail-toolbar-sep {
+  width: 1px;
+  height: 28px;
+  background: #334155;
+  flex-shrink: 0;
+}
+
+.gmail-sort-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.gmail-sort-wrap svg {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  stroke: #475569;
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+.gmail-sort-wrap select {
+  padding: 0.52rem 2.2rem 0.52rem 0.9rem;
+  background: #0f172a !important;
+  border: 1.5px solid #334155;
+  border-radius: 9px;
+  color: #94a3b8 !important;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color .15s, box-shadow .15s;
+  -webkit-text-fill-color: #94a3b8;
+  color-scheme: dark;
+}
+.gmail-sort-wrap select option { background: #1e293b; color: #f1f5f9; }
+.gmail-sort-wrap select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9;
+}
