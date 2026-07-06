@@ -2878,13 +2878,145 @@ function closeGmbMap() {
 }
 
 // ── GÉNÉRATEUR D'IMAGES BULK ──
-let _imgRows    = [];   // [{id, fiche, travaux, nb, status, images:[]}]
-let _imgCounter = 0;
-let _generatedImages = []; // {filename, b64} pour le ZIP
+let _imgRows         = [];
+let _imgCounter      = 0;
+let _generatedImages = [];
+
+const TRAVAUX_PRESETS = [
+  { label: 'Élagage',     value: 'élagage et taille de haie' },
+  { label: 'Abattage',    value: 'abattage d\'arbres' },
+  { label: 'Toiture',     value: 'réfection de toiture' },
+  { label: 'Peinture',    value: 'peinture extérieure' },
+  { label: 'Maçonnerie',  value: 'travaux de maçonnerie' },
+  { label: 'Ravalement',  value: 'ravalement de façade' },
+  { label: 'Carrelage',   value: 'pose de carrelage' },
+  { label: 'Plomberie',   value: 'travaux de plomberie' },
+];
+
+const LIEU_OPTIONS = [
+  { value: 'jardin',    label: 'Jardin résidentiel' },
+  { value: 'facade',    label: 'Façade de maison' },
+  { value: 'toit',      label: 'Toiture / Toit' },
+  { value: 'interieur', label: 'Intérieur' },
+  { value: 'commerce',  label: 'Local commercial' },
+  { value: 'voie',      label: 'Voie publique' },
+];
+
+const ETAT_OPTIONS = [
+  { value: 'desordre', label: '🔴 Désordonné / authentique' },
+  { value: 'encours',  label: '🟡 En cours de travaux' },
+  { value: 'propre',   label: '🟢 Terminé / propre' },
+];
+
+const METEO_OPTIONS = [
+  { value: 'soleil',   label: '☀️ Ensoleillé' },
+  { value: 'nuageux',  label: '⛅ Nuageux' },
+  { value: 'brumeux',  label: '🌫️ Brumeux / voilé' },
+  { value: 'pluie',    label: '🌧️ Après la pluie' },
+];
+
+const _workDetails = [
+  { keys: ['elag', 'haie', 'taille', 'arbust'],
+    desc: 'tree pruning and hedge trimming',
+    debris: 'a massive, disorganized pile of cut branches and thick hedge clippings, freshly cut logs and scattered bark on muddy grass, deep tire tracks from a loader, a thick layer of fresh yellow sawdust',
+    exclusions: 'No tools, no chainsaws, no helmets, no ropes, no brooms',
+    secteur: 'landscaping' },
+  { keys: ['abatt', 'abatage'],
+    desc: 'large tree felling',
+    debris: 'enormous trunk sections scattered across the ground, a thick carpet of wood chips and sawdust, deep ground marks from heavy machinery',
+    exclusions: 'No chainsaws, no safety gear, no ropes',
+    secteur: 'tree removal' },
+  { keys: ['toitur', 'couvreur', 'ardoise', 'tuile'],
+    desc: 'roof renovation',
+    debris: 'old broken clay roof tiles piled in the driveway, torn roofing felt, rusty nails scattered on the ground, bags of mortar and a stack of new tiles nearby',
+    exclusions: 'No workers, no scaffolding tools, no safety harnesses',
+    secteur: 'roofing' },
+  { keys: ['peintur', 'peint'],
+    desc: 'exterior painting',
+    debris: 'paint-splattered drop cloths on the ground, empty paint cans, masking tape residue on window frames, slight paint drips on the pavement below',
+    exclusions: 'No people, no ladders, no paint rollers visible',
+    secteur: 'painting' },
+  { keys: ['ravel', 'facade', 'enduit'],
+    desc: 'façade renovation',
+    debris: 'dark water runoff stains on the pavement below, scrubbing residue, patches of fresh render still drying on the wall',
+    exclusions: 'No pressure washers, no people, no hoses',
+    secteur: 'facade renovation' },
+  { keys: ['macon', 'beton', 'parpaing', 'pierre'],
+    desc: 'masonry work',
+    debris: 'broken bricks and mortar chunks scattered around, dried cement splashes on the ground, sand piles and rubble',
+    exclusions: 'No trowels, no workers, no scaffolding',
+    secteur: 'masonry' },
+  { keys: ['carrelage', 'parquet', 'sol'],
+    desc: 'flooring installation',
+    debris: 'tile offcuts and packaging on the floor, adhesive spatula marks, a thin film of tile dust, edge trimmings in a pile',
+    exclusions: 'No workers, no tools, no adhesive buckets',
+    secteur: 'flooring' },
+  { keys: ['plomb', 'sanitaire', 'salle de bain'],
+    desc: 'plumbing and sanitary work',
+    debris: 'old pipe sections piled nearby, plumber tape scraps, water stains on the floor around the installation area',
+    exclusions: 'No workers, no pipe wrenches, no tools',
+    secteur: 'plumbing' },
+  { keys: ['elect', 'cabl'],
+    desc: 'electrical work',
+    debris: 'cable offcuts on the floor, old switch boxes piled nearby, wall patching plaster traces around new outlets',
+    exclusions: 'No workers, no wire tools, no open electrical panels',
+    secteur: 'electrical work' },
+];
+
+function _getWorkDetail(travaux) {
+  const t = (travaux || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  for (const d of _workDetails) {
+    if (d.keys.some(k => t.includes(k))) return d;
+  }
+  return {
+    desc: travaux || 'renovation work',
+    debris: 'work materials and construction debris visible on the ground, completed work result clearly visible',
+    exclusions: 'No workers, no tools visible, no text',
+    secteur: 'home improvement'
+  };
+}
+
+function buildDallePromptV2(row) {
+  const detail = _getWorkDetail(row.travaux);
+
+  const lieuMap = {
+    jardin:    'in a residential garden on a typical French suburban street',
+    facade:    'on the façade of a typical French residential house',
+    toit:      'on the roof of a typical French house',
+    interieur: 'inside a typical French home or apartment',
+    commerce:  'at a small French commercial property',
+    voie:      'on a typical French street or public area',
+  };
+  const meteoMap = {
+    soleil:  'bright natural sunlight, warm afternoon tones',
+    nuageux: 'overcast grey sky, diffuse flat lighting, muted colors',
+    brumeux: 'bright hazy sunlight with soft glow and a slightly tilted horizon',
+    pluie:   'wet ground reflecting dull light, grey overcast sky, damp surfaces',
+  };
+  const etatMap = {
+    desordre: 'The site is in total disarray:',
+    encours:  'Work is in full progress:',
+    propre:   'The work has been neatly completed:',
+  };
+
+  const lieu    = lieuMap[row.lieu]  || 'in a typical French residential setting';
+  const meteo   = meteoMap[row.meteo] || 'natural daylight';
+  const etatPfx = etatMap[row.etat]  || '';
+  const villeStr = (row.ville || '').trim()
+    ? `in ${row.ville.trim()}, France`
+    : 'in a French town';
+
+  return `A grainy, realistic smartphone photo of a ${detail.desc} site ${lieu} ${villeStr}. Low-quality mobile camera aesthetic with ${meteo}. In the background, typical local French architecture. ${etatPfx} ${detail.debris}. ${detail.exclusions}. A mundane, raw, and authentic local ${detail.secteur} snapshot.`
+    .replace(/\s{2,}/g, ' ').trim();
+}
+
+function _escHtml(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 function addImgRow() {
   const id = ++_imgCounter;
-  _imgRows.push({ id, fiche: '', travaux: '', nb: 3, status: 'pending', images: [] });
+  _imgRows.push({ id, fiche: '', travaux: '', ville: '', lieu: 'jardin', etat: 'desordre', meteo: 'soleil', nb: 3, status: 'pending', images: [] });
   renderImgPlanning();
 }
 
@@ -2894,38 +3026,129 @@ function removeImgRow(id) {
   updateCostEstimate();
 }
 
+function updateImgRow(id, field, value) {
+  const row = _imgRows.find(r => r.id === id);
+  if (!row) return;
+  row[field] = value;
+  const card = document.querySelector(`.img-plan-card[data-rowid="${id}"]`);
+  if (card) {
+    const prompt = buildDallePromptV2(row);
+    const ta = card.querySelector('.img-plan-prompt-ta');
+    const cc = card.querySelector('.img-plan-prompt-chars');
+    if (ta) ta.value = prompt;
+    if (cc) cc.textContent = prompt.length + ' chars';
+  }
+  updateCostEstimate();
+}
+
+function setImgRowTravaux(id, presetIdx) {
+  const preset = TRAVAUX_PRESETS[presetIdx];
+  if (!preset) return;
+  const row = _imgRows.find(r => r.id === id);
+  if (!row) return;
+  row.travaux = preset.value;
+  const card = document.querySelector(`.img-plan-card[data-rowid="${id}"]`);
+  if (card) {
+    const input = card.querySelector('.img-plan-travaux-input');
+    if (input) input.value = preset.value;
+    card.querySelectorAll('.img-preset-chip').forEach((c, i) => {
+      c.classList.toggle('active', i === presetIdx);
+    });
+    const prompt = buildDallePromptV2(row);
+    const ta = card.querySelector('.img-plan-prompt-ta');
+    const cc = card.querySelector('.img-plan-prompt-chars');
+    if (ta) ta.value = prompt;
+    if (cc) cc.textContent = prompt.length + ' chars';
+  }
+  updateCostEstimate();
+}
+
+function _renderImgCard(row, idx) {
+  const num    = String(idx + 1).padStart(2, '0');
+  const stTxt  = row.status === 'running' ? '⏳' :
+                 row.status === 'done'    ? `✅ ${row.images.length}` :
+                 row.status === 'error'   ? '❌' : '–';
+
+  const chipsHtml = TRAVAUX_PRESETS.map((p, i) =>
+    `<button class="img-preset-chip${row.travaux === p.value ? ' active' : ''}" onclick="setImgRowTravaux(${row.id},${i})">${p.label}</button>`
+  ).join('');
+
+  const lieuOpts  = LIEU_OPTIONS.map(o =>
+    `<option value="${o.value}"${row.lieu  === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+  const etatOpts  = ETAT_OPTIONS.map(o =>
+    `<option value="${o.value}"${row.etat  === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+  const meteoOpts = METEO_OPTIONS.map(o =>
+    `<option value="${o.value}"${row.meteo === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+
+  const prompt = buildDallePromptV2(row);
+
+  return `
+<div class="img-plan-card" data-rowid="${row.id}">
+  <div class="img-plan-card-header">
+    <span class="img-plan-card-num">${num}</span>
+    <input type="text" class="img-plan-fiche-input" list="datalist-form-fiche"
+      value="${_escHtml(row.fiche)}" placeholder="Fiche GMB..."
+      oninput="updateImgRow(${row.id},'fiche',this.value)" />
+    <div class="img-plan-nbwrap">
+      <span style="color:#64748b;">×</span>
+      <input type="number" min="1" max="10" value="${row.nb}"
+        oninput="updateImgRow(${row.id},'nb',Math.max(1,Math.min(10,parseInt(this.value)||1)))" />
+      <span class="img-plan-nblabel">img</span>
+    </div>
+    <span class="img-row-status ${row.status}">${stTxt}</span>
+    <button class="btn-delete" onclick="removeImgRow(${row.id})" title="Supprimer">🗑</button>
+  </div>
+  <div class="img-plan-card-body">
+    <div class="img-plan-fields">
+      <div class="img-plan-field img-plan-field-travaux">
+        <label>Type de travaux</label>
+        <input type="text" class="img-plan-travaux-input" value="${_escHtml(row.travaux)}"
+          placeholder="élagage, toiture, peinture..."
+          oninput="updateImgRow(${row.id},'travaux',this.value)" />
+        <div class="img-preset-chips">${chipsHtml}</div>
+      </div>
+      <div class="img-plan-field">
+        <label>Ville</label>
+        <input type="text" value="${_escHtml(row.ville||'')}" placeholder="Lyon, Bordeaux..."
+          oninput="updateImgRow(${row.id},'ville',this.value)" />
+      </div>
+      <div class="img-plan-field">
+        <label>Type de lieu</label>
+        <select onchange="updateImgRow(${row.id},'lieu',this.value)">${lieuOpts}</select>
+      </div>
+      <div class="img-plan-field">
+        <label>État du chantier</label>
+        <select onchange="updateImgRow(${row.id},'etat',this.value)">${etatOpts}</select>
+      </div>
+      <div class="img-plan-field">
+        <label>Météo</label>
+        <select onchange="updateImgRow(${row.id},'meteo',this.value)">${meteoOpts}</select>
+      </div>
+    </div>
+    <div class="img-plan-prompt-preview">
+      <div class="img-plan-prompt-header">
+        <span>Prompt DALL-E 3</span>
+        <span class="img-plan-prompt-chars">${prompt.length} chars</span>
+      </div>
+      <textarea class="img-plan-prompt-ta" readonly></textarea>
+    </div>
+  </div>
+</div>`;
+}
+
 function renderImgPlanning() {
-  const tbody = document.getElementById('img-planning-body');
-  if (!tbody) return;
-  tbody.innerHTML = _imgRows.map(row => `
-    <tr data-rowid="${row.id}">
-      <td>
-        <input type="text" list="datalist-form-fiche" value="${row.fiche}"
-          placeholder="Nom de la fiche GMB..."
-          oninput="_imgRows.find(r=>r.id===${row.id}).fiche=this.value;updateCostEstimate()" />
-      </td>
-      <td>
-        <input type="text" value="${row.travaux}"
-          placeholder="Ex : élagage, toiture, peinture..."
-          oninput="_imgRows.find(r=>r.id===${row.id}).travaux=this.value;updateCostEstimate()" />
-      </td>
-      <td style="text-align:center;">
-        <input type="number" min="1" max="10" value="${row.nb}"
-          oninput="_imgRows.find(r=>r.id===${row.id}).nb=Math.max(1,Math.min(10,parseInt(this.value)||1));updateCostEstimate()" />
-      </td>
-      <td>
-        <span class="img-row-status ${row.status}">
-          ${row.status === 'pending'  ? '–' :
-            row.status === 'running'  ? '⏳ En cours' :
-            row.status === 'done'     ? `✅ ${row.images.length} img` :
-                                        '❌ Erreur'}
-        </span>
-      </td>
-      <td>
-        <button class="btn-delete" onclick="removeImgRow(${row.id})" title="Supprimer">🗑</button>
-      </td>
-    </tr>
-  `).join('');
+  const body = document.getElementById('img-planning-body');
+  if (!body) return;
+  body.innerHTML = _imgRows.map((row, idx) => _renderImgCard(row, idx)).join('');
+  // Set textarea values after render to avoid HTML-escaping issues
+  _imgRows.forEach(row => {
+    const card = body.querySelector(`.img-plan-card[data-rowid="${row.id}"]`);
+    if (card) {
+      const ta = card.querySelector('.img-plan-prompt-ta');
+      if (ta) ta.value = buildDallePromptV2(row);
+    }
+  });
+  updateCostEstimate();
 }
 
 function updateCostEstimate() {
@@ -2933,10 +3156,6 @@ function updateCostEstimate() {
   const cost  = (total * 0.04).toFixed(2);
   const el    = document.getElementById('img-cost-estimate');
   if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} · ~$${cost}` : '';
-}
-
-function buildDallePrompt(fiche, travaux) {
-  return `Authentic candid smartphone photo taken by a satisfied French customer, showing recently completed ${travaux} work, professional quality result clearly visible, natural outdoor lighting, realistic style like a genuine Google review photo, no text overlay, no watermark, no people visible, photorealistic`;
 }
 
 function slugify(str) {
@@ -2952,7 +3171,7 @@ async function generateAllImages() {
   const key = document.getElementById('openai-key')?.value.trim();
   if (!key) { alert('Renseigne ta clé API OpenAI (sk-...) en haut de la page.'); return; }
 
-  const rows = _imgRows.filter(r => r.travaux.trim());
+  const rows = _imgRows.filter(r => (r.travaux || '').trim());
   if (!rows.length) { alert('Ajoute au moins une ligne avec un type de travaux.'); return; }
 
   _generatedImages = [];
@@ -2969,8 +3188,8 @@ async function generateAllImages() {
 
   const updateProgress = () => {
     const pct = total > 0 ? Math.round(done / total * 100) : 0;
-    progressBar.style.width  = pct + '%';
-    progressLbl.textContent  = `${done} / ${total} images générées`;
+    progressBar.style.width = pct + '%';
+    progressLbl.textContent = `${done} / ${total} images générées`;
   };
   updateProgress();
 
@@ -2982,7 +3201,7 @@ async function generateAllImages() {
     renderImgPlanning();
 
     const nb     = parseInt(row.nb) || 1;
-    const prompt = buildDallePrompt(row.fiche, row.travaux);
+    const prompt = buildDallePromptV2(row);
     const slug   = slugify(row.fiche || row.travaux);
 
     let rowOk = true;
@@ -2990,17 +3209,10 @@ async function generateAllImages() {
       try {
         const resp = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${key}`,
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'dall-e-3',
-            prompt,
-            n: 1,
-            size: '1024x1024',
-            response_format: 'b64_json',
-            quality: 'standard'
+            model: 'dall-e-3', prompt, n: 1,
+            size: '1024x1024', response_format: 'b64_json', quality: 'standard'
           })
         });
 
@@ -3009,20 +3221,16 @@ async function generateAllImages() {
           throw new Error(err.error?.message || resp.statusText);
         }
 
-        const data    = await resp.json();
-        const b64     = data.data[0].b64_json;
-        const revised = data.data[0].revised_prompt;
+        const data     = await resp.json();
+        const b64      = data.data[0].b64_json;
         const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
 
         row.images.push({ b64, filename });
         _generatedImages.push({ b64, filename });
-
-        // Afficher la vignette
         appendImgCard(b64, filename, row.fiche || row.travaux);
 
         done++;
         updateProgress();
-
       } catch (e) {
         rowOk = false;
         console.error('DALL-E error:', e);
@@ -3030,7 +3238,6 @@ async function generateAllImages() {
         updateProgress();
       }
 
-      // Pause entre requêtes pour respecter les rate limits DALL-E 3
       if (i < nb - 1) await new Promise(r => setTimeout(r, 1200));
     }
 
@@ -3039,7 +3246,6 @@ async function generateAllImages() {
   }
 
   document.getElementById('btn-generate-all').disabled = false;
-
   if (_generatedImages.length > 0) {
     document.getElementById('btn-download-zip').style.display = 'inline-flex';
   }
@@ -3050,10 +3256,10 @@ function appendImgCard(b64, filename, label) {
   const card = document.createElement('div');
   card.className = 'img-result-card';
   card.innerHTML = `
-    <img src="data:image/jpeg;base64,${b64}" alt="${label}" loading="lazy" />
+    <img src="data:image/jpeg;base64,${b64}" alt="${_escHtml(label)}" loading="lazy" />
     <div class="img-result-card-info">
-      <div class="img-result-card-title">${label}</div>
-      <button class="img-result-card-dl" onclick="downloadSingleImg('${filename}', this.closest('.img-result-card').querySelector('img').src)">
+      <div class="img-result-card-title">${_escHtml(label)}</div>
+      <button class="img-result-card-dl" onclick="downloadSingleImg('${_escHtml(filename)}', this.closest('.img-result-card').querySelector('img').src)">
         ↓ Télécharger
       </button>
     </div>
@@ -3072,9 +3278,7 @@ async function downloadImagesZip() {
   if (!_generatedImages.length) return;
   const zip = new JSZip();
   const folder = zip.folder('images-gmb');
-  _generatedImages.forEach(({ b64, filename }) => {
-    folder.file(filename, b64, { base64: true });
-  });
+  _generatedImages.forEach(({ b64, filename }) => folder.file(filename, b64, { base64: true }));
   const blob = await zip.generateAsync({ type: 'blob' });
   saveAs(blob, 'images-gmb.zip');
 }
