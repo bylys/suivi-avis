@@ -81,13 +81,32 @@ function togglePwd() {
 }
 
 // ── DONNÉES ──
+let _avisCache = null;
+let _avisFetching = null;
+
 async function getAvis() {
-  return await sbGet('avis', 'select=*&order=date.desc');
+  if (_avisCache) return _avisCache;
+  if (_avisFetching) return _avisFetching;
+  _avisFetching = sbGet('avis', 'select=*&order=date.desc').then(data => {
+    _avisCache = data;
+    _avisFetching = null;
+    return data;
+  });
+  return _avisFetching;
 }
 
-async function getFiches() {
-  return await sbGet('fiches', 'select=*&order=nom.asc');
+function invalidateAvisCache() {
+  _avisCache = null;
+  _avisFetching = null;
 }
+
+let _fichesCache = null;
+async function getFiches() {
+  if (_fichesCache) return _fichesCache;
+  _fichesCache = await sbGet('fiches', 'select=*&order=nom.asc');
+  return _fichesCache;
+}
+function invalidateFichesCache() { _fichesCache = null; }
 
 // ── INIT ──
 async function init() {
@@ -531,6 +550,7 @@ async function addFiche(e) {
   const fiches = await getFiches();
   if (fiches.find(f => f.nom === nom)) return alert('Cette fiche existe déjà.');
   await sbInsert('fiches', { nom, lien: lien || null });
+  invalidateFichesCache();
   document.getElementById('fiche-nom').value = '';
   document.getElementById('fiche-lien').value = '';
   await populateFicheSelects();
@@ -543,6 +563,7 @@ async function deleteFiche(nom) {
   const fiche = fiches.find(f => f.nom === nom);
   if (!fiche) return;
   await sbDelete('fiches', fiche.id);
+  invalidateFichesCache();
   await populateFicheSelects();
   renderFiches();
 }
@@ -984,6 +1005,7 @@ async function submitAvis(e) {
     statut_date: date
   });
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
+  invalidateAvisCache();
 
   document.getElementById('form-avis').reset();
   if (opEl) opEl.value = operateur;
@@ -1105,6 +1127,7 @@ async function renderListe(openMonths = null) {
 
 async function updateDate(id, newDate) {
   await sbUpdate('avis', id, { date: newDate });
+  invalidateAvisCache();
   const openMonths = new Set();
   document.querySelectorAll('.month-group[open]').forEach(el => {
     openMonths.add(el.dataset.month);
@@ -1115,6 +1138,7 @@ async function updateDate(id, newDate) {
 async function updateStatut(id, newStatut) {
   const today = new Date().toISOString().split('T')[0];
   await sbUpdate('avis', id, { statut: newStatut, statut_date: today });
+  invalidateAvisCache();
   // Sauvegarder quels mois sont ouverts avant de re-rendre
   const openMonths = new Set();
   document.querySelectorAll('.month-group[open]').forEach(el => {
@@ -1126,6 +1150,7 @@ async function updateStatut(id, newStatut) {
 async function deleteAvis(id) {
   if (!confirm('Supprimer cet avis ?')) return;
   await sbDelete('avis', id);
+  invalidateAvisCache();
   renderListe();
   renderFiches();
 }
@@ -2700,13 +2725,19 @@ async function renderGmails() {
         ${list.map(g => {
           const lastUse = derniereUtilisation[g.email];
           const lastLabel = lastUse ? lastUse.split('-').reverse().join('/') : '–';
+          const villeCell = g.ville
+            ? `<div style="display:flex;align-items:center;gap:6px;">
+                 <button class="ville-map-btn" onclick="showGmbMap('${g.ville.replace(/'/g, "\\'")}')">📍 ${g.ville}</button>
+                 <input type="text" value="${g.ville}" title="Modifier la ville"
+                   style="background:transparent;border:none;border-bottom:1px dashed #334155;color:#475569;font-size:0.75rem;width:70px;outline:none;padding:1px 2px;"
+                   onchange="updateGmailVille('${g.id}', this.value)" />
+               </div>`
+            : `<input type="text" value="" placeholder="Ajouter une ville..."
+                 style="background:transparent;border:none;border-bottom:1px solid #334155;color:#94a3b8;font-size:0.88rem;width:120px;outline:none;padding:2px 4px;"
+                 onchange="updateGmailVille('${g.id}', this.value)" />`;
           return `<tr style="border-bottom:1px solid #1e293b;">
             <td style="padding:10px;color:#f1f5f9;">${g.email}</td>
-            <td style="padding:10px;">
-              <input type="text" value="${g.ville || ''}" placeholder="Ajouter une ville..."
-                style="background:transparent;border:none;border-bottom:1px solid #334155;color:#94a3b8;font-size:0.88rem;width:120px;outline:none;padding:2px 4px;"
-                onchange="updateGmailVille('${g.id}', this.value)" />
-            </td>
+            <td style="padding:10px;">${villeCell}</td>
             <td style="padding:10px;text-align:center;">
               <input type="checkbox" ${g.local_guide ? 'checked' : ''} onchange="toggleLocalGuide('${g.id}', this.checked)" style="accent-color:#f59e0b;width:16px;height:16px;" />
             </td>
@@ -2748,4 +2779,97 @@ async function deleteGmail(id) {
     headers: SB_HEADERS
   });
   renderGmails();
+}
+
+// ── GMB MAP PANEL ──
+function normalizeStr(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+const _geoCache = {};
+let   _leafletMap = null;
+
+async function geocodeVille(ville) {
+  if (_geoCache[ville]) return _geoCache[ville];
+  try {
+    const r = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ville + ', France')}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'fr' } }
+    );
+    const data = await r.json();
+    if (data.length) {
+      const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      _geoCache[ville] = result;
+      return result;
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function showGmbMap(ville) {
+  if (!ville) return;
+
+  const panel   = document.getElementById('gmb-map-panel');
+  const overlay = document.getElementById('gmb-map-overlay');
+
+  document.getElementById('gmb-map-city').textContent = ville;
+  document.getElementById('gmb-map-fiches').innerHTML =
+    '<p style="color:#64748b;font-size:0.85rem;">Chargement…</p>';
+
+  // Ouvrir le panel
+  overlay.classList.add('open');
+  panel.classList.add('open');
+
+  // Fiches correspondantes (texte dans le nom)
+  const fiches  = await getFiches();
+  const villeNorm = normalizeStr(ville);
+  const matches = fiches.filter(f => normalizeStr(f.nom).includes(villeNorm));
+
+  const fichesEl = document.getElementById('gmb-map-fiches');
+  const countLabel = matches.length
+    ? `<p style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:0.75rem;">${matches.length} fiche${matches.length > 1 ? 's' : ''} GMB trouvée${matches.length > 1 ? 's' : ''}</p>`
+    : `<p style="font-size:0.85rem;color:#475569;margin-bottom:0.75rem;">Aucune fiche trouvée pour « ${ville} ».</p>`;
+
+  fichesEl.innerHTML = countLabel + matches.map(f => `
+    <div class="gmb-fiche-item">
+      <div class="gmb-fiche-item-name">🏢 ${f.nom}</div>
+      ${f.lien ? `<a href="${f.lien}" target="_blank" rel="noopener">Voir sur Google Maps ↗</a>` : ''}
+    </div>
+  `).join('');
+
+  // Carte Leaflet (après transition pour que le conteneur soit visible)
+  setTimeout(async () => {
+    if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+
+    const geo    = await geocodeVille(ville);
+    const mapEl  = document.getElementById('gmb-map-leaflet');
+
+    if (geo && typeof L !== 'undefined') {
+      _leafletMap = L.map(mapEl, { zoomControl: true }).setView([geo.lat, geo.lon], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 18
+      }).addTo(_leafletMap);
+
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="background:#6366f1;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      L.marker([geo.lat, geo.lon], { icon })
+        .addTo(_leafletMap)
+        .bindPopup(`<b>${ville}</b><br>${matches.length} fiche${matches.length > 1 ? 's' : ''} GMB`)
+        .openPopup();
+    } else {
+      mapEl.innerHTML = '<p style="color:#475569;text-align:center;padding:3rem 1rem;font-size:0.85rem;">Carte non disponible</p>';
+    }
+  }, 300);
+}
+
+function closeGmbMap() {
+  document.getElementById('gmb-map-panel').classList.remove('open');
+  document.getElementById('gmb-map-overlay').classList.remove('open');
+  if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
 }
