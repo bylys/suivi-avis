@@ -35,7 +35,7 @@
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
-      <button class="tab-btn" onclick="showTab('reco')">📋 Recommandations</button>
+      <button class="tab-btn" onclick="showTab('gmails')">📧 GMails</button>
     </nav>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </header>
@@ -75,16 +75,12 @@
         <label>Avis ce mois</label>
       </div>
       <div class="stat-card">
-        <span id="stat-moyenne">–</span>
-        <label>Note moyenne</label>
+        <span id="stat-kevin">0</span>
+        <label>Avis Kevin</label>
       </div>
       <div class="stat-card">
-        <span id="stat-positifs">0</span>
-        <label>Avis positifs (4-5★)</label>
-      </div>
-      <div class="stat-card">
-        <span id="stat-negatifs">0</span>
-        <label>Avis négatifs (1-2★)</label>
+        <span id="stat-fifaliana">0</span>
+        <label>Avis Fifaliana</label>
       </div>
       <div class="stat-card highlight">
         <span id="stat-j30">0</span>
@@ -248,21 +244,23 @@
     </div>
   </section>
 
-  <!-- RECOMMANDATIONS -->
-  <section id="tab-reco" class="tab-content hidden">
-    <h2>📋 Recommandations du jour</h2>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.8rem;">
-      <div id="reco-date" style="font-size:0.9rem;color:#94a3b8;"></div>
-      <div style="display:flex;gap:0.5rem;">
-        <button class="btn-secondary" onclick="changeRecoDay(-1)">← Hier</button>
-        <button class="btn-secondary" onclick="changeRecoDay(0)">Aujourd'hui</button>
-        <button class="btn-secondary" onclick="changeRecoDay(1)">Demain →</button>
-      </div>
-    </div>
-    <div style="margin-bottom:0.8rem;">
-      <button class="btn-secondary" onclick="afficherFormulaireRecoManuelle()" style="background:#7f1d1d;color:#fca5a5;border-color:#991b1b;">🔴 + Ajouter une reco urgente</button>
-    </div>
-    <div id="reco-list"></div>
+  <!-- GMAILS -->
+  <section id="tab-gmails" class="tab-content hidden">
+    <h2>📧 Liste des GMails</h2>
+    <form id="form-gmail" onsubmit="addGmail(event)" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;align-items:flex-end;">
+      <label style="flex:2;min-width:200px;">Email
+        <input type="email" id="gmail-email" placeholder="exemple@gmail.com" required />
+      </label>
+      <label style="flex:1;min-width:140px;">Ville
+        <input type="text" id="gmail-ville" placeholder="Paris, Lyon..." />
+      </label>
+      <label class="checkbox-label" style="margin-bottom:0.5rem;">
+        <input type="checkbox" id="gmail-local-guide" />
+        ⭐ Local Guide
+      </label>
+      <button type="submit" class="btn-primary" style="white-space:nowrap;">+ Ajouter</button>
+    </form>
+    <div id="gmails-list"></div>
   </section>
 
   <!-- FICHES -->
