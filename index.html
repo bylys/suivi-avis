@@ -9,6 +9,8 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -38,6 +40,7 @@
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
       <button class="tab-btn" onclick="showTab('gmails')">📧 GMails</button>
+      <button class="tab-btn" onclick="showTab('images')">🖼️ Images</button>
     </nav>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </header>
@@ -275,6 +278,62 @@
       </div>
     </div>
     <div id="gmails-list"></div>
+  </section>
+
+  <!-- IMAGES -->
+  <section id="tab-images" class="tab-content hidden">
+    <h2>🖼️ Générateur d'images bulk</h2>
+
+    <!-- Clé API -->
+    <div class="img-api-bar">
+      <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:#64748b;fill:none;stroke-width:2;flex-shrink:0;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      <input type="password" id="openai-key" placeholder="Clé API OpenAI (sk-...)" autocomplete="off"
+        oninput="localStorage.setItem('openai_key', this.value)" />
+      <span id="img-cost-estimate" class="img-cost-badge"></span>
+    </div>
+
+    <!-- Planning -->
+    <div class="img-planning-header">
+      <span>Planning de génération</span>
+      <button class="btn-secondary" onclick="addImgRow()">+ Ajouter une ligne</button>
+    </div>
+    <div class="img-planning-table-wrap">
+      <table class="img-planning-table">
+        <thead>
+          <tr>
+            <th>Fiche GMB</th>
+            <th>Type de travaux</th>
+            <th style="width:90px;text-align:center;">Nb images</th>
+            <th style="width:80px;text-align:center;">Statut</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="img-planning-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Actions -->
+    <div class="img-actions-bar">
+      <button class="btn-primary" id="btn-generate-all" onclick="generateAllImages()">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:6px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Générer tout
+      </button>
+      <button class="btn-secondary" id="btn-download-zip" onclick="downloadImagesZip()" style="display:none;">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Télécharger ZIP
+      </button>
+    </div>
+
+    <!-- Barre de progression -->
+    <div id="img-progress-wrap" style="display:none;">
+      <div class="img-progress-bar-track">
+        <div id="img-progress-bar" class="img-progress-bar-fill"></div>
+      </div>
+      <p id="img-progress-label" class="img-progress-label">0 / 0</p>
+    </div>
+
+    <!-- Grille de résultats -->
+    <div id="img-results-grid" class="img-results-grid"></div>
   </section>
 
   <!-- FICHES -->
