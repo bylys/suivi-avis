@@ -2676,7 +2676,18 @@ async function renderGmails() {
     }
   });
 
+  const filterVille = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
+  const sort        = document.getElementById('gmail-filter-sort')?.value || 'az';
+
+  let list = gmails.filter(g => !filterVille || (g.ville || '').toLowerCase().includes(filterVille));
+
+  if (sort === 'az')      list.sort((a, b) => a.email.localeCompare(b.email));
+  if (sort === 'ville')   list.sort((a, b) => (a.ville || '').localeCompare(b.ville || ''));
+  if (sort === 'recent')  list.sort((a, b) => (derniereUtilisation[b.email] || '') > (derniereUtilisation[a.email] || '') ? 1 : -1);
+  if (sort === 'ancien')  list.sort((a, b) => (derniereUtilisation[a.email] || '9999') > (derniereUtilisation[b.email] || '9999') ? 1 : -1);
+
   container.innerHTML = `
+    <p style="color:#64748b;font-size:0.82rem;margin-bottom:0.5rem;">${list.length} Gmail${list.length > 1 ? 's' : ''}</p>
     <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
       <thead><tr style="background:#1e293b;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">
         <th style="padding:10px;text-align:left;">Email</th>
@@ -2686,7 +2697,7 @@ async function renderGmails() {
         <th style="padding:10px;"></th>
       </tr></thead>
       <tbody>
-        ${gmails.map(g => {
+        ${list.map(g => {
           const lastUse = derniereUtilisation[g.email];
           const lastLabel = lastUse ? lastUse.split('-').reverse().join('/') : '–';
           return `<tr style="border-bottom:1px solid #1e293b;">
