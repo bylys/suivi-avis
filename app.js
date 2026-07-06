@@ -134,7 +134,7 @@ function showTab(name) {
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
   if (name === 'generateur') populateGenFiche();
-  if (name === 'reco') renderRecommandations();
+  if (name === 'gmails') renderGmails();
 }
 
 // ── FICHES ──
@@ -1147,9 +1147,8 @@ async function renderDashboard() {
   const moyenne = moisAvis.length ? (moisAvis.reduce((s,a) => s+a.note, 0) / moisAvis.length).toFixed(1) : '–';
 
   document.getElementById('stat-total').textContent     = moisAvis.length;
-  document.getElementById('stat-moyenne').textContent   = moyenne !== '–' ? moyenne + ' ★' : '–';
-  document.getElementById('stat-positifs').textContent  = moisAvis.filter(a => a.note >= 4).length;
-  document.getElementById('stat-negatifs').textContent  = moisAvis.filter(a => a.note <= 2).length;
+  document.getElementById('stat-kevin').textContent     = moisAvis.filter(a => a.operateur?.toLowerCase() === 'kevin').length;
+  document.getElementById('stat-fifaliana').textContent = moisAvis.filter(a => a.operateur?.toLowerCase() === 'fifaliana').length;
   const j30Count  = moisAvis.filter(a => a.statut === 'j30').length;
   const suppCount = moisAvis.filter(a => a.statut === 'supprime').length;
   const resolus = j30Count + suppCount;
@@ -2647,4 +2646,95 @@ function clearNotes() {
   document.getElementById('notes-textarea').value = '';
   localStorage.removeItem('gmb_notes');
   updateNotesLines();
+}
+
+// ── GMAILS ──
+
+async function getGmails() {
+  return await sbGet('gmails', 'select=*&order=ville.asc,email.asc');
+}
+
+async function renderGmails() {
+  const container = document.getElementById('gmails-list');
+  if (!container) return;
+  container.innerHTML = '<p style="color:#64748b;">Chargement...</p>';
+
+  const [gmails, avis] = await Promise.all([
+    getGmails(),
+    sbGet('avis', 'select=auteur,date&order=date.desc')
+  ]);
+
+  if (!gmails.length) {
+    container.innerHTML = '<p style="color:#64748b;">Aucun Gmail enregistré.</p>';
+    return;
+  }
+
+  const derniereUtilisation = {};
+  avis.forEach(a => {
+    if (!derniereUtilisation[a.auteur] || a.date > derniereUtilisation[a.auteur]) {
+      derniereUtilisation[a.auteur] = a.date;
+    }
+  });
+
+  container.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+      <thead><tr style="background:#1e293b;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">
+        <th style="padding:10px;text-align:left;">Email</th>
+        <th style="padding:10px;text-align:left;">Ville</th>
+        <th style="padding:10px;text-align:center;">Local Guide</th>
+        <th style="padding:10px;text-align:left;">Dernière utilisation</th>
+        <th style="padding:10px;"></th>
+      </tr></thead>
+      <tbody>
+        ${gmails.map(g => {
+          const lastUse = derniereUtilisation[g.email];
+          const lastLabel = lastUse ? lastUse.split('-').reverse().join('/') : '–';
+          return `<tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:10px;color:#f1f5f9;">${g.email}</td>
+            <td style="padding:10px;">
+              <input type="text" value="${g.ville || ''}" placeholder="Ajouter une ville..."
+                style="background:transparent;border:none;border-bottom:1px solid #334155;color:#94a3b8;font-size:0.88rem;width:120px;outline:none;padding:2px 4px;"
+                onchange="updateGmailVille('${g.id}', this.value)" />
+            </td>
+            <td style="padding:10px;text-align:center;">
+              <input type="checkbox" ${g.local_guide ? 'checked' : ''} onchange="toggleLocalGuide('${g.id}', this.checked)" style="accent-color:#f59e0b;width:16px;height:16px;" />
+            </td>
+            <td style="padding:10px;color:${lastUse ? '#22c55e' : '#475569'};">${lastLabel}</td>
+            <td style="padding:10px;text-align:center;">
+              <button class="btn-delete" onclick="deleteGmail('${g.id}')">🗑</button>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function addGmail(e) {
+  e.preventDefault();
+  const email       = document.getElementById('gmail-email').value.trim();
+  const ville       = document.getElementById('gmail-ville').value.trim();
+  const local_guide = document.getElementById('gmail-local-guide').checked;
+
+  const ok = await sbInsert('gmails', { email, ville: ville || null, local_guide });
+  if (!ok) return;
+
+  document.getElementById('form-gmail').reset();
+  renderGmails();
+}
+
+async function toggleLocalGuide(id, value) {
+  await sbUpdate('gmails', id, { local_guide: value });
+}
+
+async function updateGmailVille(id, ville) {
+  await sbUpdate('gmails', id, { ville: ville || null });
+}
+
+async function deleteGmail(id) {
+  if (!confirm('Supprimer ce Gmail ?')) return;
+  await fetch(`${SUPABASE_URL}/rest/v1/gmails?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: SB_HEADERS
+  });
+  renderGmails();
 }
