@@ -706,6 +706,112 @@ datalist { display: none; }
 .notes-saved { font-size: 0.7rem; color: #334155; display: flex; align-items: center; gap: 4px; }
 .notes-saved svg { width: 11px; height: 11px; stroke: currentColor; stroke-width: 1.5; fill: none; }
 
+/* ── GMB MAP PANEL ── */
+#gmb-map-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 300;
+  backdrop-filter: blur(2px);
+}
+#gmb-map-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 400px;
+  max-width: 100vw;
+  background: #1e293b;
+  border-left: 1px solid #334155;
+  z-index: 301;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+}
+#gmb-map-panel.open {
+  transform: translateX(0);
+}
+#gmb-map-overlay.open { display: block; }
+
+.gmb-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.3rem;
+  border-bottom: 1px solid #334155;
+  flex-shrink: 0;
+}
+.gmb-map-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+.gmb-map-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  line-height: 1;
+  transition: background .15s, color .15s;
+}
+.gmb-map-close:hover { background: #334155; color: #f1f5f9; }
+
+#gmb-map-leaflet {
+  height: 220px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #334155;
+}
+#gmb-map-fiches {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.2rem;
+}
+
+.gmb-fiche-item {
+  padding: 0.75rem 1rem;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  transition: border-color .15s;
+}
+.gmb-fiche-item:hover { border-color: #6366f1; }
+.gmb-fiche-item-name {
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+.gmb-fiche-item a {
+  font-size: 0.75rem;
+  color: #6366f1;
+  text-decoration: none;
+}
+.gmb-fiche-item a:hover { text-decoration: underline; }
+
+.ville-map-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+  white-space: nowrap;
+}
+.ville-map-btn:hover {
+  border-color: #6366f1;
+  color: #a5b4fc;
+  background: #1e1b4b;
+}
+
 /* ── GMAILS FILTER BAR ── */
 .gmail-toolbar {
   display: flex;
