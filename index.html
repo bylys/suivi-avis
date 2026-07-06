@@ -256,14 +256,21 @@
       </label>
       <button type="submit" class="btn-primary" style="white-space:nowrap;flex-shrink:0;">+ Ajouter</button>
     </form>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1rem;align-items:center;">
-      <input type="text" id="gmail-filter-ville" placeholder="🏙 Filtrer par ville..." oninput="renderGmails()" style="flex:1;min-width:140px;font-size:0.85rem;" />
-      <select id="gmail-filter-sort" onchange="renderGmails()" style="background:#1e293b;color:#f1f5f9;border:1.5px solid #334155;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;">
-        <option value="az">A → Z</option>
-        <option value="recent">Récemment utilisés</option>
-        <option value="ancien">Anciennement utilisés</option>
-        <option value="ville">Ville A → Z</option>
-      </select>
+    <div class="gmail-toolbar">
+      <div class="gmail-search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="gmail-filter-ville" placeholder="Filtrer par ville..." oninput="renderGmails()" />
+      </div>
+      <div class="gmail-toolbar-sep"></div>
+      <div class="gmail-sort-wrap">
+        <select id="gmail-filter-sort" onchange="renderGmails()">
+          <option value="az">A → Z</option>
+          <option value="recent">Récemment utilisés</option>
+          <option value="ancien">Anciennement utilisés</option>
+          <option value="ville">Ville A → Z</option>
+        </select>
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
     </div>
     <div id="gmails-list"></div>
   </section>
