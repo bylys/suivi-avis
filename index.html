@@ -247,14 +247,10 @@
   <!-- GMAILS -->
   <section id="tab-gmails" class="tab-content hidden">
     <h2>📧 Liste des GMails</h2>
-    <form id="form-gmail" onsubmit="addGmail(event)" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;align-items:flex-end;">
-      <label style="flex:2;min-width:200px;">Email
-        <input type="email" id="gmail-email" placeholder="exemple@gmail.com" required />
-      </label>
-      <label style="flex:1;min-width:140px;">Ville
-        <input type="text" id="gmail-ville" placeholder="Paris, Lyon..." />
-      </label>
-      <label class="checkbox-label" style="margin-bottom:0.5rem;">
+    <form id="form-gmail" onsubmit="addGmail(event)" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;align-items:center;">
+      <input type="email" id="gmail-email" placeholder="exemple@gmail.com" required style="flex:2;min-width:180px;" />
+      <input type="text" id="gmail-ville" placeholder="Ville (optionnel)" style="flex:1;min-width:120px;" />
+      <label class="checkbox-label" style="margin:0;white-space:nowrap;">
         <input type="checkbox" id="gmail-local-guide" />
         ⭐ Local Guide
       </label>
