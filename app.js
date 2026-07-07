@@ -3231,17 +3231,15 @@ async function generateAllImages() {
         }
 
         const data     = await resp.json();
-        const imgUrl   = data.data[0].url;
+        const item     = data.data[0];
+        const b64      = item.b64_json || null;   // présent sur gpt-image-1 et dall-e-3 récent
+        const imgUrl   = item.url  || null;
         const filename = `${slug}-${String(i + 1).padStart(2, '0')}.png`;
+        const src      = b64 ? `data:image/png;base64,${b64}` : imgUrl;
 
-        // Télécharge l'image et convertit en base64 (avant expiration de l'URL)
-        const imgResp = await fetch(imgUrl);
-        const imgBlob = await imgResp.blob();
-        const b64     = await _blobToBase64(imgBlob);
-
-        row.images.push({ b64, filename });
-        _generatedImages.push({ b64, filename });
-        appendImgCard(b64, filename, row.fiche || row.travaux);
+        row.images.push({ b64, url: imgUrl, filename });
+        _generatedImages.push({ b64, url: imgUrl, filename });
+        appendImgCard(src, filename, row.fiche || row.travaux);
 
         done++;
         updateProgress();
@@ -3261,38 +3259,65 @@ async function generateAllImages() {
 
   document.getElementById('btn-generate-all').disabled = false;
   if (_generatedImages.length > 0) {
-    document.getElementById('btn-download-zip').style.display = 'inline-flex';
+    const btn = document.getElementById('btn-download-zip');
+    btn.textContent = _generatedImages.length === 1 ? '↓ Télécharger l\'image' : '↓ Télécharger le ZIP';
+    btn.style.display = 'inline-flex';
   }
 }
 
-function appendImgCard(b64, filename, label) {
+function appendImgCard(src, filename, label) {
   const grid = document.getElementById('img-results-grid');
   const card = document.createElement('div');
   card.className = 'img-result-card';
   card.innerHTML = `
-    <img src="data:image/png;base64,${b64}" alt="${_escHtml(label)}" loading="lazy" />
+    <img src="${_escHtml(src)}" alt="${_escHtml(label)}" loading="lazy" />
     <div class="img-result-card-info">
       <div class="img-result-card-title">${_escHtml(label)}</div>
-      <button class="img-result-card-dl" onclick="downloadSingleImg('${_escHtml(filename)}', this.closest('.img-result-card').querySelector('img').src)">
-        ↓ Télécharger
-      </button>
     </div>
   `;
   grid.appendChild(card);
 }
 
-function downloadSingleImg(filename, src) {
-  const a = document.createElement('a');
-  a.href = src;
-  a.download = filename;
-  a.click();
-}
-
 async function downloadImagesZip() {
-  if (!_generatedImages.length) return;
-  const zip = new JSZip();
+  const images = _generatedImages;
+  if (!images.length) return;
+
+  if (images.length === 1) {
+    // Une seule image : téléchargement direct PNG
+    const { b64, url, filename } = images[0];
+    if (b64) {
+      const a = document.createElement('a');
+      a.href = `data:image/png;base64,${b64}`;
+      a.download = filename;
+      a.click();
+    } else {
+      window.open(url, '_blank');
+    }
+    return;
+  }
+
+  // Plusieurs images : ZIP
+  const zip    = new JSZip();
   const folder = zip.folder('images-gmb');
-  _generatedImages.forEach(({ b64, filename }) => folder.file(filename, b64, { base64: true }));
+  let   added  = 0;
+
+  for (const { b64, url, filename } of images) {
+    if (b64) {
+      folder.file(filename, b64, { base64: true });
+      added++;
+    } else if (url) {
+      try {
+        const r    = await fetch(url);
+        const blob = await r.blob();
+        folder.file(filename, await _blobToBase64(blob), { base64: true });
+        added++;
+      } catch (e) {
+        console.warn('ZIP: skip', filename, e);
+      }
+    }
+  }
+
+  if (added === 0) { alert('Impossible de récupérer les images (URLs expirées ?).'); return; }
   const blob = await zip.generateAsync({ type: 'blob' });
   saveAs(blob, 'images-gmb.zip');
 }
