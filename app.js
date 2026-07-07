@@ -3158,6 +3158,15 @@ function updateCostEstimate() {
   if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} · ~$${cost}` : '';
 }
 
+function _blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 function slugify(str) {
   return (str || 'image')
     .toLowerCase()
@@ -3212,7 +3221,7 @@ async function generateAllImages() {
           headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'dall-e-3', prompt, n: 1,
-            size: '1024x1024', response_format: 'b64_json', quality: 'standard'
+            size: '1024x1024', quality: 'standard'
           })
         });
 
@@ -3222,8 +3231,13 @@ async function generateAllImages() {
         }
 
         const data     = await resp.json();
-        const b64      = data.data[0].b64_json;
-        const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
+        const imgUrl   = data.data[0].url;
+        const filename = `${slug}-${String(i + 1).padStart(2, '0')}.png`;
+
+        // Télécharge l'image et convertit en base64 (avant expiration de l'URL)
+        const imgResp = await fetch(imgUrl);
+        const imgBlob = await imgResp.blob();
+        const b64     = await _blobToBase64(imgBlob);
 
         row.images.push({ b64, filename });
         _generatedImages.push({ b64, filename });
@@ -3256,7 +3270,7 @@ function appendImgCard(b64, filename, label) {
   const card = document.createElement('div');
   card.className = 'img-result-card';
   card.innerHTML = `
-    <img src="data:image/jpeg;base64,${b64}" alt="${_escHtml(label)}" loading="lazy" />
+    <img src="data:image/png;base64,${b64}" alt="${_escHtml(label)}" loading="lazy" />
     <div class="img-result-card-info">
       <div class="img-result-card-title">${_escHtml(label)}</div>
       <button class="img-result-card-dl" onclick="downloadSingleImg('${_escHtml(filename)}', this.closest('.img-result-card').querySelector('img').src)">
