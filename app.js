@@ -3234,14 +3234,9 @@ async function generateAllImages() {
         const imgUrl   = data.data[0].url;
         const filename = `${slug}-${String(i + 1).padStart(2, '0')}.png`;
 
-        // Télécharge l'image et convertit en base64 (avant expiration de l'URL)
-        const imgResp = await fetch(imgUrl);
-        const imgBlob = await imgResp.blob();
-        const b64     = await _blobToBase64(imgBlob);
-
-        row.images.push({ b64, filename });
-        _generatedImages.push({ b64, filename });
-        appendImgCard(b64, filename, row.fiche || row.travaux);
+        row.images.push({ url: imgUrl, filename });
+        _generatedImages.push({ url: imgUrl, filename });
+        appendImgCard(imgUrl, filename, row.fiche || row.travaux);
 
         done++;
         updateProgress();
@@ -3265,34 +3260,39 @@ async function generateAllImages() {
   }
 }
 
-function appendImgCard(b64, filename, label) {
+function appendImgCard(url, filename, label) {
   const grid = document.getElementById('img-results-grid');
   const card = document.createElement('div');
   card.className = 'img-result-card';
   card.innerHTML = `
-    <img src="data:image/png;base64,${b64}" alt="${_escHtml(label)}" loading="lazy" />
+    <img src="${_escHtml(url)}" alt="${_escHtml(label)}" loading="lazy" crossorigin="anonymous" />
     <div class="img-result-card-info">
       <div class="img-result-card-title">${_escHtml(label)}</div>
-      <button class="img-result-card-dl" onclick="downloadSingleImg('${_escHtml(filename)}', this.closest('.img-result-card').querySelector('img').src)">
+      <a class="img-result-card-dl" href="${_escHtml(url)}" download="${_escHtml(filename)}" target="_blank">
         ↓ Télécharger
-      </button>
+      </a>
     </div>
   `;
   grid.appendChild(card);
-}
-
-function downloadSingleImg(filename, src) {
-  const a = document.createElement('a');
-  a.href = src;
-  a.download = filename;
-  a.click();
 }
 
 async function downloadImagesZip() {
   if (!_generatedImages.length) return;
   const zip = new JSZip();
   const folder = zip.folder('images-gmb');
-  _generatedImages.forEach(({ b64, filename }) => folder.file(filename, b64, { base64: true }));
+
+  for (const { url, filename } of _generatedImages) {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(resp.statusText);
+      const blob = await resp.blob();
+      const b64  = await _blobToBase64(blob);
+      folder.file(filename, b64, { base64: true });
+    } catch (e) {
+      console.warn('ZIP: impossible de télécharger', filename, e);
+    }
+  }
+
   const blob = await zip.generateAsync({ type: 'blob' });
   saveAs(blob, 'images-gmb.zip');
 }
