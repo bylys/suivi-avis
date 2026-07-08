@@ -2804,19 +2804,26 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 }
 
 async function geocodeVille(ville) {
+  if (!ville) return null;
   if (_geoCache[ville]) return _geoCache[ville];
-  try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ville + ', France')}&format=json&limit=1`,
-      { headers: { 'Accept-Language': 'fr' } }
-    );
-    const data = await r.json();
-    if (data.length) {
-      const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      _geoCache[ville] = result;
-      return result;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 1200));
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ville + ', France')}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'fr' } }
+      );
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (data.length) {
+        const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+        _geoCache[ville] = result;
+        return result;
+      }
+    } catch(e) {
+      console.warn('[geocode] tentative', attempt + 1, 'échouée pour', ville, e);
     }
-  } catch(e) {}
+  }
   return null;
 }
 
@@ -2908,9 +2915,13 @@ async function showGmbMap(ville) {
         .bindPopup(`<b>${ville}</b>`)
         .openPopup();
 
+      setTimeout(() => { if (_leafletMap) _leafletMap.invalidateSize(); }, 150);
       leafletReady = true;
     } else {
-      mapEl.innerHTML = '<p style="color:#475569;text-align:center;padding:3rem 1rem;font-size:0.85rem;">Carte non disponible</p>';
+      const reason = typeof L === 'undefined'
+        ? 'Leaflet non chargé — rechargez la page'
+        : `Géocodage impossible pour « ${ville} »`;
+      mapEl.innerHTML = `<p style="color:#475569;text-align:center;padding:3rem 1rem;font-size:0.85rem;">${reason}</p>`;
     }
 
     if (!centerGeo) { renderFicheList([], false); return; }
