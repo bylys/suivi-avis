@@ -3007,65 +3007,85 @@ const METEO_OPTIONS = [
 
 const _workDetails = [
   { keys: ['elag', 'haie', 'taille', 'arbust'],
-    desc: 'tree pruning and hedge trimming',
-    scene: 'A massive disordered pile of freshly cut branches and thick hedge clippings fills the driveway. Chunky logs and scattered bark litter the muddy lawn. Deep tire tracks from a loader cross the yard. A thick layer of fresh yellow sawdust coats the grass.',
-    foreground: 'a fresh-cut stump with chainsaw marks and sawdust scattered on the ground around it',
-    exclusions: 'No chainsaws, no helmets, no ropes, no brooms visible',
-    secteur: 'landscaping' },
+    intro: 'tree pruning and hedge trimming job at a residential garden',
+    setting: 'exterior',
+    secteur: 'arborist',
+    scene: `A large disordered pile of freshly cut branches and thick hedge clippings fills most of the driveway. Chunky logs and scattered bark litter the muddy lawn. Deep tire tracks from a loader cross the grass. A thick uneven layer of fresh yellow sawdust covers the ground beneath the pruned trees. The trees themselves show fresh raw cut marks on the main branches.`,
+    foreground_detail: `A freshly severed branch lying on muddy grass, surrounded by scattered bark chips and sawdust. A close-up of a raw cut stump with irregular chainsaw marks.`,
+    exclusions: ['chainsaws', 'helmets', 'ropes', 'harnesses', 'chippers', 'brooms', 'safety equipment', 'workers', 'people'] },
+
   { keys: ['abatt', 'abatage'],
-    desc: 'large tree felling',
-    scene: 'Enormous trunk sections lie scattered across the yard. A thick carpet of wood chips and sawdust surrounds a massive fresh stump. Deep gouges mark the ground where heavy machinery passed. The sky is open where a large canopy tree once stood.',
-    foreground: 'a freshly cut log cross-section showing growth rings, resting on a bed of sawdust',
-    exclusions: 'No chainsaws, no safety gear, no ropes visible',
-    secteur: 'tree removal' },
+    intro: 'large tree felling job at a residential property',
+    setting: 'exterior',
+    secteur: 'tree feller',
+    scene: `Enormous trunk sections lie scattered across the garden in a disorganized heap. A thick carpet of wood chips and coarse sawdust surrounds a massive fresh stump with a flat cut surface still dripping sap. Deep ground gouges mark where heavy machinery dragged the logs. The sky is now fully open where a large canopy once stood.`,
+    foreground_detail: `A freshly cut log cross-section resting on a bed of sawdust and bark, showing growth rings. Scattered wood chips and bark fragments on the ground.`,
+    exclusions: ['chainsaws', 'safety gear', 'ropes', 'cranes', 'workers', 'people'] },
+
   { keys: ['toitur', 'couvreur', 'ardoise', 'tuile'],
-    desc: 'roof renovation',
-    scene: 'Old broken clay roof tiles are heaped in a messy pile in the driveway. Torn roofing felt curls off the edge of the roof. Rusty nails and tile fragments litter the ground below. A neat stack of new tiles and bags of mortar sit on a wooden pallet.',
-    foreground: 'a cracked old clay roof tile lying on the pavement with dried mortar dust around it',
-    exclusions: 'No workers visible, no scaffolding tools, no safety harnesses',
-    secteur: 'roofing' },
+    intro: 'roof renovation project on a residential house',
+    setting: 'exterior',
+    secteur: 'roofer',
+    scene: `Old broken roof tiles are heaped in a messy disorganized pile in the driveway. Torn dark roofing felt curls off the edge of the partially stripped roof, revealing bare wooden lath structure underneath. Rusty nails and tile fragments litter the ground below the eaves. A neat stack of new tiles and several bags of mortar sit on a wooden pallet beside the house. Part of the roof slope is completely stripped, showing the raw timber frame.`,
+    foreground_detail: `A cracked old roof tile lying flat on the pavement with dried mortar dust and tile fragments scattered around it.`,
+    exclusions: ['workers', 'scaffolding tools', 'safety harnesses', 'helmets', 'people'] },
+
   { keys: ['peintur', 'peint'],
-    desc: 'exterior painting',
-    scene: 'Paint-splattered drop cloths protect the terrace below. Empty paint cans are stacked in a corner. Masking tape residue lines the window frames. Subtle paint drips streak the pavement below the freshly painted wall section.',
-    foreground: 'a paint-stained drop cloth folded on the pavement, a dried flat brush lying on top',
-    exclusions: 'No people, no ladders, no paint rollers visible',
-    secteur: 'painting' },
+    intro: 'exterior painting job on a residential house facade',
+    setting: 'exterior',
+    secteur: 'painter',
+    scene: `Half the wall shows a fresh coat of new paint in a clean neutral tone, while the other half remains the old weathered surface. Paint-splattered drop cloths protect the terrace and garden path below. Empty and semi-empty paint cans are stacked messily in one corner. Masking tape residue lines the window frames and edges. Subtle irregular paint drip marks streak the pavement and base of the wall below.`,
+    foreground_detail: `A paint-stained drop cloth crumpled on the pavement, with a dried flat brush lying across it and a few dried paint drops on the ground.`,
+    exclusions: ['workers', 'people', 'ladders', 'paint rollers', 'paint brushes', 'buckets'] },
+
   { keys: ['ravel', 'facade', 'enduit', 'nettoyage'],
-    desc: 'façade cleaning and rendering',
-    scene: 'Patches of fresh new render contrast sharply with the older weathered wall surface. Dark water runoff stains streak the pavement below. A protective plastic sheet is taped at the base of the wall. White render dust settles on the ground.',
-    foreground: 'the base of the wall where fresh pale plaster meets old weathered render, with dried drip marks on the pavement',
-    exclusions: 'No pressure washers, no people, no hoses visible',
-    secteur: 'facade renovation' },
+    intro: 'facade renovation and rendering project on a residential house',
+    setting: 'exterior',
+    secteur: 'facade specialist',
+    scene: `Patches of fresh new pale render contrast sharply with the older weathered wall surface. Dark water runoff stains streak the pavement below. A large protective plastic sheet is taped at the base of the wall. White render dust and fine grit settle on the pavement and surrounding garden. One section of the wall shows bare old plaster where surface preparation has started.`,
+    foreground_detail: `The base of the wall showing the sharp transition between fresh pale plaster and old weathered render, with dried drip marks and render dust on the pavement below.`,
+    exclusions: ['workers', 'pressure washers', 'hoses', 'scaffolding tools', 'mixing equipment', 'people'] },
+
   { keys: ['macon', 'beton', 'parpaing', 'pierre'],
-    desc: 'masonry work',
-    scene: 'Broken bricks and jagged mortar chunks are scattered across the site. Dried cement splashes mark the ground. A sand pile and rubble bags sit in one corner. A new unfinished blockwork section stands exposed, showing raw grey concrete blocks.',
-    foreground: 'a cracked breeze block with dried mortar smears, lying on the pavement',
-    exclusions: 'No trowels, no workers, no scaffolding visible',
-    secteur: 'masonry' },
+    intro: 'masonry work at a residential property',
+    setting: 'exterior',
+    secteur: 'mason',
+    scene: `Broken bricks and jagged mortar chunks are scattered across the work area. Dried cement splashes and grey dust mark the surrounding ground. A sand pile and several rubble-filled bags sit nearby. A new unfinished blockwork section stands exposed at mid-height, showing raw grey concrete blocks with fresh dark mortar joints, visibly still not fully hardened.`,
+    foreground_detail: `A cracked concrete breeze block with dried mortar smears lying flat on the pavement, surrounded by mortar dust and small rubble fragments.`,
+    exclusions: ['workers', 'trowels', 'scaffolding', 'mixing tools', 'wheelbarrows', 'safety equipment', 'people'] },
+
   { keys: ['carrelage', 'parquet', 'sol'],
-    desc: 'floor tiling',
-    scene: 'Half the room shows completed modern tiles with plastic leveling spacers still in place. The other half is raw concrete screed with ridges of fresh grey adhesive. Tile offcuts and cardboard packaging are piled in a corner. A thin film of white tile dust covers every surface.',
-    foreground: 'the sharp edge where completed tiling meets raw concrete screed, a single tile spacer lying nearby',
-    exclusions: 'No tools, no adhesive buckets, no people visible',
-    secteur: 'flooring' },
+    intro: 'floor tiling installation in progress inside a residential house',
+    setting: 'interior',
+    secteur: 'tiler',
+    scene: `The room is approximately half tiled. The finished half shows modern matte porcelain tiles in a warm sand-beige color (60x60 cm), perfectly aligned but still showing white plastic tile leveling clips and spacers (croisillons) between every tile. The unfinished half exposes raw concrete screed with freshly combed grey tile adhesive applied with a notched trowel. The adhesive ridges are irregular and slightly imperfect, exactly like a real ongoing installation. The transition between finished and unfinished flooring looks natural and mid-construction. Tile offcuts and torn cardboard packaging are piled in a far corner.`,
+    foreground_detail: `The sharp transition edge where the completed tiled floor with leveling spacers meets the raw concrete screed with combed adhesive ridges. One white plastic tile spacer lies loose near the edge.`,
+    exclusions: ['workers', 'people', 'buckets', 'tile cutter', 'tools', 'bottles', 'cleaning supplies', 'safety equipment', 'furniture'] },
+
   { keys: ['plomb', 'sanitaire', 'salle de bain', 'wc'],
-    desc: 'plumbing and bathroom renovation',
-    scene: 'Old copper pipe sections are piled near the wall. Plumber tape offcuts and pipe collar scraps litter the floor. Water stains and drill dust ring freshly made holes. A removed old sink sits against the tiled wall.',
-    foreground: 'a cut copper pipe end with PTFE tape coiled on the tiled floor beside it',
-    exclusions: 'No workers, no pipe wrenches, no tools visible',
-    secteur: 'plumbing' },
+    intro: 'plumbing and bathroom renovation inside a residential property',
+    setting: 'interior',
+    secteur: 'plumber',
+    scene: `The bathroom is clearly mid-renovation. Old copper pipe sections are piled near the wall. Plumber PTFE tape offcuts and pipe collar scraps litter the tiled floor. Water stains and drill dust ring freshly made holes in the wall tiles. A removed old sink or toilet sits disconnected against the wall. New copper fittings are partially installed but raw pipe work is still exposed and not yet plastered over.`,
+    foreground_detail: `A cut copper pipe end with PTFE tape coiled loosely beside it on the tiled floor, surrounded by pipe collar scraps and drill dust.`,
+    exclusions: ['workers', 'pipe wrenches', 'tools', 'buckets', 'cleaning supplies', 'people'] },
+
   { keys: ['elect', 'cabl'],
-    desc: 'electrical installation',
-    scene: 'Cable offcuts and wire scraps lie scattered on the floor. Old junction boxes and switch plates are piled in a cardboard box. Fresh plaster fills conduit channels cut into the walls around newly installed outlets.',
-    foreground: 'fresh plaster traces around a newly installed electrical outlet on a bare plaster wall',
-    exclusions: 'No workers, no wire tools, no open electrical panels visible',
-    secteur: 'electrical work' },
+    intro: 'electrical installation work inside a residential property',
+    setting: 'interior',
+    secteur: 'electrician',
+    scene: `Electrical work is clearly in progress. Cable offcuts and short wire scraps lie scattered on the bare floor. Old plastic junction boxes and yellowed switch plates are piled in a cardboard box. Conduit channels have been chased into the plaster walls, showing raw grey concrete inside. Fresh white plaster patches, still slightly damp, fill around newly installed electrical outlets. One wall shows exposed cable runs not yet covered.`,
+    foreground_detail: `Fresh plaster traces around a newly installed electrical outlet on a bare wall, with cable offcuts and a plastic junction box lying on the floor below.`,
+    exclusions: ['workers', 'wire tools', 'open electrical panels', 'screwdrivers', 'safety equipment', 'people'] },
+
   { keys: ['debarras', 'evacuation', 'dechets', 'encombr', 'vider'],
-    desc: 'house clearing',
-    scene: 'A large white utility van with open rear doors is parked in the driveway, half-filled with old furniture and black bin bags. The driveway is cluttered with discarded items: a dusty wooden wardrobe, a rolled-up old rug, cardboard boxes, and miscellaneous junk. Two workers in casual work clothes carry a heavy box towards the van.',
-    foreground: 'an old wooden chair and a crumpled discarded newspaper lying on the pavement',
-    exclusions: 'No cleaning products, no text on boxes, no brand logos visible',
-    secteur: 'house clearing' },
+    intro: 'house clearing operation at a residential property',
+    setting: 'exterior',
+    secteur: 'clearance worker',
+    hasWorkers: true,
+    scene: `A large white utility van with open rear doors is parked in the driveway, half-filled with old furniture and black bin bags. The driveway is cluttered with discarded household items in complete disarray: a dusty wooden wardrobe, a rolled-up old rug, flattened cardboard boxes, and miscellaneous junk. Two workers in plain casual civilian clothes (jeans, t-shirts) are carrying a heavy cardboard box towards the van.`,
+    foreground_detail: `An old wooden chair with a worn seat lying on its side on the pavement, next to a crumpled discarded newspaper and a plastic bag.`,
+    exclusions: ['branded uniforms', 'cleaning products', 'readable text on boxes', 'brand logos', 'gloves', 'safety vests'] },
 ];
 
 function _getWorkDetail(travaux) {
@@ -3074,11 +3094,13 @@ function _getWorkDetail(travaux) {
     if (d.keys.some(k => t.includes(k))) return d;
   }
   return {
-    desc: travaux || 'renovation work',
-    scene: 'Work materials and construction debris are visible on the ground. The result of the work is clearly visible.',
-    foreground: 'a piece of construction debris or material lying on the pavement',
-    exclusions: 'No workers, no tools visible, no text',
-    secteur: 'home improvement'
+    intro: travaux || 'renovation work at a residential property',
+    setting: 'exterior',
+    secteur: 'contractor',
+    scene: 'Work materials and construction debris are scattered across the site. The job is clearly in progress.',
+    foreground_detail: 'Construction debris and material offcuts lying on the ground.',
+    exclusions: ['workers', 'tools', 'safety equipment', 'people'],
+    hasWorkers: false
   };
 }
 
@@ -3167,33 +3189,69 @@ function _getCityContext(ville) {
 function buildDallePromptV2(row) {
   const work    = _getWorkDetail(row.travaux);
   const city    = _getCityContext(row.ville);
-  const cityStr = (row.ville || '').trim()
-    ? `in a residential street of ${row.ville.trim()}`
-    : 'in a typical French residential street';
+  const cityStr = (row.ville || '').trim() ? `in ${row.ville.trim()}, France` : 'in France';
+  const isInt   = work.setting === 'interior';
 
-  const meteoLight = {
-    soleil:  'flat midday sunlight, no golden hour, harsh neutral shadows, pale blue sky',
-    nuageux: 'flat grey diffuse light, overcast cloudy sky, muted washed-out colors',
-    brumeux: 'hazy pale milky sky, soft flat light with no shadows',
-    pluie:   'dark grey overcast sky, wet pavement, dull flat light, damp surfaces',
-  }[row.meteo] || city.light;
+  const lighting = {
+    soleil:  'flat midday sunlight coming through the window. No golden hour. Neutral shadows. Pale blue sky outside.',
+    nuageux: 'flat grey diffuse overcast daylight. Muted washed-out colors. Cloudy sky outside.',
+    brumeux: 'hazy pale milky overcast light. No direct shadows. Soft grey sky outside.',
+    pluie:   'dark grey overcast sky. Wet surfaces visible. Dull flat light. Heavy cloud outside.',
+  }[row.meteo] || (isInt ? 'natural overcast daylight coming through the window' : city.light);
 
-  const etatDesc = {
+  const etatLine = {
     desordre: 'The site is in total disarray.',
     encours:  'Work is actively in progress.',
     propre:   'The work appears neatly completed.',
   }[row.etat] || '';
 
-  return [
-    `A casual, low-quality smartphone snapshot of a ${work.desc} site ${cityStr}.`,
-    `Shot hastily from street level, no artistic framing, no golden hour, flat practical documentation. ${meteoLight}.`,
-    `In the background, typical local architecture: ${city.arch}.`,
-    etatDesc,
-    work.scene,
-    `In the foreground, ${work.foreground}.`,
-    `${work.exclusions}.`,
-    `NOT a professional photo. Digital noise, slightly tilted horizon, no depth of field blur, mundane authentic contractor work documentation snapshot.`,
-  ].filter(Boolean).join(' ').replace(/\s{2,}/g, ' ').trim();
+  const exclusionBlock = (work.exclusions || []).map(e => `No ${e}.`).join('\n');
+  const noWorkerLine   = work.hasWorkers ? '' : 'No workers. No people.';
+
+  const archBlock = isInt
+    ? `The walls are simple white plaster. One wall features authentic ${city.arch.split(' with ')[0]} material typical of the region.\n\nLarge window overlooking a genuine ${(row.ville || 'French')} residential neighborhood with ${city.arch}. ${city.light}.`
+    : `In the background: typical local architecture — ${city.arch}.`;
+
+  return `Ultra-realistic casual smartphone photo of a ${work.intro} ${cityStr}.
+
+This must NOT look like an architectural visualization or AI render. It should look like an ordinary work-in-progress photo quickly taken by a local French ${work.secteur} to document the job.
+
+${etatLine}
+
+${work.scene}
+
+${work.foreground_detail}
+
+${archBlock}
+
+${exclusionBlock}
+${noWorkerLine}
+No furniture.
+
+The ${isInt ? 'room' : 'site'} should feel empty because the contractor briefly stepped away before continuing.
+
+Camera style:
+- cheap Android smartphone photo
+- handheld, eye level
+- slightly tilted framing
+- imperfect composition
+- slight motion blur
+- visible digital noise
+- JPEG compression artifacts
+- soft autofocus
+- slightly washed-out colors
+- average exposure
+- no cinematic lighting
+- no dramatic shadows
+- no professional photography
+
+Lighting: ${lighting}
+
+The image should feel boring, ordinary, authentic and completely unpolished.
+
+Absolutely NO CGI look. Absolutely NO render. Absolutely NO staged construction scene.
+
+It should be indistinguishable from a real smartphone photo uploaded by a French ${work.secteur} during an active chantier.`.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function _escHtml(s) {
