@@ -3402,18 +3402,28 @@ async function generateAllImages() {
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
-        const resp = await fetch('https://api.openai.com/v1/images/generations', {
+        // Tente dall-e-3 en priorité (meilleure qualité réaliste)
+        // Si le compte n'y a pas accès, bascule automatiquement sur gpt-image-1
+        let resp = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'gpt-image-1', prompt, n: 1,
-            size: '1024x1024', quality: 'medium'
-          })
+          body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size: '1024x1024', quality: 'standard' })
         });
-
         if (!resp.ok) {
-          const err = await resp.json();
-          throw new Error(err.error?.message || resp.statusText);
+          const errBody = await resp.json();
+          const errMsg  = errBody.error?.message || '';
+          if (errMsg.includes('does not exist') || errMsg.includes('not found') || resp.status === 404) {
+            // Compte sans accès dall-e-3 → fallback gpt-image-1
+            resp = await fetch('https://api.openai.com/v1/images/generations', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024', quality: 'medium' })
+            });
+          }
+          if (!resp.ok) {
+            const err2 = await resp.json();
+            throw new Error(err2.error?.message || resp.statusText);
+          }
         }
 
         const data     = await resp.json();
