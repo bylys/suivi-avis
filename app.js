@@ -2791,6 +2791,17 @@ function normalizeStr(s) {
 
 const _geoCache = {};
 let   _leafletMap = null;
+let   _mapSession = 0;
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R    = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a    = Math.sin(dLat/2)**2 +
+               Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+               Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
 
 async function geocodeVille(ville) {
   if (_geoCache[ville]) return _geoCache[ville];
@@ -2812,6 +2823,8 @@ async function geocodeVille(ville) {
 async function showGmbMap(ville) {
   if (!ville) return;
 
+  const session = ++_mapSession;
+
   const panel   = document.getElementById('gmb-map-panel');
   const overlay = document.getElementById('gmb-map-overlay');
 
@@ -2819,55 +2832,121 @@ async function showGmbMap(ville) {
   document.getElementById('gmb-map-fiches').innerHTML =
     '<p style="color:#64748b;font-size:0.85rem;">Chargement…</p>';
 
-  // Ouvrir le panel
   overlay.classList.add('open');
   panel.classList.add('open');
 
-  // Fiches correspondantes (texte dans le nom)
-  const fiches  = await getFiches();
-  const villeNorm = normalizeStr(ville);
-  const matches = fiches.filter(f => normalizeStr(f.nom).includes(villeNorm));
+  const fiches       = await getFiches();
+  const villeNorm    = normalizeStr(ville);
+  const exactMatches = fiches.filter(f => normalizeStr(f.nom).includes(villeNorm));
+  const otherFiches  = fiches.filter(f => !normalizeStr(f.nom).includes(villeNorm));
 
   const fichesEl = document.getElementById('gmb-map-fiches');
-  const countLabel = matches.length
-    ? `<p style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:0.75rem;">${matches.length} fiche${matches.length > 1 ? 's' : ''} GMB trouvée${matches.length > 1 ? 's' : ''}</p>`
-    : `<p style="font-size:0.85rem;color:#475569;margin-bottom:0.75rem;">Aucune fiche trouvée pour « ${ville} ».</p>`;
 
-  fichesEl.innerHTML = countLabel + matches.map(f => `
+  const renderFicheItem = (f, dist) => `
     <div class="gmb-fiche-item">
-      <div class="gmb-fiche-item-name">🏢 ${f.nom}</div>
+      <div class="gmb-fiche-item-name">
+        🏢 ${f.nom}
+        ${dist ? `<span class="gmb-dist-badge">~${dist} km</span>` : ''}
+      </div>
       ${f.lien ? `<a href="${f.lien}" target="_blank" rel="noopener">Voir sur Google Maps ↗</a>` : ''}
-    </div>
-  `).join('');
+    </div>`;
 
-  // Carte Leaflet (après transition pour que le conteneur soit visible)
+  const renderFicheList = (nearby, isSearching) => {
+    if (_mapSession !== session) return;
+    let html = '';
+    if (exactMatches.length) {
+      html += `<p class="gmb-section-label">📍 ${exactMatches.length} fiche${exactMatches.length>1?'s':''} à ${ville}</p>`;
+      html += exactMatches.map(f => renderFicheItem(f, 0)).join('');
+    }
+    if (nearby.length) {
+      html += `<p class="gmb-section-label" style="margin-top:0.75rem;">🔍 ${nearby.length} fiche${nearby.length>1?'s':''} dans un rayon de 50 km</p>`;
+      html += nearby.map(f => renderFicheItem(f, f._dist)).join('');
+    }
+    if (isSearching) {
+      html += `<p class="gmb-searching-label">⏳ Recherche dans un rayon de 50 km…</p>`;
+    }
+    if (!exactMatches.length && !nearby.length && !isSearching) {
+      html = `<p style="font-size:0.85rem;color:#475569;">Aucune fiche trouvée dans un rayon de 50 km.</p>`;
+    }
+    fichesEl.innerHTML = html;
+  };
+
+  renderFicheList([], true);
+
   setTimeout(async () => {
+    if (_mapSession !== session) return;
     if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
 
-    const geo    = await geocodeVille(ville);
-    const mapEl  = document.getElementById('gmb-map-leaflet');
+    const centerGeo = await geocodeVille(ville);
+    const mapEl     = document.getElementById('gmb-map-leaflet');
 
-    if (geo && typeof L !== 'undefined') {
-      _leafletMap = L.map(mapEl, { zoomControl: true }).setView([geo.lat, geo.lon], 12);
+    let leafletReady = false;
+    if (centerGeo && typeof L !== 'undefined') {
+      _leafletMap = L.map(mapEl, { zoomControl: true }).setView([centerGeo.lat, centerGeo.lon], 10);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 18
       }).addTo(_leafletMap);
 
-      const icon = L.divIcon({
+      L.circle([centerGeo.lat, centerGeo.lon], {
+        radius: 50000,
+        color: '#6366f1',
+        fillColor: '#6366f1',
+        fillOpacity: 0.05,
+        weight: 1.5,
+        dashArray: '6 4'
+      }).addTo(_leafletMap);
+
+      const centerIcon = L.divIcon({
         className: '',
         html: `<div style="background:#6366f1;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
         iconSize: [14, 14],
         iconAnchor: [7, 7]
       });
-
-      L.marker([geo.lat, geo.lon], { icon })
+      L.marker([centerGeo.lat, centerGeo.lon], { icon: centerIcon })
         .addTo(_leafletMap)
-        .bindPopup(`<b>${ville}</b><br>${matches.length} fiche${matches.length > 1 ? 's' : ''} GMB`)
+        .bindPopup(`<b>${ville}</b>`)
         .openPopup();
+
+      leafletReady = true;
     } else {
       mapEl.innerHTML = '<p style="color:#475569;text-align:center;padding:3rem 1rem;font-size:0.85rem;">Carte non disponible</p>';
     }
+
+    if (!centerGeo) { renderFicheList([], false); return; }
+
+    const nearbyIcon = (typeof L !== 'undefined') ? L.divIcon({
+      className: '',
+      html: `<div style="background:#22c55e;width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.4);"></div>`,
+      iconSize: [10, 10],
+      iconAnchor: [5, 5]
+    }) : null;
+
+    const nearby = [];
+    for (const f of otherFiches) {
+      if (_mapSession !== session) return;
+      await new Promise(r => setTimeout(r, 300));
+      if (_mapSession !== session) return;
+
+      const fGeo = await geocodeVille(f.nom);
+      if (!fGeo) continue;
+
+      const dist = haversineKm(centerGeo.lat, centerGeo.lon, fGeo.lat, fGeo.lon);
+      if (dist > 50) continue;
+
+      const d = Math.round(dist);
+      nearby.push({ ...f, _dist: d });
+      nearby.sort((a, b) => a._dist - b._dist);
+
+      if (leafletReady && _leafletMap && nearbyIcon) {
+        L.marker([fGeo.lat, fGeo.lon], { icon: nearbyIcon })
+          .addTo(_leafletMap)
+          .bindPopup(`<b>${f.nom}</b><br>~${d} km`);
+      }
+      renderFicheList(nearby, true);
+    }
+
+    renderFicheList(nearby, false);
   }, 300);
 }
 
