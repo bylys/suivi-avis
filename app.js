@@ -3543,11 +3543,11 @@ async function downloadImagesZip() {
   if (!images.length) return;
 
   if (images.length === 1) {
-    // Une seule image : téléchargement direct PNG
+    // Une seule image : téléchargement direct JPEG
     const { b64, url, filename } = images[0];
     if (b64) {
       const a = document.createElement('a');
-      a.href = `data:image/png;base64,${b64}`;
+      a.href = `data:image/jpeg;base64,${b64}`;
       a.download = filename;
       a.click();
     } else {
