@@ -3172,10 +3172,10 @@ function buildDallePromptV2(row) {
     : 'in a typical French residential street';
 
   const meteoLight = {
-    soleil:  'warm soft afternoon light and a clear sky',
-    nuageux: 'flat diffuse grey light and an overcast sky',
-    brumeux: 'hazy pale light with a milky soft sky',
-    pluie:   'dull grey light with wet reflective surfaces and a heavy overcast sky',
+    soleil:  'flat midday sunlight, no golden hour, harsh neutral shadows, pale blue sky',
+    nuageux: 'flat grey diffuse light, overcast cloudy sky, muted washed-out colors',
+    brumeux: 'hazy pale milky sky, soft flat light with no shadows',
+    pluie:   'dark grey overcast sky, wet pavement, dull flat light, damp surfaces',
   }[row.meteo] || city.light;
 
   const etatDesc = {
@@ -3185,14 +3185,14 @@ function buildDallePromptV2(row) {
   }[row.etat] || '';
 
   return [
-    `A grainy, realistic smartphone photo of a ${work.desc} site ${cityStr}.`,
-    `Low-quality mobile camera aesthetic with ${meteoLight}.`,
+    `A casual, low-quality smartphone snapshot of a ${work.desc} site ${cityStr}.`,
+    `Shot hastily from street level, no artistic framing, no golden hour, flat practical documentation. ${meteoLight}.`,
     `In the background, typical local architecture: ${city.arch}.`,
     etatDesc,
     work.scene,
     `In the foreground, ${work.foreground}.`,
     `${work.exclusions}.`,
-    `Slightly overexposed, digital noise, slightly tilted horizon, mundane and authentic local contractor work-in-progress snapshot.`,
+    `NOT a professional photo. Digital noise, slightly tilted horizon, no depth of field blur, mundane authentic contractor work documentation snapshot.`,
   ].filter(Boolean).join(' ').replace(/\s{2,}/g, ' ').trim();
 }
 
@@ -3402,18 +3402,28 @@ async function generateAllImages() {
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
-        const resp = await fetch('https://api.openai.com/v1/images/generations', {
+        // Tente dall-e-3 en priorité (meilleure qualité réaliste)
+        // Si le compte n'y a pas accès, bascule automatiquement sur gpt-image-1
+        let resp = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'gpt-image-1', prompt, n: 1,
-            size: '1024x1024', quality: 'high'
-          })
+          body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size: '1024x1024', quality: 'standard' })
         });
-
         if (!resp.ok) {
-          const err = await resp.json();
-          throw new Error(err.error?.message || resp.statusText);
+          const errBody = await resp.json();
+          const errMsg  = errBody.error?.message || '';
+          if (errMsg.includes('does not exist') || errMsg.includes('not found') || resp.status === 404) {
+            // Compte sans accès dall-e-3 → fallback gpt-image-1
+            resp = await fetch('https://api.openai.com/v1/images/generations', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024', quality: 'medium' })
+            });
+          }
+          if (!resp.ok) {
+            const err2 = await resp.json();
+            throw new Error(err2.error?.message || resp.statusText);
+          }
         }
 
         const data     = await resp.json();
