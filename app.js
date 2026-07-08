@@ -3310,8 +3310,9 @@ async function generateAllImages() {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'gpt-image-1', prompt, n: 1,
-            size: '1024x1024', quality: 'medium'
+            model: 'dall-e-3', prompt, n: 1,
+            size: '1024x1024', quality: 'hd',
+            response_format: 'b64_json'
           })
         });
 
