@@ -3008,49 +3008,64 @@ const METEO_OPTIONS = [
 const _workDetails = [
   { keys: ['elag', 'haie', 'taille', 'arbust'],
     desc: 'tree pruning and hedge trimming',
-    debris: 'a massive, disorganized pile of cut branches and thick hedge clippings, freshly cut logs and scattered bark on muddy grass, deep tire tracks from a loader, a thick layer of fresh yellow sawdust',
-    exclusions: 'No tools, no chainsaws, no helmets, no ropes, no brooms',
+    scene: 'A massive disordered pile of freshly cut branches and thick hedge clippings fills the driveway. Chunky logs and scattered bark litter the muddy lawn. Deep tire tracks from a loader cross the yard. A thick layer of fresh yellow sawdust coats the grass.',
+    foreground: 'a fresh-cut stump with chainsaw marks and sawdust scattered on the ground around it',
+    exclusions: 'No chainsaws, no helmets, no ropes, no brooms visible',
     secteur: 'landscaping' },
   { keys: ['abatt', 'abatage'],
     desc: 'large tree felling',
-    debris: 'enormous trunk sections scattered across the ground, a thick carpet of wood chips and sawdust, deep ground marks from heavy machinery',
-    exclusions: 'No chainsaws, no safety gear, no ropes',
+    scene: 'Enormous trunk sections lie scattered across the yard. A thick carpet of wood chips and sawdust surrounds a massive fresh stump. Deep gouges mark the ground where heavy machinery passed. The sky is open where a large canopy tree once stood.',
+    foreground: 'a freshly cut log cross-section showing growth rings, resting on a bed of sawdust',
+    exclusions: 'No chainsaws, no safety gear, no ropes visible',
     secteur: 'tree removal' },
   { keys: ['toitur', 'couvreur', 'ardoise', 'tuile'],
     desc: 'roof renovation',
-    debris: 'old broken clay roof tiles piled in the driveway, torn roofing felt, rusty nails scattered on the ground, bags of mortar and a stack of new tiles nearby',
-    exclusions: 'No workers, no scaffolding tools, no safety harnesses',
+    scene: 'Old broken clay roof tiles are heaped in a messy pile in the driveway. Torn roofing felt curls off the edge of the roof. Rusty nails and tile fragments litter the ground below. A neat stack of new tiles and bags of mortar sit on a wooden pallet.',
+    foreground: 'a cracked old clay roof tile lying on the pavement with dried mortar dust around it',
+    exclusions: 'No workers visible, no scaffolding tools, no safety harnesses',
     secteur: 'roofing' },
   { keys: ['peintur', 'peint'],
     desc: 'exterior painting',
-    debris: 'paint-splattered drop cloths on the ground, empty paint cans, masking tape residue on window frames, slight paint drips on the pavement below',
+    scene: 'Paint-splattered drop cloths protect the terrace below. Empty paint cans are stacked in a corner. Masking tape residue lines the window frames. Subtle paint drips streak the pavement below the freshly painted wall section.',
+    foreground: 'a paint-stained drop cloth folded on the pavement, a dried flat brush lying on top',
     exclusions: 'No people, no ladders, no paint rollers visible',
     secteur: 'painting' },
-  { keys: ['ravel', 'facade', 'enduit'],
-    desc: 'façade renovation',
-    debris: 'dark water runoff stains on the pavement below, scrubbing residue, patches of fresh render still drying on the wall',
-    exclusions: 'No pressure washers, no people, no hoses',
+  { keys: ['ravel', 'facade', 'enduit', 'nettoyage'],
+    desc: 'façade cleaning and rendering',
+    scene: 'Patches of fresh new render contrast sharply with the older weathered wall surface. Dark water runoff stains streak the pavement below. A protective plastic sheet is taped at the base of the wall. White render dust settles on the ground.',
+    foreground: 'the base of the wall where fresh pale plaster meets old weathered render, with dried drip marks on the pavement',
+    exclusions: 'No pressure washers, no people, no hoses visible',
     secteur: 'facade renovation' },
   { keys: ['macon', 'beton', 'parpaing', 'pierre'],
     desc: 'masonry work',
-    debris: 'broken bricks and mortar chunks scattered around, dried cement splashes on the ground, sand piles and rubble',
-    exclusions: 'No trowels, no workers, no scaffolding',
+    scene: 'Broken bricks and jagged mortar chunks are scattered across the site. Dried cement splashes mark the ground. A sand pile and rubble bags sit in one corner. A new unfinished blockwork section stands exposed, showing raw grey concrete blocks.',
+    foreground: 'a cracked breeze block with dried mortar smears, lying on the pavement',
+    exclusions: 'No trowels, no workers, no scaffolding visible',
     secteur: 'masonry' },
   { keys: ['carrelage', 'parquet', 'sol'],
-    desc: 'flooring installation',
-    debris: 'tile offcuts and packaging on the floor, adhesive spatula marks, a thin film of tile dust, edge trimmings in a pile',
-    exclusions: 'No workers, no tools, no adhesive buckets',
+    desc: 'floor tiling',
+    scene: 'Half the room shows completed modern tiles with plastic leveling spacers still in place. The other half is raw concrete screed with ridges of fresh grey adhesive. Tile offcuts and cardboard packaging are piled in a corner. A thin film of white tile dust covers every surface.',
+    foreground: 'the sharp edge where completed tiling meets raw concrete screed, a single tile spacer lying nearby',
+    exclusions: 'No tools, no adhesive buckets, no people visible',
     secteur: 'flooring' },
-  { keys: ['plomb', 'sanitaire', 'salle de bain'],
-    desc: 'plumbing and sanitary work',
-    debris: 'old pipe sections piled nearby, plumber tape scraps, water stains on the floor around the installation area',
-    exclusions: 'No workers, no pipe wrenches, no tools',
+  { keys: ['plomb', 'sanitaire', 'salle de bain', 'wc'],
+    desc: 'plumbing and bathroom renovation',
+    scene: 'Old copper pipe sections are piled near the wall. Plumber tape offcuts and pipe collar scraps litter the floor. Water stains and drill dust ring freshly made holes. A removed old sink sits against the tiled wall.',
+    foreground: 'a cut copper pipe end with PTFE tape coiled on the tiled floor beside it',
+    exclusions: 'No workers, no pipe wrenches, no tools visible',
     secteur: 'plumbing' },
   { keys: ['elect', 'cabl'],
-    desc: 'electrical work',
-    debris: 'cable offcuts on the floor, old switch boxes piled nearby, wall patching plaster traces around new outlets',
-    exclusions: 'No workers, no wire tools, no open electrical panels',
+    desc: 'electrical installation',
+    scene: 'Cable offcuts and wire scraps lie scattered on the floor. Old junction boxes and switch plates are piled in a cardboard box. Fresh plaster fills conduit channels cut into the walls around newly installed outlets.',
+    foreground: 'fresh plaster traces around a newly installed electrical outlet on a bare plaster wall',
+    exclusions: 'No workers, no wire tools, no open electrical panels visible',
     secteur: 'electrical work' },
+  { keys: ['debarras', 'evacuation', 'dechets', 'encombr', 'vider'],
+    desc: 'house clearing',
+    scene: 'A large white utility van with open rear doors is parked in the driveway, half-filled with old furniture and black bin bags. The driveway is cluttered with discarded items: a dusty wooden wardrobe, a rolled-up old rug, cardboard boxes, and miscellaneous junk. Two workers in casual work clothes carry a heavy box towards the van.',
+    foreground: 'an old wooden chair and a crumpled discarded newspaper lying on the pavement',
+    exclusions: 'No cleaning products, no text on boxes, no brand logos visible',
+    secteur: 'house clearing' },
 ];
 
 function _getWorkDetail(travaux) {
@@ -3060,44 +3075,125 @@ function _getWorkDetail(travaux) {
   }
   return {
     desc: travaux || 'renovation work',
-    debris: 'work materials and construction debris visible on the ground, completed work result clearly visible',
+    scene: 'Work materials and construction debris are visible on the ground. The result of the work is clearly visible.',
+    foreground: 'a piece of construction debris or material lying on the pavement',
     exclusions: 'No workers, no tools visible, no text',
     secteur: 'home improvement'
   };
 }
 
+function _getCityContext(ville) {
+  const v = normalizeStr(ville || '').toLowerCase();
+  const regions = [
+    { keys: ['paris', 'boulogne', 'vincennes', 'versailles', 'argenteuil', 'montreuil', 'neuilly', 'creteil', 'nanterre'],
+      arch: 'classic Haussmann-style stone buildings with zinc rooftops and wrought-iron balconies',
+      light: 'pale urban Île-de-France sky and diffuse city light' },
+    { keys: ['lyon', 'villeurbanne', 'bron', 'venissieux'],
+      arch: 'Lyonnais buildings with ochre plaster façades and terracotta roofs',
+      light: 'soft Rhône valley light under a partly cloudy sky' },
+    { keys: ['marseille', 'aix-en-provence', 'toulon', 'martigues'],
+      arch: 'Provençal stone houses with pale limestone walls, terracotta roof tiles and blue shutters',
+      light: 'bright Mediterranean sunshine, hard shadows, vivid blue sky' },
+    { keys: ['bordeaux', 'merignac', 'pessac', 'libourne', 'talence'],
+      arch: 'Bordelais Gironde-stone classical facades with dark slate roofs',
+      light: 'mild Atlantic light and a pale grey-blue sky' },
+    { keys: ['lille', 'roubaix', 'tourcoing', 'villeneuve', 'lens', 'valenciennes', 'dunkerque'],
+      arch: 'Flemish red-brick townhouses with stepped gables and arched doorways',
+      light: 'flat cold northern light under a wide grey sky' },
+    { keys: ['strasbourg', 'mulhouse', 'colmar', 'haguenau'],
+      arch: 'Alsatian half-timbered colombage houses with steep dark rooflines and coloured facades',
+      light: 'crisp Alsatian light under a pale high-pressure sky' },
+    { keys: ['nantes', 'saint-nazaire'],
+      arch: 'Loire Atlantique town houses with grey slate roofs and pale stone facades',
+      light: 'soft Atlantic Loire light and a pale overcast sky' },
+    { keys: ['angers'],
+      arch: 'Maine-et-Loire schist and tuffeau stone houses with grey slate roofs',
+      light: 'soft Loire Valley light and a slightly overcast pale sky' },
+    { keys: ['tours', 'blois', 'orleans', 'chartres', 'amboise'],
+      arch: '1970s suburban houses with white rendered facades and dark grey slate roofs typical of Touraine',
+      light: 'soft, flat Loire Valley light and a pale milky sky' },
+    { keys: ['caen', 'cherbourg', 'alençon', 'argentan'],
+      arch: 'light-coloured Pierre de Caen limestone facades and dark slate roofs typical of Normandy',
+      light: 'soft, hazy Normandy sky with diffuse Atlantic light' },
+    { keys: ['rouen', 'le havre', 'evreux', 'dieppe'],
+      arch: 'Norman half-timbered colombage facades or white-rendered post-war buildings with slate roofs',
+      light: 'overcast Normandy sky, flat diffuse light' },
+    { keys: ['rennes', 'brest', 'quimper', 'saint-brieuc', 'lorient', 'vannes'],
+      arch: 'Breton granite stone houses with grey schist slate roofs',
+      light: 'soft muted Atlantic Brittany light under a pale overcast sky' },
+    { keys: ['toulouse', 'montpellier', 'nimes', 'perpignan', 'carcassonne'],
+      arch: 'pink Toulouse brick townhouses or pale Languedoc limestone with clay roman-tile roofs',
+      light: 'warm southern light and a clear Mediterranean blue sky' },
+    { keys: ['grenoble', 'chambery', 'annecy', 'albertville'],
+      arch: 'Alpine-style buildings with wooden balconies and stone basements against a mountain backdrop',
+      light: 'crisp clear alpine light and a brilliant high sky' },
+    { keys: ['nice', 'cannes', 'antibes', 'grasse', 'frejus'],
+      arch: 'Belle Époque villas with pastel ochre and salmon facades and terracotta canal-tile roofs',
+      light: 'brilliant Côte d\'Azur sunshine and a deep blue Mediterranean sky' },
+    { keys: ['amiens', 'beauvais', 'compiegne', 'soissons'],
+      arch: 'red-brick Picard houses with grey slate roofs',
+      light: 'flat diffuse northern Picard light under a pale overcast sky' },
+    { keys: ['dijon', 'chalon', 'macon', 'auxerre'],
+      arch: 'Burgundy tuffeau stone townhouses with distinctive polychrome glazed tile roofs',
+      light: 'mild Burgundy continental light under a partly cloudy sky' },
+    { keys: ['metz', 'nancy', 'reims', 'troyes'],
+      arch: 'golden Lorraine stone townhouses or Champagne chalk-stone facades with slate roofs',
+      light: 'clear continental light and a high pale sky' },
+    { keys: ['besancon', 'belfort', 'montbeliard'],
+      arch: 'Franche-Comté stone houses with steep grey roofs',
+      light: 'clear continental Franche-Comté light under a partly cloudy sky' },
+    { keys: ['clermont', 'vichy', 'aurillac'],
+      arch: 'dark volcanic basalt Auvergne buildings with dark grey steep roofs',
+      light: 'clear Massif Central light under an open sky' },
+    { keys: ['limoges', 'angouleme', 'perigueux'],
+      arch: 'Limousin or Périgord stone houses with brown clay tile or grey slate roofs',
+      light: 'mild Atlantic inland light and a soft partly cloudy sky' },
+    { keys: ['poitiers', 'la rochelle', 'niort', 'rochefort'],
+      arch: 'Poitevin or Charentais pale limestone houses with flat roman clay-tile roofs',
+      light: 'Atlantic coastal light and a pale sea-sky' },
+    { keys: ['toulon', 'saint-tropez', 'hyeres'],
+      arch: 'Provençal village houses with pastel rendered facades and terracotta roof tiles',
+      light: 'brilliant Var sunshine and a vivid blue sky' },
+  ];
+  for (const r of regions) {
+    if (r.keys.some(k => v.includes(normalizeStr(k).toLowerCase()))) return r;
+  }
+  return {
+    arch: 'typical French suburban houses with classic slate rooftops and rendered facades',
+    light: 'natural French daylight under a pale European sky'
+  };
+}
+
 function buildDallePromptV2(row) {
-  const detail = _getWorkDetail(row.travaux);
+  const work    = _getWorkDetail(row.travaux);
+  const city    = _getCityContext(row.ville);
+  const cityStr = (row.ville || '').trim()
+    ? `in a residential street of ${row.ville.trim()}`
+    : 'in a typical French residential street';
 
-  const lieuMap = {
-    jardin:    'in a residential garden on a typical French suburban street',
-    facade:    'on the façade of a typical French residential house',
-    toit:      'on the roof of a typical French house',
-    interieur: 'inside a typical French home or apartment',
-    commerce:  'at a small French commercial property',
-    voie:      'on a typical French street or public area',
-  };
-  const meteoMap = {
-    soleil:  'bright natural sunlight, warm afternoon tones',
-    nuageux: 'overcast grey sky, diffuse flat lighting, muted colors',
-    brumeux: 'bright hazy sunlight with soft glow and a slightly tilted horizon',
-    pluie:   'wet ground reflecting dull light, grey overcast sky, damp surfaces',
-  };
-  const etatMap = {
-    desordre: 'The site is in total disarray:',
-    encours:  'Work is in full progress:',
-    propre:   'The work has been neatly completed:',
-  };
+  const meteoLight = {
+    soleil:  'warm soft afternoon light and a clear sky',
+    nuageux: 'flat diffuse grey light and an overcast sky',
+    brumeux: 'hazy pale light with a milky soft sky',
+    pluie:   'dull grey light with wet reflective surfaces and a heavy overcast sky',
+  }[row.meteo] || city.light;
 
-  const lieu    = lieuMap[row.lieu]  || 'in a typical French residential setting';
-  const meteo   = meteoMap[row.meteo] || 'natural daylight';
-  const etatPfx = etatMap[row.etat]  || '';
-  const villeStr = (row.ville || '').trim()
-    ? `in ${row.ville.trim()}, France`
-    : 'in a French town';
+  const etatDesc = {
+    desordre: 'The site is in total disarray.',
+    encours:  'Work is actively in progress.',
+    propre:   'The work appears neatly completed.',
+  }[row.etat] || '';
 
-  return `A grainy, realistic smartphone photo of a ${detail.desc} site ${lieu} ${villeStr}. Low-quality mobile camera aesthetic with ${meteo}. In the background, typical local French architecture. ${etatPfx} ${detail.debris}. ${detail.exclusions}. A mundane, raw, and authentic local ${detail.secteur} snapshot.`
-    .replace(/\s{2,}/g, ' ').trim();
+  return [
+    `A grainy, realistic smartphone photo of a ${work.desc} site ${cityStr}.`,
+    `Low-quality mobile camera aesthetic with ${meteoLight}.`,
+    `In the background, typical local architecture: ${city.arch}.`,
+    etatDesc,
+    work.scene,
+    `In the foreground, ${work.foreground}.`,
+    `${work.exclusions}.`,
+    `Slightly overexposed, digital noise, slightly tilted horizon, mundane and authentic local contractor work-in-progress snapshot.`,
+  ].filter(Boolean).join(' ').replace(/\s{2,}/g, ' ').trim();
 }
 
 function _escHtml(s) {
