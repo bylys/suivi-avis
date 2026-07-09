@@ -3007,13 +3007,28 @@ const METEO_OPTIONS = [
 
 // ─── WORK_SCENES ─────────────────────────────────────────────────────────────
 // Single source of truth per trade.
-// Replaces the former _workDetails array and _SCENE_LIBRARY object.
-// Each entry covers: identity, camera, materials, defects, exclusions,
-// and 4 progressive states (debut / encours / semifinal / final).
+// Each entry: category, priority, service_keywords (scored phrases),
+// exclude_if (strings or { phrase, unless } for conditional exclusion),
+// + scene data (intro, setting, camera, states…).
+// _getWorkDetail() scores all entries and returns the highest-scoring match.
+let _lastMatch = { matched_category: null, matched_service: null, match_score: 0 };
+
 const WORK_SCENES = {
 
   élagage: {
-    keys:       ['elag', 'haie', 'taille', 'arbust'],
+    category:         'arboriste',
+    priority:         3,
+    service_keywords: [
+      { phrase: 'taille arbre',   score: 12 },
+      { phrase: 'rognage souche', score: 12 },
+      { phrase: 'emondage',       score: 10 },
+      { phrase: 'elagage',        score: 10 },
+      { phrase: 'elagueur',       score: 10 },
+      { phrase: 'taille haie',    score: 9  },
+      { phrase: 'haie',           score: 4  },
+      { phrase: 'arbust',         score: 3  },
+    ],
+    exclude_if: [],
     intro:      'tree pruning and hedge trimming at a residential garden',
     setting:    'exterior',
     secteur:    'arborist',
@@ -3070,7 +3085,15 @@ const WORK_SCENES = {
   },
 
   abattage: {
-    keys:       ['abatt', 'abatage'],
+    category:         'arboriste',
+    priority:         3,
+    service_keywords: [
+      { phrase: 'abattage arbre', score: 13 },
+      { phrase: 'dessouchage',    score: 11 },
+      { phrase: 'abattage',       score: 9  },
+      { phrase: 'abatage',        score: 9  },
+    ],
+    exclude_if: [],
     intro:      'large tree felling at a residential property',
     setting:    'exterior',
     secteur:    'tree feller',
@@ -3127,7 +3150,25 @@ const WORK_SCENES = {
   },
 
   toiture: {
-    keys:       ['toitur', 'couvreur', 'ardoise', 'tuile'],
+    category:         'couverture',
+    priority:         3,
+    service_keywords: [
+      { phrase: 'reparation tuiles',   score: 13 },
+      { phrase: 'remplacement tuiles', score: 13 },
+      { phrase: 'pose tuiles',         score: 13 },
+      { phrase: 'pose ardoises',       score: 13 },
+      { phrase: 'reparation toiture',  score: 12 },
+      { phrase: 'faitage',             score: 11 },
+      { phrase: 'charpente',           score: 10 },
+      { phrase: 'ossature bois',       score: 10 },
+      { phrase: 'zinguerie',           score: 10 },
+      { phrase: 'gouttiere',           score: 8  },
+      { phrase: 'couvreur',            score: 8  },
+      { phrase: 'ardoise',             score: 7  },
+      { phrase: 'tuile',               score: 6  },
+      { phrase: 'toitur',              score: 4  },
+    ],
+    exclude_if: ['nettoyage', 'demousage', 'demoussage'],
     intro:      'roof renovation on a residential house',
     setting:    'exterior',
     secteur:    'roofer',
@@ -3184,7 +3225,19 @@ const WORK_SCENES = {
   },
 
   peinture: {
-    keys:       ['peintur', 'peint'],
+    category:         'peinture',
+    priority:         2,
+    service_keywords: [
+      { phrase: 'peinture interieure', score: 13 },
+      { phrase: 'peinture exterieure', score: 12 },
+      { phrase: 'peinture exterieur',  score: 12 },
+      { phrase: 'peinture facade',     score: 11 },
+      { phrase: 'peinture mur',        score: 11 },
+      { phrase: 'peinture plafond',    score: 11 },
+      { phrase: 'peintur',             score: 1  },
+      { phrase: 'peint',               score: 1  },
+    ],
+    exclude_if: [],
     intro:      'exterior facade painting on a residential house',
     setting:    'exterior',
     secteur:    'painter',
@@ -3241,7 +3294,21 @@ const WORK_SCENES = {
   },
 
   ravalement: {
-    keys:       ['ravel', 'facade', 'enduit', 'nettoyage'],
+    category:         'ravalement',
+    priority:         3,
+    service_keywords: [
+      { phrase: 'ravalement facade',          score: 14 },
+      { phrase: 'renovation facade',          score: 13 },
+      { phrase: 'traitement fissures facade', score: 14 },
+      { phrase: 'traitement fissures',        score: 11 },
+      { phrase: 'enduit facade',              score: 12 },
+      { phrase: 'peinture exterieur',         score: 10 },
+      { phrase: 'ravalement',                 score: 9  },
+      { phrase: 'enduit',                     score: 6  },
+      { phrase: 'ravel',                      score: 5  },
+      { phrase: 'facade',                     score: 4  },
+    ],
+    exclude_if: [{ phrase: 'nettoyage', unless: 'ravalement' }],
     intro:      'facade rendering and renovation on a residential house',
     setting:    'exterior',
     secteur:    'facade specialist',
@@ -3298,7 +3365,21 @@ const WORK_SCENES = {
   },
 
   maçonnerie: {
-    keys:       ['macon', 'beton', 'parpaing', 'pierre'],
+    category:         'maçonnerie',
+    priority:         2,
+    service_keywords: [
+      { phrase: 'dalle beton',    score: 12 },
+      { phrase: 'mur beton',      score: 12 },
+      { phrase: 'terrasse beton', score: 12 },
+      { phrase: 'mur parpaing',   score: 11 },
+      { phrase: 'muret',          score: 10 },
+      { phrase: 'macon',          score: 8  },
+      { phrase: 'parpaing',       score: 7  },
+      { phrase: 'pierre',         score: 5  },
+      { phrase: 'beton',          score: 4  },
+      { phrase: 'mur',            score: 3  },
+    ],
+    exclude_if: [],
     intro:      'masonry work at a residential property',
     setting:    'exterior',
     secteur:    'mason',
@@ -3355,7 +3436,21 @@ const WORK_SCENES = {
   },
 
   carrelage: {
-    keys:       ['carrelage', 'parquet', 'sol'],
+    category:         'carrelage',
+    priority:         3,
+    service_keywords: [
+      { phrase: 'floor tile',     score: 13 },
+      { phrase: 'pose carrelage', score: 13 },
+      { phrase: 'pose parquet',   score: 13 },
+      { phrase: 'carreleur',      score: 11 },
+      { phrase: 'carrelage',      score: 10 },
+      { phrase: 'parquet',        score: 9  },
+      { phrase: 'tiling',         score: 8  },
+      { phrase: 'carre',          score: 6  },
+      { phrase: 'tile',           score: 5  },
+      { phrase: 'sol',            score: 3  },
+    ],
+    exclude_if: [],
     intro:      'floor tiling installation inside a residential property',
     setting:    'interior',
     secteur:    'tiler',
@@ -3412,7 +3507,22 @@ const WORK_SCENES = {
   },
 
   plomberie: {
-    keys:       ['plomb', 'sanitaire', 'salle de bain', 'wc'],
+    category:         'plomberie',
+    priority:         2,
+    service_keywords: [
+      { phrase: 'reparation fuite plomberie', score: 14 },
+      { phrase: 'fuite plomberie',            score: 13 },
+      { phrase: 'installation sanitaire',     score: 12 },
+      { phrase: 'salle de bain',              score: 11 },
+      { phrase: 'plombier',                   score: 9  },
+      { phrase: 'robinetterie',               score: 9  },
+      { phrase: 'chauffe eau',                score: 9  },
+      { phrase: 'chaudiere',                  score: 8  },
+      { phrase: 'sanitaire',                  score: 8  },
+      { phrase: 'plomb',                      score: 6  },
+      { phrase: 'wc',                         score: 6  },
+    ],
+    exclude_if: [],
     intro:      'plumbing renovation inside a residential property',
     setting:    'interior',
     secteur:    'plumber',
@@ -3469,7 +3579,20 @@ const WORK_SCENES = {
   },
 
   électricité: {
-    keys:       ['elect', 'cabl'],
+    category:         'électricité',
+    priority:         2,
+    service_keywords: [
+      { phrase: 'mise aux normes electrique', score: 14 },
+      { phrase: 'installation electrique',    score: 13 },
+      { phrase: 'tableau electrique',         score: 12 },
+      { phrase: 'electricien',                score: 10 },
+      { phrase: 'electricite',                score: 9  },
+      { phrase: 'prises',                     score: 5  },
+      { phrase: 'interrupteur',               score: 5  },
+      { phrase: 'cabl',                       score: 6  },
+      { phrase: 'elect',                      score: 5  },
+    ],
+    exclude_if: [],
     intro:      'electrical installation inside a residential property',
     setting:    'interior',
     secteur:    'electrician',
@@ -3526,7 +3649,23 @@ const WORK_SCENES = {
   },
 
   débarras: {
-    keys:       ['debarras', 'evacuation', 'dechets', 'encombr', 'vider'],
+    category:         'débarras',
+    priority:         2,
+    service_keywords: [
+      { phrase: 'debarras grenier',       score: 13 },
+      { phrase: 'debarras appartement',   score: 13 },
+      { phrase: 'debarras maison',        score: 13 },
+      { phrase: 'enlevement encombrants', score: 13 },
+      { phrase: 'evacuation encombrants', score: 13 },
+      { phrase: 'vide cave',              score: 12 },
+      { phrase: 'vide grenier',           score: 12 },
+      { phrase: 'debarras',               score: 9  },
+      { phrase: 'encombr',                score: 7  },
+      { phrase: 'evacuation',             score: 5  },
+      { phrase: 'vider',                  score: 5  },
+      { phrase: 'dechet',                 score: 4  },
+    ],
+    exclude_if: [],
     intro:      'house clearing operation at a residential property',
     setting:    'exterior',
     secteur:    'clearance worker',
@@ -3582,21 +3721,477 @@ const WORK_SCENES = {
     },
   },
 
+  nettoyage: {
+    category:         'nettoyage',
+    priority:         4,
+    service_keywords: [
+      { phrase: 'nettoyage toiture',        score: 15 },
+      { phrase: 'demousage toiture',         score: 15 },
+      { phrase: 'demoussage toiture',        score: 15 },
+      { phrase: 'nettoyage facade',          score: 14 },
+      { phrase: 'nettoyage terrasse',        score: 13 },
+      { phrase: 'nettoyage dallage',         score: 13 },
+      { phrase: 'nettoyage paves',           score: 13 },
+      { phrase: 'nettoyage gouttieres',      score: 13 },
+      { phrase: 'nettoyage gouttiere',       score: 13 },
+      { phrase: 'traitement antimousse',     score: 12 },
+      { phrase: 'traitement anti-mousse',    score: 12 },
+      { phrase: 'traitement anti mousse',    score: 12 },
+      { phrase: 'hydrofuge',                 score: 11 },
+      { phrase: 'demoussage',                score: 10 },
+      { phrase: 'demousage',                 score: 10 },
+      { phrase: 'nettoyage',                 score: 7  },
+    ],
+    exclude_if: [],
+    intro:      'pressure washing and surface cleaning at a residential property',
+    setting:    'exterior',
+    secteur:    'cleaning specialist',
+    hasWorkers: false,
+    camera:     'standing 4–6 m from the surface, eye level, full extent of the cleaned area visible',
+    materials:  ['cleaning product residue', 'moss and dirt runoff', 'water channels'],
+    photo_defects: [
+      'wet surface reflection causing overexposed bright patches',
+      'slight motion blur from water spray movement',
+    ],
+    exclusions: ['pressure washer machine', 'hoses', 'safety gear', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'one small strip already bright and clean — sharp contrast against surrounding dark moss and grime',
+          midground:  'most of the surface still heavily soiled — green moss patches and grey dirt on driveway, facade or roof',
+          background: 'house facade, garden boundary, or parked vehicles at edge',
+        },
+        debris:      'dirty water runoff near the cleaned strip, light moss flakes on the ground',
+        description: 'Cleaning has just started. One small patch is visibly clean — the contrast with the surrounding dirty surface is sharp.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'wet surface with runoff channels carrying moss and grime at the clean/dirty boundary',
+          midground:  'half the surface cleaned — clearly demarcated line between bright clean and dark dirty areas',
+          background: 'remaining dirty surface, house wall or fence',
+        },
+        debris:      'dirty water and moss debris running off the cleaned section edge',
+        description: 'Half the surface is clean. The contrast between the cleaned and dirty halves is striking. Active work in progress.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   55,
+          foreground: 'nearly all surface clean, isolated remaining stain patches near edges and corners',
+          midground:  'bright clean surface covering most of the area, small dark patches at edges',
+          background: 'house facade or garden boundary',
+        },
+        debris:      'minimal — a few remaining moss patches near corners and along joints',
+        description: 'Almost done. The surface is mostly bright and clean. A few stubborn patches remain near the edges.',
+      },
+      final: {
+        framing: {
+          work_pct:   70,
+          foreground: 'clean dry surface — uniform colour, no moss, no grime, sharp joints visible',
+          midground:  'full clean area — even colour throughout, clean edges',
+          background: 'house facade, garden, clean driveway or roofline',
+        },
+        debris:      'none — surface completely clean and dry',
+        description: 'Cleaning complete. The surface is uniformly clean with no moss or staining. A professional result.',
+      },
+    },
+  },
+
+  etancheite: {
+    category:         'étanchéité',
+    priority:         4,
+    service_keywords: [
+      { phrase: 'etancheite toit terrasse', score: 15 },
+      { phrase: 'toit terrasse',            score: 13 },
+      { phrase: 'etancheite toiture',       score: 13 },
+      { phrase: 'membrane bitume',          score: 13 },
+      { phrase: 'resine etanche',           score: 13 },
+      { phrase: 'impermeabilisation',       score: 12 },
+      { phrase: 'recherche de fuite',       score: 13 },
+      { phrase: 'reparation de fuite',      score: 13 },
+      { phrase: 'fuite toiture',            score: 12 },
+      { phrase: 'fuite toit',               score: 12 },
+      { phrase: 'infiltration',             score: 10 },
+      { phrase: 'etancheite',               score: 9  },
+    ],
+    exclude_if: [],
+    intro:      'flat roof waterproofing work on a residential or commercial building',
+    setting:    'exterior',
+    secteur:    'waterproofing specialist',
+    hasWorkers: false,
+    camera:     'crouching on the flat roof or terrace, wide view of membrane work, parapet visible at edges',
+    materials:  ['bitumen membrane rolls', 'primer residue', 'protective gravel', 'aluminium flashing'],
+    photo_defects: [
+      'harsh overhead midday light flattening the dark membrane texture',
+      'slight horizon tilt on the flat roof surface',
+    ],
+    exclusions: ['gas torches', 'gas canisters', 'workers', 'people', 'safety harnesses'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'section of old membrane peeled back — bare concrete or screed substrate exposed, primer marks drying',
+          midground:  'flat roof mostly still covered by old weathered grey membrane, one strip removed',
+          background: 'parapet wall, neighbouring rooftops, open sky',
+        },
+        debris:      'strips of old membrane rolled up at the roof edge, primer dust near stripped area',
+        description: 'Work has just started. A section of old membrane is removed, exposing bare substrate. The primer coat is drying.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'new bitumen membrane sheets overlapping neatly, seams visible on half the surface',
+          midground:  'clear boundary between new dark membrane and old weathered grey covering',
+          background: 'parapet wall, rooftop equipment, sky',
+        },
+        debris:      'membrane offcuts and packaging near the active work edge',
+        description: 'Half the roof is covered in new membrane. The contrast between fresh black and old grey is clear. Active professional work.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'membrane fully laid, parapet edges and upstands being sealed with aluminium flashing',
+          midground:  'complete new membrane surface — smooth, dark, uniformly flat',
+          background: 'parapet walls, sky, neighbouring building roofline',
+        },
+        debris:      'a few leftover membrane offcuts near the parapet wall, otherwise clean',
+        description: 'Membrane covering is complete. Edge flashings around the parapet are being sealed. Almost finished.',
+      },
+      final: {
+        framing: {
+          work_pct:   65,
+          foreground: 'clean finished flat roof — uniform dark membrane, sealed edges, clear drainage outlets',
+          midground:  'complete waterproofed surface, drainage points visible and unobstructed',
+          background: 'parapet walls, sky, neighbouring roofline',
+        },
+        debris:      'none — roof surface clean and ready',
+        description: 'Waterproofing complete. New membrane, sealed parapet edges, clear drainage. A professional result.',
+      },
+    },
+  },
+
+  terrassement: {
+    category:         'terrassement',
+    priority:         2,
+    service_keywords: [
+      { phrase: 'construction allee', score: 12 },
+      { phrase: 'allee carrossable',  score: 12 },
+      { phrase: 'allee gravier',      score: 12 },
+      { phrase: 'assainissement',     score: 10 },
+      { phrase: 'drainage',           score: 10 },
+      { phrase: 'nivellement',        score: 10 },
+      { phrase: 'vrd',                score: 11 },
+      { phrase: 'terrassement',       score: 9  },
+      { phrase: 'allee',              score: 5  },
+      { phrase: 'fondation',          score: 4  },
+    ],
+    exclude_if: [],
+    intro:      'groundworks and earthmoving at a residential property',
+    setting:    'exterior',
+    secteur:    'civil works contractor',
+    hasWorkers: false,
+    camera:     'standing at the edge of the site, 5–8 m from the work zone, wide shot showing ground profile',
+    materials:  ['compacted gravel', 'geotextile fabric', 'drainage pipes', 'sand bed'],
+    photo_defects: [
+      'lens barrel distortion on flat ground plane',
+      'pale sky bleaching at the top of frame',
+    ],
+    exclusions: ['excavators', 'dumper trucks', 'workers', 'people', 'safety equipment'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'freshly excavated trench or site perimeter marked with stakes and string line',
+          midground:  'disturbed soil and small earth mounds, garden mostly intact beside the work zone',
+          background: 'house facade, garden fence, neighbouring property',
+        },
+        debris:      'fresh excavated soil piled beside the trench, a few stones on the surface',
+        description: 'Groundwork has just started. Excavation beginning, site marked out, first earth moved.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'gravel base layer being spread — visible aggregate at the leading edge',
+          midground:  'terrain significantly shaped and partially filled with compacted sub-base',
+          background: 'garden boundary, existing fence or wall',
+        },
+        debris:      'soil mounds at the edge, gravel dust and aggregate on surrounding ground',
+        description: 'Groundwork well underway. Terrain shaped, gravel sub-base being compacted.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'compacted gravel surface nearly level, edging strips being installed',
+          midground:  'flat leveled surface covering most of the work zone, clean straight edges forming',
+          background: 'house facade, garden',
+        },
+        debris:      'a small pile of leftover gravel near the edge, otherwise tidy',
+        description: 'Base is almost complete. Surface is leveled and compacted. Edging being installed.',
+      },
+      final: {
+        framing: {
+          work_pct:   65,
+          foreground: 'finished surface — neat driveway, leveled ground or paved allée, clean edges',
+          midground:  'complete groundwork result — flat, even, well-finished',
+          background: 'house facade, garden boundary, gate or fence',
+        },
+        debris:      'none — site clean, professional finish',
+        description: 'Groundwork complete. Surface flat, level and neatly finished. A solid professional result.',
+      },
+    },
+  },
+
+  depannage_auto: {
+    category:         'dépannage auto',
+    priority:         4,
+    service_keywords: [
+      { phrase: 'depannage auto',     score: 14 },
+      { phrase: 'depannage voiture',  score: 14 },
+      { phrase: 'panne voiture',      score: 14 },
+      { phrase: 'remorquage',         score: 12 },
+      { phrase: 'transport garage',   score: 12 },
+      { phrase: 'crevaison',          score: 11 },
+      { phrase: 'batterie voiture',   score: 11 },
+      { phrase: 'depannag',           score: 8  },
+    ],
+    exclude_if: [],
+    intro:      'roadside vehicle breakdown assistance and recovery',
+    setting:    'exterior',
+    secteur:    'breakdown technician',
+    hasWorkers: false,
+    camera:     'standing 3–5 m from the car, eye level, showing vehicle and roadside context',
+    materials:  ['warning triangle on pavement', 'jump cables on seat', 'tow straps visible in van'],
+    photo_defects: [
+      'overexposure from bright sky against dark car bodywork',
+      'slight motion blur from passing traffic in background',
+    ],
+    exclusions: ['readable licence plates', 'brand logos', 'workers', 'people', 'driver'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'car parked on roadside — warning triangle placed on pavement nearby, hazard lights implied',
+          midground:  'car bonnet still closed, technician van parked directly behind',
+          background: 'road, hedgerow or pavement edge, distant traffic',
+        },
+        debris:      'warning triangle on pavement, small oil drip under car as authentic detail',
+        description: 'Breakdown just attended. Technician van parked behind. Car on the side of the road, bonnet still closed.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'car bonnet open, engine bay visible, jump cables or diagnostic equipment nearby',
+          midground:  'van open with equipment visible, technician at the front of the car',
+          background: 'road, fence or hedge, distant vehicles',
+        },
+        debris:      'jump cable on the road near the battery, warning vest placed on car roof',
+        description: 'Diagnosis underway. Bonnet open. Jump cables or tools connecting the vehicles.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   55,
+          foreground: 'car bonnet being lowered after repair, cables being coiled near van',
+          midground:  'van doors being closed, equipment packed away',
+          background: 'road, pavement, distant hedges',
+        },
+        debris:      'cables coiled on the ground near the van, warning triangle about to be picked up',
+        description: 'Repair complete, equipment being packed. Car is roadworthy again.',
+      },
+      final: {
+        framing: {
+          work_pct:   50,
+          foreground: 'car fully closed and ready — clean side view on the roadside',
+          midground:  'technician van parked behind, both vehicles ready',
+          background: 'road, pavement, sky',
+        },
+        debris:      'none — roadside clear, job done cleanly',
+        description: 'Breakdown resolved. Car ready to drive. Roadside is clear and tidy.',
+      },
+    },
+  },
+
+  paysagiste: {
+    category:         'paysagiste',
+    priority:         2,
+    service_keywords: [
+      { phrase: 'entretien jardin',      score: 13 },
+      { phrase: 'creation jardin',       score: 13 },
+      { phrase: 'amenagement exterieur', score: 12 },
+      { phrase: 'pose gazon',            score: 12 },
+      { phrase: 'plantation',            score: 9  },
+      { phrase: 'tonte',                 score: 9  },
+      { phrase: 'gazon',                 score: 7  },
+      { phrase: 'jardin',                score: 5  },
+    ],
+    exclude_if: [],
+    intro:      'garden landscaping and maintenance at a residential property',
+    setting:    'exterior',
+    secteur:    'landscaper',
+    hasWorkers: false,
+    camera:     'standing in the garden, 4–6 m from the work area, wide view showing garden context',
+    materials:  ['topsoil bags', 'mulch', 'plant pots', 'turf rolls'],
+    photo_defects: [
+      'dappled shade causing uneven exposure across the garden',
+      'slight lens flare from low afternoon sun between trees',
+    ],
+    exclusions: ['lawnmowers', 'hedge trimmers', 'tools', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'soil freshly turned and raked, plant pots and topsoil bags staged at the garden edge',
+          midground:  'bare soil plot or patchy lawn with marked planting positions',
+          background: 'house facade, garden fence, existing mature trees',
+        },
+        debris:      'topsoil bags and empty packaging at garden edge, soil clods on path',
+        description: 'Landscaping just started. Soil prepared, planting positions marked. No plants installed yet.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'plants being installed — some root balls in position, mulch being spread around them',
+          midground:  'garden half planted — some areas green and established, others still bare',
+          background: 'house facade, fence, existing garden trees',
+        },
+        debris:      'plant pot packaging on the ground, soil and mulch debris near planting areas',
+        description: 'Garden half planted. Some areas lush and green, others still bare. Mulch being laid.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'freshly laid turf or mulched beds with plants in place, neat edging being finished',
+          midground:  'garden mostly complete — plants established, edging nearly done',
+          background: 'house facade, clean fence line, sky',
+        },
+        debris:      'a few empty plant pots at the garden edge, otherwise tidy',
+        description: 'Garden mostly planted and mulched. Edges being defined. Almost complete.',
+      },
+      final: {
+        framing: {
+          work_pct:   70,
+          foreground: 'clean garden bed — lush plants, neat mulch layer, sharply defined edges',
+          midground:  'complete landscaped garden — green and tidy throughout',
+          background: 'house facade, fence, sky',
+        },
+        debris:      'none — garden clean and tidy',
+        description: 'Garden landscaping complete. Plants installed, mulch laid, edges clean. A beautiful professional result.',
+      },
+    },
+  },
+
+  vitrier: {
+    category:         'vitrier',
+    priority:         3,
+    service_keywords: [
+      { phrase: 'remplacement vitre', score: 13 },
+      { phrase: 'vitre cassee',       score: 13 },
+      { phrase: 'double vitrage',     score: 12 },
+      { phrase: 'miroiterie',         score: 11 },
+      { phrase: 'vitrerie',           score: 10 },
+      { phrase: 'vitrier',            score: 10 },
+      { phrase: 'vitrine',            score: 9  },
+      { phrase: 'vitr',               score: 5  },
+    ],
+    exclude_if: [],
+    intro:      'window glass replacement at a residential property',
+    setting:    'exterior',
+    secteur:    'glazier',
+    hasWorkers: false,
+    camera:     'standing 2–3 m from the window, straight-on view, eye level',
+    materials:  ['glass pane against wall', 'glazing putty', 'window spacers', 'protective corner pieces'],
+    photo_defects: [
+      'glass reflection causing an overexposed bright patch in the frame centre',
+      'chromatic aberration on the sharp window frame edge',
+    ],
+    exclusions: ['suction cups in use', 'workers', 'people', 'broken glass shards'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'old window frame with glass partially removed — bare frame sections exposed, putty being chipped away',
+          midground:  'window opening in the facade, old glass still in place on the upper section',
+          background: 'house facade, brick or rendered wall',
+        },
+        debris:      'old putty flakes and small glass chips at the window base — minimal and tidy',
+        description: 'Work just started. Frame being prepared. Old glass or putty being removed.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'new glass pane positioned in frame, spacers visible at edges, putty being applied',
+          midground:  'window partially assembled — new glass in position, sealant bead at frame junction',
+          background: 'house facade',
+        },
+        debris:      'putty scraps and spacer packaging near the window base',
+        description: 'Glass replacement underway. New pane being positioned and sealed into the frame.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'glass fully in place, sealant bead being smoothed around the frame perimeter',
+          midground:  'complete glass panel in frame, sealant line visible but not yet dry',
+          background: 'house facade',
+        },
+        debris:      'sealant packaging and a small putty knife near the window',
+        description: 'New glass in. Sealant being applied and smoothed around the edges. Nearly finished.',
+      },
+      final: {
+        framing: {
+          work_pct:   65,
+          foreground: 'clean new window — clear glass, neat sealant bead, clean painted frame',
+          midground:  'full window view — glass reflecting surroundings cleanly, frame in good condition',
+          background: 'house facade, garden or pavement, sky visible in glass reflection',
+        },
+        debris:      'none — window clean, installation finished',
+        description: 'Window replacement complete. Clear glass, clean frame, neat sealant. Professional result.',
+      },
+    },
+  },
+
 };
 
 // ─── _getWorkDetail ─────────────────────────────────────────────────────────────
-// Same interface as before. Now reads from WORK_SCENES.
+// Scoring engine: iterates all WORK_SCENES, checks exclude_if, sums keyword scores,
+// adds priority as a fractional tiebreaker, returns the highest-scoring entry.
+// Supports string exclusions and conditional { phrase, unless } objects.
+// Stores match debug info in _lastMatch for buildDallePromptV2.
 function _getWorkDetail(travaux) {
-  const t = (travaux || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  for (const scene of Object.values(WORK_SCENES)) {
-    if (scene.keys.some(k => t.includes(k))) return scene;
+  const t = (travaux || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+  let best = null, bestFinal = 0, bestCat = null, bestPhrases = [];
+
+  for (const [name, scene] of Object.entries(WORK_SCENES)) {
+    const excluded = (scene.exclude_if || []).some(rule => {
+      if (typeof rule === 'string') return t.includes(rule);
+      return t.includes(rule.phrase) && !t.includes(rule.unless);
+    });
+    if (excluded) continue;
+
+    let score = 0;
+    const matched = [];
+    for (const kw of (scene.service_keywords || [])) {
+      if (t.includes(kw.phrase)) { score += kw.score; matched.push(kw.phrase); }
+    }
+    if (score === 0) continue;
+
+    const finalScore = score + (scene.priority || 1) * 0.1;
+    if (finalScore > bestFinal) {
+      bestFinal = finalScore; best = scene;
+      bestCat = scene.category || name; bestPhrases = matched;
+    }
   }
-  // Default fallback for unknown trade
-  return {
+
+  _lastMatch = {
+    matched_category: bestCat || '(fallback)',
+    matched_service:  bestPhrases[0] || (travaux || ''),
+    match_score:      Math.round(bestFinal * 10) / 10,
+  };
+
+  return best || {
     intro:      travaux || 'renovation work at a residential property',
-    setting:    'exterior',
-    secteur:    'contractor',
-    hasWorkers: false,
+    setting:    'exterior', secteur: 'contractor', hasWorkers: false,
     camera:     'standing near the work, eye level',
     materials:  [],
     photo_defects: ['JPEG compression artifacts', 'slightly tilted horizon'],
@@ -3736,8 +4331,11 @@ function buildDallePromptV2(row) {
     photo_defects:   work.photo_defects,
     architecture:    city.arch,
     light:           meteo,
-    exclude:         work.exclusions || [],
-    no_people:       !work.hasWorkers,
+    exclude:           work.exclusions || [],
+    no_people:         !work.hasWorkers,
+    _matched_category: _lastMatch.matched_category,
+    _matched_service:  _lastMatch.matched_service,
+    _match_score:      _lastMatch.match_score,
   }, null, 2);
 }
 
