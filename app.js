@@ -3186,72 +3186,94 @@ function _getCityContext(ville) {
   };
 }
 
+// ─── Level 1: fixed photography-style preamble ────────────────────────────────
+const _IMG_SYSTEM_PREAMBLE = `Casual documentary smartphone photo taken by a French contractor to record work progress. NOT a professional photograph. NOT an architectural render. NOT a portfolio shot.
+
+ANTI-AESTHETIC RULES — every one applies:
+Do NOT create an aesthetically pleasing image. Do NOT compose like an architectural photographer. Do NOT use symmetry or centered framing. Do NOT apply cinematic color grading, golden hour, or dramatic shadows. The framing must look accidental — zero intentional composition. Avoid anything that looks like a render or a stock photo.
+
+CAMERA DEFECTS (all must appear):
+Cheap Android smartphone. Tiny JPEG sensor. Slight chromatic aberration at frame edges. Rolling shutter distortion on vertical lines. Visible barrel lens distortion. Small sensor noise (ISO 400–800 equivalent). JPEG compression artifacts on flat surfaces. Smartphone oversharpening. Slightly washed-out or clipped exposure. No HDR processing. No portrait mode.
+
+CONSTRUCTION IMPERFECTIONS (never cleaned, always present):
+Fine construction dust on every horizontal surface. Footprints in dust or material residue. Small offcuts, broken fragments, torn packaging on the floor. Mortar splashes, adhesive stains, paint drips on adjacent surfaces. Nothing staged. Nothing cleaned before the photo.
+
+NEIGHBORHOOD CONTEXT (exterior only):
+TV antennas and satellite dishes on nearby roofs. Different weathered roof colors. Dirty gutters, stained render, peeling paint on neighboring facades. Uneven vegetation. Old windows in varied styles, moss-covered chimneys, weather stains.`;
+
+// ─── Level 2: randomization libraries ─────────────────────────────────────────
+const _CAM_VARIANTS = [
+  'slightly tilted — horizon not level by 4–6 degrees',
+  'phone held too low, shooting upward at the work',
+  'phone held too high, looking down at the site from above',
+  'subject off-center with extra dead space on one side',
+  'phone shadow partially creeping into the bottom corner',
+  'hand tremor — slight motion blur on peripheral edges',
+];
+const _DIRT_VARIANTS = [
+  'fine white cement dust settled on every horizontal surface',
+  'dried muddy boot prints tracking across the floor',
+  'scattered debris: broken tile fragments, torn kraft paper, cable offcuts',
+  'dried adhesive smears and mortar splashes on the baseboards',
+  'fine sawdust piled in corners, wood particles drifting in the air',
+  'dirty grey mortar residue smeared across the nearby wall',
+];
+const _COMP_VARIANTS = [
+  'main subject cropped at one edge — bad framing',
+  'empty foreground takes up 50% of the image',
+  'ceiling or sky fills the top 40% of the frame',
+  'an obstacle in the foreground half-blocks the view of the work',
+  'subject pushed into the far background, lots of empty space in front',
+  'important material detail half-cut at the far right edge',
+];
+
+function _rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// ─── Level 2: variable scene builder ─────────────────────────────────────────
 function buildDallePromptV2(row) {
   const work    = _getWorkDetail(row.travaux);
   const city    = _getCityContext(row.ville);
   const cityStr = (row.ville || '').trim() ? `in ${row.ville.trim()}, France` : 'in France';
   const isInt   = work.setting === 'interior';
 
-  const lighting = {
-    soleil:  'flat midday sunlight coming through the window. No golden hour. Neutral shadows. Pale blue sky outside.',
-    nuageux: 'flat grey diffuse overcast daylight. Muted washed-out colors. Cloudy sky outside.',
-    brumeux: 'hazy pale milky overcast light. No direct shadows. Soft grey sky outside.',
-    pluie:   'dark grey overcast sky. Wet surfaces visible. Dull flat light. Heavy cloud outside.',
-  }[row.meteo] || (isInt ? 'natural overcast daylight coming through the window' : city.light);
+  const meteoLight = {
+    soleil:  'flat harsh midday sun, short neutral shadows, bleached concrete, pale blue sky',
+    nuageux: 'flat grey overcast daylight, zero shadows, washed-out muted colors',
+    brumeux: 'hazy milky diffuse overcast, almost no contrast, pale white sky',
+    pluie:   'dark grey overcast, wet surfaces reflect dull light, heavy cloud',
+  }[row.meteo] || (isInt ? 'flat natural daylight from window, no direct sun' : city.light);
 
   const etatLine = {
-    desordre: 'The site is in total disarray.',
-    encours:  'Work is actively in progress.',
-    propre:   'The work appears neatly completed.',
+    desordre: 'The site is in total disarray — nothing has been tidied.',
+    encours:  'Work is actively underway, the job is halfway done.',
+    propre:   'Work looks almost finished but debris has not yet been cleaned up.',
   }[row.etat] || '';
 
-  const exclusionBlock = (work.exclusions || []).map(e => `No ${e}.`).join('\n');
-  const noWorkerLine   = work.hasWorkers ? '' : 'No workers. No people.';
+  const exclusionBlock = (work.exclusions || []).map(e => `No ${e}.`).join(' ');
+  const noWorkerLine   = work.hasWorkers ? '' : 'No workers visible. No people in frame.';
 
   const archBlock = isInt
-    ? `The walls are simple white plaster. One wall features authentic ${city.arch.split(' with ')[0]} material typical of the region.\n\nLarge window overlooking a genuine ${(row.ville || 'French')} residential neighborhood with ${city.arch}. ${city.light}.`
-    : `In the background: typical local architecture — ${city.arch}.`;
+    ? `Walls: plain white plaster, one wall with exposed ${city.arch.split(' with ')[0]} typical of the region. Window shows a real ${row.ville || 'French'} residential neighborhood — ${city.arch}.`
+    : `Background: authentic ${row.ville || 'French'} streetscape — ${city.arch}. ${city.light}.`;
 
-  return `Ultra-realistic casual smartphone photo of a ${work.intro} ${cityStr}.
-
-This must NOT look like an architectural visualization or AI render. It should look like an ordinary work-in-progress photo quickly taken by a local French ${work.secteur} to document the job.
-
+  const scenePrompt = `Subject: ${work.intro} ${cityStr}.
 ${etatLine}
-
 ${work.scene}
-
 ${work.foreground_detail}
-
 ${archBlock}
+${exclusionBlock} ${noWorkerLine} No furniture.
 
-${exclusionBlock}
-${noWorkerLine}
-No furniture.
+THIS SHOT SPECIFICALLY:
+Camera angle: ${_rnd(_CAM_VARIANTS)}.
+Ambient light: ${meteoLight}.
+Debris on site: ${_rnd(_DIRT_VARIANTS)}.
+Framing error: ${_rnd(_COMP_VARIANTS)}.
 
-The ${isInt ? 'room' : 'site'} should feel empty because the contractor briefly stepped away before continuing.
+STORY: The ${work.secteur} set their phone down mid-job to quickly document progress before continuing. No aesthetic intent. The photo exists only for the artisan's records. Nothing was arranged or cleaned.
 
-Camera style:
-- cheap Android smartphone photo
-- handheld, eye level
-- slightly tilted framing
-- imperfect composition
-- slight motion blur
-- visible digital noise
-- JPEG compression artifacts
-- soft autofocus
-- slightly washed-out colors
-- average exposure
-- no cinematic lighting
-- no dramatic shadows
-- no professional photography
+Ultra-realistic. Indistinguishable from a real unedited smartphone snapshot taken on a French chantier.`;
 
-Lighting: ${lighting}
-
-The image should feel boring, ordinary, authentic and completely unpolished.
-
-Absolutely NO CGI look. Absolutely NO render. Absolutely NO staged construction scene.
-
-It should be indistinguishable from a real smartphone photo uploaded by a French ${work.secteur} during an active chantier.`.replace(/\n{3,}/g, '\n\n').trim();
+  return (_IMG_SYSTEM_PREAMBLE + '\n\n' + scenePrompt).replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function _escHtml(s) {
