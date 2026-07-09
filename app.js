@@ -4350,6 +4350,72 @@ function _getCityContext(ville) {
 }
 
 // ─── Scene planner model (upgrade here when a better model is available) ─────
+// ─── PromptBuilder ────────────────────────────────────────────────────────────
+// Deterministic JS alternative to GPT rewrite (Étape 2).
+// Assembles the final image prompt from the validated scene JSON.
+// _USE_PROMPT_BUILDER = false → falls back to _rewritePromptWithGPT.
+const _USE_PROMPT_BUILDER = true;
+
+const PHOTO_STYLE_RULES = {
+  opening:  'Authentic work-progress snapshot taken on a cheap Android smartphone'
+          + ' by a French contractor.'
+          + ' Organised worksite — realistic activity for the work stage,'
+          + ' neither a disaster scene nor a staged portfolio shot.',
+
+  style:    'Flat even lighting, slightly overexposed in bright areas.'
+          + ' Light JPEG compression artifacts on fine textures.'
+          + ' Possibly a small horizon tilt.'
+          + ' No post-processing, no depth-of-field blur.',
+
+  interior: 'Indoor setting — no outdoor sky or horizon visible.'
+          + ' Room illuminated by natural window light and ambient ceiling lamp.',
+};
+
+const PromptBuilder = {
+  build(jsonStr) {
+    const s   = JSON.parse(jsonStr);
+    const f   = s.framing || {};
+    const isInt   = s.setting === 'interior';
+    const defects = (s.photo_defects || []).slice(0, 2).join('; ');
+
+    return [
+      // 1 — Photo type / register
+      PHOTO_STYLE_RULES.opening,
+
+      // 2 — Scene content
+      `Subject: ${s.work_type}. Work state: ${s.state}`,
+
+      // 3 — Composition
+      `Camera: ${s.camera_position}.`,
+      `The work fills approximately ${f.work_pct || 55}% of the frame.`,
+      `Foreground: ${f.foreground}.`,
+      `Mid-ground: ${f.midground}.`,
+      `Background: ${f.background}.`,
+
+      // 4 — Site debris
+      `On site: ${s.site_debris}.`,
+
+      // 5 — Photo defects (from scene data only, never invented)
+      defects ? `Photo imperfections: ${defects}.` : '',
+
+      // 6 — Architecture + light (interior variant suppresses exterior references)
+      isInt
+        ? PHOTO_STYLE_RULES.interior
+        : `Architecture: ${s.architecture}. Light: ${s.light}.`,
+
+      // 7 — Style rules
+      PHOTO_STYLE_RULES.style,
+
+      // 8 — People (positive framing only, no negative lists)
+      s.no_people
+        ? 'Empty worksite — no workers or people in the scene.'
+        : 'Workers in casual work clothes visible on site.',
+
+    ].filter(Boolean).join(' ');
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 const _SCENE_PLANNER_MODEL = 'gpt-4.1';
 
 // ─── JSON scene builder (displayed in textarea + sent to GPT) ─────────────────
@@ -4673,9 +4739,14 @@ async function generateAllImages() {
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
-        // Step 1: GPT scene planner converts JSON → camera-first prompt
-        progressLbl.textContent = `Planification scène ${done + 1}/${total}…`;
-        const prompt = await _rewritePromptWithGPT(jsonScene, key);
+        // Step 1: build image prompt — PromptBuilder (deterministic) or GPT rewrite (fallback)
+        let prompt;
+        if (_USE_PROMPT_BUILDER) {
+          prompt = PromptBuilder.build(jsonScene);
+        } else {
+          progressLbl.textContent = `Planification scène ${done + 1}/${total}…`;
+          prompt = await _rewritePromptWithGPT(jsonScene, key);
+        }
 
         // Step 2: generate image
         progressLbl.textContent = `Génération image ${done + 1}/${total}…`;
