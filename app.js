@@ -4354,7 +4354,8 @@ function _getCityContext(ville) {
 // Deterministic JS alternative to GPT rewrite (Étape 2).
 // Assembles the final image prompt from the validated scene JSON.
 // _USE_PROMPT_BUILDER = false → falls back to _rewritePromptWithGPT.
-const _USE_PROMPT_BUILDER = true;
+const _USE_PROMPT_BUILDER  = true;
+const _USE_GPT_SCENE_JSON  = true; // false = use buildDallePromptV2 as-is (no GPT refinement)
 
 const PHOTO_STYLE_RULES = {
   opening:  'Authentic work-progress snapshot taken on a cheap Android smartphone'
@@ -4482,6 +4483,28 @@ function _validateScene(jsonStr) {
   return issues;
 }
 
+function _validateSceneStrict(obj) {
+  const issues = [];
+  if (!obj.work_type)                          issues.push('work_type missing');
+  if (!obj.state)                              issues.push('state missing');
+  if (!obj.camera_position)                   issues.push('camera_position missing');
+  if (!obj.framing?.foreground)               issues.push('framing.foreground missing');
+  if (!obj.framing?.midground)                issues.push('framing.midground missing');
+  if (!obj.framing?.background)               issues.push('framing.background missing');
+  if (typeof obj.framing?.work_pct !== 'number') issues.push('framing.work_pct must be a number');
+  if (!obj.site_debris)                       issues.push('site_debris missing');
+  if (!obj.architecture)                      issues.push('architecture missing');
+  if (!obj.light)                             issues.push('light missing');
+  if (!['interior', 'exterior'].includes(obj.setting)) issues.push('setting must be interior or exterior');
+  if (!Array.isArray(obj.photo_defects) || obj.photo_defects.length !== 2)
+    issues.push('photo_defects must be an array of exactly 2 items');
+  if (obj.setting === 'interior' && (obj.framing?.background || '').toLowerCase().includes('sky'))
+    issues.push('interior scene has sky in background — incoherent');
+  if (obj.setting === 'exterior' && (obj.camera_position || '').toLowerCase().includes('inside'))
+    issues.push('exterior work but camera is inside — incoherent');
+  return issues;
+}
+
 // ─── GPT scene planner: JSON → camera-first image prompt ─────────────────────
 const _IMG_REWRITE_SYSTEM = `You are an image prompt engineer for realistic construction-site smartphone photography.
 
@@ -4499,6 +4522,65 @@ Rules:
 - Write every instruction positively. Replace "exclude X" with a spatial alternative if possible.
 - Apply no_people: true by placing the camera so no humans are visible in frame.
 - Output only the final English image prompt. No explanation, no JSON, no title.`;
+
+const _SCENE_JSON_SYSTEM = `You are a construction-site scene editor for realistic GMB smartphone photography.
+
+You receive a SceneJSON already built from a trade database. Your job is to REFINE it — not invent from scratch.
+
+Rules:
+- Keep every field that is already correct. Only improve fields that are vague or generic.
+- Improve camera_position, framing (foreground/midground/background), and site_debris to be more vivid and specific.
+- photo_defects: return EXACTLY 2 items chosen from this list:
+  slight horizon tilt, mild overexposure in bright areas, light JPEG compression artifacts,
+  slight barrel distortion at edges, muted color saturation, minor motion blur on foreground detail.
+- Do NOT add workers, people, or disasters. Keep no_people as-is.
+- Do NOT change work_type, state, setting, architecture, or light unless they are clearly wrong.
+- Keep all fields starting with _ unchanged (debug fields: _matched_category, _matched_service, _match_score).
+- Output ONLY valid JSON matching the input schema exactly. No markdown fences, no explanation.`;
+
+async function _generateSceneJSON(baseScene, key) {
+  const callGPT = async (userContent) => {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: _SCENE_PLANNER_MODEL,
+        messages: [
+          { role: 'system', content: _SCENE_JSON_SYSTEM },
+          { role: 'user',   content: userContent }
+        ],
+        max_tokens: 1000,
+        temperature: 0.35
+      })
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error('Scene JSON error: ' + (err.error?.message || resp.statusText));
+    }
+    const data = await resp.json();
+    return data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+  };
+
+  let obj;
+  try {
+    const raw = await callGPT(baseScene);
+    obj = JSON.parse(raw);
+    const issues = _validateSceneStrict(obj);
+    if (issues.length) {
+      const raw2 = await callGPT(baseScene + `\n\nFix these issues: ${issues.join('; ')}`);
+      obj = JSON.parse(raw2);
+      const issues2 = _validateSceneStrict(obj);
+      if (issues2.length) {
+        console.warn('[_generateSceneJSON] retry still invalid:', issues2, '— using baseScene');
+        return baseScene;
+      }
+    }
+    return JSON.stringify(obj);
+  } catch (e) {
+    console.warn('[_generateSceneJSON] error:', e.message, '— using baseScene');
+    return baseScene;
+  }
+}
 
 async function _rewritePromptWithGPT(jsonScene, key) {
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -4722,11 +4804,11 @@ async function generateAllImages() {
     renderImgPlanning();
 
     const nb         = parseInt(row.nb) || 1;
-    const jsonScene  = buildDallePromptV2(row);
+    const baseScene  = buildDallePromptV2(row);
     const slug       = slugify(row.fiche || row.travaux);
 
     // Validate scene before sending to GPT
-    const sceneIssues = _validateScene(jsonScene);
+    const sceneIssues = _validateScene(baseScene);
     if (sceneIssues.length) {
       row.status = 'error';
       renderImgPlanning();
@@ -4734,6 +4816,13 @@ async function generateAllImages() {
       done += nb;
       updateProgress();
       continue;
+    }
+
+    // GPT refinement (once per row, outside image loop)
+    let jsonScene = baseScene;
+    if (_USE_GPT_SCENE_JSON) {
+      progressLbl.textContent = `Optimisation scène ${done + 1}/${total}…`;
+      jsonScene = await _generateSceneJSON(baseScene, key);
     }
 
     let rowOk = true;
