@@ -3186,29 +3186,79 @@ function _getCityContext(ville) {
   };
 }
 
-// ─── GPT rewrite system prompt ────────────────────────────────────────────────
-const _IMG_REWRITE_SYSTEM = `You are an image prompt engineer for realistic construction-site smartphone photography.
+// ─── Scene planner model (upgrade here when a better model is available) ─────
+const _SCENE_PLANNER_MODEL = 'gpt-4.1';
 
-You receive a scene brief and must rewrite it into a precise, camera-first image prompt.
+// ─── Scene library: one entry per work type with camera framing data ──────────
+const _SCENE_LIBRARY = {
+  élagage: {
+    camera:   'standing on the ground, 5–8 m from the tree, angled slightly upward',
+    frame:    { work_pct: 60, foreground: 'cut branches and leaf debris on lawn', midground: 'partially pruned tree crown', background: 'sky and neighbouring rooflines' },
+    debris:   'fresh cut branches, leaves, sawdust scattered on lawn around base',
+    defects:  ['slight upward tilt distorting verticals', 'sky clipping exposure on bright patches'],
+  },
+  abattage: {
+    camera:   'standing back 7–10 m, wide view of felled or half-felled tree',
+    frame:    { work_pct: 65, foreground: 'trunk sections laid on ground, chainsaw nearby', midground: 'stump or falling tree mid-action', background: 'garden fence and neighbouring house' },
+    debris:   'large log sections, branches, sawdust and bark chips on ground',
+    defects:  ['motion blur on outer branches from wind', 'JPEG compression on dense foliage texture'],
+  },
+  toiture: {
+    camera:   'standing in the driveway or garden, 3–6 m from house, looking up at roof',
+    frame:    { work_pct: 55, foreground: 'pile of old roof tiles on ground, tile fragments', midground: 'roof being worked on — tiles partially stripped, battens exposed', background: 'sky, chimney tops, neighbouring rooflines' },
+    debris:   'broken roof tiles, mortar chips and dust on driveway',
+    defects:  ['overexposure on pale sky bleaching the top third', 'JPEG compression on rough tile texture'],
+  },
+  peinture: {
+    camera:   'standing inside the room, 2–3 m from painted wall, slight diagonal angle',
+    frame:    { work_pct: 60, foreground: 'tarpaulin on floor, paint roller tray, open paint tin', midground: 'wall half-painted — visible line between old colour and new', background: 'opposite wall or window' },
+    debris:   'paint drips on tarpaulin, crumpled masking tape, used roller left on tray',
+    defects:  ['flat overcast window light, slight overexposure on white wall', 'chromatic aberration on painted edge line'],
+  },
+  ravalement: {
+    camera:   'standing on pavement, 3–5 m from facade, slightly low angle',
+    frame:    { work_pct: 55, foreground: 'scaffolding base tubes, bags of cement', midground: 'facade — section freshly rendered, section still old damaged render', background: 'roof edge and sky' },
+    debris:   'render splashes on scaffolding planks, empty cement bags crumpled near base',
+    defects:  ['chromatic aberration on metal scaffolding poles', 'JPEG noise on flat rendered surface'],
+  },
+  maçonnerie: {
+    camera:   'standing 2–4 m from the wall, straight-on or slight diagonal, eye level',
+    frame:    { work_pct: 65, foreground: 'mortar bucket and trowel on ground, concrete blocks', midground: 'partial wall under construction, visible mortar joints', background: 'adjacent existing structure or garden' },
+    debris:   'mortar splashes on ground, block dust, open cement bags nearby',
+    defects:  ['flat midday light, even dull shadows', 'lens barrel distortion on straight wall lines'],
+  },
+  carrelage: {
+    camera:   'crouching or kneeling inside, 2–3 m from tiling work, slightly low angle',
+    frame:    { work_pct: 65, foreground: 'freshly tiled floor section, visible adhesive smears, plastic tile spacers', midground: 'junction between tiled and untiled area', background: 'plain wall, window or doorframe' },
+    debris:   'adhesive smears, spacers and tile dust on untiled floor, broken tile fragment',
+    defects:  ['flat diffuse window light casting no shadows', 'slight motion blur from low ambient light'],
+  },
+  plomberie: {
+    camera:   'crouching or kneeling inside, 1–2 m from pipes or open wall cavity',
+    frame:    { work_pct: 70, foreground: 'pipes and fittings, open wall or floor', midground: 'plumbing installation in progress', background: 'white wall, cabinet or tiled surface' },
+    debris:   'pipe offcuts, thread tape, fittings packaging on floor nearby',
+    defects:  ['low ambient light with slight sensor noise', 'flat artificial ceiling light only'],
+  },
+  électricité: {
+    camera:   'standing or crouching, 1–2 m from open wall cavity or electrical panel',
+    frame:    { work_pct: 70, foreground: 'open wall cavity or panel with visible cables', midground: 'cables, conduits and junction boxes in progress', background: 'bare plaster wall' },
+    debris:   'cable offcuts, conduit pieces, screw packaging, chalk marks on wall',
+    defects:  ['mixed ceiling lamp and window light, uneven exposure', 'JPEG noise in dark cable areas'],
+  },
+  débarras: {
+    camera:   'standing in doorway or just inside room, 2–4 m from pile, eye level',
+    frame:    { work_pct: 60, foreground: 'furniture, boxes and debris piled on floor', midground: 'room being cleared — visible emerging floor space', background: 'wall, window, empty corner' },
+    debris:   'dust, old cardboard, broken furniture fragments on bare floor',
+    defects:  ['mixed window and ceiling light, patchy uneven exposure', 'slight tilt from doorframe vertical reference'],
+  },
+};
 
-RULES:
-- Maximum 200 words. No lists of more than 3 items.
-- PRIORITY 1 (most important): This is an ordinary Android smartphone photo taken for work documentation. Flat. Unpolished. Not artistic. Write this in a positive way — do not use "NOT" or "Do NOT".
-- PRIORITY 2: Camera composition — describe exactly what the camera sees. Where does each element sit in the frame? What percentage of the frame does the construction work occupy? The work must fill 50–70% of the image.
-- PRIORITY 3: Scene — the work type, materials visible, state of completion.
-- PRIORITY 4: Photography defects — pick exactly 2 specific defects (e.g. slightly tilted horizon, JPEG compression noise, slight overexposure on bright surfaces).
-- PRIORITY 5: Local context — city architecture style, outdoor lighting.
-
-Replace every negative instruction with a positive alternative. Example: instead of "no cinematic lighting", write "flat ordinary daylight, equal exposure".
-
-OUTPUT: Only the final image prompt in English. No explanation. No preamble. No title.`;
-
-// ─── Compact scene brief (sent as user message to GPT rewriter) ───────────────
+// ─── JSON scene builder (displayed in textarea + sent to GPT) ─────────────────
 function buildDallePromptV2(row) {
-  const work    = _getWorkDetail(row.travaux);
-  const city    = _getCityContext(row.ville);
-  const cityStr = (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France';
-  const isInt   = work.setting === 'interior';
+  const work  = _getWorkDetail(row.travaux);
+  const city  = _getCityContext(row.ville);
+  const scene = _SCENE_LIBRARY[row.travaux] || {};
+  const isInt = work.setting === 'interior';
 
   const meteo = {
     soleil:  'bright midday sun, short shadows, pale blue sky',
@@ -3223,33 +3273,65 @@ function buildDallePromptV2(row) {
     propre:   'nearly finished, light debris remaining',
   }[row.etat] || 'in progress';
 
-  const exclusions = (work.exclusions || []).join(', ');
-  const noWorkers  = work.hasWorkers ? '' : 'No workers or people visible.';
-
-  return [
-    `Work type: ${work.intro}`,
-    `Location: ${cityStr}`,
-    `Setting: ${isInt ? 'interior room' : 'exterior site'}`,
-    `State: ${etat}`,
-    `Scene: ${work.scene}`,
-    `Foreground: ${work.foreground_detail}`,
-    `Architecture: ${city.arch}`,
-    `Light / weather: ${meteo}`,
-    exclusions ? `Exclude from image: ${exclusions}` : '',
-    noWorkers,
-  ].filter(Boolean).join('\n');
+  return JSON.stringify({
+    photo_goal:       'work-progress documentation by French contractor, cheap Android smartphone',
+    location:         (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France',
+    work_type:        work.intro,
+    setting:          isInt ? 'interior' : 'exterior',
+    state:            etat,
+    camera_position:  scene.camera  || 'standing near the work, eye level',
+    framing:          scene.frame   || { work_pct: 60, foreground: work.foreground_detail, midground: work.scene, background: city.arch },
+    site_debris:      scene.debris  || 'construction dust and material scraps',
+    photo_defects:    scene.defects || ['JPEG compression artifacts', 'slightly tilted horizon'],
+    architecture:     city.arch,
+    light:            meteo,
+    exclude:          work.exclusions || [],
+    no_people:        !work.hasWorkers,
+  }, null, 2);
 }
 
-// ─── GPT-4.1 prompt rewriter ──────────────────────────────────────────────────
-async function _rewritePromptWithGPT(brief, key) {
+// ─── JS validation before sending to GPT ─────────────────────────────────────
+function _validateScene(jsonStr) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return ['Invalid JSON scene']; }
+  const issues = [];
+  if (!obj.work_type)                        issues.push('work_type is missing');
+  if (!obj.framing?.foreground)              issues.push('framing.foreground is missing');
+  if (!obj.framing?.midground)               issues.push('framing.midground is missing');
+  if (obj.setting === 'interior' && (obj.framing?.background || '').toLowerCase().includes('sky'))
+    issues.push('interior scene has sky in background — incoherent');
+  if (obj.setting === 'exterior' && (obj.camera_position || '').toLowerCase().includes('inside'))
+    issues.push('exterior work but camera is described as inside');
+  return issues;
+}
+
+// ─── GPT scene planner: JSON → camera-first image prompt ─────────────────────
+const _IMG_REWRITE_SYSTEM = `You are an image prompt engineer for realistic construction-site smartphone photography.
+
+You receive a structured JSON scene description and convert it into a precise image generation prompt.
+
+PRIORITY ORDER (most important first):
+1. PHOTO TYPE — establish from photo_goal, in positive language only. Example: "Ordinary work-progress snapshot taken on a cheap Android smartphone."
+2. CAMERA COMPOSITION — use camera_position and framing to describe the scene spatially: where each element sits, what % of the frame it occupies. The construction work must fill work_pct% of the image.
+3. SCENE CONTENT — work_type, state, key elements visible.
+4. PHOTO DEFECTS — include exactly the defects listed in photo_defects, nothing extra.
+5. CONTEXT — architecture style, light/weather condition.
+
+Rules:
+- Maximum 200 words
+- Write every instruction positively. Replace "exclude X" with a spatial alternative if possible.
+- Apply no_people: true by placing the camera so no humans are visible in frame.
+- Output only the final English image prompt. No explanation, no JSON, no title.`;
+
+async function _rewritePromptWithGPT(jsonScene, key) {
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-4.1',
+      model: _SCENE_PLANNER_MODEL,
       messages: [
         { role: 'system', content: _IMG_REWRITE_SYSTEM },
-        { role: 'user',   content: brief }
+        { role: 'user',   content: jsonScene }
       ],
       max_tokens: 350,
       temperature: 0.75
@@ -3257,7 +3339,7 @@ async function _rewritePromptWithGPT(brief, key) {
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
-    throw new Error('Rewrite GPT error: ' + (err.error?.message || resp.statusText));
+    throw new Error('Scene planner error: ' + (err.error?.message || resp.statusText));
   }
   const data = await resp.json();
   return data.choices[0].message.content.trim();
@@ -3462,16 +3544,27 @@ async function generateAllImages() {
     row.images = [];
     renderImgPlanning();
 
-    const nb    = parseInt(row.nb) || 1;
-    const brief = buildDallePromptV2(row);
-    const slug  = slugify(row.fiche || row.travaux);
+    const nb         = parseInt(row.nb) || 1;
+    const jsonScene  = buildDallePromptV2(row);
+    const slug       = slugify(row.fiche || row.travaux);
+
+    // Validate scene before sending to GPT
+    const sceneIssues = _validateScene(jsonScene);
+    if (sceneIssues.length) {
+      row.status = 'error';
+      renderImgPlanning();
+      console.warn('[scene validation]', sceneIssues);
+      done += nb;
+      updateProgress();
+      continue;
+    }
 
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
-        // Step 1: rewrite brief into camera-first prompt via GPT
-        progressLbl.textContent = `Optimisation prompt ${done + 1}/${total}…`;
-        const prompt = await _rewritePromptWithGPT(brief, key);
+        // Step 1: GPT scene planner converts JSON → camera-first prompt
+        progressLbl.textContent = `Planification scène ${done + 1}/${total}…`;
+        const prompt = await _rewritePromptWithGPT(jsonScene, key);
 
         // Step 2: generate image
         progressLbl.textContent = `Génération image ${done + 1}/${total}…`;
