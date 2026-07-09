@@ -2972,37 +2972,41 @@ let _imgRows         = [];
 let _imgCounter      = 0;
 let _generatedImages = [];
 
-const TRAVAUX_PRESETS = [
-  { label: 'Élagage',     value: 'élagage et taille de haie' },
-  { label: 'Abattage',    value: 'abattage d\'arbres' },
-  { label: 'Toiture',     value: 'réfection de toiture' },
-  { label: 'Peinture',    value: 'peinture extérieure' },
-  { label: 'Maçonnerie',  value: 'travaux de maçonnerie' },
-  { label: 'Ravalement',  value: 'ravalement de façade' },
-  { label: 'Carrelage',   value: 'pose de carrelage' },
-  { label: 'Plomberie',   value: 'travaux de plomberie' },
+const SERVICE_PRESETS = [
+  'Rénovation toiture', 'Réparation toiture', 'Remplacement tuiles', 'Remplacement ardoises',
+  'Charpente', 'Faîtage', 'Zinguerie',
+  'Nettoyage toiture', 'Démoussage toiture', 'Hydrofuge toiture',
+  'Nettoyage façade', 'Nettoyage terrasse', 'Nettoyage gouttières',
+  'Étanchéité toit terrasse', 'Réparation fuite', 'Imperméabilisation',
+  'Carrelage intérieur', 'Faïence', 'Peinture intérieure', 'Peinture extérieure',
+  'Ravalement façade', 'Débarras appartement', 'Débarras maison',
+  'Élagage', 'Abattage', 'Émondage', 'Taille de haie',
+  'Terrassement', 'Maçonnerie', 'Plomberie', 'Électricité',
 ];
 
-const LIEU_OPTIONS = [
-  { value: 'jardin',    label: 'Jardin résidentiel' },
-  { value: 'facade',    label: 'Façade de maison' },
-  { value: 'toit',      label: 'Toiture / Toit' },
-  { value: 'interieur', label: 'Intérieur' },
-  { value: 'commerce',  label: 'Local commercial' },
-  { value: 'voie',      label: 'Voie publique' },
+const CONTEXTE_OPTIONS = [
+  { value: 'maison',        label: 'Maison individuelle' },
+  { value: 'appartement',   label: 'Appartement' },
+  { value: 'immeuble',      label: 'Immeuble' },
+  { value: 'commerce',      label: 'Commerce' },
+  { value: 'professionnel', label: 'Local professionnel' },
+  { value: 'entrepot',      label: 'Entrepôt' },
+  { value: 'agricole',      label: 'Bâtiment agricole' },
 ];
 
 const ETAT_OPTIONS = [
-  { value: 'desordre', label: '🔴 Désordonné / authentique' },
-  { value: 'encours',  label: '🟡 En cours de travaux' },
-  { value: 'propre',   label: '🟢 Terminé / propre' },
+  { value: 'debut',     label: 'Début' },
+  { value: 'encours',   label: 'En cours' },
+  { value: 'semifinal', label: 'Presque terminé' },
+  { value: 'final',     label: 'Terminé' },
 ];
 
 const METEO_OPTIONS = [
-  { value: 'soleil',   label: '☀️ Ensoleillé' },
-  { value: 'nuageux',  label: '⛅ Nuageux' },
-  { value: 'brumeux',  label: '🌫️ Brumeux / voilé' },
-  { value: 'pluie',    label: '🌧️ Après la pluie' },
+  { value: 'auto',    label: 'Automatique' },
+  { value: 'soleil',  label: 'Soleil' },
+  { value: 'nuageux', label: 'Nuageux' },
+  { value: 'brumeux', label: 'Brouillard' },
+  { value: 'pluie',   label: 'Pluie' },
 ];
 
 // ─── WORK_SCENES ─────────────────────────────────────────────────────────────
@@ -4610,7 +4614,7 @@ function _escHtml(s) {
 
 function addImgRow() {
   const id = ++_imgCounter;
-  _imgRows.push({ id, fiche: '', travaux: '', ville: '', lieu: 'jardin', etat: 'desordre', meteo: 'soleil', nb: 3, status: 'pending', images: [] });
+  _imgRows.push({ id, fiche: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
   renderImgPlanning();
 }
 
@@ -4626,35 +4630,75 @@ function updateImgRow(id, field, value) {
   row[field] = value;
   const card = document.querySelector(`.img-plan-card[data-rowid="${id}"]`);
   if (card) {
-    const prompt = buildDallePromptV2(row);
-    const ta = card.querySelector('.img-plan-prompt-ta');
-    const cc = card.querySelector('.img-plan-prompt-chars');
-    if (ta) ta.value = prompt;
-    if (cc) cc.textContent = prompt.length + ' chars';
+    if (field === 'etat') {
+      card.querySelectorAll('.img-etat-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.etat === value);
+      });
+    }
+    const analyseEl = card.querySelector('.img-plan-analyse');
+    if (analyseEl) analyseEl.innerHTML = _renderAnalyse(row);
   }
   updateCostEstimate();
 }
 
-function setImgRowTravaux(id, presetIdx) {
-  const preset = TRAVAUX_PRESETS[presetIdx];
-  if (!preset) return;
-  const row = _imgRows.find(r => r.id === id);
-  if (!row) return;
-  row.travaux = preset.value;
-  const card = document.querySelector(`.img-plan-card[data-rowid="${id}"]`);
-  if (card) {
-    const input = card.querySelector('.img-plan-travaux-input');
-    if (input) input.value = preset.value;
-    card.querySelectorAll('.img-preset-chip').forEach((c, i) => {
-      c.classList.toggle('active', i === presetIdx);
-    });
-    const prompt = buildDallePromptV2(row);
-    const ta = card.querySelector('.img-plan-prompt-ta');
-    const cc = card.querySelector('.img-plan-prompt-chars');
-    if (ta) ta.value = prompt;
-    if (cc) cc.textContent = prompt.length + ' chars';
-  }
-  updateCostEstimate();
+function _renderAnalyse(row) {
+  let obj;
+  try { obj = JSON.parse(buildDallePromptV2(row)); } catch { return ''; }
+
+  const stateLabels = { debut: 'Début', encours: 'En cours', semifinal: 'Presque terminé', final: 'Terminé' };
+  const serviceDemande = (row.travaux || '').trim() || '—';
+  const serviceDetecte = obj._matched_service || '—';
+  const contexteLabel  = (CONTEXTE_OPTIONS.find(o => o.value === (row.contexte || 'maison')) || CONTEXTE_OPTIONS[0]).label;
+  const typeLabel      = obj.setting === 'interior' ? 'Intérieur' : 'Extérieur';
+  const etatLabel      = stateLabels[obj.state_level] || '—';
+  const arch           = obj.architecture || '—';
+  const camera         = obj.camera_position || '—';
+  const score          = obj._match_score || 0;
+  const pct = Math.min(99, score >= 15 ? 98 :
+                           score >= 10 ? Math.round(85 + (score - 10) * 2.6) :
+                           score >= 6  ? Math.round(65 + (score - 6)  * 5) :
+                                         Math.round(40 + score * 4));
+  const confColor = pct >= 80 ? '#22c55e' : pct >= 55 ? '#f59e0b' : '#ef4444';
+
+  return `
+<div class="img-analyse-head">Analyse de la scène</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Service demandé</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(serviceDemande)}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Service détecté</span>
+  <span class="img-analyse-val">${_escHtml(serviceDetecte)}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Contexte</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(contexteLabel)}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Type</span>
+  <span class="img-analyse-val">${typeLabel}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">État</span>
+  <span class="img-analyse-val">${etatLabel}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Architecture</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(arch)}</span>
+</div>
+<div class="img-analyse-row img-analyse-row-last">
+  <span class="img-analyse-key">Caméra</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(camera)}</span>
+</div>
+<div class="img-analyse-conf">
+  <div class="img-analyse-conf-label">Confiance du matching</div>
+  <div class="img-analyse-conf-bar">
+    <div class="img-analyse-conf-track">
+      <div class="img-analyse-conf-fill" style="width:${pct}%;background:${confColor}"></div>
+    </div>
+    <span class="img-analyse-conf-pct" style="color:${confColor}">${pct} %</span>
+  </div>
+</div>`;
 }
 
 function _renderImgCard(row, idx) {
@@ -4663,18 +4707,14 @@ function _renderImgCard(row, idx) {
                  row.status === 'done'    ? `✅ ${row.images.length}` :
                  row.status === 'error'   ? '❌' : '–';
 
-  const chipsHtml = TRAVAUX_PRESETS.map((p, i) =>
-    `<button class="img-preset-chip${row.travaux === p.value ? ' active' : ''}" onclick="setImgRowTravaux(${row.id},${i})">${p.label}</button>`
+  const serviceDatalist = SERVICE_PRESETS.map(s => `<option value="${_escHtml(s)}">`).join('');
+  const contexteOpts    = CONTEXTE_OPTIONS.map(o =>
+    `<option value="${o.value}"${(row.contexte || 'maison') === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+  const etatPills       = ETAT_OPTIONS.map(p =>
+    `<button class="img-etat-pill${row.etat === p.value ? ' active' : ''}" data-etat="${p.value}" onclick="updateImgRow(${row.id},'etat','${p.value}')">${p.label}</button>`
   ).join('');
-
-  const lieuOpts  = LIEU_OPTIONS.map(o =>
-    `<option value="${o.value}"${row.lieu  === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
-  const etatOpts  = ETAT_OPTIONS.map(o =>
-    `<option value="${o.value}"${row.etat  === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
-  const meteoOpts = METEO_OPTIONS.map(o =>
+  const meteoOpts       = METEO_OPTIONS.map(o =>
     `<option value="${o.value}"${row.meteo === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
-
-  const prompt = buildDallePromptV2(row);
 
   return `
 <div class="img-plan-card" data-rowid="${row.id}">
@@ -4694,38 +4734,35 @@ function _renderImgCard(row, idx) {
   </div>
   <div class="img-plan-card-body">
     <div class="img-plan-fields">
-      <div class="img-plan-field img-plan-field-travaux">
-        <label>Type de travaux</label>
-        <input type="text" class="img-plan-travaux-input" value="${_escHtml(row.travaux)}"
-          placeholder="élagage, toiture, peinture..."
+      <div class="img-plan-field img-plan-field-service">
+        <label>Service</label>
+        <input type="text" value="${_escHtml(row.travaux)}"
+          placeholder="Démoussage toiture, élagage, carrelage..."
+          list="img-service-list-${row.id}"
           oninput="updateImgRow(${row.id},'travaux',this.value)" />
-        <div class="img-preset-chips">${chipsHtml}</div>
+        <datalist id="img-service-list-${row.id}">${serviceDatalist}</datalist>
       </div>
-      <div class="img-plan-field">
-        <label>Ville</label>
-        <input type="text" value="${_escHtml(row.ville||'')}" placeholder="Lyon, Bordeaux..."
-          oninput="updateImgRow(${row.id},'ville',this.value)" />
-      </div>
-      <div class="img-plan-field">
-        <label>Type de lieu</label>
-        <select onchange="updateImgRow(${row.id},'lieu',this.value)">${lieuOpts}</select>
+      <div class="img-plan-row2">
+        <div class="img-plan-field">
+          <label>Ville</label>
+          <input type="text" value="${_escHtml(row.ville||'')}" placeholder="Lyon, Bordeaux..."
+            oninput="updateImgRow(${row.id},'ville',this.value)" />
+        </div>
+        <div class="img-plan-field">
+          <label>Contexte</label>
+          <select onchange="updateImgRow(${row.id},'contexte',this.value)">${contexteOpts}</select>
+        </div>
       </div>
       <div class="img-plan-field">
         <label>État du chantier</label>
-        <select onchange="updateImgRow(${row.id},'etat',this.value)">${etatOpts}</select>
+        <div class="img-etat-pills">${etatPills}</div>
       </div>
-      <div class="img-plan-field">
+      <div class="img-plan-field img-plan-field-meteo">
         <label>Météo</label>
         <select onchange="updateImgRow(${row.id},'meteo',this.value)">${meteoOpts}</select>
       </div>
     </div>
-    <div class="img-plan-prompt-preview">
-      <div class="img-plan-prompt-header">
-        <span>Prompt DALL-E 3</span>
-        <span class="img-plan-prompt-chars">${prompt.length} chars</span>
-      </div>
-      <textarea class="img-plan-prompt-ta" readonly></textarea>
-    </div>
+    <div class="img-plan-analyse">${_renderAnalyse(row)}</div>
   </div>
 </div>`;
 }
@@ -4734,14 +4771,6 @@ function renderImgPlanning() {
   const body = document.getElementById('img-planning-body');
   if (!body) return;
   body.innerHTML = _imgRows.map((row, idx) => _renderImgCard(row, idx)).join('');
-  // Set textarea values after render to avoid HTML-escaping issues
-  _imgRows.forEach(row => {
-    const card = body.querySelector(`.img-plan-card[data-rowid="${row.id}"]`);
-    if (card) {
-      const ta = card.querySelector('.img-plan-prompt-ta');
-      if (ta) ta.value = buildDallePromptV2(row);
-    }
-  });
   updateCostEstimate();
 }
 
