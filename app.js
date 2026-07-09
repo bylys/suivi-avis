@@ -3013,7 +3013,7 @@ const METEO_OPTIONS = [
 const WORK_SCENES = {
 
   élagage: {
-    keys:       ['elag', 'haie', 'taille', 'arbust'],
+    keys:       ['elagage', 'elagueur', 'haie', 'taille', 'arbust'],
     intro:      'tree pruning and hedge trimming at a residential garden',
     setting:    'exterior',
     secteur:    'arborist',
@@ -3355,7 +3355,7 @@ const WORK_SCENES = {
   },
 
   carrelage: {
-    keys:       ['carrelage', 'parquet', 'sol'],
+    keys:       ['carrelage', 'carreleur', 'carre', 'parquet', 'sol', 'tile', 'tiling', 'floor tile'],
     intro:      'floor tiling installation inside a residential property',
     setting:    'interior',
     secteur:    'tiler',
