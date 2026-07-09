@@ -3005,102 +3005,608 @@ const METEO_OPTIONS = [
   { value: 'pluie',    label: '🌧️ Après la pluie' },
 ];
 
-const _workDetails = [
-  { keys: ['elag', 'haie', 'taille', 'arbust'],
-    intro: 'tree pruning and hedge trimming job at a residential garden',
-    setting: 'exterior',
-    secteur: 'arborist',
-    scene: `A large disordered pile of freshly cut branches and thick hedge clippings fills most of the driveway. Chunky logs and scattered bark litter the muddy lawn. Deep tire tracks from a loader cross the grass. A thick uneven layer of fresh yellow sawdust covers the ground beneath the pruned trees. The trees themselves show fresh raw cut marks on the main branches.`,
-    foreground_detail: `A freshly severed branch lying on muddy grass, surrounded by scattered bark chips and sawdust. A close-up of a raw cut stump with irregular chainsaw marks.`,
-    exclusions: ['chainsaws', 'helmets', 'ropes', 'harnesses', 'chippers', 'brooms', 'safety equipment', 'workers', 'people'] },
+// ─── WORK_SCENES ─────────────────────────────────────────────────────────────
+// Single source of truth per trade.
+// Replaces the former _workDetails array and _SCENE_LIBRARY object.
+// Each entry covers: identity, camera, materials, defects, exclusions,
+// and 4 progressive states (debut / encours / semifinal / final).
+const WORK_SCENES = {
 
-  { keys: ['abatt', 'abatage'],
-    intro: 'large tree felling job at a residential property',
-    setting: 'exterior',
-    secteur: 'tree feller',
-    scene: `Enormous trunk sections lie scattered across the garden in a disorganized heap. A thick carpet of wood chips and coarse sawdust surrounds a massive fresh stump with a flat cut surface still dripping sap. Deep ground gouges mark where heavy machinery dragged the logs. The sky is now fully open where a large canopy once stood.`,
-    foreground_detail: `A freshly cut log cross-section resting on a bed of sawdust and bark, showing growth rings. Scattered wood chips and bark fragments on the ground.`,
-    exclusions: ['chainsaws', 'safety gear', 'ropes', 'cranes', 'workers', 'people'] },
+  élagage: {
+    keys:       ['elag', 'haie', 'taille', 'arbust'],
+    intro:      'tree pruning and hedge trimming at a residential garden',
+    setting:    'exterior',
+    secteur:    'arborist',
+    hasWorkers: false,
+    camera:     'standing on the ground, 5–8 m from the tree, angled slightly upward',
+    materials:  ['cut branches', 'hedge clippings', 'fresh sawdust', 'bark chips'],
+    photo_defects: [
+      'slight upward tilt distorting verticals',
+      'pale sky clipping exposure on bright patches',
+    ],
+    exclusions: ['chainsaws', 'helmets', 'ropes', 'harnesses', 'chippers', 'safety equipment', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'a small pile of first cut branches on the lawn beside the tree',
+          midground:  'tree mostly intact with one section freshly trimmed — raw cut marks visible on main branch',
+          background: 'garden fence, neighbouring roof, pale sky',
+        },
+        debris:      'a few scattered branch offcuts and light sawdust near the base',
+        description: 'Pruning has just started. The tree is mostly full. One branch section has been removed, leaving a clean raw cut mark. Materials are barely disturbed.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'branches and clippings piled on lawn around the base, fresh sawdust visible',
+          midground:  'tree crown partially pruned — clearly lighter on one side, major cuts visible',
+          background: 'neighbouring rooflines and sky now more visible through the thinned crown',
+        },
+        debris:      'cut branches and hedge clippings piled on lawn, sawdust scattered around base',
+        description: 'Pruning is underway. The crown is noticeably lighter on one side. Branches are piled on the lawn. The job is active and progressing well.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   50,
+          foreground: 'most branches already removed and stacked, one last pile being managed',
+          midground:  'tree properly shaped, fresh cuts on all main branches neatly done',
+          background: 'open sky now visible, clean garden structure emerging',
+        },
+        debris:      'a tidy pile of cut branches ready for removal, fine sawdust remaining on the lawn',
+        description: 'The pruning is nearly complete. The tree has a clean shape. Cut material is being organised into neat piles for removal.',
+      },
+      final: {
+        framing: {
+          work_pct:   60,
+          foreground: 'clean lawn with only a small heap of last trimmings at the edge',
+          midground:  'properly shaped tree — balanced crown, all cuts clean and neatly done',
+          background: 'tidy garden, neighbouring house, open sky',
+        },
+        debris:      'minimal — one small bundle of branches at garden edge, lawn otherwise clear',
+        description: 'Work is finished. The tree is well shaped. The garden is clean and tidy. A professional result ready to photograph for a client.',
+      },
+    },
+  },
 
-  { keys: ['toitur', 'couvreur', 'ardoise', 'tuile'],
-    intro: 'roof renovation project on a residential house',
-    setting: 'exterior',
-    secteur: 'roofer',
-    scene: `Old broken roof tiles are heaped in a messy disorganized pile in the driveway. Torn dark roofing felt curls off the edge of the partially stripped roof, revealing bare wooden lath structure underneath. Rusty nails and tile fragments litter the ground below the eaves. A neat stack of new tiles and several bags of mortar sit on a wooden pallet beside the house. Part of the roof slope is completely stripped, showing the raw timber frame.`,
-    foreground_detail: `A cracked old roof tile lying flat on the pavement with dried mortar dust and tile fragments scattered around it.`,
-    exclusions: ['workers', 'scaffolding tools', 'safety harnesses', 'helmets', 'people'] },
+  abattage: {
+    keys:       ['abatt', 'abatage'],
+    intro:      'large tree felling at a residential property',
+    setting:    'exterior',
+    secteur:    'tree feller',
+    hasWorkers: false,
+    camera:     'standing back 7–10 m, wide view of felled or sectioned tree',
+    materials:  ['log sections', 'bark chips', 'coarse sawdust', 'large branches'],
+    photo_defects: [
+      'motion blur on peripheral branches from wind',
+      'JPEG compression on dense bark and wood grain texture',
+    ],
+    exclusions: ['chainsaws', 'safety gear', 'ropes', 'cranes', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'first cut log sections placed neatly at the garden edge',
+          midground:  'tree still standing with lower branches removed and base notched',
+          background: 'garden fence, neighbouring house',
+        },
+        debris:      'bark chips and a light coat of sawdust around the base of the standing tree',
+        description: 'Felling has just started. The tree is still standing but lower branches are removed. The first cuts are made at the base.',
+      },
+      encours: {
+        framing: {
+          work_pct:   60,
+          foreground: 'trunk sections laid on ground in an organised row, bark chips around them',
+          midground:  'main trunk partially sectioned, upper part still standing',
+          background: 'sky now more open above where canopy is being reduced',
+        },
+        debris:      'log sections, branches and sawdust on the ground — an active but organised work site',
+        description: 'The tree is being sectioned. Several log pieces are already on the ground. The upper trunk and crown are still being worked.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   55,
+          foreground: 'log sections stacked neatly on one side, sawdust on ground',
+          midground:  'fresh flat stump visible, remaining small branches being cleared',
+          background: 'open sky where the tree stood, neighbouring house now visible',
+        },
+        debris:      'neatly stacked logs, fine sawdust coat on surrounding ground',
+        description: 'The tree is down. The trunk is sectioned. Logs are being stacked. The stump is clean and flat. Final clearing underway.',
+      },
+      final: {
+        framing: {
+          work_pct:   50,
+          foreground: 'clean garden with fresh flat stump visible',
+          midground:  'tidy log pile stacked against fence or garden wall',
+          background: 'open sky, neighbouring property now visible, cleared garden',
+        },
+        debris:      'minimal — stump and a tidy log pile are the only evidence of work',
+        description: 'Felling complete. Garden clear. Logs neatly stacked. The stump is all that remains. A clean professional finish.',
+      },
+    },
+  },
 
-  { keys: ['peintur', 'peint'],
-    intro: 'exterior painting job on a residential house facade',
-    setting: 'exterior',
-    secteur: 'painter',
-    scene: `Half the wall shows a fresh coat of new paint in a clean neutral tone, while the other half remains the old weathered surface. Paint-splattered drop cloths protect the terrace and garden path below. Empty and semi-empty paint cans are stacked messily in one corner. Masking tape residue lines the window frames and edges. Subtle irregular paint drip marks streak the pavement and base of the wall below.`,
-    foreground_detail: `A paint-stained drop cloth crumpled on the pavement, with a dried flat brush lying across it and a few dried paint drops on the ground.`,
-    exclusions: ['workers', 'people', 'ladders', 'paint rollers', 'paint brushes', 'buckets'] },
+  toiture: {
+    keys:       ['toitur', 'couvreur', 'ardoise', 'tuile'],
+    intro:      'roof renovation on a residential house',
+    setting:    'exterior',
+    secteur:    'roofer',
+    hasWorkers: false,
+    camera:     'standing in the driveway or garden, 3–6 m from house, looking up at roof',
+    materials:  ['terracotta roof tiles', 'wooden battens', 'roofing felt', 'mortar bags'],
+    photo_defects: [
+      'overexposure on pale sky bleaching the top third',
+      'JPEG compression artifacts on rough tile texture',
+    ],
+    exclusions: ['safety harnesses', 'helmets', 'scaffolding tools', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'first removed tiles stacked near the wall, a few mortar fragments on the driveway',
+          midground:  'roof mostly intact with one small stripped section showing bare lath beneath',
+          background: 'upper roof still fully tiled, chimney, pale sky',
+        },
+        debris:      'a small pile of removed tiles beside the house, light mortar dust near the stripped patch',
+        description: 'Work has just started. The old roof is mostly in place. One small section is stripped, revealing bare wooden battens. Materials are staged.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'organised pile of old tiles on driveway, mortar chips nearby',
+          midground:  'roof half stripped — one slope bare showing wooden battens, pallet of new tiles staged to the side',
+          background: 'opposite roof slope still tiled, sky, chimney tops',
+        },
+        debris:      'old tiles stacked on driveway, mortar dust and a few broken fragments — an active but organised site',
+        description: 'Halfway through. Half the roof is stripped to the battens. The other half remains. A pallet of new tiles is staged. Active professional work.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'a few remaining bags of mortar and offcuts near the wall, driveway mostly clear',
+          midground:  'new roof mostly complete — fresh tiles neatly aligned, ridge or flashing still being finished',
+          background: 'clean roofline against sky, neighbouring rooftops',
+        },
+        debris:      'minimal — a small stack of leftover materials near the wall, driveway mostly swept',
+        description: 'The new roof is nearly complete. Fresh tiles cover most of the surface, neatly aligned. The ridge or valley flashing is still being finished.',
+      },
+      final: {
+        framing: {
+          work_pct:   65,
+          foreground: 'clean driveway with only one leftover bag near the wall as an authentic detail',
+          midground:  'complete new roof — fresh tiles perfectly aligned, clean ridge line, new flashing',
+          background: 'clear roofline, pale sky, neighbouring houses',
+        },
+        debris:      'nearly none — driveway swept, one leftover bag remains near the wall',
+        description: 'Renovation complete. A full new terracotta roof, tiles aligned, ridge clean. Professional result credible for a contractor portfolio.',
+      },
+    },
+  },
 
-  { keys: ['ravel', 'facade', 'enduit', 'nettoyage'],
-    intro: 'facade renovation and rendering project on a residential house',
-    setting: 'exterior',
-    secteur: 'facade specialist',
-    scene: `Patches of fresh new pale render contrast sharply with the older weathered wall surface. Dark water runoff stains streak the pavement below. A large protective plastic sheet is taped at the base of the wall. White render dust and fine grit settle on the pavement and surrounding garden. One section of the wall shows bare old plaster where surface preparation has started.`,
-    foreground_detail: `The base of the wall showing the sharp transition between fresh pale plaster and old weathered render, with dried drip marks and render dust on the pavement below.`,
-    exclusions: ['workers', 'pressure washers', 'hoses', 'scaffolding tools', 'mixing equipment', 'people'] },
+  peinture: {
+    keys:       ['peintur', 'peint'],
+    intro:      'exterior facade painting on a residential house',
+    setting:    'exterior',
+    secteur:    'painter',
+    hasWorkers: false,
+    camera:     'standing on pavement, 3–5 m from facade, straight-on or slight diagonal',
+    materials:  ['paint cans', 'masking tape', 'drop cloths', 'roller trays'],
+    photo_defects: [
+      'flat overcast light causing slight overexposure on white painted surface',
+      'chromatic aberration on the sharp painted edge between old and new colour',
+    ],
+    exclusions: ['ladders', 'paint rollers', 'brushes', 'buckets', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   45,
+          foreground: 'drop cloths spread at the base of the wall, masking tape on window frames',
+          midground:  'facade fully masked and prepared, not yet painted — old paint surface visible',
+          background: 'neighbouring facade, garden hedge, pale sky',
+        },
+        debris:      'masking tape scraps on the ground, protective film around windows',
+        description: 'Surface preparation is done. Masking tape on window frames and drop cloths on the ground. Painting has not yet started.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'drop cloths on ground with paint drips, used roller tray at the wall base',
+          midground:  'facade half painted — visible line between fresh colour and old weathered surface',
+          background: 'neighbouring facade and sky',
+        },
+        debris:      'drop cloths on ground with paint drips, empty paint cans stacked at wall base',
+        description: 'Painting is underway. Half the facade shows the new colour. The line between fresh and old paint is clearly visible.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'drop cloths still in place, a few paint cans near the wall',
+          midground:  'facade almost fully painted in new colour, one small section or trim still in progress',
+          background: 'clean roofline, sky',
+        },
+        debris:      'a few paint cans and the drop cloth remain, driveway otherwise clear',
+        description: 'Almost done. The facade is mostly the new colour. A corner or trim section is still being finished. The drop cloths are still down.',
+      },
+      final: {
+        framing: {
+          work_pct:   70,
+          foreground: 'clean pavement, drop cloths removed, one paint can left as authentic detail',
+          midground:  'complete fresh facade — even new colour, clean edges around windows and trim',
+          background: 'neighbouring facades, garden, sky',
+        },
+        debris:      'nearly none — pavement clean, one leftover paint can near the wall',
+        description: 'Painting complete. The facade has a fresh even coat, clean edges. A professional finish ready to show to clients.',
+      },
+    },
+  },
 
-  { keys: ['macon', 'beton', 'parpaing', 'pierre'],
-    intro: 'masonry work at a residential property',
-    setting: 'exterior',
-    secteur: 'mason',
-    scene: `Broken bricks and jagged mortar chunks are scattered across the work area. Dried cement splashes and grey dust mark the surrounding ground. A sand pile and several rubble-filled bags sit nearby. A new unfinished blockwork section stands exposed at mid-height, showing raw grey concrete blocks with fresh dark mortar joints, visibly still not fully hardened.`,
-    foreground_detail: `A cracked concrete breeze block with dried mortar smears lying flat on the pavement, surrounded by mortar dust and small rubble fragments.`,
-    exclusions: ['workers', 'trowels', 'scaffolding', 'mixing tools', 'wheelbarrows', 'safety equipment', 'people'] },
+  ravalement: {
+    keys:       ['ravel', 'facade', 'enduit', 'nettoyage'],
+    intro:      'facade rendering and renovation on a residential house',
+    setting:    'exterior',
+    secteur:    'facade specialist',
+    hasWorkers: false,
+    camera:     'standing on pavement, 3–5 m from facade, slightly low angle',
+    materials:  ['cement bags', 'render mix', 'plastic sheeting', 'plastic mesh'],
+    photo_defects: [
+      'chromatic aberration on scaffolding metal poles',
+      'JPEG compression noise on flat rendered surface',
+    ],
+    exclusions: ['pressure washers', 'hoses', 'mixing equipment', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'protective plastic sheeting taped at the base of the wall, a few cement bags staged',
+          midground:  'old facade surface exposed — original render being stripped or cleaned on one section',
+          background: 'upper facade intact, roofline, sky',
+        },
+        debris:      'old render flakes and fine dust on pavement near the stripped section',
+        description: 'Surface preparation has started. One section of old render is being removed. Protective sheeting is in place at the base.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'cement bags and render bucket at the base, render splashes on protective sheeting',
+          midground:  'facade half rendered — fresh pale new render on one section, old weathered surface on the other',
+          background: 'roofline, sky, neighbouring house',
+        },
+        debris:      'render splashes on pavement sheeting, a few empty bags crumpled near the wall',
+        description: 'Half the facade has fresh new render. The other half is still old. The contrast is clearly visible. An active professional job.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'protective sheeting being removed, last cement bag near the wall',
+          midground:  'facade mostly covered in fresh render — surface smooth, one section still being finished',
+          background: 'roofline, sky',
+        },
+        debris:      'minimal — sheeting rolled up at the base, one or two empty bags remaining',
+        description: 'Most of the facade is freshly rendered. One corner or section is still being smoothed. The surface looks good overall.',
+      },
+      final: {
+        framing: {
+          work_pct:   70,
+          foreground: 'clean pavement, protective sheeting gone, one bag remains as authentic detail',
+          midground:  'complete fresh render — even surface across the full facade, clean around windows',
+          background: 'roofline, sky, neighbouring property',
+        },
+        debris:      'nearly none — pavement clean, one leftover bag near the wall',
+        description: 'Facade renovation complete. Fresh render covers the full surface evenly. Clean edges around windows. A professional result.',
+      },
+    },
+  },
 
-  { keys: ['carrelage', 'parquet', 'sol'],
-    intro: 'floor tiling installation in progress inside a residential house',
-    setting: 'interior',
-    secteur: 'tiler',
-    scene: `The room is approximately half tiled. The finished half shows modern matte porcelain tiles in a warm sand-beige color (60x60 cm), perfectly aligned but still showing white plastic tile leveling clips and spacers (croisillons) between every tile. The unfinished half exposes raw concrete screed with freshly combed grey tile adhesive applied with a notched trowel. The adhesive ridges are irregular and slightly imperfect, exactly like a real ongoing installation. The transition between finished and unfinished flooring looks natural and mid-construction. Tile offcuts and torn cardboard packaging are piled in a far corner.`,
-    foreground_detail: `The sharp transition edge where the completed tiled floor with leveling spacers meets the raw concrete screed with combed adhesive ridges. One white plastic tile spacer lies loose near the edge.`,
-    exclusions: ['workers', 'people', 'buckets', 'tile cutter', 'tools', 'bottles', 'cleaning supplies', 'safety equipment', 'furniture'] },
+  maçonnerie: {
+    keys:       ['macon', 'beton', 'parpaing', 'pierre'],
+    intro:      'masonry work at a residential property',
+    setting:    'exterior',
+    secteur:    'mason',
+    hasWorkers: false,
+    camera:     'standing 2–4 m from the wall, straight-on or slight diagonal, eye level',
+    materials:  ['concrete blocks', 'mortar', 'sand', 'cement bags'],
+    photo_defects: [
+      'flat midday light casting short even shadows',
+      'lens barrel distortion on straight wall lines',
+    ],
+    exclusions: ['trowels', 'mixing tools', 'wheelbarrows', 'safety equipment', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'first row of concrete blocks laid on foundation, mortar bucket nearby',
+          midground:  'foundation line or existing wall with first course of new blocks beginning',
+          background: 'garden, existing structure, sky',
+        },
+        debris:      'mortar splashes on ground near the first course, cement dust and a few broken block chips',
+        description: 'Construction has just started. The foundation is set. The first row of blocks is in place. The site is organised and just getting underway.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'concrete blocks and mortar debris at the base, sand pile nearby',
+          midground:  'half-height wall under construction — fresh dark mortar joints clearly visible, blocks not yet fully set',
+          background: 'adjacent existing structure or garden',
+        },
+        debris:      'mortar splashes on ground, block dust, open cement bags nearby',
+        description: 'The wall is at mid-height. Fresh mortar joints are visible. Blocks are stacked and ready. An active organised site.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'a few remaining blocks and a bag of mortar near the base',
+          midground:  'wall at full height, joints nearly done, surface clean',
+          background: 'existing structure, garden, sky',
+        },
+        debris:      'a small pile of leftover blocks and one bag near the base — mostly tidy',
+        description: 'The wall is at full height. Mortar joints are being finished. The structure looks solid and neat.',
+      },
+      final: {
+        framing: {
+          work_pct:   65,
+          foreground: 'clean ground with only a few small mortar marks remaining',
+          midground:  'complete wall — level, regular blocks, clean joints, professional finish',
+          background: 'neighbouring property, garden, sky',
+        },
+        debris:      'nearly none — ground swept, small mortar traces only',
+        description: 'Masonry complete. The wall is level, joints are clean. A solid professional result ready to show clients.',
+      },
+    },
+  },
 
-  { keys: ['plomb', 'sanitaire', 'salle de bain', 'wc'],
-    intro: 'plumbing and bathroom renovation inside a residential property',
-    setting: 'interior',
-    secteur: 'plumber',
-    scene: `The bathroom is clearly mid-renovation. Old copper pipe sections are piled near the wall. Plumber PTFE tape offcuts and pipe collar scraps litter the tiled floor. Water stains and drill dust ring freshly made holes in the wall tiles. A removed old sink or toilet sits disconnected against the wall. New copper fittings are partially installed but raw pipe work is still exposed and not yet plastered over.`,
-    foreground_detail: `A cut copper pipe end with PTFE tape coiled loosely beside it on the tiled floor, surrounded by pipe collar scraps and drill dust.`,
-    exclusions: ['workers', 'pipe wrenches', 'tools', 'buckets', 'cleaning supplies', 'people'] },
+  carrelage: {
+    keys:       ['carrelage', 'parquet', 'sol'],
+    intro:      'floor tiling installation inside a residential property',
+    setting:    'interior',
+    secteur:    'tiler',
+    hasWorkers: false,
+    camera:     'crouching or standing inside, 2–3 m from the tiling work, slightly low angle',
+    materials:  ['porcelain tiles', 'tile adhesive', 'tile spacers', 'grout'],
+    photo_defects: [
+      'flat diffuse window light casting no shadows',
+      'slight motion blur from low ambient light in the room',
+    ],
+    exclusions: ['tile cutters', 'buckets', 'cleaning supplies', 'safety equipment', 'workers', 'people', 'furniture'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   45,
+          foreground: 'first few tiles laid in one corner, adhesive lines combed on the screed beside them',
+          midground:  'mostly bare concrete screed floor with a small completed tile section',
+          background: 'plain white wall, window or doorframe',
+        },
+        debris:      'tile adhesive residue near the first placed tiles, a cardboard tile packaging piece on the side',
+        description: 'Tiling has just started. A few tiles are in place in one corner. The rest of the floor is bare concrete screed with freshly combed adhesive ridges.',
+      },
+      encours: {
+        framing: {
+          work_pct:   60,
+          foreground: 'sharp transition between tiled section and bare screed with combed adhesive',
+          midground:  'room about half tiled — plastic spacers visible between tiles, adhesive smears on edge',
+          background: 'plain wall, window',
+        },
+        debris:      'plastic tile spacers and adhesive smears on the untiled screed, one tile offcut at the edge',
+        description: 'The room is half tiled. The completed section shows aligned tiles with spacers. The other half has combed adhesive ready for the next tiles.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   65,
+          foreground: 'nearly complete tiled floor, grout being applied between tiles',
+          midground:  'full tiled surface, grout lines still slightly damp, spacers just removed',
+          background: 'plain wall, window',
+        },
+        debris:      'grout residue on tiles near the fresh joints, a sponge and bucket of water nearby',
+        description: 'Tiling is complete. Grout is being applied and cleaned. The joints are still slightly damp. The floor looks nearly finished.',
+      },
+      final: {
+        framing: {
+          work_pct:   70,
+          foreground: 'complete clean tiled floor — aligned tiles, clean grout joints, no residue',
+          midground:  'full view of the finished tiled room',
+          background: 'clean white wall, window, door frame',
+        },
+        debris:      'none — floor clean, tiles and joints fully finished',
+        description: 'Tiling complete. The floor is clean, aligned and finished. Grout joints are dry. A professional result ready for the client.',
+      },
+    },
+  },
 
-  { keys: ['elect', 'cabl'],
-    intro: 'electrical installation work inside a residential property',
-    setting: 'interior',
-    secteur: 'electrician',
-    scene: `Electrical work is clearly in progress. Cable offcuts and short wire scraps lie scattered on the bare floor. Old plastic junction boxes and yellowed switch plates are piled in a cardboard box. Conduit channels have been chased into the plaster walls, showing raw grey concrete inside. Fresh white plaster patches, still slightly damp, fill around newly installed electrical outlets. One wall shows exposed cable runs not yet covered.`,
-    foreground_detail: `Fresh plaster traces around a newly installed electrical outlet on a bare wall, with cable offcuts and a plastic junction box lying on the floor below.`,
-    exclusions: ['workers', 'wire tools', 'open electrical panels', 'screwdrivers', 'safety equipment', 'people'] },
+  plomberie: {
+    keys:       ['plomb', 'sanitaire', 'salle de bain', 'wc'],
+    intro:      'plumbing renovation inside a residential property',
+    setting:    'interior',
+    secteur:    'plumber',
+    hasWorkers: false,
+    camera:     'crouching or kneeling, 1–2 m from the pipes or open wall cavity',
+    materials:  ['copper pipes', 'fittings', 'PTFE tape', 'pipe collars'],
+    photo_defects: [
+      'low ambient light with slight sensor noise',
+      'flat artificial ceiling light only — no natural light',
+    ],
+    exclusions: ['pipe wrenches', 'tools', 'buckets', 'cleaning supplies', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   50,
+          foreground: 'old pipe section removed, wall cavity open, fresh drill dust on floor',
+          midground:  'exposed wall showing old pipe stub and new pipe start being positioned',
+          background: 'white bathroom wall, existing tiles',
+        },
+        debris:      'pipe offcuts, drill dust and small plaster fragments near the wall opening',
+        description: 'Work has just started. Old pipes are being removed. The wall is open. New pipe routing is being planned.',
+      },
+      encours: {
+        framing: {
+          work_pct:   60,
+          foreground: 'copper pipes partially installed, visible fittings and PTFE tape on the floor',
+          midground:  'new pipe run in progress — some sections soldered, others still raw',
+          background: 'white wall, some tiles, window or door',
+        },
+        debris:      'pipe offcuts, PTFE tape scraps and fitting packaging on the floor',
+        description: 'Plumbing installation is underway. New copper pipes are being run. Some sections are soldered, others still open. The job is progressing.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   65,
+          foreground: 'new pipes fully connected, wall being patched around them',
+          midground:  'complete new plumbing run, plaster patch drying around pipe entry points',
+          background: 'white bathroom wall, existing tiles',
+        },
+        debris:      'plaster dust and a few pipe offcuts, wall patch still slightly damp',
+        description: 'Pipes are in and connected. The wall is being patched around the new installation. Almost ready for the final finish.',
+      },
+      final: {
+        framing: {
+          work_pct:   60,
+          foreground: 'clean floor, new fixture installed and connected — no tools in view',
+          midground:  'new plumbing visible — clean pipes, wall patched and painted',
+          background: 'clean bathroom wall, existing tiles',
+        },
+        debris:      'none — floor clean, installation complete',
+        description: 'Plumbing renovation complete. New pipes installed, wall patched. The bathroom is clean and ready.',
+      },
+    },
+  },
 
-  { keys: ['debarras', 'evacuation', 'dechets', 'encombr', 'vider'],
-    intro: 'house clearing operation at a residential property',
-    setting: 'exterior',
-    secteur: 'clearance worker',
+  électricité: {
+    keys:       ['elect', 'cabl'],
+    intro:      'electrical installation inside a residential property',
+    setting:    'interior',
+    secteur:    'electrician',
+    hasWorkers: false,
+    camera:     'standing or crouching, 1–2 m from open wall cavity or distribution board',
+    materials:  ['electrical cable', 'conduit', 'junction boxes', 'outlet plates'],
+    photo_defects: [
+      'mixed ceiling lamp and window light causing uneven exposure',
+      'JPEG compression noise in dark cable areas',
+    ],
+    exclusions: ['screwdrivers', 'wire strippers', 'safety equipment', 'workers', 'people'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   45,
+          foreground: 'cable channels chased into plaster wall, fine plaster dust on floor',
+          midground:  'bare wall with open cable channels, first cables being pulled through',
+          background: 'adjacent wall, door frame, ceiling',
+        },
+        debris:      'plaster dust and small plaster chips on floor near the chased channels',
+        description: 'Cable routing has started. Channels are chased into the wall. The first cables are being pulled through. The room is dusty from chasing.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'cable offcuts and junction box scraps on the bare floor',
+          midground:  'cables installed in channels, junction boxes fitted, outlets in progress',
+          background: 'bare plaster wall, door frame',
+        },
+        debris:      'cable offcuts, conduit pieces and screw packaging on the floor',
+        description: 'Cables are in and junction boxes are fitted. Outlet positions are being confirmed. The work is clear and progressing.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   60,
+          foreground: 'fresh plaster patches drying around new outlet positions',
+          midground:  'wall with all cables covered and plastered, outlet boxes installed',
+          background: 'white plastered wall, door frame',
+        },
+        debris:      'plaster dust near the fresh patches, a few cable offcuts on the floor',
+        description: 'Cables are covered. Plaster patches are drying around the new outlets. Almost ready for painting.',
+      },
+      final: {
+        framing: {
+          work_pct:   60,
+          foreground: 'clean wall with new outlet and switch plates fitted',
+          midground:  'complete installation — smooth wall, outlets and switches aligned',
+          background: 'clean painted wall, door frame',
+        },
+        debris:      'none — wall clean, installation finished',
+        description: 'Electrical installation complete. Outlets and switches are in. Wall is patched and painted. Clean professional result.',
+      },
+    },
+  },
+
+  débarras: {
+    keys:       ['debarras', 'evacuation', 'dechets', 'encombr', 'vider'],
+    intro:      'house clearing operation at a residential property',
+    setting:    'exterior',
+    secteur:    'clearance worker',
     hasWorkers: true,
-    scene: `A large white utility van with open rear doors is parked in the driveway, half-filled with old furniture and black bin bags. The driveway is cluttered with discarded household items in complete disarray: a dusty wooden wardrobe, a rolled-up old rug, flattened cardboard boxes, and miscellaneous junk. Two workers in plain casual civilian clothes (jeans, t-shirts) are carrying a heavy cardboard box towards the van.`,
-    foreground_detail: `An old wooden chair with a worn seat lying on its side on the pavement, next to a crumpled discarded newspaper and a plastic bag.`,
-    exclusions: ['branded uniforms', 'cleaning products', 'readable text on boxes', 'brand logos', 'gloves', 'safety vests'] },
-];
+    camera:     'standing near the property entrance, 3–5 m from van, eye level',
+    materials:  ['furniture', 'cardboard boxes', 'bin bags', 'household items'],
+    photo_defects: [
+      'mixed window and doorway light causing uneven exposure at entrance',
+      'slight tilt from doorframe vertical reference',
+    ],
+    exclusions: ['branded uniforms', 'readable text on boxes', 'brand logos', 'safety vests'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   40,
+          foreground: 'a few large items staged at the entrance — a wardrobe, a rolled rug',
+          midground:  'van parked in driveway with rear doors open, mostly empty',
+          background: 'house facade, garden hedge',
+        },
+        debris:      'light dust on items staged at entrance, cardboard packing material on the ground',
+        description: 'Clearing has just started. A few large items are staged at the entrance. The van is parked and ready. Workers in casual clothes are beginning to load.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'items stacked near the van — boxes, bags, chairs, small furniture',
+          midground:  'van half loaded with furniture and bags, two workers in jeans and t-shirts carrying items',
+          background: 'house facade, open entrance',
+        },
+        debris:      'dust and packing material on the driveway near staged items',
+        description: 'Clearing is in full swing. The van is half loaded. Workers are actively moving items from the property to the van.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   50,
+          foreground: 'last remaining items near the entrance, driveway mostly clear',
+          midground:  'van nearly full, one worker carries the last items',
+          background: 'house facade, garden',
+        },
+        debris:      'a few small items and cardboard scraps remain — driveway nearly clear',
+        description: 'Almost done. The van is nearly full. A few last items are being moved out. The property entrance is becoming clear.',
+      },
+      final: {
+        framing: {
+          work_pct:   45,
+          foreground: 'empty clean driveway, van closed and ready to leave',
+          midground:  'cleared property entrance — nothing remaining outside',
+          background: 'house facade, garden, street',
+        },
+        debris:      'none — driveway swept and clear',
+        description: 'Clearing complete. The property is empty. The van is loaded and closed. The driveway is clean. Job done.',
+      },
+    },
+  },
 
+};
+
+// ─── _getWorkDetail ─────────────────────────────────────────────────────────────
+// Same interface as before. Now reads from WORK_SCENES.
 function _getWorkDetail(travaux) {
   const t = (travaux || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  for (const d of _workDetails) {
-    if (d.keys.some(k => t.includes(k))) return d;
+  for (const scene of Object.values(WORK_SCENES)) {
+    if (scene.keys.some(k => t.includes(k))) return scene;
   }
+  // Default fallback for unknown trade
   return {
-    intro: travaux || 'renovation work at a residential property',
-    setting: 'exterior',
-    secteur: 'contractor',
-    scene: 'Work materials and construction debris are scattered across the site. The job is clearly in progress.',
-    foreground_detail: 'Construction debris and material offcuts lying on the ground.',
+    intro:      travaux || 'renovation work at a residential property',
+    setting:    'exterior',
+    secteur:    'contractor',
+    hasWorkers: false,
+    camera:     'standing near the work, eye level',
+    materials:  [],
+    photo_defects: ['JPEG compression artifacts', 'slightly tilted horizon'],
     exclusions: ['workers', 'tools', 'safety equipment', 'people'],
-    hasWorkers: false
+    states: {
+      debut:     { framing: { work_pct: 40, foreground: 'first materials staged on site', midground: 'work area prepared, job just starting', background: 'garden or street' }, debris: 'light dust and material packaging', description: 'Work is just starting.' },
+      encours:   { framing: { work_pct: 55, foreground: 'materials and construction debris', midground: 'work actively in progress', background: 'adjacent structure or garden' }, debris: 'construction debris and material scraps', description: 'Work is actively underway.' },
+      semifinal: { framing: { work_pct: 60, foreground: 'last remaining materials near the wall', midground: 'work nearly complete', background: 'garden or street' }, debris: 'minimal debris, site being tidied', description: 'Work is nearly finished.' },
+      final:     { framing: { work_pct: 65, foreground: 'clean site, minimal remaining material', midground: 'completed work visible', background: 'garden, street or neighbouring property' }, debris: 'nearly none', description: 'Work is complete. Clean professional result.' },
+    },
   };
 }
 
@@ -3186,29 +3692,29 @@ function _getCityContext(ville) {
   };
 }
 
-// ─── GPT rewrite system prompt ────────────────────────────────────────────────
-const _IMG_REWRITE_SYSTEM = `You are an image prompt engineer for realistic construction-site smartphone photography.
+// ─── Scene planner model (upgrade here when a better model is available) ─────
+const _SCENE_PLANNER_MODEL = 'gpt-4.1';
 
-You receive a scene brief and must rewrite it into a precise, camera-first image prompt.
-
-RULES:
-- Maximum 200 words. No lists of more than 3 items.
-- PRIORITY 1 (most important): This is an ordinary Android smartphone photo taken for work documentation. Flat. Unpolished. Not artistic. Write this in a positive way — do not use "NOT" or "Do NOT".
-- PRIORITY 2: Camera composition — describe exactly what the camera sees. Where does each element sit in the frame? What percentage of the frame does the construction work occupy? The work must fill 50–70% of the image.
-- PRIORITY 3: Scene — the work type, materials visible, state of completion.
-- PRIORITY 4: Photography defects — pick exactly 2 specific defects (e.g. slightly tilted horizon, JPEG compression noise, slight overexposure on bright surfaces).
-- PRIORITY 5: Local context — city architecture style, outdoor lighting.
-
-Replace every negative instruction with a positive alternative. Example: instead of "no cinematic lighting", write "flat ordinary daylight, equal exposure".
-
-OUTPUT: Only the final image prompt in English. No explanation. No preamble. No title.`;
-
-// ─── Compact scene brief (sent as user message to GPT rewriter) ───────────────
+// ─── JSON scene builder (displayed in textarea + sent to GPT) ─────────────────
+// Reads entirely from WORK_SCENES via _getWorkDetail — no more _SCENE_LIBRARY.
+// Backward-compat state mapping: desordre→debut, propre→semifinal.
+// Adds state_level field without removing any existing fields.
 function buildDallePromptV2(row) {
-  const work    = _getWorkDetail(row.travaux);
-  const city    = _getCityContext(row.ville);
-  const cityStr = (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France';
-  const isInt   = work.setting === 'interior';
+  const work = _getWorkDetail(row.travaux);
+  const city = _getCityContext(row.ville);
+  const isInt = work.setting === 'interior';
+
+  // Map old and new state values to WORK_SCENES state keys
+  const stateKey = {
+    desordre:  'debut',
+    debut:     'debut',
+    encours:   'encours',
+    propre:    'semifinal',
+    semifinal: 'semifinal',
+    final:     'final',
+  }[row.etat] || 'encours';
+
+  const stateData = work.states?.[stateKey] || work.states?.encours || {};
 
   const meteo = {
     soleil:  'bright midday sun, short shadows, pale blue sky',
@@ -3217,39 +3723,66 @@ function buildDallePromptV2(row) {
     pluie:   'dark heavy clouds, wet surfaces',
   }[row.meteo] || (isInt ? 'natural daylight from window' : city.light);
 
-  const etat = {
-    desordre: 'chaotic — tools and debris everywhere, nothing tidied',
-    encours:  'halfway done, actively in progress',
-    propre:   'nearly finished, light debris remaining',
-  }[row.etat] || 'in progress';
-
-  const exclusions = (work.exclusions || []).join(', ');
-  const noWorkers  = work.hasWorkers ? '' : 'No workers or people visible.';
-
-  return [
-    `Work type: ${work.intro}`,
-    `Location: ${cityStr}`,
-    `Setting: ${isInt ? 'interior room' : 'exterior site'}`,
-    `State: ${etat}`,
-    `Scene: ${work.scene}`,
-    `Foreground: ${work.foreground_detail}`,
-    `Architecture: ${city.arch}`,
-    `Light / weather: ${meteo}`,
-    exclusions ? `Exclude from image: ${exclusions}` : '',
-    noWorkers,
-  ].filter(Boolean).join('\n');
+  return JSON.stringify({
+    photo_goal:      'work-progress documentation by French contractor, cheap Android smartphone',
+    location:        (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France',
+    work_type:       work.intro,
+    setting:         isInt ? 'interior' : 'exterior',
+    state:           stateData.description || stateKey,
+    state_level:     stateKey,
+    camera_position: work.camera,
+    framing:         stateData.framing || { work_pct: 55, foreground: '', midground: '', background: '' },
+    site_debris:     stateData.debris  || 'construction debris on site',
+    photo_defects:   work.photo_defects,
+    architecture:    city.arch,
+    light:           meteo,
+    exclude:         work.exclusions || [],
+    no_people:       !work.hasWorkers,
+  }, null, 2);
 }
 
-// ─── GPT-4.1 prompt rewriter ──────────────────────────────────────────────────
-async function _rewritePromptWithGPT(brief, key) {
+// ─── JS validation before sending to GPT ─────────────────────────────────────
+function _validateScene(jsonStr) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return ['Invalid JSON scene']; }
+  const issues = [];
+  if (!obj.work_type)                        issues.push('work_type is missing');
+  if (!obj.framing?.foreground)              issues.push('framing.foreground is missing');
+  if (!obj.framing?.midground)               issues.push('framing.midground is missing');
+  if (obj.setting === 'interior' && (obj.framing?.background || '').toLowerCase().includes('sky'))
+    issues.push('interior scene has sky in background — incoherent');
+  if (obj.setting === 'exterior' && (obj.camera_position || '').toLowerCase().includes('inside'))
+    issues.push('exterior work but camera is described as inside');
+  return issues;
+}
+
+// ─── GPT scene planner: JSON → camera-first image prompt ─────────────────────
+const _IMG_REWRITE_SYSTEM = `You are an image prompt engineer for realistic construction-site smartphone photography.
+
+You receive a structured JSON scene description and convert it into a precise image generation prompt.
+
+PRIORITY ORDER (most important first):
+1. PHOTO TYPE — establish from photo_goal, in positive language only. Example: "Ordinary work-progress snapshot taken on a cheap Android smartphone."
+2. CAMERA COMPOSITION — use camera_position and framing to describe the scene spatially: where each element sits, what % of the frame it occupies. The construction work must fill work_pct% of the image.
+3. SCENE CONTENT — work_type, state, key elements visible.
+4. PHOTO DEFECTS — include exactly the defects listed in photo_defects, nothing extra.
+5. CONTEXT — architecture style, light/weather condition.
+
+Rules:
+- Maximum 200 words
+- Write every instruction positively. Replace "exclude X" with a spatial alternative if possible.
+- Apply no_people: true by placing the camera so no humans are visible in frame.
+- Output only the final English image prompt. No explanation, no JSON, no title.`;
+
+async function _rewritePromptWithGPT(jsonScene, key) {
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'gpt-4.1',
+      model: _SCENE_PLANNER_MODEL,
       messages: [
         { role: 'system', content: _IMG_REWRITE_SYSTEM },
-        { role: 'user',   content: brief }
+        { role: 'user',   content: jsonScene }
       ],
       max_tokens: 350,
       temperature: 0.75
@@ -3257,7 +3790,7 @@ async function _rewritePromptWithGPT(brief, key) {
   });
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
-    throw new Error('Rewrite GPT error: ' + (err.error?.message || resp.statusText));
+    throw new Error('Scene planner error: ' + (err.error?.message || resp.statusText));
   }
   const data = await resp.json();
   return data.choices[0].message.content.trim();
@@ -3462,16 +3995,27 @@ async function generateAllImages() {
     row.images = [];
     renderImgPlanning();
 
-    const nb    = parseInt(row.nb) || 1;
-    const brief = buildDallePromptV2(row);
-    const slug  = slugify(row.fiche || row.travaux);
+    const nb         = parseInt(row.nb) || 1;
+    const jsonScene  = buildDallePromptV2(row);
+    const slug       = slugify(row.fiche || row.travaux);
+
+    // Validate scene before sending to GPT
+    const sceneIssues = _validateScene(jsonScene);
+    if (sceneIssues.length) {
+      row.status = 'error';
+      renderImgPlanning();
+      console.warn('[scene validation]', sceneIssues);
+      done += nb;
+      updateProgress();
+      continue;
+    }
 
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
-        // Step 1: rewrite brief into camera-first prompt via GPT
-        progressLbl.textContent = `Optimisation prompt ${done + 1}/${total}…`;
-        const prompt = await _rewritePromptWithGPT(brief, key);
+        // Step 1: GPT scene planner converts JSON → camera-first prompt
+        progressLbl.textContent = `Planification scène ${done + 1}/${total}…`;
+        const prompt = await _rewritePromptWithGPT(jsonScene, key);
 
         // Step 2: generate image
         progressLbl.textContent = `Génération image ${done + 1}/${total}…`;
