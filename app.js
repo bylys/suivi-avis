@@ -3186,94 +3186,81 @@ function _getCityContext(ville) {
   };
 }
 
-// ─── Level 1: fixed photography-style preamble ────────────────────────────────
-const _IMG_SYSTEM_PREAMBLE = `Casual documentary smartphone photo taken by a French contractor to record work progress. NOT a professional photograph. NOT an architectural render. NOT a portfolio shot.
+// ─── GPT rewrite system prompt ────────────────────────────────────────────────
+const _IMG_REWRITE_SYSTEM = `You are an image prompt engineer for realistic construction-site smartphone photography.
 
-ANTI-AESTHETIC RULES — every one applies:
-Do NOT create an aesthetically pleasing image. Do NOT compose like an architectural photographer. Do NOT use symmetry or centered framing. Do NOT apply cinematic color grading, golden hour, or dramatic shadows. The framing must look accidental — zero intentional composition. Avoid anything that looks like a render or a stock photo.
+You receive a scene brief and must rewrite it into a precise, camera-first image prompt.
 
-CAMERA DEFECTS (all must appear):
-Cheap Android smartphone. Tiny JPEG sensor. Slight chromatic aberration at frame edges. Rolling shutter distortion on vertical lines. Visible barrel lens distortion. Small sensor noise (ISO 400–800 equivalent). JPEG compression artifacts on flat surfaces. Smartphone oversharpening. Slightly washed-out or clipped exposure. No HDR processing. No portrait mode.
+RULES:
+- Maximum 200 words. No lists of more than 3 items.
+- PRIORITY 1 (most important): This is an ordinary Android smartphone photo taken for work documentation. Flat. Unpolished. Not artistic. Write this in a positive way — do not use "NOT" or "Do NOT".
+- PRIORITY 2: Camera composition — describe exactly what the camera sees. Where does each element sit in the frame? What percentage of the frame does the construction work occupy? The work must fill 50–70% of the image.
+- PRIORITY 3: Scene — the work type, materials visible, state of completion.
+- PRIORITY 4: Photography defects — pick exactly 2 specific defects (e.g. slightly tilted horizon, JPEG compression noise, slight overexposure on bright surfaces).
+- PRIORITY 5: Local context — city architecture style, outdoor lighting.
 
-CONSTRUCTION IMPERFECTIONS (never cleaned, always present):
-Fine construction dust on every horizontal surface. Footprints in dust or material residue. Small offcuts, broken fragments, torn packaging on the floor. Mortar splashes, adhesive stains, paint drips on adjacent surfaces. Nothing staged. Nothing cleaned before the photo.
+Replace every negative instruction with a positive alternative. Example: instead of "no cinematic lighting", write "flat ordinary daylight, equal exposure".
 
-NEIGHBORHOOD CONTEXT (exterior only):
-TV antennas and satellite dishes on nearby roofs. Different weathered roof colors. Dirty gutters, stained render, peeling paint on neighboring facades. Uneven vegetation. Old windows in varied styles, moss-covered chimneys, weather stains.`;
+OUTPUT: Only the final image prompt in English. No explanation. No preamble. No title.`;
 
-// ─── Level 2: randomization libraries ─────────────────────────────────────────
-const _CAM_VARIANTS = [
-  'slightly tilted — horizon not level by 4–6 degrees',
-  'phone held too low, shooting upward at the work',
-  'phone held too high, looking down at the site from above',
-  'subject off-center with extra dead space on one side',
-  'phone shadow partially creeping into the bottom corner',
-  'hand tremor — slight motion blur on peripheral edges',
-];
-const _DIRT_VARIANTS = [
-  'fine white cement dust settled on every horizontal surface',
-  'dried muddy boot prints tracking across the floor',
-  'scattered debris: broken tile fragments, torn kraft paper, cable offcuts',
-  'dried adhesive smears and mortar splashes on the baseboards',
-  'fine sawdust piled in corners, wood particles drifting in the air',
-  'dirty grey mortar residue smeared across the nearby wall',
-];
-const _COMP_VARIANTS = [
-  'main subject cropped at one edge — bad framing',
-  'empty foreground takes up 50% of the image',
-  'ceiling or sky fills the top 40% of the frame',
-  'an obstacle in the foreground half-blocks the view of the work',
-  'subject pushed into the far background, lots of empty space in front',
-  'important material detail half-cut at the far right edge',
-];
-
-function _rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-// ─── Level 2: variable scene builder ─────────────────────────────────────────
+// ─── Compact scene brief (sent as user message to GPT rewriter) ───────────────
 function buildDallePromptV2(row) {
   const work    = _getWorkDetail(row.travaux);
   const city    = _getCityContext(row.ville);
-  const cityStr = (row.ville || '').trim() ? `in ${row.ville.trim()}, France` : 'in France';
+  const cityStr = (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France';
   const isInt   = work.setting === 'interior';
 
-  const meteoLight = {
-    soleil:  'flat harsh midday sun, short neutral shadows, bleached concrete, pale blue sky',
-    nuageux: 'flat grey overcast daylight, zero shadows, washed-out muted colors',
-    brumeux: 'hazy milky diffuse overcast, almost no contrast, pale white sky',
-    pluie:   'dark grey overcast, wet surfaces reflect dull light, heavy cloud',
-  }[row.meteo] || (isInt ? 'flat natural daylight from window, no direct sun' : city.light);
+  const meteo = {
+    soleil:  'bright midday sun, short shadows, pale blue sky',
+    nuageux: 'flat grey overcast, muted colors',
+    brumeux: 'hazy milky overcast, very low contrast',
+    pluie:   'dark heavy clouds, wet surfaces',
+  }[row.meteo] || (isInt ? 'natural daylight from window' : city.light);
 
-  const etatLine = {
-    desordre: 'The site is in total disarray — nothing has been tidied.',
-    encours:  'Work is actively underway, the job is halfway done.',
-    propre:   'Work looks almost finished but debris has not yet been cleaned up.',
-  }[row.etat] || '';
+  const etat = {
+    desordre: 'chaotic — tools and debris everywhere, nothing tidied',
+    encours:  'halfway done, actively in progress',
+    propre:   'nearly finished, light debris remaining',
+  }[row.etat] || 'in progress';
 
-  const exclusionBlock = (work.exclusions || []).map(e => `No ${e}.`).join(' ');
-  const noWorkerLine   = work.hasWorkers ? '' : 'No workers visible. No people in frame.';
+  const exclusions = (work.exclusions || []).join(', ');
+  const noWorkers  = work.hasWorkers ? '' : 'No workers or people visible.';
 
-  const archBlock = isInt
-    ? `Walls: plain white plaster, one wall with exposed ${city.arch.split(' with ')[0]} typical of the region. Window shows a real ${row.ville || 'French'} residential neighborhood — ${city.arch}.`
-    : `Background: authentic ${row.ville || 'French'} streetscape — ${city.arch}. ${city.light}.`;
+  return [
+    `Work type: ${work.intro}`,
+    `Location: ${cityStr}`,
+    `Setting: ${isInt ? 'interior room' : 'exterior site'}`,
+    `State: ${etat}`,
+    `Scene: ${work.scene}`,
+    `Foreground: ${work.foreground_detail}`,
+    `Architecture: ${city.arch}`,
+    `Light / weather: ${meteo}`,
+    exclusions ? `Exclude from image: ${exclusions}` : '',
+    noWorkers,
+  ].filter(Boolean).join('\n');
+}
 
-  const scenePrompt = `Subject: ${work.intro} ${cityStr}.
-${etatLine}
-${work.scene}
-${work.foreground_detail}
-${archBlock}
-${exclusionBlock} ${noWorkerLine} No furniture.
-
-THIS SHOT SPECIFICALLY:
-Camera angle: ${_rnd(_CAM_VARIANTS)}.
-Ambient light: ${meteoLight}.
-Debris on site: ${_rnd(_DIRT_VARIANTS)}.
-Framing error: ${_rnd(_COMP_VARIANTS)}.
-
-STORY: The ${work.secteur} set their phone down mid-job to quickly document progress before continuing. No aesthetic intent. The photo exists only for the artisan's records. Nothing was arranged or cleaned.
-
-Ultra-realistic. Indistinguishable from a real unedited smartphone snapshot taken on a French chantier.`;
-
-  return (_IMG_SYSTEM_PREAMBLE + '\n\n' + scenePrompt).replace(/\n{3,}/g, '\n\n').trim();
+// ─── GPT-4.1 prompt rewriter ──────────────────────────────────────────────────
+async function _rewritePromptWithGPT(brief, key) {
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4.1',
+      messages: [
+        { role: 'system', content: _IMG_REWRITE_SYSTEM },
+        { role: 'user',   content: brief }
+      ],
+      max_tokens: 350,
+      temperature: 0.75
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error('Rewrite GPT error: ' + (err.error?.message || resp.statusText));
+  }
+  const data = await resp.json();
+  return data.choices[0].message.content.trim();
 }
 
 function _escHtml(s) {
@@ -3475,13 +3462,19 @@ async function generateAllImages() {
     row.images = [];
     renderImgPlanning();
 
-    const nb     = parseInt(row.nb) || 1;
-    const prompt = buildDallePromptV2(row);
-    const slug   = slugify(row.fiche || row.travaux);
+    const nb    = parseInt(row.nb) || 1;
+    const brief = buildDallePromptV2(row);
+    const slug  = slugify(row.fiche || row.travaux);
 
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
+        // Step 1: rewrite brief into camera-first prompt via GPT
+        progressLbl.textContent = `Optimisation prompt ${done + 1}/${total}…`;
+        const prompt = await _rewritePromptWithGPT(brief, key);
+
+        // Step 2: generate image
+        progressLbl.textContent = `Génération image ${done + 1}/${total}…`;
         let resp = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
