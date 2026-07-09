@@ -949,27 +949,22 @@ datalist { display: none; }
 .img-plan-nblabel { font-size: 0.74rem; color: #475569; }
 
 .img-plan-card-body {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 200px;
 }
 
 .img-plan-fields {
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  padding: 14px 16px;
 }
 
 .img-plan-field {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  min-width: 120px;
-  flex: 1;
 }
-.img-plan-field-travaux { flex: 2.5; min-width: 220px; }
 
 .img-plan-field > label {
   font-size: 0.69rem;
@@ -996,60 +991,88 @@ datalist { display: none; }
 .img-plan-field input[type="text"]:focus,
 .img-plan-field select:focus { border-color: #6366f1; }
 
-.img-preset-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 3px;
+.img-plan-field-service input[type="text"] {
+  font-size: 0.92rem;
+  border-color: #475569;
 }
-.img-preset-chip {
-  padding: 3px 9px;
+
+.img-plan-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.img-etat-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.img-etat-pill {
+  padding: 4px 11px;
   border-radius: 20px;
-  border: 1px solid #334155;
+  border: 1.5px solid #334155;
   background: transparent;
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   cursor: pointer;
   transition: all .15s;
 }
-.img-preset-chip:hover { border-color: #6366f1; color: #a5b4fc; background: rgba(99,102,241,.1); }
-.img-preset-chip.active { border-color: #6366f1; color: #fff; background: #6366f1; }
+.img-etat-pill:hover { border-color: #6366f1; color: #a5b4fc; background: rgba(99,102,241,.1); }
+.img-etat-pill.active { border-color: #6366f1; color: #fff; background: #6366f1; }
 
-.img-plan-prompt-preview {
+.img-plan-field-meteo { flex-direction: row; align-items: center; gap: 10px; }
+.img-plan-field-meteo select { width: auto; flex: 1; }
+
+.img-plan-analyse {
+  border-left: 1px solid #334155;
   background: #0f172a55;
-  border: 1px solid #1e293b;
-  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
-.img-plan-prompt-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 12px;
-  border-bottom: 1px solid #1e293b;
-}
-.img-plan-prompt-header > span:first-child {
-  font-size: 0.69rem;
+.img-analyse-head {
+  font-size: 0.68rem;
   font-weight: 700;
   color: #475569;
   text-transform: uppercase;
   letter-spacing: .05em;
+  margin-bottom: 10px;
 }
-.img-plan-prompt-chars { font-size: 0.7rem; color: #334155; }
-.img-plan-prompt-ta {
-  width: 100%;
-  min-height: 52px;
-  padding: 10px 12px;
-  font-size: 0.78rem;
-  font-family: inherit;
-  line-height: 1.55;
-  background: transparent;
-  border: none;
-  outline: none;
-  resize: vertical;
-  color: #64748b;
-  box-sizing: border-box;
+.img-analyse-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px solid #1e293b;
+  gap: 8px;
 }
+.img-analyse-row-last { border-bottom: none; }
+.img-analyse-key { font-size: 0.7rem; color: #475569; white-space: nowrap; }
+.img-analyse-val {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #818cf8;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.img-analyse-muted { color: #64748b; font-weight: 400; }
+.img-analyse-conf { margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155; }
+.img-analyse-conf-label {
+  font-size: 0.66rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 6px;
+}
+.img-analyse-conf-bar { display: flex; align-items: center; gap: 7px; }
+.img-analyse-conf-track {
+  flex: 1;
+  height: 3px;
+  background: #1e293b;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.img-analyse-conf-fill { height: 100%; border-radius: 99px; transition: width .3s ease; }
+.img-analyse-conf-pct { font-size: 0.8rem; font-weight: 700; }
 
 .img-row-status {
   font-size: 0.8rem;
