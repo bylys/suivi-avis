@@ -3460,22 +3460,28 @@ async function generateAllImages() {
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
-        // Tente dall-e-3 en priorité (meilleure qualité réaliste)
-        // Si le compte n'y a pas accès, bascule automatiquement sur gpt-image-1
         let resp = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size: '1024x1024', quality: 'standard' })
+          body: JSON.stringify({
+            model: 'gpt-image-2',
+            prompt,
+            n: 1,
+            size: '1536x1024',
+            quality: 'high',
+            output_format: 'jpeg',
+            output_compression: 85
+          })
         });
         if (!resp.ok) {
           const errBody = await resp.json();
           const errMsg  = errBody.error?.message || '';
           if (errMsg.includes('does not exist') || errMsg.includes('not found') || resp.status === 404) {
-            // Compte sans accès dall-e-3 → fallback gpt-image-1
+            // Fallback gpt-image-1 si gpt-image-2 indisponible
             resp = await fetch('https://api.openai.com/v1/images/generations', {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024', quality: 'medium' })
+              body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024', quality: 'high', output_format: 'jpeg', output_compression: 85 })
             });
           }
           if (!resp.ok) {
@@ -3486,10 +3492,10 @@ async function generateAllImages() {
 
         const data     = await resp.json();
         const item     = data.data[0];
-        const b64      = item.b64_json || null;   // présent sur gpt-image-1 et dall-e-3 récent
+        const b64      = item.b64_json || null;
         const imgUrl   = item.url  || null;
-        const filename = `${slug}-${String(i + 1).padStart(2, '0')}.png`;
-        const src      = b64 ? `data:image/png;base64,${b64}` : imgUrl;
+        const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
+        const src      = b64 ? `data:image/jpeg;base64,${b64}` : imgUrl;
 
         row.images.push({ b64, url: imgUrl, filename });
         _generatedImages.push({ b64, url: imgUrl, filename });
@@ -3537,11 +3543,11 @@ async function downloadImagesZip() {
   if (!images.length) return;
 
   if (images.length === 1) {
-    // Une seule image : téléchargement direct PNG
+    // Une seule image : téléchargement direct JPEG
     const { b64, url, filename } = images[0];
     if (b64) {
       const a = document.createElement('a');
-      a.href = `data:image/png;base64,${b64}`;
+      a.href = `data:image/jpeg;base64,${b64}`;
       a.download = filename;
       a.click();
     } else {
