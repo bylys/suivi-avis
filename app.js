@@ -3035,9 +3035,10 @@ const WORK_SCENES = {
     exclude_if: [],
     intro:      'tree pruning and hedge trimming at a residential garden',
     setting:    'exterior',
-    secteur:    'arborist',
-    hasWorkers: false,
-    camera:     'standing on the ground, 5–8 m from the tree, angled slightly upward',
+    secteur:           'arborist',
+    variation_setting: 'garden',
+    hasWorkers:        false,
+    camera:            'standing on the ground, 5–8 m from the tree, angled slightly upward',
     materials:  ['cut branches', 'hedge clippings', 'fresh sawdust', 'bark chips'],
     photo_defects: [
       'slight upward tilt distorting verticals',
@@ -3100,9 +3101,10 @@ const WORK_SCENES = {
     exclude_if: [],
     intro:      'large tree felling at a residential property',
     setting:    'exterior',
-    secteur:    'tree feller',
-    hasWorkers: false,
-    camera:     'standing back 7–10 m, wide view of felled or sectioned tree',
+    secteur:           'tree feller',
+    variation_setting: 'garden',
+    hasWorkers:        false,
+    camera:            'standing back 7–10 m, wide view of felled or sectioned tree',
     materials:  ['log sections', 'bark chips', 'coarse sawdust', 'large branches'],
     photo_defects: [
       'motion blur on peripheral branches from wind',
@@ -3965,9 +3967,10 @@ const WORK_SCENES = {
     exclude_if: [],
     intro:      'flat roof waterproofing work on a residential or commercial building',
     setting:    'exterior',
-    secteur:    'waterproofing specialist',
-    hasWorkers: false,
-    camera:     'crouching on the flat roof or terrace, wide view of membrane work, parapet visible at edges',
+    secteur:           'waterproofing specialist',
+    variation_setting: 'roof',
+    hasWorkers:        false,
+    camera:            'crouching on the flat roof or terrace, wide view of membrane work, parapet visible at edges',
     materials:  ['bitumen membrane rolls', 'primer residue', 'protective gravel', 'aluminium flashing'],
     photo_defects: [
       'harsh overhead midday light flattening the dark membrane texture',
@@ -4134,15 +4137,28 @@ const WORK_SCENES = {
     exclude_if: [],
     intro:      'roadside vehicle breakdown assistance and recovery',
     setting:    'exterior',
-    secteur:    'breakdown technician',
-    hasWorkers: false,
-    camera:     'standing 3–5 m from the car, eye level, showing vehicle and roadside context',
+    secteur:           'breakdown technician',
+    variation_setting: 'roadside',
+    hasWorkers:        false,
+    camera:            'standing 3–5 m from the car, eye level, showing vehicle and roadside context',
     materials:  ['warning triangle on pavement', 'jump cables on seat', 'tow straps visible in van'],
     photo_defects: [
       'overexposure from bright sky against dark car bodywork',
       'slight motion blur from passing traffic in background',
     ],
     exclusions: ['readable licence plates', 'brand logos', 'workers', 'people', 'driver'],
+    // TODO: UI — propose dedicated auto contexts instead of building types:
+    // Autoroute, Route nationale, Route départementale, Rue en ville,
+    // Parking, Domicile, Garage / atelier, Station-service, Aire de repos
+    context_map: {
+      maison:        'parked on a residential street or in a driveway outside a house',
+      appartement:   'parked on an urban street near an apartment building',
+      immeuble:      'parked on a busy urban road, low-rise buildings in background',
+      commerce:      'parked in a commercial car park or retail area',
+      professionnel: 'parked in a business estate or light-industrial area',
+      entrepot:      'parked in an industrial estate access road',
+      agricole:      'stopped on a rural road or departmental route, fields in background',
+    },
     states: {
       debut: {
         framing: {
@@ -4218,9 +4234,10 @@ const WORK_SCENES = {
     exclude_if: [],
     intro:      'garden landscaping and maintenance at a residential property',
     setting:    'exterior',
-    secteur:    'landscaper',
-    hasWorkers: false,
-    camera:     'standing in the garden, 4–6 m from the work area, wide view showing garden context',
+    secteur:           'landscaper',
+    variation_setting: 'garden',
+    hasWorkers:        false,
+    camera:            'standing in the garden, 4–6 m from the work area, wide view showing garden context',
     materials:  ['topsoil bags', 'mulch', 'plant pots', 'turf rolls'],
     photo_defects: [
       'dappled shade causing uneven exposure across the garden',
@@ -4701,24 +4718,93 @@ const SITE_REALISM = {
   },
 
   etancheite: {
-    tools: [
-      'seam roller resting on the membrane surface at the last worked lap joint',
-      'bitumen primer can with brush resting on top near the edge',
-      'utility knife beside the trimmed membrane roll',
-      'tape measure resting on the substrate beside the chalk line',
-      'small gas torch cylinder resting on the substrate nearby',
-    ],
-    protections: [
-      'protective board placed over the existing membrane at the access point',
-      'plastic cap over the roof drain during membrane application',
-    ],
-    chantier_details: [
-      'trimmed membrane offcuts stacked near the parapet edge',
-      'empty bitumen primer can on the substrate surface',
-      'seam tape strip at the lap joint overlap',
-      'chalk snap line across the substrate showing the membrane layout',
-      'scrap membrane piece used as knee pad near the last worked seam',
-    ],
+    _dispatch: 'contexte',
+
+    maison: {
+      scene_note: 'waterproofing work on a small accessible flat roof — house extension, garage top, or low terrace of a residential house, garden visible below the low parapet',
+      tools: [
+        'seam roller resting on the membrane surface at the last lap joint',
+        'bitumen primer can with brush resting near the parapet edge',
+        'utility knife beside the trimmed membrane roll',
+        'tape measure resting on the substrate beside the chalk line',
+      ],
+      protections: [
+        'protective board placed over the existing membrane at the access point',
+        'plastic cap over the small flat roof drain',
+      ],
+      chantier_details: [
+        'trimmed membrane offcuts near the low parapet edge',
+        'empty bitumen primer can on the substrate',
+        'chalk snap line across the compact substrate surface',
+        'residential garden or driveway visible just below the parapet',
+        'house wall or window visible beside the low parapet edge',
+      ],
+    },
+
+    immeuble: {
+      scene_note: 'waterproofing work on a large multi-storey residential flat roof — broad membrane surface, rooftop technical equipment in background',
+      tools: [
+        'seam roller resting on the membrane surface at the last worked lap joint',
+        'bitumen primer can with brush resting on top near the edge',
+        'utility knife beside the trimmed membrane roll',
+        'tape measure resting on the substrate beside the chalk line',
+        'small gas torch cylinder resting on the substrate nearby',
+      ],
+      protections: [
+        'protective board placed over the existing membrane at the access point',
+        'plastic cap over the rooftop drain during membrane application',
+      ],
+      chantier_details: [
+        'trimmed membrane offcuts near the parapet edge',
+        'empty bitumen primer can on the broad substrate surface',
+        'chalk snap line across the membrane layout',
+        'HVAC unit or ventilation stack visible in the background',
+        'neighbouring rooftops visible above the taller parapet',
+      ],
+    },
+
+    commerce: {
+      scene_note: 'waterproofing work on a commercial or industrial flat roof — warehouse, retail unit, or workshop, large light-gauge steel deck or concrete substrate',
+      tools: [
+        'seam roller resting on the membrane surface',
+        'bitumen primer can with brush resting on top',
+        'utility knife beside the trimmed membrane roll',
+        'tape measure on the substrate',
+        'small gas torch cylinder on the substrate',
+      ],
+      protections: [
+        'protective board at the access hatch entry point',
+        'plastic cap over the industrial roof drain',
+      ],
+      chantier_details: [
+        'trimmed membrane offcuts near the industrial parapet',
+        'empty primer can on the broad substrate surface',
+        'large open flat roof with robust industrial parapet visible',
+        'roof access hatch cover folded back at the entry point',
+        'distant industrial skyline or warehouse roof visible beyond the parapet',
+      ],
+    },
+
+    default: {
+      tools: [
+        'seam roller resting on the membrane surface at the last worked lap joint',
+        'bitumen primer can with brush resting on top near the edge',
+        'utility knife beside the trimmed membrane roll',
+        'tape measure resting on the substrate beside the chalk line',
+        'small gas torch cylinder resting on the substrate nearby',
+      ],
+      protections: [
+        'protective board placed over the existing membrane at the access point',
+        'plastic cap over the roof drain during membrane application',
+      ],
+      chantier_details: [
+        'trimmed membrane offcuts stacked near the parapet edge',
+        'empty bitumen primer can on the substrate surface',
+        'seam tape strip at the lap joint overlap',
+        'chalk snap line across the substrate showing the membrane layout',
+        'scrap membrane piece used as knee pad near the last worked seam',
+      ],
+    },
   },
 
   terrassement: {
@@ -4742,23 +4828,110 @@ const SITE_REALISM = {
   },
 
   depannage_auto: {
-    tools: [
-      'reflective warning triangle placed on the ground behind the vehicle',
-      'hydraulic jack positioned under the vehicle sill point',
-      'lug wrench on the ground beside the wheel',
-      'torch or flashlight resting on the wheel arch',
-    ],
-    protections: [
-      'reflective safety vest folded on the car roof or bonnet',
-      'warning cone placed on the road behind the vehicle',
-    ],
-    chantier_details: [
-      'flat tyre leaning against the car body near the wheel arch',
-      'wheel nuts grouped on the ground beside the removed tyre',
-      'oil mark on the ground beneath the engine bay',
-      'gravel disturbed beside the parking spot near the jack point',
-      'empty tyre pressure gauge on the ground near the spare',
-    ],
+    _dispatch: 'service',
+
+    batterie: {
+      scene_note: 'roadside breakdown — battery failure, jump-start or booster in progress beside a stalled vehicle',
+      tools: [
+        'jump-start cable set draped over the open bonnet edge',
+        'portable battery booster pack resting on the ground near the front bumper',
+        'multimeter resting on the engine bay ledge',
+        'clamp connector visible on the battery terminal',
+        'torch resting on the wheel arch near the open bonnet',
+      ],
+      protections: [
+        'reflective safety vest on the car roof',
+        'reflective warning triangle placed behind the vehicle',
+      ],
+      chantier_details: [
+        'bonnet propped open showing the engine bay',
+        'battery booster cable clips visible at the battery posts',
+        'empty booster pack carry case on the ground near the front tyre',
+        'warning triangle casting a shadow on the road behind the car',
+        'technician gloves on the ground near the front wheel',
+      ],
+    },
+
+    crevaison: {
+      scene_note: 'roadside breakdown — flat tyre, tyre change in progress beside a stalled vehicle',
+      tools: [
+        'hydraulic jack positioned under the vehicle sill point',
+        'lug wrench on the ground beside the wheel',
+        'spare wheel resting upright against the car body',
+        'torque socket resting on the ground near the wheel',
+      ],
+      protections: [
+        'reflective safety vest folded on the car roof',
+        'warning cone placed on the road behind the vehicle',
+      ],
+      chantier_details: [
+        'flat tyre leaning against the car body near the wheel arch',
+        'wheel nuts grouped on the ground beside the removed tyre',
+        'gravel disturbed beside the jack point',
+        'empty tyre pressure gauge on the ground near the spare',
+        'reflective warning triangle placed further back on the road',
+      ],
+    },
+
+    remorquage: {
+      scene_note: 'roadside recovery — vehicle being prepared for towing, tow strap or hook attached',
+      tools: [
+        'tow strap laid out on the ground between the two vehicles',
+        'tow hook attached to the recovery point under the front bumper',
+        'torch resting on the ground near the attachment point',
+        'wheel dolly placed under the driven wheel',
+      ],
+      protections: [
+        'reflective safety vest on the technician or car roof',
+        'warning cone placed on the road behind the stalled vehicle',
+      ],
+      chantier_details: [
+        'tow strap running between the two vehicles at low angle',
+        'recovery hook visible under the stalled vehicle front bumper',
+        'wheel dolly under one tyre ready for transport',
+        'warning triangle further back on the road',
+        'open recovery van doors visible in the background',
+      ],
+    },
+
+    ouverture: {
+      scene_note: 'roadside lockout — vehicle door opening in progress, technician working at the door frame with specialist tools',
+      tools: [
+        'plastic door wedge inserted at the top corner of the door frame',
+        'long-reach rod visible through the door gap near the lock mechanism',
+        'air wedge pump resting on the ground beside the door',
+        'protective film strip on the door frame edge at the wedge contact point',
+      ],
+      protections: [
+        'reflective safety vest on the technician or car roof',
+      ],
+      chantier_details: [
+        'door gap visible at the top corner where the wedge is inserted',
+        'protective film on the door frame edge preventing scratch marks',
+        'air pump tube running to the wedge between door and frame',
+        'keys or key fob visible inside the car through the window',
+        'technician equipment bag on the ground near the rear door',
+      ],
+    },
+
+    default: {
+      tools: [
+        'reflective warning triangle placed on the ground behind the vehicle',
+        'torch or flashlight resting on the wheel arch',
+        'tool bag open on the ground near the front tyre',
+      ],
+      protections: [
+        'reflective safety vest folded on the car roof or bonnet',
+        'warning cone placed on the road behind the vehicle',
+      ],
+      chantier_details: [
+        'bonnet propped open or door open beside the vehicle',
+        'oil mark on the ground beneath the engine bay',
+        'warning triangle casting a shadow on the road behind the car',
+        'gravel disturbed beside the parking spot near the work area',
+        'empty product container on the ground near the front wheel',
+      ],
+    },
   },
 
   paysagiste: {
@@ -4888,6 +5061,58 @@ const _REALISM_COUNTS = {
   final:     { tools: 0, protections: 0, details: 1 },
 };
 
+const VARIATION_ENGINE = {
+  camera_angles: {
+    exterior: [
+      'from the garden path, centred on the house facade',
+      'from the driveway edge, slight left offset',
+      'oblique view from the side, 30° angle to the facade',
+      'closer crop, work area fills most of frame',
+      'stepped back, wider context showing surrounding garden',
+    ],
+    interior: [
+      'standing in the doorway, full room depth visible',
+      'crouching at floor level, work edge prominent in foreground',
+      'standing to the side, oblique view of the work surface',
+      'slightly elevated angle looking down at the floor',
+    ],
+    roof: [
+      'from the parapet corner, diagonal view across the membrane surface',
+      'low angle along the roof surface, parapet at the horizon',
+      'wide shot showing the full flat roof with parapet all around',
+      'close crop focused on the lap joint or flashing detail',
+    ],
+    roadside: [
+      'from the pavement behind the vehicle, 4 m back',
+      'from the side of the road at the vehicle mid-point',
+      'slight low angle showing the wheel arch and road surface',
+      'wide shot including road and surrounding context',
+    ],
+    garden: [
+      'from the garden entrance, full planting border visible',
+      'standing beside the work area, close oblique view',
+      'low angle at plant level, open sky visible behind',
+      'wide shot showing house facade and garden together',
+    ],
+  },
+  light_quality: [
+    { text: 'soft overcast light, no hard shadows',           meteo: ['nuageux', 'brumeux', 'auto'] },
+    { text: 'bright midday sun, short shadows on ground',     meteo: ['soleil', 'auto'] },
+    { text: 'warm afternoon light raking from the left',      meteo: ['soleil', 'auto'] },
+    { text: 'slightly hazy morning light, cool tones',        meteo: ['nuageux', 'brumeux', 'auto'] },
+    { text: 'flat white sky, very diffuse even light',        meteo: ['nuageux', 'auto'] },
+    { text: 'broken cloud, intermittent sunlight patches',    meteo: ['nuageux', 'soleil', 'auto'] },
+    { text: 'heavy overcast, grey sky, damp atmosphere',      meteo: ['pluie', 'nuageux', 'auto'] },
+    { text: 'flat grey light after recent rain',              meteo: ['pluie', 'auto'] },
+  ],
+  framing_emphasis: [
+    'foreground tools prominent, midground subject clear',
+    'balanced foreground and midground, no dominant element',
+    'midground as main subject, foreground detail secondary',
+    'wide establishing shot, full site context visible',
+  ],
+};
+
 function _hashSeed(str) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
@@ -4911,14 +5136,36 @@ function _pick(arr, n, seed) {
   return _seedShuffle(arr, seed).slice(0, Math.min(n, arr.length));
 }
 
+function _serviceGroup(matchedService) {
+  const s = (matchedService || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (/batterie|demarrage|boost/.test(s))             return 'batterie';
+  if (/crevaison|roue|pneu/.test(s))                  return 'crevaison';
+  if (/remorquage|remorque|transport|treuil/.test(s)) return 'remorquage';
+  if (/ouverture|ouvert/.test(s))                     return 'ouverture';
+  return 'default';
+}
+
 function _applySiteRealism(jsonStr, imageIndex) {
   let obj;
   try { obj = JSON.parse(jsonStr); } catch { return jsonStr; }
 
-  const sceneKey = obj._matched_key;
-  const realism  = SITE_REALISM[sceneKey];
-  const counts   = _REALISM_COUNTS[obj.state_level] || _REALISM_COUNTS.encours;
-  const seed     = _hashSeed(`${sceneKey || ''}${obj.state_level || ''}${imageIndex}`);
+  const sceneKey   = obj._matched_key;
+  const realismRaw = SITE_REALISM[sceneKey];
+  const counts     = _REALISM_COUNTS[obj.state_level] || _REALISM_COUNTS.encours;
+  const seed       = _hashSeed(`${sceneKey || ''}${obj.state_level || ''}${imageIndex}`);
+
+  // Dispatch: select sub-entry by service or contexte when _dispatch is set
+  let realism = realismRaw;
+  if (realismRaw) {
+    if (realismRaw._dispatch === 'service') {
+      const bucket = _serviceGroup(obj._matched_service);
+      realism = realismRaw[bucket] || realismRaw.default || null;
+    } else if (realismRaw._dispatch === 'contexte') {
+      realism = realismRaw[obj.contexte] || realismRaw.default || null;
+    }
+    // Inject context-specific description into work_type for PromptBuilder
+    if (realism && realism.scene_note) obj.work_type = realism.scene_note;
+  }
 
   // Camera defects — drawn from global library (2 common, rare at ~5%)
   const defects = _pick(CAMERA_DEFECTS_LIB.common, 2, seed + 3);
@@ -4934,6 +5181,37 @@ function _applySiteRealism(jsonStr, imageIndex) {
     obj.site_protections = _pick(realism.protections,      counts.protections, seed + 1);
     obj.site_details     = _pick(realism.chantier_details, counts.details,     seed + 2);
   }
+
+  return JSON.stringify(obj);
+}
+
+function _applyVariation(jsonStr, imageIndex) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return jsonStr; }
+
+  const seed = _hashSeed(
+    `${obj._matched_key || ''}|${obj._matched_service || ''}|${obj.location || ''}|${obj.state_level || ''}|${imageIndex}`
+  );
+
+  // Detect meteo from scene light string to filter compatible light variants
+  const lc = (obj.light || '').toLowerCase();
+  const meteo = /rain|wet surface|heavy cloud|dark heavy/.test(lc) ? 'pluie'
+              : /hazy milky|very low contrast/.test(lc)            ? 'brumeux'
+              : /overcast|grey|muted color/.test(lc)               ? 'nuageux'
+              : /bright|midday sun|blue sky/.test(lc)              ? 'soleil'
+              : 'auto';
+
+  // Camera angles — prefer variation_setting on WORK_SCENES entry over generic setting
+  const sceneKey = obj._matched_key;
+  const vSetting = (WORK_SCENES[sceneKey] || {}).variation_setting || obj.setting || 'exterior';
+  const angleLib = VARIATION_ENGINE.camera_angles[vSetting] || VARIATION_ENGINE.camera_angles.exterior;
+
+  // Light — only pick from options compatible with the chosen meteo
+  const lightLib = VARIATION_ENGINE.light_quality.filter(q => q.meteo.includes(meteo)).map(q => q.text);
+
+  obj.var_camera  = _pick(angleLib,                             1, seed     )[0] || null;
+  obj.var_light   = lightLib.length ? _pick(lightLib,          1, seed + 7 )[0] : null;
+  obj.var_framing = _pick(VARIATION_ENGINE.framing_emphasis,   1, seed + 13)[0] || null;
 
   return JSON.stringify(obj);
 }
@@ -4990,6 +5268,15 @@ const PromptBuilder = {
         return items.length ? `Scattered nearby: ${items.join('; ')}.` : '';
       })(),
 
+      // 11 — Camera viewpoint variation (VARIATION_ENGINE)
+      s.var_camera ? `Viewpoint: ${s.var_camera}.` : '',
+
+      // 12 — Light quality variation (VARIATION_ENGINE, meteo-filtered)
+      s.var_light ? `Lighting feel: ${s.var_light}.` : '',
+
+      // 13 — Roadside / scene context override (context_map dispatch)
+      s.roadside_context ? `Scene location: ${s.roadside_context}.` : '',
+
     ].filter(Boolean).join(' ');
   },
 };
@@ -5025,19 +5312,23 @@ function buildDallePromptV2(row) {
     pluie:   'dark heavy clouds, wet surfaces',
   }[row.meteo] || (isInt ? 'natural daylight from window' : city.light);
 
+  const roadContext = (work.context_map || {})[row.contexte] || null;
+
   return JSON.stringify({
-    photo_goal:      'work-progress documentation by French contractor, cheap Android smartphone',
-    location:        (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France',
-    work_type:       work.intro,
-    setting:         isInt ? 'interior' : 'exterior',
-    state:           stateData.description || stateKey,
-    state_level:     stateKey,
-    camera_position: work.camera,
-    framing:         stateData.framing || { work_pct: 55, foreground: '', midground: '', background: '' },
-    site_debris:     stateData.debris  || 'construction debris on site',
-    photo_defects:   work.photo_defects,
-    architecture:    city.arch,
-    light:           meteo,
+    photo_goal:        'work-progress documentation by French contractor, cheap Android smartphone',
+    location:          (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France',
+    work_type:         work.intro,
+    setting:           isInt ? 'interior' : 'exterior',
+    state:             stateData.description || stateKey,
+    state_level:       stateKey,
+    camera_position:   work.camera,
+    framing:           stateData.framing || { work_pct: 55, foreground: '', midground: '', background: '' },
+    site_debris:       stateData.debris  || 'construction debris on site',
+    photo_defects:     work.photo_defects,
+    architecture:      city.arch,
+    light:             meteo,
+    contexte:          row.contexte || 'maison',
+    roadside_context:  roadContext,
     exclude:           work.exclusions || [],
     no_people:         !work.hasWorkers,
     _matched_category: _lastMatch.matched_category,
@@ -5435,13 +5726,16 @@ async function generateAllImages() {
         // Step 1: apply SITE_REALISM (varies photo_defects + tools per image)
         const realistScene = _applySiteRealism(jsonScene, i);
 
+        // Step 1b: apply VARIATION_ENGINE (varies viewpoint + light per image)
+        const variedScene  = _applyVariation(realistScene, i);
+
         // Step 2: build image prompt — PromptBuilder (deterministic) or GPT rewrite (fallback)
         let prompt;
         if (_USE_PROMPT_BUILDER) {
-          prompt = PromptBuilder.build(realistScene);
+          prompt = PromptBuilder.build(variedScene);
         } else {
           progressLbl.textContent = `Planification scène ${done + 1}/${total}…`;
-          prompt = await _rewritePromptWithGPT(realistScene, key);
+          prompt = await _rewritePromptWithGPT(variedScene, key);
         }
 
         // Step 2: generate image
