@@ -3792,6 +3792,75 @@ const WORK_SCENES = {
     },
   },
 
+  nettoyage_gouttieres: {
+    category:         'nettoyage',
+    priority:         5,
+    service_keywords: [
+      { phrase: 'nettoyage gouttieres',    score: 15 },
+      { phrase: 'nettoyage gouttiere',     score: 15 },
+      { phrase: 'debouchage gouttieres',   score: 15 },
+      { phrase: 'debouchage gouttiere',    score: 15 },
+      { phrase: 'curage gouttieres',       score: 14 },
+      { phrase: 'curage gouttiere',        score: 14 },
+      { phrase: 'gouttieres',              score: 9  },
+      { phrase: 'gouttiere',               score: 9  },
+    ],
+    exclude_if: [],
+    intro:      'gutter cleaning and unblocking at a residential house',
+    setting:    'exterior',
+    secteur:    'gutter cleaning specialist',
+    hasWorkers: false,
+    camera:     'standing in the garden or driveway, looking upward toward the gutters and eave edge, 4–8 m from the house',
+    materials:  ['clogged gutter full of dead leaves, wet moss and twigs', 'dark wet stains on the facade below the downpipe outlet', 'downpipe visible at the corner of the house'],
+    photo_defects: [
+      'slight overexposure on the pale wall surface below the roofline',
+      'JPEG compression noise on the gutter texture and leaf debris',
+    ],
+    exclusions: ['ladders', 'workers', 'people', 'safety harnesses', 'pressure washer machine', 'hoses', 'tools held by hand', 'terrace', 'ground surface as main subject'],
+    states: {
+      debut: {
+        framing: {
+          work_pct:   45,
+          foreground: 'house facade and downpipe at the corner, dark wet stain marks on the wall below the blocked gutter outlet',
+          midground:  'gutter along the eave fully clogged — thick layer of compacted dead leaves, green moss and wet debris visible from below, overflowing at one corner',
+          background: 'roofline, chimney or adjoining rooftop, pale sky',
+        },
+        debris:      'leaves, wet moss and twigs spilling over the gutter edge, dark water stain on the facade below the downpipe',
+        description: 'Gutter cleaning not yet started. The gutter is heavily clogged with compacted leaves and moss, visible from below. Dark water stains mark the facade beneath the blocked downpipe outlet.',
+      },
+      encours: {
+        framing: {
+          work_pct:   55,
+          foreground: 'house facade and downpipe, small pile of leaves and wet debris on the ground directly below the cleared gutter section',
+          midground:  'gutter partially cleared — one section clean and empty, adjacent section still filled with matted wet leaves and moss',
+          background: 'roofline, chimney, pale sky',
+        },
+        debris:      'wet leaves and moss clumps on the ground below the cleared gutter section, dark water stain fading on the facade',
+        description: 'Gutter cleaning in progress. One section is clear, the remaining stretch still holds compacted debris. A pile of wet leaves and moss sits on the ground below the cleared portion.',
+      },
+      semifinal: {
+        framing: {
+          work_pct:   55,
+          foreground: 'house facade and downpipe — water stain on wall mostly faded, small leaf residue on ground near the drain outlet',
+          midground:  'gutter nearly clear — a few leaf patches remaining at one end near the downpipe joint or bracket, most of the trough now visibly empty',
+          background: 'clean roofline, sky, chimney',
+        },
+        debris:      'last small clumps of wet leaves and grit near the gutter bracket — almost done',
+        description: 'Almost complete. The gutter is mostly clear, with a small patch of debris remaining near the downpipe joint. The facade water stain has largely faded.',
+      },
+      final: {
+        framing: {
+          work_pct:   60,
+          foreground: 'clean house facade and downpipe — no stains below the gutter outlet, clean ground at the base of the downpipe',
+          midground:  'gutter fully clear and empty along the entire eave — clean trough visible, brackets well spaced, downpipe running straight to the ground drain',
+          background: 'clean roofline, chimney, pale sky',
+        },
+        debris:      'none — gutters clear, facade clean, ground tidy below the downpipe',
+        description: 'Gutter cleaning complete. The gutter is fully clear along the entire eave. The facade is clean, the downpipe is unobstructed, and the ground drain is clear.',
+      },
+    },
+  },
+
   nettoyage: {
     category:         'nettoyage',
     priority:         4,
@@ -3800,8 +3869,6 @@ const WORK_SCENES = {
       { phrase: 'nettoyage terrasse',     score: 13 },
       { phrase: 'nettoyage dallage',      score: 13 },
       { phrase: 'nettoyage paves',        score: 13 },
-      { phrase: 'nettoyage gouttieres',   score: 13 },
-      { phrase: 'nettoyage gouttiere',    score: 13 },
       { phrase: 'traitement antimousse',  score: 12 },
       { phrase: 'traitement anti-mousse', score: 12 },
       { phrase: 'traitement anti mousse', score: 12 },
@@ -4226,7 +4293,7 @@ function _getWorkDetail(travaux) {
   const t = (travaux || '').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-  let best = null, bestFinal = 0, bestCat = null, bestPhrases = [];
+  let best = null, bestKey = null, bestFinal = 0, bestCat = null, bestPhrases = [];
 
   for (const [name, scene] of Object.entries(WORK_SCENES)) {
     const excluded = (scene.exclude_if || []).some(rule => {
@@ -4244,13 +4311,14 @@ function _getWorkDetail(travaux) {
 
     const finalScore = score + (scene.priority || 1) * 0.1;
     if (finalScore > bestFinal) {
-      bestFinal = finalScore; best = scene;
+      bestFinal = finalScore; best = scene; bestKey = name;
       bestCat = scene.category || name; bestPhrases = matched;
     }
   }
 
   _lastMatch = {
     matched_category: bestCat || '(fallback)',
+    matched_key:      bestKey || '(fallback)',
     matched_service:  bestPhrases[0] || (travaux || ''),
     match_score:      Math.round(bestFinal * 10) / 10,
   };
@@ -4376,6 +4444,99 @@ const PHOTO_STYLE_RULES = {
           + ' Room illuminated by natural window light and ambient ceiling lamp.',
 };
 
+// ─── SITE REALISM — Étape A stub (Étape B complètera les 13 métiers) ─────────
+// Keyed by WORK_SCENES entry name (_matched_key in SceneJSON).
+const SITE_REALISM = {
+  nettoyage_toiture: {
+    tools:            ['backpack sprayer with lance', 'telescopic cleaning lance', 'soft roof brush', 'empty treatment bucket'],
+    protections:      ['protective tarp draped under the eave edge', 'plastic sheet covering the garden beds below'],
+    chantier_details: ['small pile of wet moss on the driveway', 'dark water stain on the facade below the gutter', 'empty treatment container near the downpipe'],
+  },
+  nettoyage_gouttieres: {
+    tools:            ['folded protective tarp beside the house', 'empty bucket near the downpipe base', 'soft brush resting against the wall'],
+    protections:      ['plastic sheet covering the flower bed below the gutter'],
+    chantier_details: ['small pile of wet leaves on the ground', 'dark water stain on the facade below the outlet', 'leaf debris near the drain grate'],
+  },
+  carrelage: {
+    tools:            ['notched trowel resting on tile stack', 'tile spacers scattered on the floor', 'levelling system clips on the ground', 'grout bucket with sponge'],
+    protections:      ['cardboard sheet protecting finished tiles near the doorway', 'masking tape along the skirting board'],
+    chantier_details: ['tile offcuts near the wall', 'grout residue on the subfloor edge', 'empty tile box flattened near the room entrance'],
+  },
+};
+
+const CAMERA_DEFECTS_LIB = {
+  common: [
+    'slight horizon tilt',
+    'mild overexposure in bright areas',
+    'light JPEG compression artifacts',
+    'slight barrel distortion at edges',
+    'muted color saturation',
+    'minor motion blur on foreground detail',
+  ],
+  rare: [
+    'finger partially visible at frame corner',
+    'obvious lens smudge on one side',
+    'water droplet on lens surface',
+  ],
+};
+
+const _REALISM_COUNTS = {
+  debut:     { tools: 3, protections: 2, details: 2 },
+  encours:   { tools: 2, protections: 1, details: 2 },
+  semifinal: { tools: 1, protections: 0, details: 1 },
+  final:     { tools: 0, protections: 0, details: 1 },
+};
+
+function _hashSeed(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  return Math.abs(h);
+}
+
+function _seedShuffle(arr, seed) {
+  const a = arr.slice();
+  let s = seed >>> 0;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = Math.imul(s ^ (s >>> 16), 0x45d9f3b) >>> 0;
+    s = (s ^ (s >>> 11)) >>> 0;
+    const j = s % (i + 1);
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function _pick(arr, n, seed) {
+  if (!arr || !arr.length || n <= 0) return [];
+  return _seedShuffle(arr, seed).slice(0, Math.min(n, arr.length));
+}
+
+function _applySiteRealism(jsonStr, imageIndex) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return jsonStr; }
+
+  const sceneKey = obj._matched_key;
+  const realism  = SITE_REALISM[sceneKey];
+  const counts   = _REALISM_COUNTS[obj.state_level] || _REALISM_COUNTS.encours;
+  const seed     = _hashSeed(`${sceneKey || ''}${obj.state_level || ''}${imageIndex}`);
+
+  // Camera defects — drawn from global library (2 common, rare at ~5%)
+  const defects = _pick(CAMERA_DEFECTS_LIB.common, 2, seed + 3);
+  if (_hashSeed(`${sceneKey}${imageIndex}rare`) % 20 === 0) {
+    const rare = _pick(CAMERA_DEFECTS_LIB.rare, 1, seed + 4);
+    if (rare.length) defects.push(rare[0]);
+  }
+  obj.photo_defects = defects;
+
+  // Realism layer — only when scene has data (graceful stub passthrough)
+  if (realism) {
+    obj.site_tools       = _pick(realism.tools,            counts.tools,       seed);
+    obj.site_protections = _pick(realism.protections,      counts.protections, seed + 1);
+    obj.site_details     = _pick(realism.chantier_details, counts.details,     seed + 2);
+  }
+
+  return JSON.stringify(obj);
+}
+
 const PromptBuilder = {
   build(jsonStr) {
     const s   = JSON.parse(jsonStr);
@@ -4415,6 +4576,18 @@ const PromptBuilder = {
       s.no_people
         ? 'Empty worksite — no workers or people in the scene.'
         : 'Workers in casual work clothes visible on site.',
+
+      // 9 — Tools and protections (SITE_REALISM — max 2 combined)
+      (() => {
+        const items = [...(s.site_tools || []), ...(s.site_protections || [])].slice(0, 2);
+        return items.length ? `Visible on site: ${items.join(', ')}.` : '';
+      })(),
+
+      // 10 — Site details (SITE_REALISM — max 2)
+      (() => {
+        const items = (s.site_details || []).slice(0, 2);
+        return items.length ? `Scattered nearby: ${items.join('; ')}.` : '';
+      })(),
 
     ].filter(Boolean).join(' ');
   },
@@ -4467,6 +4640,7 @@ function buildDallePromptV2(row) {
     exclude:           work.exclusions || [],
     no_people:         !work.hasWorkers,
     _matched_category: _lastMatch.matched_category,
+    _matched_key:      _lastMatch.matched_key,
     _matched_service:  _lastMatch.matched_service,
     _match_score:      _lastMatch.match_score,
   }, null, 2);
@@ -4857,13 +5031,16 @@ async function generateAllImages() {
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
-        // Step 1: build image prompt — PromptBuilder (deterministic) or GPT rewrite (fallback)
+        // Step 1: apply SITE_REALISM (varies photo_defects + tools per image)
+        const realistScene = _applySiteRealism(jsonScene, i);
+
+        // Step 2: build image prompt — PromptBuilder (deterministic) or GPT rewrite (fallback)
         let prompt;
         if (_USE_PROMPT_BUILDER) {
-          prompt = PromptBuilder.build(jsonScene);
+          prompt = PromptBuilder.build(realistScene);
         } else {
           progressLbl.textContent = `Planification scène ${done + 1}/${total}…`;
-          prompt = await _rewritePromptWithGPT(jsonScene, key);
+          prompt = await _rewritePromptWithGPT(realistScene, key);
         }
 
         // Step 2: generate image
