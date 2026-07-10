@@ -4721,6 +4721,110 @@ const SITE_REALISM = {
     _dispatch: 'contexte',
 
     maison: {
+      _trigger_service: 'fuit|reparation|infiltrat',
+      scenarios: [
+        {
+          scene_note: 'chimney flashing repair on a pitched tiled roof — zinc solin being refitted around the chimney base, localized repair, rest of the roof untouched',
+          tools: [
+            'zinc flashing strip cut to length resting against the chimney foot',
+            'tube of bituminous sealant with nozzle on the tile near the chimney',
+            'tin snips resting on the tile beside the chimney base',
+            'small hand trowel on the tile at the mortar joint',
+          ],
+          protections: [
+            'knee pad on the tile surface at the chimney work area',
+          ],
+          chantier_details: [
+            'cracked old mortar at the chimney base partially removed',
+            'new zinc strip held in place at the chimney foot with a temporary clamp',
+            'small pile of old sealant removed from the joint beside the chimney',
+            'two tiles lifted to allow the flashing to slide underneath',
+          ],
+        },
+        {
+          scene_note: 'Velux or roof window resealing on a pitched tiled roof — peel-and-stick flashing membrane applied around the window frame, localized repair, rest of the roof untouched',
+          tools: [
+            'peel-and-stick flashing tape strip beside the window frame',
+            'tube of silicone sealant with nozzle on the tile near the frame',
+            'putty knife resting on the tile near the window edge',
+          ],
+          protections: [
+            'protective foam strip along the window frame contact edge',
+          ],
+          chantier_details: [
+            'old dried sealant removed around the window frame edge',
+            'new sealant bead partially applied along one frame side',
+            'flashing kit cardboard packaging beside the window on the tile surface',
+            'two lifted tiles resting aside the window frame',
+          ],
+        },
+        {
+          scene_note: 'valley (noue) repair on a pitched tiled roof — new zinc valley strip being positioned in the roof valley, tiles around the valley left intact',
+          tools: [
+            'zinc valley strip resting in the noue ready to be positioned',
+            'tin snips on the tile surface beside the valley top',
+            'hammer and roofing nails on the tile near the valley',
+          ],
+          protections: [
+            'knee pad on the tile surface at the valley edge',
+          ],
+          chantier_details: [
+            'old valley debris — compacted moss and leaf fragments — cleared to one side',
+            'new zinc strip being positioned along the valley channel',
+            'a few lifted tiles stacked aside the valley line',
+            'old corroded zinc strip removed and set aside on the tile surface',
+          ],
+        },
+        {
+          scene_note: 'wall-to-roof junction repair on a pitched tiled roof — membrane strip being pressed along the wall foot at the tile edge, small localized repair zone only',
+          tools: [
+            'tube of bitumen mastic with nozzle at the wall base',
+            'putty knife at the wall-roof junction',
+            'membrane strip cut to length resting against the wall foot',
+          ],
+          protections: [
+            'protective plastic sheet on the adjacent tiles near the wall',
+          ],
+          chantier_details: [
+            'old flashing peeled back at the wall-roof junction',
+            'new membrane strip being pressed along the wall base',
+            'small bucket of bitumen primer beside the repair zone',
+            'a few lifted tiles resting against the wall beside the repair area',
+          ],
+        },
+        {
+          scene_note: 'gable edge (rive) repair on a pitched tiled roof — gable tile resealed and refitted at the roof verge, small localized repair',
+          tools: [
+            'tube of roofing sealant with nozzle at the gable tile joint',
+            'small putty knife on the tile surface near the gable edge',
+          ],
+          protections: [],
+          chantier_details: [
+            'displaced gable tile resting beside the repair zone on the tile surface',
+            'old mortar chunks on the tile near the gable edge',
+            'new sealant bead applied along the gable tile joint',
+          ],
+        },
+        {
+          scene_note: 'localized tile replacement with waterproofing on a pitched tiled roof — two or three cracked tiles being swapped, new tiles with sealant bead, rest of the roof intact',
+          tools: [
+            'tile lifter resting on the tile surface at the repair zone',
+            '2 or 3 replacement tiles stacked beside the repair area',
+            'hammer and roofing nails on the tile near the lifted zone',
+            'tube of roofing sealant beside the new tiles',
+          ],
+          protections: [
+            'knee pad on the tile surface near the repair area',
+          ],
+          chantier_details: [
+            'old cracked tile set aside on the tile surface nearby',
+            'small exposed area showing the roof batten',
+            'new tiles positioned ready to slide into place',
+            'tile lifter wedge visible under the adjacent tile edge',
+          ],
+        },
+      ],
+      // Fallback: flat small roof (no fuite/réparation trigger match)
       scene_note: 'waterproofing work on a small accessible flat roof — house extension, garage top, or low terrace of a residential house, garden visible below the low parapet',
       tools: [
         'seam roller resting on the membrane surface at the last lap joint',
@@ -5162,6 +5266,16 @@ function _applySiteRealism(jsonStr, imageIndex) {
       realism = realismRaw[bucket] || realismRaw.default || null;
     } else if (realismRaw._dispatch === 'contexte') {
       realism = realismRaw[obj.contexte] || realismRaw.default || null;
+    }
+    // Level 3: scenario pool — seed-pick by sub-service trigger
+    if (realism && Array.isArray(realism.scenarios)) {
+      const trigger = realism._trigger_service;
+      const svc = (obj._matched_service || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      if (!trigger || new RegExp(trigger).test(svc)) {
+        const scenSeed = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}`);
+        const picked = _pick(realism.scenarios, 1, scenSeed)[0];
+        if (picked) realism = Object.assign({}, realism, picked);
+      }
     }
     // Inject context-specific description into work_type for PromptBuilder
     if (realism && realism.scene_note) obj.work_type = realism.scene_note;
