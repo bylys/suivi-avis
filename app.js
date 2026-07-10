@@ -4724,7 +4724,16 @@ const SITE_REALISM = {
       _trigger_service: 'fuit|reparation|infiltrat',
       scenarios: [
         {
-          scene_note: 'chimney flashing repair on a pitched tiled roof — zinc solin being refitted around the chimney base, localized repair, rest of the roof untouched',
+          scene_note:    'chimney flashing (solin) repair on a pitched tiled roof — zinc strip being refitted around the chimney base, localized repair zone only, rest of the roof untouched',
+          scene_camera:  'crouching on the roof slope close to the chimney, framing the chimney base and the surrounding tiles — chimney occupies the centre of frame',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'chimney base and the zinc flashing strip being refitted — mortar joint and tile edge visible',
+            midground:  'a few surrounding tiles on the pitched slope, roof continuing normally in both directions',
+            background: 'naturally weathered tiled roof slope and open sky — no flat membrane, no parapet, no rooftop equipment',
+          },
+          scene_debris:  'small pile of old mortar chips on the tile beside the chimney base',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'rooftop technical equipment', 'large flat roof expanse', 'bitumen membrane roll'],
           tools: [
             'zinc flashing strip cut to length resting against the chimney foot',
             'tube of bituminous sealant with nozzle on the tile near the chimney',
@@ -4742,7 +4751,16 @@ const SITE_REALISM = {
           ],
         },
         {
-          scene_note: 'Velux or roof window resealing on a pitched tiled roof — peel-and-stick flashing membrane applied around the window frame, localized repair, rest of the roof untouched',
+          scene_note:    'Velux or roof window resealing on a pitched tiled roof — peel-and-stick flashing being applied around the window frame, localized repair, rest of the roof untouched',
+          scene_camera:  'crouching on the roof slope beside the Velux window, framing the window frame and the adjacent tiles — window frame fills the centre of frame',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'Velux frame corner and the new peel-and-stick flashing strip or sealant bead being applied',
+            midground:  'tiles surrounding the window on the pitched slope, roof continuing normally',
+            background: 'tiled roof slope extending away and open sky — no flat membrane, no parapet',
+          },
+          scene_debris:  'strip of old dried sealant removed from the frame edge, lying on the adjacent tile',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'rooftop technical equipment', 'large flat roof expanse', 'bitumen membrane roll'],
           tools: [
             'peel-and-stick flashing tape strip beside the window frame',
             'tube of silicone sealant with nozzle on the tile near the frame',
@@ -4755,11 +4773,20 @@ const SITE_REALISM = {
             'old dried sealant removed around the window frame edge',
             'new sealant bead partially applied along one frame side',
             'flashing kit cardboard packaging beside the window on the tile surface',
-            'two lifted tiles resting aside the window frame',
+            'two lifted tiles resting beside the window frame',
           ],
         },
         {
-          scene_note: 'valley (noue) repair on a pitched tiled roof — new zinc valley strip being positioned in the roof valley, tiles around the valley left intact',
+          scene_note:    'valley (noue) repair on a pitched tiled roof — new zinc valley strip being positioned between two roof slopes, tiles around the valley left intact',
+          scene_camera:  'crouching at the junction of two roof slopes, framing the valley channel running down between the two tile surfaces',
+          scene_framing: {
+            work_pct:   60,
+            foreground: 'zinc valley strip being laid into the noue channel between two tile surfaces',
+            midground:  'tiles on either side of the valley, a few lifted to allow the new zinc to seat properly',
+            background: 'two meeting tiled pitches and open sky — no flat membrane, no parapet',
+          },
+          scene_debris:  'old corroded zinc strip removed and placed beside the valley, leaf and moss debris cleared to one side',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'rooftop technical equipment', 'large flat roof expanse', 'bitumen membrane roll'],
           tools: [
             'zinc valley strip resting in the noue ready to be positioned',
             'tin snips on the tile surface beside the valley top',
@@ -4776,7 +4803,16 @@ const SITE_REALISM = {
           ],
         },
         {
-          scene_note: 'wall-to-roof junction repair on a pitched tiled roof — membrane strip being pressed along the wall foot at the tile edge, small localized repair zone only',
+          scene_note:    'wall-to-roof junction repair on a pitched tiled roof — membrane strip or mastic bead applied at the wall base where it meets the tile surface, small localized zone only',
+          scene_camera:  'crouching at the base of a wall where it meets the roof slope, framing the wall-to-tile junction — wall fills one side of the frame, tiles the other',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'membrane strip or mastic bead being pressed along the wall base at the tile edge — a few tiles lifted beside the wall',
+            midground:  'house wall surface and adjacent pitched roof tiles, repair zone compact',
+            background: 'house wall above and tiled roof slope to the side — no flat membrane, no parapet',
+          },
+          scene_debris:  'old flashing debris removed from the wall base lying on the tile beside the repair zone',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'rooftop technical equipment', 'large flat roof expanse', 'bitumen membrane roll'],
           tools: [
             'tube of bitumen mastic with nozzle at the wall base',
             'putty knife at the wall-roof junction',
@@ -4793,7 +4829,16 @@ const SITE_REALISM = {
           ],
         },
         {
-          scene_note: 'gable edge (rive) repair on a pitched tiled roof — gable tile resealed and refitted at the roof verge, small localized repair',
+          scene_note:    'gable edge (rive) repair on a pitched tiled roof — gable tile being resealed and refitted at the roof verge, small localized repair',
+          scene_camera:  'standing or crouching at the gable end of the roof, framing the verge edge and the gable tile joint',
+          scene_framing: {
+            work_pct:   60,
+            foreground: 'gable tile being resealed — sealant nozzle or putty knife at the gable tile joint',
+            midground:  'roof slope tiles running back from the gable edge',
+            background: 'gable wall below and tiled roof surface extending away, open sky — no flat membrane, no parapet',
+          },
+          scene_debris:  'old mortar chunks on the tile near the gable edge, displaced gable tile beside the repair zone',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'rooftop technical equipment', 'large flat roof expanse', 'bitumen membrane roll'],
           tools: [
             'tube of roofing sealant with nozzle at the gable tile joint',
             'small putty knife on the tile surface near the gable edge',
@@ -4806,7 +4851,16 @@ const SITE_REALISM = {
           ],
         },
         {
-          scene_note: 'localized tile replacement with waterproofing on a pitched tiled roof — two or three cracked tiles being swapped, new tiles with sealant bead, rest of the roof intact',
+          scene_note:    'localized tile replacement with waterproofing on a pitched tiled roof — two or three cracked tiles being swapped out, new tiles positioned, rest of the roof intact',
+          scene_camera:  'crouching on the roof slope at the repair area, close view of the small tile opening and the replacement tiles beside it',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'small open section of roof batten briefly visible where old tiles were removed, two new replacement tiles positioned ready to slide in',
+            midground:  'surrounding intact tiles on the pitched slope, tile lifter wedge under an adjacent tile edge',
+            background: 'tiled roof slope continuing normally, open sky — no flat membrane, no parapet',
+          },
+          scene_debris:  'old cracked tile placed beside the repair area, tile dust on the surrounding tile surface',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'rooftop technical equipment', 'large flat roof expanse', 'bitumen membrane roll'],
           tools: [
             'tile lifter resting on the tile surface at the repair zone',
             '2 or 3 replacement tiles stacked beside the repair area',
@@ -5274,7 +5328,13 @@ function _applySiteRealism(jsonStr, imageIndex) {
       if (!trigger || new RegExp(trigger).test(svc)) {
         const scenSeed = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}`);
         const picked = _pick(realism.scenarios, 1, scenSeed)[0];
-        if (picked) realism = Object.assign({}, realism, picked);
+        if (picked) {
+          realism = Object.assign({}, realism, picked);
+          if (realism.scene_camera)  obj.camera_position = realism.scene_camera;
+          if (realism.scene_framing) obj.framing          = realism.scene_framing;
+          if (realism.scene_debris)  obj.site_debris      = realism.scene_debris;
+          if (Array.isArray(realism.scene_exclude)) obj.exclude = [...(obj.exclude || []), ...realism.scene_exclude];
+        }
       }
     }
     // Inject context-specific description into work_type for PromptBuilder
