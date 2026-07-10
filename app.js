@@ -3742,12 +3742,12 @@ const WORK_SCENES = {
     secteur:    'roof cleaning specialist',
     hasWorkers: false,
     camera:     'standing in the driveway or garden, 6–10 m from the house, looking up at the roof pitch',
-    materials:  ['green moss residue on old tiles', 'protective tarp fixed along the eave edge collecting treatment runoff', 'wet terracotta or slate surface'],
+    materials:  ['uniform single-material roof covering — same tile type, same aging, same color on every visible slope', 'green moss residue on old tiles', 'wet terracotta or slate surface'],
     photo_defects: [
       'slight overexposure on pale sky above the roofline',
       'JPEG compression noise on the granular texture of wet tiles',
     ],
-    exclusions: ['ladders', 'pressure washer machine', 'hoses', 'workers', 'people', 'safety harnesses', 'broken tiles', 'exposed battens'],
+    exclusions: ['ladders', 'pressure washer machine', 'hoses', 'workers', 'people', 'safety harnesses', 'broken tiles', 'exposed battens', 'two different tile types on same slope', 'mixed roofing materials on same pitch', 'patchwork roof texture', 'new tiles mixed with old tiles on same slope', 'roof appearing reconstructed or partially replaced'],
     states: {
       debut: {
         framing: {
@@ -3762,11 +3762,11 @@ const WORK_SCENES = {
       encours: {
         framing: {
           work_pct:   55,
-          foreground: 'protective tarp fixed along the full eave edge — green treatment runoff channelled into the tarp, facade covered and protected below',
+          foreground: 'protective tarp fixed along the full eave edge — light water runoff collecting in the tarp fold, facade covered and protected below',
           midground:  'pitched roof half cleaned — one full slope or half the surface showing restored uniform tile colour, the other slope still dark with heavy moss',
           background: 'chimney, gutters visible along the eave, neighbouring slate or tile rooftops, pale sky',
         },
-        debris:      'green water collecting in the tarp below the cleaned slope, wet moss residue at the tarp edge on the driveway',
+        debris:      'wet moss clumps fallen onto the tarp surface, small puddle in the tarp fold at the driveway edge',
         description: 'Half the roof is clean. The contrast between the bright restored tiles and the still-mossy dark slope is very clear. Active professional work.',
       },
       semifinal: {
@@ -4464,7 +4464,7 @@ const SITE_REALISM = {
     ],
     chantier_details: [
       'small pile of wet dislodged moss on the driveway at the tarp edge',
-      'green water pooling in the tarp channel below the eave',
+      'small puddle of water in the tarp fold below the eave edge',
       'empty treatment container cap on the ground near the sprayer',
       'wet footprints on the concrete path leading away from the house',
       'faint grey moisture ring on the lower wall near the downpipe base',
@@ -4532,6 +4532,277 @@ const SITE_REALISM = {
       'empty tile box flattened near the room entrance',
       'damp grouting sponge and small water bucket near the recently grouted section',
       'pencil reference line marked on the wall at tile height',
+    ],
+  },
+
+  abattage: {
+    tools: [
+      'guide stake driven into the ground at the calculated fall direction',
+      'measuring tape on the ground near the base of the tree',
+      'rope coil resting at the base for directional pull',
+      'hand saw resting against a cut lower branch',
+      'wedge blocks on the ground near the trunk base',
+    ],
+    protections: [
+      'yellow safety tape marking the exclusion zone around the felling area',
+      'tarp spread on the ground at the expected landing zone',
+    ],
+    chantier_details: [
+      'fresh wood chips scattered on the ground at the base of the tree',
+      'cut branch sections stacked in a pile nearby',
+      'sap mark on the freshly exposed cut end of a branch',
+      'sawdust pile at the base of the trunk',
+      'small root fragment disturbed and exposed at the base of the tree',
+    ],
+  },
+
+  peinture: {
+    tools: [
+      'paint roller with extension pole resting against the wall',
+      'flat brush balanced on the edge of an open paint can',
+      'roller tray with paint residue on the floor',
+      'stir stick resting on the paint can lid',
+      'masking tape roll on the floor near the skirting board',
+      'small paint scraper on the windowsill',
+    ],
+    protections: [
+      'canvas drop cloth spread across the floor below the painted wall',
+      'plastic sheeting draped over furniture or adjacent built-in fixtures',
+      'masking tape strip along the ceiling junction or skirting board edge',
+    ],
+    chantier_details: [
+      'paint drip marks on the drop cloth below the working section',
+      'fresh wet brush stroke visible at the unpainted edge of the wall',
+      'empty paint tin beside the opened one on the floor',
+      'roller texture marks visible near the unpainted corner',
+      'crumpled painter tape strip on the drop cloth',
+    ],
+  },
+
+  ravalement: {
+    tools: [
+      'hawk and trowel resting against the wall at the work section',
+      'plastic mixing bucket with mortar residue beside the wall base',
+      'mixing paddle leaning against the bucket handle',
+      'spray bottle for dampening the substrate on the ground nearby',
+      'straight edge rule leaning against the freshly rendered panel',
+    ],
+    protections: [
+      'plastic sheeting draped and taped over the window opening',
+      'wooden board protecting the garden bed at the base of the wall',
+      'kraft paper strip taped along the window frame edge',
+    ],
+    chantier_details: [
+      'fresh render patch on the facade showing trowel lines still wet',
+      'empty mortar bag folded on the ground near the wall base',
+      'chalk reference marks on the wall showing render depth guide lines',
+      'mortar splash marks on the concrete apron at the wall base',
+      'water bucket with a sponge resting on the rim beside the wall',
+    ],
+  },
+
+  plomberie: {
+    tools: [
+      'pipe wrench on the floor near the open pipe connection',
+      'adjustable spanner resting on a nearby surface',
+      'PTFE thread seal tape reel on the work area beside the fitting',
+      'pipe offcut beside the new connection point',
+      'pipe cutter tool resting on the subfloor nearby',
+    ],
+    protections: [
+      'absorbent mat on the floor below the pipe connection point',
+      'small plastic bucket placed under the disconnected pipe end',
+    ],
+    chantier_details: [
+      'thread seal tape strip near the pipe fitting on the floor',
+      'pipe compression fitting cap on the floor beside the work area',
+      'putty residue mark on the subfloor below the connection',
+      'copper pipe end cap resting on the subfloor',
+      'small damp mark on the floor from water draining during disconnection',
+    ],
+  },
+
+  nettoyage: {
+    tools: [
+      'high-pressure lance resting against the wall between uses',
+      'high-pressure hose coiled on the ground nearby',
+      'nozzle fitting resting on a step or ledge',
+      'trigger handle for the pressure washer resting on the coiled hose',
+    ],
+    protections: [
+      'plastic bag tied over a nearby electrical outlet or exterior socket',
+      'garden furniture moved aside and covered with a tarp',
+    ],
+    chantier_details: [
+      'dark wet cleaning line on the surface marking the border between cleaned and uncleaned areas',
+      'dirty water runoff channel on the terrace or driveway leading to the drain',
+      'leaf and grit debris pushed to the untreated edge',
+      'wet footprints on the path leading away from the cleaned surface',
+      'puddle of dark water near the drain grate',
+    ],
+  },
+
+  etancheite: {
+    tools: [
+      'seam roller resting on the membrane surface at the last worked lap joint',
+      'bitumen primer can with brush resting on top near the edge',
+      'utility knife beside the trimmed membrane roll',
+      'tape measure resting on the substrate beside the chalk line',
+      'small gas torch cylinder resting on the substrate nearby',
+    ],
+    protections: [
+      'protective board placed over the existing membrane at the access point',
+      'plastic cap over the roof drain during membrane application',
+    ],
+    chantier_details: [
+      'trimmed membrane offcuts stacked near the parapet edge',
+      'empty bitumen primer can on the substrate surface',
+      'seam tape strip at the lap joint overlap',
+      'chalk snap line across the substrate showing the membrane layout',
+      'scrap membrane piece used as knee pad near the last worked seam',
+    ],
+  },
+
+  terrassement: {
+    tools: [
+      'shovel stuck vertically into the fresh earth pile',
+      'pickaxe resting against a fence post or stake',
+      'wheelbarrow with fresh earth parked at the trench edge',
+      'compacting tamper resting on its flat head beside the trench',
+    ],
+    protections: [
+      'orange safety mesh stretched across the open trench at ground level',
+      'wooden planks bridging the trench at the pedestrian access point',
+    ],
+    chantier_details: [
+      'fresh earth pile at the trench edge with soil profile visible',
+      'gravel or aggregate exposed at the bottom of the cut',
+      'boot prints in the fresh mud at the trench edge',
+      'soil marks on the adjacent concrete path from boot traffic',
+      'small stone or root section dug from the excavation beside the pile',
+    ],
+  },
+
+  depannage_auto: {
+    tools: [
+      'reflective warning triangle placed on the ground behind the vehicle',
+      'hydraulic jack positioned under the vehicle sill point',
+      'lug wrench on the ground beside the wheel',
+      'torch or flashlight resting on the wheel arch',
+    ],
+    protections: [
+      'reflective safety vest folded on the car roof or bonnet',
+      'warning cone placed on the road behind the vehicle',
+    ],
+    chantier_details: [
+      'flat tyre leaning against the car body near the wheel arch',
+      'wheel nuts grouped on the ground beside the removed tyre',
+      'oil mark on the ground beneath the engine bay',
+      'gravel disturbed beside the parking spot near the jack point',
+      'empty tyre pressure gauge on the ground near the spare',
+    ],
+  },
+
+  paysagiste: {
+    tools: [
+      'garden stake driven into the soil at a planting mark',
+      'long-handled edging spade resting against the fence post',
+      'hand trowel on the ground beside a freshly dug planting hole',
+      'wheelbarrow with topsoil parked at the border edge',
+      'string line pulled taut between two stakes defining the bed edge',
+    ],
+    protections: [
+      'horticultural weed-control fabric spread on the adjacent planted bed',
+      'wooden board placed flat on a planted section to avoid foot compression',
+    ],
+    chantier_details: [
+      'fresh topsoil heap at the edge of the new planting area',
+      'empty plant pot with nursery label on the ground nearby',
+      'mulch pile at the border edge ready to be spread',
+      'small stone or pebble sample near the path edge',
+      'water puddle in the freshly turned topsoil near the planting hole',
+    ],
+  },
+
+  vitrier: {
+    tools: [
+      'suction cup lifting handle resting on the windowsill',
+      'glass cutter resting beside the scored glass piece on the floor',
+      'putty knife resting on the ledge beside the window frame',
+      'caulk gun on the floor near the frame base',
+      'plastic glazing bead strip on the floor beside the opening',
+    ],
+    protections: [
+      'protective rubber mat on the windowsill to prevent glass scratching',
+      'cardboard sheet on the floor directly below the window opening',
+    ],
+    chantier_details: [
+      'glass offcut resting against the wall at the base near the window',
+      'strip of old putty or sealant on the floor from the removed pane',
+      'caulk bead residue visible on the frame edge',
+      'small plastic shim wedge near the base of the installed glass',
+      'empty silicone tube beside the caulk gun on the floor',
+    ],
+  },
+
+  'élagage': {
+    tools: [
+      'telescopic pruning pole leaning against the tree trunk',
+      'lopper handles resting on the ground near the tree base',
+      'hand pruning saw resting on a cut branch stub',
+      'branch hook resting against the trunk',
+    ],
+    protections: [
+      'tarp spread below the canopy to catch cut branches and leaf debris',
+      'yellow safety tape marking the drop zone around the tree base',
+    ],
+    chantier_details: [
+      'fresh wood chips scattered on the ground around the tree base',
+      'cut branch pile on the tarp sorted by diameter',
+      'sap mark on the freshly exposed cut end of a pruned limb',
+      'small twigs and leaf clusters scattered around the base of the tree',
+      'pale fresh wood visible at the pruning cut against the older bark',
+    ],
+  },
+
+  'électricité': {
+    tools: [
+      'cable routing rod resting against the wall near the conduit entry',
+      'electrical junction box open on the floor nearby',
+      'cable stripping tool on the work surface',
+      'voltage tester resting beside the open panel or socket',
+      'coil of electrical cable resting on the floor near the pull point',
+    ],
+    protections: [
+      'electrical isolation warning tag clipped to the circuit breaker handle',
+      'rubber mat on the floor below the open consumer unit',
+    ],
+    chantier_details: [
+      'cable offcut clippings on the floor near the pull point',
+      'wire connector caps grouped on the work surface',
+      'conduit elbow fitting on the floor beside the wall entry',
+      'chalk marking on the wall showing the cable routing path',
+      'open circuit breaker panel with one breaker visibly switched off',
+    ],
+  },
+
+  'débarras': {
+    tools: [
+      'flat furniture trolley resting against the wall near the doorway',
+      'moving straps on the floor near the exit',
+      'hand cart parked beside the loaded items',
+      'box cutter resting on top of a sealed box',
+    ],
+    protections: [
+      'cardboard sheet protecting the floor threshold at the doorway',
+      'foam corner protector on the door frame at the load exit point',
+    ],
+    chantier_details: [
+      'cardboard boxes stacked near the exit point ready for removal',
+      'sorted pile of items near the door — books, frames, small furniture',
+      'hand cart wheel marks on the floor near the doorway',
+      'small pile of bubble wrap or packing paper on the floor',
+      'open box with packing material beside the sorted pile',
     ],
   },
 };
