@@ -3028,6 +3028,16 @@ const SERVICE_CATALOG = {
       'Traitement façade pierre',
     ],
   },
+  'maçonnerie': {
+    label: 'Maçonnerie',
+    services: [
+      'Mur parpaing', 'Mur brique', 'Construction mur', 'Muret',
+      'Dalle béton', 'Terrasse béton', 'Coulage dalle',
+      'Fondation', 'Semelle béton', 'Ferraillage',
+      'Escalier béton', 'Seuil', 'Linteau', 'Ouverture dans mur', 'Percement mur',
+      'Réparation fissure', 'Rejointoiement', 'Rejointoiement pierre',
+    ],
+  },
   peinture: {
     label: 'Peinture',
     services: [
@@ -3042,26 +3052,6 @@ const SERVICE_CATALOG = {
       'Pose carrelage sol', 'Pose carrelage mural', 'Faïence salle de bain',
       'Faïence cuisine', 'Carrelage terrasse extérieure', 'Dallage extérieur',
       'Pose pierre naturelle', 'Réfection joint', 'Réfection carrelage',
-    ],
-  },
-  plomberie: {
-    label: 'Plomberie',
-    services: [
-      'Remplacement chauffe-eau', 'Installation chaudière',
-      "Réparation fuite d'eau", 'Dépannage plomberie urgence',
-      'Débouchage canalisation', 'Installation salle de bain',
-      'Rénovation salle de bain', 'Remplacement robinetterie',
-      'Pose baignoire', 'Pose douche',
-    ],
-  },
-  'électricité': {
-    label: 'Électricité',
-    services: [
-      'Mise aux normes électriques', 'Remplacement tableau électrique',
-      'Pose prises et interrupteurs', 'Installation éclairage LED',
-      'Dépannage électrique', 'Installation VMC',
-      'Installation climatisation', 'Câblage réseau informatique',
-      'Pose borne de recharge', 'Installation volets roulants',
     ],
   },
   vitrier: {
