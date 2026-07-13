@@ -11043,6 +11043,24 @@ const QUALITY_RULES = [
     issue:    'couverture — nettoyeur haute pression / nettoyage détecté',
     fix:      { type: 'addExclusions', terms: ['pressure washer', 'pressure washing machine', 'karcher', 'cleaning machine'] },
   },
+  {
+    id:       'peinture_int_no_ext_refs',
+    key:      'peinture',
+    when:     (obj) => obj.setting === 'interior',
+    scan:     ['camera_position', 'work_type', 'roadside_context'],
+    forbidden: /\b(?:facade|pavement|scaffold(?:ing)?|exterior.?wall|garden.?path|street.?level|house.?front|from.?the.?street|from.?outside)\b/i,
+    issue:    'peinture intérieure — références extérieures détectées',
+    fix:      { type: 'addExclusions', terms: ['facade', 'pavement', 'scaffolding', 'exterior wall', 'street view', 'garden path', 'house exterior'] },
+  },
+  {
+    id:       'peinture_ext_no_int_refs',
+    key:      'peinture',
+    when:     (obj) => obj.setting === 'exterior',
+    scan:     ['camera_position', 'work_type'],
+    forbidden: /\b(?:ceiling|bedroom|living.?room|indoor|interior.?room|drop.?cloth.?on.?(?:the\s+)?\w+.?floor|room.?interior|standing.?in.?the.?(?:room|doorway))\b/i,
+    issue:    'peinture extérieure — références intérieures détectées',
+    fix:      { type: 'addExclusions', terms: ['bedroom', 'living room', 'ceiling interior', 'indoor furniture', 'interior room'] },
+  },
 ];
 
 function _validateQuality(obj) {
@@ -11161,6 +11179,19 @@ const _SCENE_PLANNER_MODEL = 'gpt-4.1';
 // Reads entirely from WORK_SCENES via _getWorkDetail — no more _SCENE_LIBRARY.
 // Backward-compat state mapping: desordre→debut, propre→semifinal.
 // Adds state_level field without removing any existing fields.
+// Résout le setting réel à partir du sous-service, avant que WORK_SCENES ne soit lu.
+// Évite que peinture chambre soit traité comme exterior parce que WORK_SCENES.peinture est exterior.
+function _resolveServiceSetting(metier, travaux, defaultSetting) {
+  const svc = (travaux || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (metier === 'peinture') {
+    if (/chambre|salon|cuisine|couloir|plafond|interieur|interieure|cage.*escal|boiserie.*int|papier.*peint|enduit.*decor/.test(svc))
+      return 'interior';
+    if (/facade|volet|portail|cloture|exterieur|exterieure|boiserie.*ext|sous.*face|soffit/.test(svc))
+      return 'exterior';
+  }
+  return defaultSetting;
+}
+
 function buildDallePromptV2(row) {
   let work;
   if (row.metier && WORK_SCENES[row.metier]) {
@@ -11175,7 +11206,8 @@ function buildDallePromptV2(row) {
     work = _getWorkDetail(row.travaux);
   }
   const city = _getCityContext(row.ville);
-  const isInt = work.setting === 'interior';
+  const resolvedSetting = _resolveServiceSetting(row.metier, row.travaux, work.setting);
+  const isInt = resolvedSetting === 'interior';
 
   // Map old and new state values to WORK_SCENES state keys
   const stateKey = {
@@ -11205,10 +11237,12 @@ function buildDallePromptV2(row) {
     photo_goal:        'work-progress documentation by French contractor, cheap Android smartphone',
     location:          (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France',
     work_type:         work.intro,
-    setting:           isInt ? 'interior' : 'exterior',
+    setting:           resolvedSetting,
     state:             stateData.description || stateKey,
     state_level:       stateKey,
-    camera_position:   work.camera,
+    camera_position:   (isInt && row.metier === 'peinture')
+                         ? 'standing in the room, 2–3 m from the work surface, casual handheld angle'
+                         : work.camera,
     framing:           stateData.framing || { work_pct: 55, foreground: '', midground: '', background: '' },
     site_debris:       stateData.debris  || 'construction debris on site',
     photo_defects:     work.photo_defects,
