@@ -2984,6 +2984,159 @@ const SERVICE_PRESETS = [
   'Terrassement', 'Maçonnerie', 'Plomberie', 'Électricité',
 ];
 
+const SERVICE_CATALOG = {
+  toiture: {
+    label: 'Couverture / Toiture',
+    services: [
+      'Rénovation toiture complète', 'Réparation toiture', 'Remplacement tuiles',
+      'Remplacement ardoises', 'Couverture neuve', 'Réfection toiture',
+      'Charpente', 'Isolation combles', 'Faîtage', 'Zinguerie', 'Solins',
+    ],
+  },
+  nettoyage_toiture: {
+    label: 'Nettoyage / Démoussage toiture',
+    services: [
+      'Démoussage toiture', 'Nettoyage toiture', 'Traitement hydrofuge toiture',
+      'Nettoyage mousse toiture', 'Hydrofuge toiture', 'Traitement anti-mousse toiture',
+    ],
+  },
+  nettoyage_gouttieres: {
+    label: 'Nettoyage gouttières',
+    services: [
+      'Nettoyage gouttières', 'Débouchage gouttières', 'Remplacement gouttières',
+      'Entretien gouttières', 'Pose gouttières',
+    ],
+  },
+  etancheite: {
+    label: 'Étanchéité',
+    services: [
+      'Réparation fuite toiture', 'Recherche de fuite', 'Infiltration toiture',
+      'Étanchéité toit terrasse', 'Étanchéité toiture plate',
+      'Étanchéité balcon', 'Étanchéité terrasse',
+      'Étanchéité EPDM', 'Étanchéité PVC', 'Étanchéité bitume',
+      "Réfection d'étanchéité",
+      'Réparation solin', 'Réparation Velux', 'Réparation noue',
+      'Réparation rive', 'Étanchéité cheminée', 'Étanchéité acrotère',
+    ],
+  },
+  ravalement: {
+    label: 'Ravalement / Façade',
+    services: [
+      'Ravalement façade', 'Rénovation façade', 'Crépi façade',
+      "ITE (isolation par l'extérieur)", 'Enduit monocouche',
+      'Enduit hydraulique', 'Nettoyage façade', 'Peinture façade',
+      'Traitement façade pierre',
+    ],
+  },
+  peinture: {
+    label: 'Peinture',
+    services: [
+      'Peinture intérieure', 'Peinture salon', 'Peinture chambre',
+      'Peinture cuisine', 'Peinture couloir', 'Peinture plafond',
+      'Papier peint', 'Peinture extérieure', 'Peinture façade', 'Enduit décoratif',
+    ],
+  },
+  carrelage: {
+    label: 'Carrelage',
+    services: [
+      'Pose carrelage sol', 'Pose carrelage mural', 'Faïence salle de bain',
+      'Faïence cuisine', 'Carrelage terrasse extérieure', 'Dallage extérieur',
+      'Pose pierre naturelle', 'Réfection joint', 'Réfection carrelage',
+    ],
+  },
+  plomberie: {
+    label: 'Plomberie',
+    services: [
+      'Remplacement chauffe-eau', 'Installation chaudière',
+      "Réparation fuite d'eau", 'Dépannage plomberie urgence',
+      'Débouchage canalisation', 'Installation salle de bain',
+      'Rénovation salle de bain', 'Remplacement robinetterie',
+      'Pose baignoire', 'Pose douche',
+    ],
+  },
+  'électricité': {
+    label: 'Électricité',
+    services: [
+      'Mise aux normes électriques', 'Remplacement tableau électrique',
+      'Pose prises et interrupteurs', 'Installation éclairage LED',
+      'Dépannage électrique', 'Installation VMC',
+      'Installation climatisation', 'Câblage réseau informatique',
+      'Pose borne de recharge', 'Installation volets roulants',
+    ],
+  },
+  vitrier: {
+    label: 'Vitrier',
+    services: [
+      'Remplacement vitrage brisé', 'Remplacement double vitrage',
+      'Remplacement fenêtre PVC', 'Remplacement fenêtre aluminium',
+      'Réparation fenêtre', 'Remplacement porte vitrée',
+      'Vitrage sécurité feuilleté', 'Bris de glace urgence',
+    ],
+  },
+  'élagage': {
+    label: 'Élagage',
+    services: [
+      'Élagage arbre', 'Taille arbre haute tige', 'Élagage peuplier',
+      'Élagage en hauteur', 'Recépage arbre', 'Couronnage arbre',
+      'Élagage arbres dangereux',
+    ],
+  },
+  abattage: {
+    label: 'Abattage',
+    services: [
+      'Abattage arbre', 'Abattage peuplier', 'Abattage grand arbre',
+      'Abattage en zone difficile', 'Dessouchage', 'Abattage conifère',
+    ],
+  },
+  terrassement: {
+    label: 'Terrassement',
+    services: [
+      'Terrassement maison', 'Terrassement piscine', 'Terrassement terrain',
+      'Décaissement', 'Excavation', 'Fouilles', 'Tranchées',
+      'Remblai', 'Empierrement', 'Nivellement', 'Préparation terrain',
+      'Création allée', 'Création chemin', 'Plateforme', 'VRD',
+      'Évacuation des terres',
+    ],
+  },
+  paysagiste: {
+    label: 'Paysagiste',
+    services: [
+      'Création jardin', 'Aménagement extérieur', 'Aménagement paysager',
+      'Plantation', 'Plantation de haies', "Plantation d'arbres",
+      'Taille de haie', "Taille d'arbustes", 'Création massif',
+      'Pose de gazon', 'Gazon en rouleau', 'Semis de gazon',
+      'Arrosage automatique', 'Bordures', 'Paillage',
+      'Entretien jardin', 'Désherbage', 'Petite maçonnerie paysagère',
+    ],
+  },
+  depannage_auto: {
+    label: 'Dépannage Auto',
+    services: [
+      'Batterie à plat', 'Démarrage batterie', 'Boost batterie', 'Remplacement batterie',
+      'Crevaison', 'Changement de roue', 'Réparation pneu',
+      'Remorquage', 'Assistance routière', 'Véhicule en panne',
+      'Ouverture de véhicule', 'Clés enfermées', 'Déverrouillage voiture',
+      'Erreur de carburant', 'Panne moteur', 'Panne électrique', 'Enlèvement véhicule',
+    ],
+  },
+  nettoyage: {
+    label: 'Nettoyage extérieur',
+    services: [
+      'Nettoyage façade', 'Nettoyage terrasse', 'Nettoyage dallage',
+      'Nettoyage pavés', 'Nettoyage allée', 'Traitement hydrofuge façade',
+      'Nettoyage haute pression',
+    ],
+  },
+  'débarras': {
+    label: 'Débarras',
+    services: [
+      'Débarras appartement', 'Débarras maison', 'Débarras cave',
+      'Débarras grenier', 'Vider maison succession', 'Débarras après décès',
+      'Enlèvement encombrants', 'Nettoyage encombrants',
+    ],
+  },
+};
+
 const CONTEXTE_OPTIONS = [
   { value: 'maison',        label: 'Maison individuelle' },
   { value: 'appartement',   label: 'Appartement' },
@@ -2993,6 +3146,21 @@ const CONTEXTE_OPTIONS = [
   { value: 'entrepot',      label: 'Entrepôt' },
   { value: 'agricole',      label: 'Bâtiment agricole' },
 ];
+
+// Contextes spécifiques par métier — remplacent CONTEXTE_OPTIONS quand le métier est sélectionné
+const CONTEXTE_BY_METIER = {
+  depannage_auto: [
+    { value: 'autoroute',       label: 'Autoroute',             desc: 'parked on a motorway hard shoulder' },
+    { value: 'route_nationale', label: 'Route nationale',       desc: 'parked on the side of a national road' },
+    { value: 'route_dept',      label: 'Route départementale',  desc: 'parked on the side of a rural departmental road, fields in background' },
+    { value: 'rue_ville',       label: 'Rue en ville',          desc: 'parked on an urban street in a town or city' },
+    { value: 'parking',         label: 'Parking',               desc: 'in a car park or parking area' },
+    { value: 'domicile',        label: 'Domicile',              desc: 'parked in a residential driveway or on a quiet street outside a house' },
+    { value: 'garage',          label: 'Garage / Atelier',      desc: 'inside or in front of a garage or vehicle workshop' },
+    { value: 'station_service', label: 'Station-service',       desc: 'in a petrol station forecourt' },
+    { value: 'aire_repos',      label: 'Aire de repos',         desc: 'in a motorway rest area or lay-by' },
+  ],
+};
 
 const ETAT_OPTIONS = [
   { value: 'debut',     label: 'Début' },
@@ -4147,18 +4315,6 @@ const WORK_SCENES = {
       'slight motion blur from passing traffic in background',
     ],
     exclusions: ['readable licence plates', 'brand logos', 'workers', 'people', 'driver'],
-    // TODO: UI — propose dedicated auto contexts instead of building types:
-    // Autoroute, Route nationale, Route départementale, Rue en ville,
-    // Parking, Domicile, Garage / atelier, Station-service, Aire de repos
-    context_map: {
-      maison:        'parked on a residential street or in a driveway outside a house',
-      appartement:   'parked on an urban street near an apartment building',
-      immeuble:      'parked on a busy urban road, low-rise buildings in background',
-      commerce:      'parked in a commercial car park or retail area',
-      professionnel: 'parked in a business estate or light-industrial area',
-      entrepot:      'parked in an industrial estate access road',
-      agricole:      'stopped on a rural road or departmental route, fields in background',
-    },
     states: {
       debut: {
         framing: {
@@ -5555,7 +5711,18 @@ const _SCENE_PLANNER_MODEL = 'gpt-4.1';
 // Backward-compat state mapping: desordre→debut, propre→semifinal.
 // Adds state_level field without removing any existing fields.
 function buildDallePromptV2(row) {
-  const work = _getWorkDetail(row.travaux);
+  let work;
+  if (row.metier && WORK_SCENES[row.metier]) {
+    work = WORK_SCENES[row.metier];
+    _lastMatch = {
+      matched_category: work.category || row.metier,
+      matched_key:      row.metier,
+      matched_service:  row.travaux || '',
+      match_score:      20,
+    };
+  } else {
+    work = _getWorkDetail(row.travaux);
+  }
   const city = _getCityContext(row.ville);
   const isInt = work.setting === 'interior';
 
@@ -5578,7 +5745,10 @@ function buildDallePromptV2(row) {
     pluie:   'dark heavy clouds, wet surfaces',
   }[row.meteo] || (isInt ? 'natural daylight from window' : city.light);
 
-  const roadContext = (work.context_map || {})[row.contexte] || null;
+  const _metierCtx  = CONTEXTE_BY_METIER[row.metier];
+  const roadContext = _metierCtx
+    ? ((_metierCtx.find(o => o.value === row.contexte) || {}).desc || null)
+    : ((work.context_map || {})[row.contexte] || null);
 
   return JSON.stringify({
     photo_goal:        'work-progress documentation by French contractor, cheap Android smartphone',
@@ -5746,7 +5916,7 @@ function _escHtml(s) {
 
 function addImgRow() {
   const id = ++_imgCounter;
-  _imgRows.push({ id, fiche: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
+  _imgRows.push({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
   renderImgPlanning();
 }
 
@@ -5780,7 +5950,8 @@ function _renderAnalyse(row) {
   const stateLabels = { debut: 'Début', encours: 'En cours', semifinal: 'Presque terminé', final: 'Terminé' };
   const serviceDemande = (row.travaux || '').trim() || '—';
   const serviceDetecte = obj._matched_service || '—';
-  const contexteLabel  = (CONTEXTE_OPTIONS.find(o => o.value === (row.contexte || 'maison')) || CONTEXTE_OPTIONS[0]).label;
+  const _ctxList       = CONTEXTE_BY_METIER[row.metier] || CONTEXTE_OPTIONS;
+  const contexteLabel  = (_ctxList.find(o => o.value === (row.contexte || _ctxList[0].value)) || _ctxList[0]).label;
   const typeLabel      = obj.setting === 'interior' ? 'Intérieur' : 'Extérieur';
   const etatLabel      = stateLabels[obj.state_level] || '—';
   const arch           = obj.architecture || '—';
@@ -5833,15 +6004,53 @@ function _renderAnalyse(row) {
 </div>`;
 }
 
+function _svcOpts(metierKey, currentValue) {
+  const cat = SERVICE_CATALOG[metierKey];
+  if (!cat) return '<option value="">— Sous-service —</option>';
+  return '<option value="">— Sous-service —</option>' +
+    cat.services.map(s =>
+      `<option value="${_escHtml(s)}"${s === currentValue ? ' selected' : ''}>${_escHtml(s)}</option>`
+    ).join('');
+}
+
+function _ctxOpts(metierKey, currentValue) {
+  const opts = CONTEXTE_BY_METIER[metierKey] || CONTEXTE_OPTIONS;
+  const def  = opts[0].value;
+  return opts.map(o =>
+    `<option value="${o.value}"${(currentValue || def) === o.value ? ' selected' : ''}>${_escHtml(o.label)}</option>`
+  ).join('');
+}
+
+function _changeMetier(rowId, metierKey) {
+  const row = _imgRows.find(r => r.id === rowId);
+  if (!row) return;
+  row.metier  = metierKey;
+  row.travaux = '';
+  // Reset contexte to first option of the new metier's context list
+  const newCtxOpts = CONTEXTE_BY_METIER[metierKey] || CONTEXTE_OPTIONS;
+  row.contexte = newCtxOpts[0].value;
+  const card = document.querySelector(`.img-plan-card[data-rowid="${rowId}"]`);
+  if (card) {
+    const svcSel = card.querySelector('.img-svc-select');
+    if (svcSel) svcSel.innerHTML = _svcOpts(metierKey, '');
+    const ctxSel = card.querySelector('.img-ctx-select');
+    if (ctxSel) ctxSel.innerHTML = _ctxOpts(metierKey, row.contexte);
+    const analyseEl = card.querySelector('.img-plan-analyse');
+    if (analyseEl) analyseEl.innerHTML = _renderAnalyse(row);
+  }
+  updateCostEstimate();
+}
+
 function _renderImgCard(row, idx) {
   const num    = String(idx + 1).padStart(2, '0');
   const stTxt  = row.status === 'running' ? '⏳' :
                  row.status === 'done'    ? `✅ ${row.images.length}` :
                  row.status === 'error'   ? '❌' : '–';
 
-  const serviceDatalist = SERVICE_PRESETS.map(s => `<option value="${_escHtml(s)}">`).join('');
-  const contexteOpts    = CONTEXTE_OPTIONS.map(o =>
-    `<option value="${o.value}"${(row.contexte || 'maison') === o.value ? ' selected' : ''}>${o.label}</option>`).join('');
+  const metierOpts      = Object.entries(SERVICE_CATALOG).map(([k, v]) =>
+    `<option value="${k}"${(row.metier || '') === k ? ' selected' : ''}>${_escHtml(v.label)}</option>`
+  ).join('');
+  const contexteOpts    = _ctxOpts(row.metier || '', row.contexte || '');
   const etatPills       = ETAT_OPTIONS.map(p =>
     `<button class="img-etat-pill${row.etat === p.value ? ' active' : ''}" data-etat="${p.value}" onclick="updateImgRow(${row.id},'etat','${p.value}')">${p.label}</button>`
   ).join('');
@@ -5867,12 +6076,17 @@ function _renderImgCard(row, idx) {
   <div class="img-plan-card-body">
     <div class="img-plan-fields">
       <div class="img-plan-field img-plan-field-service">
-        <label>Service</label>
-        <input type="text" value="${_escHtml(row.travaux)}"
-          placeholder="Démoussage toiture, élagage, carrelage..."
-          list="img-service-list-${row.id}"
-          oninput="updateImgRow(${row.id},'travaux',this.value)" />
-        <datalist id="img-service-list-${row.id}">${serviceDatalist}</datalist>
+        <label>Métier</label>
+        <select onchange="_changeMetier(${row.id},this.value)">
+          <option value="">— Métier —</option>
+          ${metierOpts}
+        </select>
+      </div>
+      <div class="img-plan-field img-plan-field-service">
+        <label>Sous-service</label>
+        <select class="img-svc-select" onchange="updateImgRow(${row.id},'travaux',this.value)">
+          ${_svcOpts(row.metier || '', row.travaux || '')}
+        </select>
       </div>
       <div class="img-plan-row2">
         <div class="img-plan-field">
@@ -5882,7 +6096,7 @@ function _renderImgCard(row, idx) {
         </div>
         <div class="img-plan-field">
           <label>Contexte</label>
-          <select onchange="updateImgRow(${row.id},'contexte',this.value)">${contexteOpts}</select>
+          <select class="img-ctx-select" onchange="updateImgRow(${row.id},'contexte',this.value)">${contexteOpts}</select>
         </div>
       </div>
       <div class="img-plan-field">
