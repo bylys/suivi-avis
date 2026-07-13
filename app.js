@@ -4877,9 +4877,9 @@ const SITE_REALISM = {
     _dispatch: 'contexte',
 
     maison: {
-      _trigger_service: 'fuit|reparation|infiltrat',
       scenarios: [
         {
+          _for:          'solin|cheminee|faitage',
           scene_note:    'chimney flashing (solin) repair on a pitched tiled roof — zinc strip being refitted around the chimney base, localized repair zone only, rest of the roof untouched',
           scene_camera:  'crouching on the roof slope close to the chimney, framing the chimney base and the surrounding tiles — chimney occupies the centre of frame',
           scene_framing: {
@@ -4907,6 +4907,7 @@ const SITE_REALISM = {
           ],
         },
         {
+          _for:          'velux|lucarne|fenetre.*toit|chassis.*toit',
           scene_note:    'Velux or roof window resealing on a pitched tiled roof — peel-and-stick flashing being applied around the window frame, localized repair, rest of the roof untouched',
           scene_camera:  'crouching on the roof slope beside the Velux window, framing the window frame and the adjacent tiles — window frame fills the centre of frame',
           scene_framing: {
@@ -4933,6 +4934,7 @@ const SITE_REALISM = {
           ],
         },
         {
+          _for:          'noue|vallee|jonction.*pente',
           scene_note:    'valley (noue) repair on a pitched tiled roof — new zinc valley strip being positioned between two roof slopes, tiles around the valley left intact',
           scene_camera:  'crouching at the junction of two roof slopes, framing the valley channel running down between the two tile surfaces',
           scene_framing: {
@@ -4959,6 +4961,7 @@ const SITE_REALISM = {
           ],
         },
         {
+          _for:          'raccord.*mur|jonction.*mur|mur.*toit|solin.*mur',
           scene_note:    'wall-to-roof junction repair on a pitched tiled roof — membrane strip or mastic bead applied at the wall base where it meets the tile surface, small localized zone only',
           scene_camera:  'crouching at the base of a wall where it meets the roof slope, framing the wall-to-tile junction — wall fills one side of the frame, tiles the other',
           scene_framing: {
@@ -4985,6 +4988,7 @@ const SITE_REALISM = {
           ],
         },
         {
+          _for:          'rive|gable|debord.*toit|arretier',
           scene_note:    'gable edge (rive) repair on a pitched tiled roof — gable tile being resealed and refitted at the roof verge, small localized repair',
           scene_camera:  'standing or crouching at the gable end of the roof, framing the verge edge and the gable tile joint',
           scene_framing: {
@@ -5007,6 +5011,7 @@ const SITE_REALISM = {
           ],
         },
         {
+          _for:          'tuile|ardoise|remplacement.*tuile|tuile.*cass',
           scene_note:    'localized tile replacement with waterproofing on a pitched tiled roof — two or three cracked tiles being swapped out, new tiles positioned, rest of the roof intact',
           scene_camera:  'crouching on the roof slope at the repair area, close view of the small tile opening and the replacement tiles beside it',
           scene_framing: {
@@ -5034,7 +5039,7 @@ const SITE_REALISM = {
           ],
         },
       ],
-      // Fallback: flat small roof (no fuite/réparation trigger match)
+      // Fallback: flat small roof (no service matches any _for)
       scene_note: 'waterproofing work on a small accessible flat roof — house extension, garage top, or low terrace of a residential house, garden visible below the low parapet',
       tools: [
         'seam roller resting on the membrane surface at the last lap joint',
@@ -5122,6 +5127,123 @@ const SITE_REALISM = {
   },
 
   terrassement: {
+    scenarios: [
+      {
+        _for:          'decaiss|fouill|excavat|percement|terrassem',
+        scene_note:    'excavation work in progress — trench or pit being dug, raw earth walls visible, deep cut into the ground',
+        scene_camera:  'standing at the trench edge, looking down into the cut — angle showing the depth and the layered soil walls',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'fresh earth pile at the trench lip, shovel or pickaxe driven vertically into it',
+          midground:  'open trench or pit showing layered soil profile — dark topsoil, pale subsoil, gravel',
+          background: 'surrounding site, site boundary fence or hedge, sky above',
+        },
+        scene_debris:  'fresh earth spill on the surrounding ground, small roots and stones extracted from the trench beside the pile',
+        scene_exclude: ['decorative paving', 'finished surface', 'green grass lawn', 'concrete pour', 'rebar'],
+        tools: [
+          'shovel driven vertically into the fresh earth pile',
+          'pickaxe resting against a stake at the trench edge',
+          'wheelbarrow loaded with fresh earth beside the trench',
+          'compacting tamper resting on its head at the trench edge',
+        ],
+        protections: [
+          'orange safety mesh stretched across the open trench at ground level',
+          'wooden plank bridging the trench at the site access point',
+        ],
+        chantier_details: [
+          'trench walls showing raw soil layers — dark topsoil above, pale subsoil below',
+          'small stones and root sections removed from the excavation beside the pile',
+          'boot prints in the fresh mud at the trench edge',
+          'soil marks on the adjacent surface from wheelbarrow traffic',
+        ],
+      },
+      {
+        _for:          'allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee',
+        scene_note:    'driveway or outdoor surface construction in progress — sub-base compacted or paving units being laid, string line taut as a guide',
+        scene_camera:  'standing at the end of the driveway or path in perspective along its length, showing the work progress',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'string line between stakes, compacted sub-base or first paving units laid',
+          midground:  'driveway in progress — prepared sub-base on one side, existing ground on the other',
+          background: 'house wall or fence at the far end, garden or existing drive beside',
+        },
+        scene_debris:  'sand pile at the side edge, paving off-cuts near the cutting zone',
+        scene_exclude: ['deep excavation trench', 'concrete foundation', 'pipe or conduit in trench', 'green lawn untouched'],
+        tools: [
+          'string line pulled taut between two stakes defining the edge',
+          'long spirit level resting on the compacted sub-base',
+          'vibrating plate compactor at the prepared section end',
+          'rubber mallet beside the last paving unit',
+        ],
+        protections: [
+          'safety cones at each end of the work zone',
+        ],
+        chantier_details: [
+          'string line defining the straight edge of the new surface',
+          'sub-base compacted and level behind the leading edge',
+          'sand screed layer visible at the active laying point',
+          'paving off-cut pieces near the cutting zone',
+        ],
+      },
+      {
+        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        scene_note:    'foundation work in progress — reinforced concrete strip or pad being prepared, rebar cage in the trench, formwork boards in place',
+        scene_camera:  'crouching at the trench edge or standing at the formwork end, framing the rebar cage and the trench interior',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'rebar cage visible in the trench bottom, wire ties at the intersections, spacers underneath',
+          midground:  'formwork boards on the trench sides held by wooden spacers',
+          background: 'site surroundings — subsoil walls, construction fence',
+        },
+        scene_debris:  'cut wire tie ends on the ground near the rebar, concrete splash marks on the trench edge',
+        scene_exclude: ['finished driveway', 'decorative garden', 'tiling', 'green grass', 'pipe in trench'],
+        tools: [
+          'rebar tying wire and pliers beside the trench edge',
+          'formwork boards held by wooden spacers along the trench sides',
+          'concrete vibrator or screed bar beside the trench',
+          'spirit level on the formwork top',
+        ],
+        protections: [
+          'hard hat beside the trench edge',
+          'orange safety mesh stretched around the open excavation perimeter',
+        ],
+        chantier_details: [
+          'rebar cage in the trench — horizontal bars tied to vertical stakes',
+          'concrete spacers under the rebar for cover thickness',
+          'formwork boards visible on the trench sides',
+          'wire tie cut-offs on the ground near the rebar work area',
+        ],
+      },
+      {
+        _for:          'tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr',
+        scene_note:    'utility trench work in progress — open trench with pipe or conduit being laid in bedding material, service markers visible',
+        scene_camera:  'standing at the trench edge looking along its length, showing the pipe and the bedding layer',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'open trench showing pipe or conduit resting in gravel or sand bedding',
+          midground:  'trench continuing along the run, next pipe section beside the trench',
+          background: 'site surface — road, path, or garden — and site fence beyond',
+        },
+        scene_debris:  'pipe packaging on the ground beside the trench, small service marker flags at the entry and exit points',
+        scene_exclude: ['rebar or formwork for foundations', 'decorative paving', 'finished surface', 'garden plants'],
+        tools: [
+          'pipe section being lowered into the trench bedding',
+          'shovel for final grading of the bedding layer',
+          'service locator wand resting against the trench edge',
+          'pipe jointing lubricant beside the open trench',
+        ],
+        protections: [
+          'orange safety mesh stretched across the open trench at ground level',
+          'warning tape over the trench edges at the road crossing',
+        ],
+        chantier_details: [
+          'pipe or conduit visible in the gravel bedding at the trench base',
+          'gravel surround layer poured around the pipe section',
+          'marker flags at the service entry and exit points',
+          'trench walls showing the full depth with soil layers visible',
+        ],
+      },
+    ],
     tools: [
       'shovel stuck vertically into the fresh earth pile',
       'pickaxe resting against a fence post or stake',
@@ -5145,6 +5267,86 @@ const SITE_REALISM = {
     _dispatch: 'service',
 
     batterie: {
+      scenarios: [
+        {
+          scene_note:    'battery jump-start in progress — clamp cables connecting the two batteries, bonnets open on both vehicles',
+          scene_camera:  'standing at the front of the stalled vehicle, looking down into the open engine bay from the side — clamp cables clearly visible on the battery posts',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'jump-start cable clamps on battery terminals, cable running to the second vehicle out of frame',
+            midground:  'open engine bay of the stalled vehicle, battery and engine components visible',
+            background: 'second vehicle partially visible with bonnet raised, road or outdoor surface beyond',
+          },
+          scene_debris:  'cable tie packaging on the ground near the battery, small oil residue on the engine bay ledge',
+          scene_exclude: ['hydraulic jack', 'spare tyre', 'lug wrench', 'flat tyre', 'tow strap', 'door wedge', 'air pump'],
+          tools: [
+            'jump-start cable set with clamps on battery terminals',
+            'multimeter resting on the engine bay ledge',
+            'torch on the wheel arch near the open bonnet',
+          ],
+          protections: [
+            'reflective safety vest on the car roof',
+            'reflective warning triangle placed behind the vehicle',
+          ],
+          chantier_details: [
+            'cable clamps on battery terminals with cable running to second vehicle',
+            'both vehicle bonnets raised — cable running between them',
+            'warning triangle shadow on the road behind the stalled car',
+          ],
+        },
+        {
+          scene_note:    'battery jump-start using a standalone portable booster pack — no second vehicle, compact booster clipped directly to the battery terminals',
+          scene_camera:  'close view at engine bay level, framing the compact booster pack propped on the wheel arch, clamp cables on battery posts',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'portable booster pack on the wheel arch lip, short clamp cables running to battery terminals',
+            midground:  'engine bay surrounding the battery — air filter, fuse box, hoses visible',
+            background: 'open bonnet edge and outdoor surface beyond',
+          },
+          scene_debris:  'booster carry case on the ground near the front wheel',
+          scene_exclude: ['second vehicle bonnet open', 'long cables between two cars', 'hydraulic jack', 'spare tyre', 'tow strap', 'door wedge'],
+          tools: [
+            'compact portable battery booster pack on the wheel arch, clipped to battery posts',
+            'clamp cables short-length connected directly to the booster',
+            'torch resting on the wheel arch beside the booster',
+          ],
+          protections: [
+            'reflective safety vest folded on the car roof',
+            'warning triangle placed behind the vehicle',
+          ],
+          chantier_details: [
+            'booster pack indicator LEDs lit up on the casing',
+            'clamp cables running directly from booster to battery posts',
+            'empty booster carry case on the ground near the front tyre',
+          ],
+        },
+        {
+          scene_note:    'battery replacement in progress — old battery removed and set aside, new battery being positioned in the engine bay tray',
+          scene_camera:  'leaning over the open bonnet, close view of the battery tray with the new battery being lowered into position',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'new battery being positioned in the battery tray, hold-down bracket beside it',
+            midground:  'engine bay around the battery slot, terminal spanner on the ledge',
+            background: 'open bonnet edge and outdoor surface beyond',
+          },
+          scene_debris:  'old battery on the ground near the front wheel, terminal corrosion residue on the battery ledge',
+          scene_exclude: ['jump cables between two cars', 'second vehicle', 'hydraulic jack', 'spare tyre', 'tow strap', 'door wedge'],
+          tools: [
+            'new battery being lowered into the battery tray',
+            'battery terminal spanner beside the hold-down bracket',
+            'terminal grease tube on the engine bay ledge',
+          ],
+          protections: [
+            'insulating mat beneath the new battery in the tray',
+            'warning triangle placed behind the vehicle',
+          ],
+          chantier_details: [
+            'old battery set aside on the ground near the front wheel, terminals facing up',
+            'new battery in the tray, hold-down bracket about to be fitted',
+            'terminal posts clean and ready for cable connection',
+          ],
+        },
+      ],
       scene_note: 'roadside breakdown — battery failure, jump-start or booster in progress beside a stalled vehicle',
       tools: [
         'jump-start cable set draped over the open bonnet edge',
@@ -5167,6 +5369,89 @@ const SITE_REALISM = {
     },
 
     crevaison: {
+      scenarios: [
+        {
+          scene_note:    'full wheel change in progress — spare tyre being fitted, flat tyre removed and leaning against the car body, hydraulic jack raised under the vehicle sill',
+          scene_camera:  'crouching at the wheel arch level, framing the raised wheel gap and the spare tyre being aligned with the hub',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'spare wheel being aligned with the hub, lug wrench on the ground beside it',
+            midground:  'hydraulic jack under the vehicle sill, vehicle body raised — gap clearly visible',
+            background: 'flat tyre leaning against the car body, road or parking surface beyond',
+          },
+          scene_debris:  'wheel nuts grouped on the ground beside the removed tyre, gravel disturbed around the jack base',
+          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open'],
+          tools: [
+            'hydraulic jack raised under the vehicle sill',
+            'lug wrench on the ground beside the spare wheel',
+            'spare wheel positioned against the hub ready to mount',
+            'torque socket beside the spare on the ground',
+          ],
+          protections: [
+            'reflective safety vest folded on the car roof',
+            'warning cone placed on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'flat tyre leaning against the car body beside the open wheel arch',
+            'wheel nuts grouped on the ground near the spare',
+            'jack raised with the wheel gap clearly visible',
+            'warning triangle placed further back on the road',
+          ],
+        },
+        {
+          scene_note:    'tyre puncture plug repair — tyre still mounted on the vehicle, plug reamer inserted in the puncture hole, no wheel removal needed',
+          scene_camera:  'crouching low at the tyre sidewall, framing the plug reamer inserted in the tread puncture, repair kit open on the ground',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'plug reamer tool in the tread puncture, plug strip and cement tube beside the tyre',
+            midground:  'tyre sidewall and lower wheel arch, no jack visible',
+            background: 'road surface and vehicle bodywork beyond',
+          },
+          scene_debris:  'small nail or screw on the ground near the tyre — the puncture cause just extracted',
+          scene_exclude: ['hydraulic jack', 'spare tyre', 'wheel removed from car', 'jump cables', 'door wedge', 'tow strap'],
+          tools: [
+            'plug reamer tool inserted in the tread puncture',
+            'plug strip beside the tyre on the ground',
+            'portable tyre inflator on the ground near the wheel',
+          ],
+          protections: [
+            'reflective vest near the wheel',
+            'warning triangle on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'small nail or screw beside the tyre — the puncture cause',
+            'plug strip partially inserted in the tyre tread',
+            'portable compressor inflating the tyre after repair',
+          ],
+        },
+        {
+          scene_note:    'wheel change mid-point — flat tyre removed, spare not yet fitted, vehicle raised on jack, wheel hub exposed',
+          scene_camera:  'crouching at the open wheel arch, framing the bare hub and the spare wheel on the ground ready to mount',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'exposed wheel hub with lug bolt threads visible, spare wheel on the ground beside it',
+            midground:  'vehicle body raised on the hydraulic jack, sill clearance visible',
+            background: 'flat tyre against the car door, road surface beyond',
+          },
+          scene_debris:  'wheel nuts arranged beside the spare, gravel around the jack foot',
+          scene_exclude: ['wheel already fitted', 'jump cables', 'battery booster', 'door wedge', 'tow strap'],
+          tools: [
+            'hydraulic jack under the sill, vehicle raised',
+            'spare wheel on the ground beside the bare hub',
+            'lug wrench on the ground beside the spare',
+          ],
+          protections: [
+            'reflective warning triangle on the road behind the vehicle',
+            'reflective vest folded on the bonnet',
+          ],
+          chantier_details: [
+            'hub exposed with lug bolt threads — no wheel fitted yet',
+            'spare wheel on the ground, angled ready to align with the hub',
+            'flat tyre leaning against the car beside the wheel arch',
+            'wheel nuts arranged near the spare',
+          ],
+        },
+      ],
       scene_note: 'roadside breakdown — flat tyre, tyre change in progress beside a stalled vehicle',
       tools: [
         'hydraulic jack positioned under the vehicle sill point',
@@ -5188,6 +5473,87 @@ const SITE_REALISM = {
     },
 
     remorquage: {
+      scenarios: [
+        {
+          scene_note:    'vehicle recovery by flatbed lorry — stalled car being winched or driven onto the lowered flatbed deck',
+          scene_camera:  'standing at the rear of the flatbed lorry, framing the lowered ramp and the stalled car at the base or mid-ramp',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'flatbed ramp lowered to road level, winch cable or tyre strap visible on the ramp edge',
+            midground:  'stalled vehicle on or approaching the ramp',
+            background: 'flatbed lorry deck and cab behind, road on either side',
+          },
+          scene_debris:  'wheel chock block on the deck near the car tyre, ratchet strap laid out on the ramp edge',
+          scene_exclude: ['tow strap between two cars on flat road', 'jump cables', 'battery booster', 'door wedge', 'spare tyre'],
+          tools: [
+            'ratchet strap laid on the flatbed deck near the car wheel',
+            'wheel chock placed in front of the loaded car tyre',
+            'winch hook visible at the vehicle tow point under the bumper',
+          ],
+          protections: [
+            'reflective safety vest on the recovery operator',
+            'warning cone placed on the road behind the flatbed',
+          ],
+          chantier_details: [
+            'flatbed ramp lowered and touching the road surface',
+            'ratchet strap ready to secure the car on the deck',
+            'wheel chock visible near the car front tyre on the deck',
+          ],
+        },
+        {
+          scene_note:    'vehicle tow by strap — tow strap stretched between the stalled car and the recovery vehicle, both stationary before towing begins',
+          scene_camera:  'low angle from the side, framing the tow strap running at ground level between the two bumpers',
+          scene_framing: {
+            work_pct:   60,
+            foreground: 'tow strap on the road between the bumpers, hook visible at each attachment point',
+            midground:  'rear of the recovery vehicle and front of the stalled car',
+            background: 'road, kerbside vegetation or markings beyond',
+          },
+          scene_debris:  'tow strap carry bag on the ground near the stalled car bumper',
+          scene_exclude: ['flatbed lorry ramp', 'winch on deck', 'jump cables', 'battery booster', 'door wedge', 'spare tyre'],
+          tools: [
+            'tow strap stretched between recovery vehicle and stalled car',
+            'tow hook at the stalled car front recovery point',
+            'torch on the ground near the attachment',
+          ],
+          protections: [
+            'reflective safety vest on the operator',
+            'warning triangle placed behind the stalled car',
+          ],
+          chantier_details: [
+            'tow strap lying taut at low angle between the bumpers',
+            'tow hook loop visible at the recovery point',
+            'warning triangle on the road surface behind the stalled car',
+          ],
+        },
+        {
+          scene_note:    'off-road vehicle extraction — car stuck in a ditch or on verge, snatch strap or winch cable being attached for recovery',
+          scene_camera:  'standing at the ditch edge, framing the stuck vehicle at an angle in the ditch and the extraction strap being connected',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'snatch strap or winch cable running to the stuck car front tow point',
+            midground:  'stuck car at an angle in the ditch or on uneven verge — one or two wheels off-level',
+            background: 'grass verge, ditch edge, or rough ground beyond the stuck vehicle',
+          },
+          scene_debris:  'mud and displaced grass at the stuck wheel positions',
+          scene_exclude: ['flatbed ramp', 'tow strap on flat road', 'jump cables', 'door wedge', 'spare tyre'],
+          tools: [
+            'snatch strap looped around the stuck car tow hook',
+            'recovery shackle at the strap attachment point',
+            'torch on the grass near the stuck car',
+          ],
+          protections: [
+            'reflective safety vest on the operator',
+            'warning triangle on the road edge above the ditch',
+          ],
+          chantier_details: [
+            'car leaning at angle in the ditch or on the verge',
+            'mud marks on the bodywork from the ditch contact',
+            'snatch strap taut between the two vehicles',
+            'displaced earth and grass at the stuck wheel positions',
+          ],
+        },
+      ],
       scene_note: 'roadside recovery — vehicle being prepared for towing, tow strap or hook attached',
       tools: [
         'tow strap laid out on the ground between the two vehicles',
@@ -5209,6 +5575,86 @@ const SITE_REALISM = {
     },
 
     ouverture: {
+      scenarios: [
+        {
+          scene_note:    'vehicle lockout — plastic wedge inserted at the top door corner, long-reach rod passed through the gap toward the interior lock',
+          scene_camera:  'standing beside the car door, close view of the top door corner — wedge visible in the gap, rod entering through it',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'plastic wedge in the door frame corner, thin long-reach rod visible through the narrow gap',
+            midground:  'door panel and window glass, car roof above',
+            background: 'car interior dimly visible through the window, road or parking surface beyond',
+          },
+          scene_debris:  'protective film strip on the door frame paint at the wedge contact point',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap', 'battery booster'],
+          tools: [
+            'plastic door wedge in the top door frame corner',
+            'long-reach rod visible through the door gap',
+            'protective film strip on the door frame at wedge contact',
+          ],
+          protections: [
+            'protective film on the door frame paint at the wedge contact point',
+            'reflective vest folded on the car roof',
+          ],
+          chantier_details: [
+            'narrow door gap at the top corner where wedge is inserted',
+            'rod tip visible inside the car approaching the lock',
+            'keys or key fob visible inside through the window',
+          ],
+        },
+        {
+          scene_note:    'vehicle lockout — inflatable air wedge pumped to widen the door frame gap, giving access for a reach tool to the interior controls',
+          scene_camera:  'standing beside the car door, framing the air wedge at the door edge and the rubber pump bulb in hand',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'inflatable air wedge at the door edge, rubber pump bulb connected by a thin tube',
+            midground:  'car door and window, vehicle bodywork',
+            background: 'car interior through the window, outdoor setting beyond',
+          },
+          scene_debris:  'tool carry case open on the ground near the car door',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap', 'battery booster'],
+          tools: [
+            'inflatable air wedge at the door edge frame',
+            'rubber hand pump connected to the air wedge by thin tube',
+            'protective film on the door frame at the wedge contact point',
+          ],
+          protections: [
+            'protective film on the door frame edge at the wedge point',
+            'reflective vest on the car roof',
+          ],
+          chantier_details: [
+            'air wedge visibly inflated creating a gap at the door edge',
+            'pump tube running from the wedge to the rubber bulb',
+            'keys visible inside the car through the window',
+          ],
+        },
+        {
+          scene_note:    'vehicle lockout — keys clearly visible inside the car on the seat or dashboard, hooked slim-jim rod working through a minimal door gap',
+          scene_camera:  'close shot framing the car window glass, key fob visible inside — hooked rod barely visible at the door edge',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'car window glass with key fob or keys visible on the seat inside, hooked rod at door edge',
+            midground:  'door panel and lock strip',
+            background: 'car interior through the far window, road or parking area beyond',
+          },
+          scene_debris:  'protective silicone mat on the door sill at the tool entry point',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap', 'battery booster'],
+          tools: [
+            'hooked slim-jim rod at the narrow door edge gap',
+            'plastic door wedge holding the gap open at the corner',
+            'protective silicone mat on the door sill',
+          ],
+          protections: [
+            'protective silicone mat at the tool contact point',
+            'reflective vest on the car roof',
+          ],
+          chantier_details: [
+            'keys or key fob visible through the window on the seat',
+            'hooked rod tip approaching the interior lock through the gap',
+            'door gap barely 5 mm — held by the wedge',
+          ],
+        },
+      ],
       scene_note: 'roadside lockout — vehicle door opening in progress, technician working at the door frame with specialist tools',
       tools: [
         'plastic door wedge inserted at the top corner of the door frame',
@@ -5249,6 +5695,149 @@ const SITE_REALISM = {
   },
 
   paysagiste: {
+    scenarios: [
+      {
+        _for:          'creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie',
+        scene_note:    'garden creation or planting work in progress — plants being positioned in freshly dug holes, new bed taking shape from bare ground',
+        scene_camera:  'standing at the edge of the new planting bed, framing the active planting zone across the turned soil',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'plant in freshly dug hole or just placed, topsoil around the base, empty nursery pot beside it',
+          midground:  'new planting bed — turned topsoil, several newly planted specimens at intervals',
+          background: 'garden boundary — fence, wall, or hedge — existing path or lawn visible',
+        },
+        scene_debris:  'empty plant pots with nursery labels beside the planting holes, topsoil heap at the bed edge',
+        scene_exclude: ['lawn mower', 'hedge trimmer', 'leaf blower', 'finished manicured garden without bare soil', 'no planting activity'],
+        tools: [
+          'hand trowel beside a freshly dug planting hole',
+          'long-handled edging spade resting against the fence post',
+          'wheelbarrow with topsoil at the bed edge',
+          'string line pulled between two stakes defining the bed edge',
+        ],
+        protections: [
+          'weed-control fabric partially laid on the adjacent bed section',
+          'flat board on the turned soil to avoid foot compaction',
+        ],
+        chantier_details: [
+          'freshly dug planting holes at measured intervals in the new bed',
+          'empty plant pots with nursery labels on the ground nearby',
+          'new plant in hole with roots visible — not yet backfilled',
+          'topsoil heap at the bed edge, wheelbarrow partially filled',
+        ],
+      },
+      {
+        _for:          'gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse',
+        scene_note:    'lawn installation in progress — turf rolls being unrolled on prepared ground, or lawn seed being broadcast, bare prepared soil visible',
+        scene_camera:  'standing at the edge of the prepared area, framing the leading turf roll being unrolled or the seeder on the bare earth',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'turf roll being unrolled across prepared soil, or seeder being pushed across raked earth',
+          midground:  'prepared bare soil surface with turf strips already laid to one side',
+          background: 'garden boundary and existing surfaces — path, terrace, fence',
+        },
+        scene_debris:  'turf roll off-cut at the edge of the laid section, rake on the ground near the last strip',
+        scene_exclude: ['hedge trimmer', 'leaf blower', 'deep planting holes', 'large shrubs or trees being planted', 'finished manicured lawn with no work visible'],
+        tools: [
+          'turf roll beside the active laying edge',
+          'wide levelling rake on the prepared soil',
+          'lawn roller on the ground near the newly laid section',
+          'half-moon edger at the border cut line',
+        ],
+        protections: [
+          'flat wooden board on the newly laid turf to kneel on without compaction',
+        ],
+        chantier_details: [
+          'turf strips laid parallel, joints staggered like brickwork',
+          'leading turf roll being unrolled on prepared bare soil',
+          'border cut being trimmed at the path edge',
+          'rake marks on the still-bare section ahead of the laying front',
+        ],
+      },
+      {
+        _for:          'taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie',
+        scene_note:    'hedge trimming or shrub pruning in progress — hedge trimmer or secateurs in use, cut clippings on the ground, hedge clearly mid-shaping',
+        scene_camera:  'standing back from the hedge, framing the work zone at mid-height — trimmed section and still-overgrown section side by side',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'cut clippings pile at the hedge base, secateurs or trimmer beside it',
+          midground:  'hedge showing contrast between freshly trimmed side and overgrown side',
+          background: 'garden fence or wall behind the hedge, garden or path on the other side',
+        },
+        scene_debris:  'pile of cut clippings on the ground at the base, small branches on the adjacent path or lawn',
+        scene_exclude: ['bare soil planting bed', 'turf rolls', 'planting holes', 'finished garden with no cut material visible'],
+        tools: [
+          'hedge trimmer set on the ground beside the hedge',
+          'bypass secateurs near the clipping pile',
+          'garden rake beside the debris pile',
+          'garden refuse sack open at the clipping pile',
+        ],
+        protections: [
+          'safety goggles beside the hedge trimmer',
+          'cut-resistant gloves beside the secateurs',
+        ],
+        chantier_details: [
+          'hedge clearly showing trimmed and untrimmed sections side by side',
+          'pile of fresh cut clippings at the hedge base',
+          'small branches on the adjacent lawn from the cutting work',
+          'string line showing the target hedge height pulled taut along the top',
+        ],
+      },
+      {
+        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        scene_note:    'garden weeding or vegetation clearance in progress — weeds being removed from beds or paths, cleared patch beside still-overgrown area',
+        scene_camera:  'crouching low near a bed or path, framing the active weeding zone — bare cleared soil beside the remaining overgrowth',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'hand fork or hoe in the soil at the cleared patch edge, uprooted weeds piled beside it',
+          midground:  'cleared bed section — bare soil — adjacent to the still-overgrown section',
+          background: 'garden fence, hedge, or wall, garden beyond',
+        },
+        scene_debris:  'pile of uprooted weeds on the cleared ground, garden refuse sack open beside the pile',
+        scene_exclude: ['hedge trimmer', 'turf rolls', 'new plants being planted', 'finished manicured garden'],
+        tools: [
+          'hand fork pushed into the soil at the active weeding edge',
+          'hoe resting against the fence at the cleared section',
+          'garden kneeling pad on the cleared soil',
+          'garden refuse sack beside the weed pile',
+        ],
+        protections: [
+          'gardening gloves beside the hand fork',
+        ],
+        chantier_details: [
+          'uprooted weed pile on the cleared soil — root balls visible',
+          'bare soil section where weeding is done beside the overgrown area',
+          'garden refuse sack partially filled with removed weeds',
+        ],
+      },
+      {
+        _for:          'bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin',
+        scene_note:    'garden edging, mulching, or surface treatment in progress — border being set or mulch being spread over a prepared bed',
+        scene_camera:  'standing at the bed edge, framing the active section where edging is being pressed in or mulch spread with a rake',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'edging strip being pressed into the soil, or mulch pile being spread with a rake at the bed surface',
+          midground:  'bed section with edging set and mulch applied, next section still to do',
+          background: 'lawn or path beside the bed, garden fence or wall beyond',
+        },
+        scene_debris:  'excess mulch spill on the path edge, edging strip packaging on the ground',
+        scene_exclude: ['hedge trimmer', 'turf rolls', 'planting holes', 'weeding debris piles'],
+        tools: [
+          'plastic or metal edging strip being set along the bed border',
+          'rubber mallet for tapping the edging into the soil',
+          'garden rake for spreading mulch evenly',
+          'wheelbarrow with mulch or gravel at the active section',
+        ],
+        protections: [
+          'gardening gloves beside the edging strip',
+        ],
+        chantier_details: [
+          'edging strip partially set along the bed, held at intervals',
+          'mulch pile being spread to cover the prepared bed',
+          'transition visible — mulched section beside still-bare soil',
+          'edging strip off-cut on the ground near the active end',
+        ],
+      },
+    ],
     tools: [
       'garden stake driven into the soil at a planting mark',
       'long-handled edging spade resting against the fence post',
@@ -5483,7 +6072,10 @@ function _applySiteRealism(jsonStr, imageIndex) {
       const svc = (obj._matched_service || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (!trigger || new RegExp(trigger).test(svc)) {
         const scenSeed = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}`);
-        const picked = _pick(realism.scenarios, 1, scenSeed)[0];
+        const targeted  = realism.scenarios.filter(s => s._for && new RegExp(s._for, 'i').test(svc));
+        const fallback  = realism.scenarios.filter(s => !s._for);
+        const pool      = targeted.length ? targeted : fallback;
+        const picked    = pool.length ? _pick(pool, 1, scenSeed)[0] : null;
         if (picked) {
           realism = Object.assign({}, realism, picked);
           if (realism.scene_camera)  obj.camera_position = realism.scene_camera;
