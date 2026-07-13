@@ -5944,6 +5944,7 @@ const SITE_REALISM = {
       // --- peinture intérieure (murs) ---
       {
         _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        setting:       'interior',
         scene_note:    'interior wall being painted — roller working across a half-painted wall, fresh new colour on the upper half, old paint still visible on the lower half, roller tray on the drop cloth',
         scene_camera:  'standing in the room, framing the half-painted wall with the roller mid-stroke and the drop cloth on the floor',
         scene_framing: {
@@ -5972,6 +5973,7 @@ const SITE_REALISM = {
       },
       {
         _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        setting:       'interior',
         scene_note:    'room being prepared for painting — canvas drop cloth covering the full floor, masking tape along the skirting board edge, unpainted wall above ready, paint tin open on the cloth',
         scene_camera:  'standing in the doorway, framing the drop-cloth-covered room with masking tape along all edges and the open paint tin',
         scene_framing: {
@@ -6000,6 +6002,7 @@ const SITE_REALISM = {
       },
       {
         _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        setting:       'interior',
         scene_note:    'interior wall corner being cut in — flat brush cutting a precise line at the inside corner, both walls freshly painted around the angle, drop cloth on the floor',
         scene_camera:  'close-up at the inside corner, framing the brush at the angle making the cut-in line',
         scene_framing: {
@@ -6028,6 +6031,7 @@ const SITE_REALISM = {
       // --- peinture plafond ---
       {
         _for:          'plafond',
+        setting:       'interior',
         scene_note:    'ceiling being painted with an extension roller — roller on a long pole being pushed across the flat ceiling, freshly painted section white and wet beside the old unpainted area still warm-toned',
         scene_camera:  'standing in the room looking up, framing the roller on the extension pole being pushed across the ceiling',
         scene_framing: {
@@ -6055,6 +6059,7 @@ const SITE_REALISM = {
       },
       {
         _for:          'plafond',
+        setting:       'interior',
         scene_note:    'ceiling paint almost complete — last strip being finished at the room perimeter with a short roller, ceiling junction cutting-in done, full floor drop cloth visible below',
         scene_camera:  'standing at the room edge, framing the short roller finishing the perimeter strip with the drop cloth below',
         scene_framing: {
@@ -6083,6 +6088,7 @@ const SITE_REALISM = {
       // --- peinture extérieure ---
       {
         _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        setting:       'exterior',
         scene_note:    'timber shutters removed and laid on trestles outdoors — old paint being sanded before repainting, both shutters side by side on the outdoor workstation, sanding dust visible',
         scene_camera:  'standing beside the trestles, framing both shutters flat on the workstation with the sanding equipment',
         scene_framing: {
@@ -6110,6 +6116,7 @@ const SITE_REALISM = {
       },
       {
         _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        setting:       'exterior',
         scene_note:    'exterior facade paint in progress — upper section freshly painted in new colour, lower section still original paint, clear horizontal boundary, ladder and paint tray beside the wall',
         scene_camera:  'standing back from the facade, framing the full wall height with the painted upper section and the old lower section, ladder beside the work',
         scene_framing: {
@@ -6138,6 +6145,7 @@ const SITE_REALISM = {
       },
       {
         _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        setting:       'exterior',
         scene_note:    'garden gate being painted — masking tape along the adjacent wall junction, tarp on the ground below, new paint colour on the upper bars with old finish still on the lower section',
         scene_camera:  'standing in front of the gate, framing the painted upper bars with the masking tape at the wall junction and the tarp below',
         scene_framing: {
@@ -10701,17 +10709,20 @@ const SITE_REALISM = {
 
 const CAMERA_DEFECTS_LIB = {
   common: [
-    'slight horizon tilt',
-    'mild overexposure in bright areas',
+    'slight horizon tilt of 2–3°, phone not perfectly level',
+    'mild overexposure in bright sky or wall areas',
     'light JPEG compression artifacts',
     'slight barrel distortion at edges',
-    'muted color saturation',
+    'muted color saturation — smartphone auto mode',
     'minor motion blur on foreground detail',
   ],
   rare: [
     'finger partially visible at frame corner',
     'obvious lens smudge on one side',
     'water droplet on lens surface',
+    'partial garden gate post or fence rail at the frame edge',
+    'slight thumb shadow at the bottom left corner',
+    'work van or truck partially visible at the frame edge — not the main subject',
   ],
 };
 
@@ -10755,6 +10766,22 @@ const VARIATION_ENGINE = {
       'low angle at plant level, open sky visible behind',
       'wide shot showing house facade and garden together',
     ],
+    customer: [
+      'standing in the garden 5–8 m from the house, phone held loosely at chest height — casual snapshot',
+      'from the end of the driveway looking toward the front of the house, full facade in frame',
+      'from the pavement in front of the property, slight upward tilt toward the upper storey',
+      'standing at the open garden gate, gate post partially framing the left edge',
+      'from the terrace or patio, looking across the garden toward the work area on the house',
+      'seated in a parked car, taken through the open side window toward the house facade',
+      'wide shot from 8–12 m back — full facade and surrounding garden context in frame',
+      'from just inside the front door or a ground-floor window, looking out at the work',
+      'low angle from the garden path, foreground lawn or paving surface visible below',
+    ],
+    neighbor: [
+      'from the adjacent property\'s driveway, peering slightly sideways over the low fence',
+      'from the public pavement across the road, opposite side of the street, slight oblique angle',
+      'from the shared garden boundary — hedge or fence post partially in the foreground',
+    ],
   },
   light_quality: [
     { text: 'soft overcast light, no hard shadows',           meteo: ['nuageux', 'brumeux', 'auto'] },
@@ -10771,6 +10798,8 @@ const VARIATION_ENGINE = {
     'balanced foreground and midground, no dominant element',
     'midground as main subject, foreground detail secondary',
     'wide establishing shot, full site context visible',
+    'work van or pickup visible in the background — adds professional context without dominating',
+    'slightly wide shot, surrounding street or garden environment visible at the frame edges',
   ],
 };
 
@@ -10841,6 +10870,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism.scene_debris)  obj.site_debris      = realism.scene_debris;
           if (Array.isArray(realism.scene_exclude)) obj.exclude = [...(obj.exclude || []), ...realism.scene_exclude];
           if (realism.time_of_day) obj.time_of_day = realism.time_of_day;
+          if (realism.setting)    obj.setting     = realism.setting;
         }
       }
     }
@@ -10895,6 +10925,63 @@ function _applyVariation(jsonStr, imageIndex) {
     ? 'work floodlight as the main light source, dark background, slightly underexposed smartphone photo'
     : (lightLib.length ? _pick(lightLib, 1, seed + 7)[0] : null);
   obj.var_framing = _pick(VARIATION_ENGINE.framing_emphasis,   1, seed + 13)[0] || null;
+
+  // Camera author — customer 80% / contractor 15% / neighbor 5%
+  const authorRoll = seed % 100;
+  obj.var_author = authorRoll < 80 ? 'customer'
+                 : authorRoll < 95 ? 'contractor'
+                 : 'neighbor';
+
+  // Worker count — state-conditional distribution
+  const _workerDist = {
+    debut:     [70, 20,  8,  2],
+    encours:   [70, 20,  8,  2],
+    semifinal: [85, 13,  2,  0],
+    final:     [95,  5,  0,  0],
+  };
+  const _wdist = _workerDist[obj.state_level] || _workerDist.encours;
+  const _wcum  = [_wdist[0], _wdist[0]+_wdist[1], _wdist[0]+_wdist[1]+_wdist[2], 100];
+  const workerSeed = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}workers${imageIndex}`);
+  const workerRoll = workerSeed % 100;
+  obj.var_workers = workerRoll < _wcum[0] ? 0
+                  : workerRoll < _wcum[1] ? 1
+                  : workerRoll < _wcum[2] ? 2
+                  : 3;
+  obj.no_people   = obj.var_workers === 0;
+
+  // Worker type description by métier — always from behind or in profile, never posing
+  const _workerDesc = {
+    toiture:              'roofer crouching at the ridge or working on the tile field — seen from below, back to camera',
+    nettoyage_toiture:    'operative on the roof holding a pressure lance — seen from behind',
+    nettoyage_gouttieres: 'operative at the top of a ladder working at the gutters — in profile',
+    'élagage':            'arborist in the tree with a chainsaw and harness — back to camera',
+    abattage:             'operative with a chainsaw at the base of the tree — in profile, back to camera',
+    'maçonnerie':         'mason laying blocks with a trowel — standing or crouching at the wall, back to camera',
+    ravalement:           'plasterer on the scaffold applying render with a hawk and float — back to camera',
+    peinture:             'painter with a roller or brush working on the surface — back or in profile, never looking at the camera',
+    nettoyage:            'operative holding the pressure lance directing the jet at the surface — in profile',
+    carrelage:            'tiler kneeling on the floor laying tiles — back to camera',
+    vitrier:              'glazier handling a window pane or frame — in profile or from the side',
+    'débarras':           'operative carrying boxes or furniture through a doorway — back to camera',
+    etancheite:           'waterproofing technician on the flat roof applying membrane — back to camera',
+    depannage_auto:       'breakdown technician crouching beside the vehicle — in profile',
+  };
+  obj.var_worker_desc = _workerDesc[obj._matched_key]
+    || 'tradesperson in work clothes naturally engaged in the task — seen from behind or in profile, never posing';
+
+  // For customer/neighbor authors, override var_camera with a matching perspective pool
+  if (obj.var_author !== 'contractor') {
+    const authorPool = obj.var_author === 'neighbor'
+      ? (VARIATION_ENGINE.camera_angles.neighbor || VARIATION_ENGINE.camera_angles.exterior)
+      : (VARIATION_ENGINE.camera_angles.customer || VARIATION_ENGINE.camera_angles.exterior);
+    const authorSeed = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}author${imageIndex}`);
+    obj.var_camera = _pick(authorPool, 1, authorSeed)[0] || obj.var_camera;
+  }
+
+  // Debug metadata
+  obj._camera_author     = obj.var_author;
+  obj._worker_count      = obj.var_workers;
+  obj._variation_setting = vSetting;
 
   return JSON.stringify(obj);
 }
@@ -11026,10 +11113,21 @@ const PromptBuilder = {
       // 7 — Style rules
       PHOTO_STYLE_RULES.style,
 
-      // 8 — People (positive framing only, no negative lists)
-      s.no_people
-        ? 'Empty worksite — no workers or people in the scene.'
-        : 'Workers in casual work clothes visible on site.',
+      // 8 — People
+      (() => {
+        const n = s.var_workers !== undefined ? s.var_workers : (s.no_people ? 0 : 1);
+        if (n === 0) return 'Empty worksite — no workers or people in the scene.';
+        const desc = s.var_worker_desc || 'tradesperson in work clothes naturally engaged in the task — seen from behind or in profile, never posing or looking at the camera';
+        if (n === 1) return `One ${desc}.`;
+        return `${n} tradespeople in work clothes naturally at work — seen from behind or in profile, never posing or looking at the camera.`;
+      })(),
+
+      // 8b — Camera author perspective
+      s.var_author === 'contractor'
+        ? 'Photo taken by the contractor documenting the job — closer, more technical framing.'
+        : s.var_author === 'neighbor'
+          ? 'Photo taken from a neighbouring property or the public pavement — natural passer-by angle, slightly through a fence or hedge.'
+          : 'Photo taken casually by the homeowner — relaxed handheld shot from the garden, driveway, or pavement.',
 
       // 9 — Tools and protections (SITE_REALISM — max 2 combined)
       (() => {
