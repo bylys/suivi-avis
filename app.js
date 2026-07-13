@@ -4679,6 +4679,192 @@ const PHOTO_STYLE_RULES = {
 // Keyed by WORK_SCENES entry name (_matched_key in SceneJSON).
 const SITE_REALISM = {
   nettoyage_toiture: {
+    scenarios: [
+
+      // --- démoussage / brossage manuel ---
+      {
+        _for:          'demoussa|mousse.*toit|nettoy.*mousse|brossage',
+        scene_note:    'manual moss scraping from a pitched roof — stiff broom sweeping thick green moss off old tiles, debris falling onto the protective tarp below the eave',
+        scene_camera:  'standing back from the house, framing the full roof slope with the worker using a long-handled stiff broom across the mossy tiles',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'protective tarp below the eave catching wet moss clumps falling from the roof',
+          midground:  'pitched roof — one section scraped to bare tile, adjacent section still thick with green moss',
+          background: 'house wall, surrounding garden or driveway below the eave',
+        },
+        scene_debris:  'wet green moss clumps on the tarp below, loose moss fragments on the lower tile courses',
+        scene_exclude: ['chemical sprayer lance', 'pressure washing jet', 'new tiles being laid', 'scaffolding tower', 'concrete mixer'],
+        tools: [
+          'long-handled stiff nylon broom being swept across the mossy roof tiles',
+          'heavy protective tarp fixed under the eave edge collecting moss debris',
+        ],
+        protections: [
+          'heavy tarp fixed under the eave to catch moss runoff',
+          'plastic sheet over garden shrubs directly below the scraping zone',
+        ],
+        chantier_details: [
+          'thick green moss layer — clearly biological buildup visible on tile surface',
+          'scraped section of bare terracotta tiles contrasting with the still-mossy area',
+          'wet moss clumps accumulating on the tarp below the eave',
+        ],
+      },
+      {
+        _for:          'demoussa|mousse.*toit|nettoy.*mousse|brossage',
+        scene_note:    'close-up moss removal from individual tiles — hand scraper being drawn across a moss-covered tile, thick moss pad being lifted in one cohesive piece',
+        scene_camera:  'close-up from the roof surface, framing the hand scraper lifting a thick moss pad from a tile with bare tile visible where already cleared',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'hand scraper lifting a thick cohesive moss pad from the tile surface — underside of the moss pad visible',
+          midground:  'surrounding tiles — mix of already-scraped bare terracotta and still moss-covered',
+          background: 'roof slope continuing, tile courses below the repair zone',
+        },
+        scene_debris:  'moss pad piece beside the scraped tile, damp stain circle on the cleared tile surface',
+        scene_exclude: ['chemical sprayer', 'pressure lance', 'new tiles', 'concrete mixer'],
+        tools: [
+          'hand scraper drawing a thick moss pad from the tile surface',
+          'small handheld brush sweeping moss residue off cleared tiles',
+        ],
+        protections: [
+          'knee pad on the roof tile surface beside the worker',
+        ],
+        chantier_details: [
+          'thick moss pad being lifted intact — underside and rhizoid roots clearly visible',
+          'bare tile below — original terracotta colour recovered after moss removal',
+          'stain outline on the tile where the moss has sat for years',
+        ],
+      },
+      {
+        _for:          'demoussa|mousse.*toit|nettoy.*mousse|brossage',
+        scene_note:    'half-scraped roof — left half already cleared to bare tiles, right half still thick with green moss, sharp demarcation line visible across the slope',
+        scene_camera:  'standing back from the house, framing the full roof width with the cleared vs. mossy division clearly visible across the slope',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'tarp below the eave loaded with wet moss debris — visual record of work done',
+          midground:  'full roof pitch — left half scraped bare, right half still green — division line sharp',
+          background: 'sky beyond the ridge, house wall beside the cleared section',
+        },
+        scene_debris:  'large pile of wet moss on the tarp below, loose fragments near the division line on the cleared side',
+        scene_exclude: ['chemical sprayer', 'pressure lance', 'new tiles', 'scaffolding tower'],
+        tools: [
+          'long-handled broom resting on the roof at the active work line',
+        ],
+        protections: [
+          'heavy tarp below the eave — visibly loaded with scraped moss debris',
+        ],
+        chantier_details: [
+          'sharp division line across the roof — bare terracotta on one side, thick green moss on the other',
+          'tile colour recovery clearly visible on the cleared side',
+          'moss debris accumulation on the tarp below quantifying work completed',
+        ],
+      },
+
+      // --- traitement chimique / hydrofuge ---
+      {
+        _for:          'hydrofuge|traitement|anti.mousse',
+        scene_note:    'chemical anti-moss treatment being applied by backpack sprayer — lance fanning a spray arc across the tile surface, product spreading down from the top',
+        scene_camera:  'standing at the side of the house, framing the spray lance fanning chemical treatment across the mossy roof tiles',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'spray lance directing fine chemical mist across the tile surface — spray fan visible in the air',
+          midground:  'mossy roof tiles being coated — dark wet patch spreading where treatment has landed',
+          background: 'roof slope continuing to the ridge, house wall at the side',
+        },
+        scene_debris:  'chemical runoff darkening the tiles below the spray point, drip traces on the lower courses',
+        scene_exclude: ['stiff broom scraping', 'pressure washing jet', 'new tiles', 'concrete mixer'],
+        tools: [
+          'backpack chemical sprayer with telescopic lance applying treatment to the tiles',
+        ],
+        protections: [
+          'heavy tarp fixed under the eave to collect chemical runoff',
+          'plastic sheet covering garden plants below the treatment zone',
+          'chemical-resistant gloves on the hands operating the lance',
+        ],
+        chantier_details: [
+          'spray fan of chemical treatment visible above the tile surface',
+          'tiles visibly darkening as the product soaks in from the top down',
+          'runoff tracks of treatment chemical on the lower tile courses',
+        ],
+      },
+      {
+        _for:          'hydrofuge|traitement|anti.mousse',
+        scene_note:    'treatment being applied from the ridge downward — spray lance directed at the ridge tiles first, product running in rivulets down the full slope under gravity',
+        scene_camera:  'shooting up from below, framing the spray lance at the ridge line with product rivulets running down the slope',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'spray lance at the ridge tiles — product mist at the ridge apex',
+          midground:  'treatment running down the tile surface in rivulets from ridge toward eave',
+          background: 'sky above the ridge, moss-covered lower tiles where product has not yet reached',
+        },
+        scene_debris:  'treatment rivulets running down the tile grooves, moss beginning to darken where product reached',
+        scene_exclude: ['stiff broom scraping', 'pressure lance jet', 'new tiles'],
+        tools: [
+          'telescopic lance reaching to the ridge tiles, treatment being applied from the apex',
+        ],
+        protections: [
+          'safety harness visible on the operator at ridge height',
+          'tarp at ground level below the eave',
+        ],
+        chantier_details: [
+          'treatment running from ridge downward in dark rivulets along the tile grooves',
+          'ridge tiles uniformly wet with product at the apex',
+          'lower tile courses still dry and moss-green — contrast with treated upper section',
+        ],
+      },
+      {
+        _for:          'hydrofuge|traitement|anti.mousse',
+        scene_note:    'post-treatment roof — tiles uniformly dark and wet from the applied hydrofuge, protective tarp below the eave loaded with chemical runoff',
+        scene_camera:  'standing back from the house, framing the full roof slope uniformly dark with product, tarp visible below the eave',
+        scene_framing: {
+          work_pct:   45,
+          foreground: 'heavy tarp below the eave — visibly wet with chemical runoff, weighted at corners',
+          midground:  'full roof pitch — uniformly dark and wet from the applied treatment',
+          background: 'ridge line, sky above, garden to the side',
+        },
+        scene_debris:  'chemical pooling in the tarp folds below the eave, drip marks on the house wall near the downpipe',
+        scene_exclude: ['stiff broom scraping', 'pressure lance jet', 'new tiles'],
+        tools: [
+          'backpack sprayer parked at the base of the house — treatment complete',
+          'empty treatment container beside the sprayer',
+        ],
+        protections: [
+          'heavy tarp fully loaded with chemical runoff below the eave',
+          'plastic sheet still protecting the garden shrubs below',
+        ],
+        chantier_details: [
+          'roof uniformly dark from the treatment — product evenly applied across the full pitch',
+          'chemical runoff pooling in the tarp folds',
+          'drip marks on the lower house wall from the product runoff',
+        ],
+      },
+
+      // Fallback: general view
+      {
+        scene_note:    'roof cleaning or treatment in progress — general view of a mossy pitched residential roof with treatment equipment visible at the eave',
+        scene_camera:  'standing back from the house, framing the full roof slope with visible moss and treatment equipment at the eave',
+        scene_framing: {
+          work_pct:   45,
+          foreground: 'protective tarp fixed below the eave, sprayer or brush equipment at the base of the house wall',
+          midground:  'pitched roof — heavily mossy tiles, green biological growth across the surface',
+          background: 'ridge line, sky above, garden or driveway below the eave',
+        },
+        scene_debris:  'light moss debris at the tarp edge from the beginning of work',
+        scene_exclude: ['new tiles being laid', 'concrete mixer', 'scaffolding tower', 'pressure lance jet'],
+        tools: [
+          'backpack chemical sprayer with telescopic lance resting against the wall',
+          'soft-bristle roof brush laid flat on the driveway',
+          'treatment pump container with hose coiled beside the house base',
+        ],
+        protections: [
+          'heavy protective tarp fixed under the eave edge to collect moss runoff',
+          'plastic sheet covering the garden shrubs below the treated section',
+        ],
+        chantier_details: [
+          'heavy moss coverage across the roof surface — biological buildup clearly visible',
+          'tarp positioned and ready at the eave line',
+          'treatment equipment laid out at the base of the house',
+        ],
+      },
+    ],
     tools: [
       'backpack chemical sprayer with telescopic lance resting against the wall',
       'soft-bristle roof brush laid flat on the driveway',
@@ -4702,6 +4888,232 @@ const SITE_REALISM = {
     ],
   },
   nettoyage_gouttieres: {
+    scenarios: [
+
+      // --- nettoyage / entretien standard ---
+      {
+        _for:          'nettoy|entretien|curag|debris|feuill',
+        scene_note:    'gutter being manually cleared of compacted leaf and moss debris — gutter scoop being worked along the trough from a ladder, debris being deposited into a bucket below',
+        scene_camera:  'standing back from the house, framing the ladder leaning at the gutter run with the worker using a scoop along the trough',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'ladder base against the house wall, plastic bucket with leaf and moss debris beside it',
+          midground:  'worker on the ladder using a gutter scoop along the trough — compacted leaf mass visible in the gutter',
+          background: 'house facade and eave line, garden beyond',
+        },
+        scene_debris:  'wet compacted leaf and moss debris being extracted from the gutter, small pile on the ground below',
+        scene_exclude: ['new gutter sections', 'drill and fascia brackets', 'pressure rodding equipment', 'concrete mixer'],
+        tools: [
+          'aluminium ladder leaning against the house wall at the gutter run',
+          'plastic gutter scoop working along the trough',
+          'plastic bucket with wet leaf debris beside the ladder base',
+        ],
+        protections: [
+          'plastic sheet on the flower bed directly below the gutter run',
+        ],
+        chantier_details: [
+          'gutter trough packed with compacted leaves and moss — clearly overflowing capacity',
+          'gutter scoop extracting a thick mat of compacted debris',
+          'bucket at the ladder base progressively filling with extracted debris',
+        ],
+      },
+      {
+        _for:          'nettoy|entretien|curag|debris|feuill',
+        scene_note:    'cleaned gutter being flushed with a garden hose — water running freely along the trough toward the downpipe outlet, confirming the gutter is clear',
+        scene_camera:  'standing beside the house, framing the hose running water along the cleaned gutter trough above',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'garden hose directed into the cleared gutter at the top end — water flowing in',
+          midground:  'cleaned gutter trough — water running along the bottom toward the downpipe',
+          background: 'house facade, downpipe at the far end carrying water cleanly to the drain',
+        },
+        scene_debris:  'small residual debris fragments at the downpipe outlet being flushed through, wet streak down the downpipe',
+        scene_exclude: ['new gutter sections', 'drill and fascia brackets', 'gutter scoop in use', 'compacted debris still in gutter'],
+        tools: [
+          'garden hose with running water being fed into the cleared gutter at the high end',
+        ],
+        protections: [
+          'plastic sheet on the garden bed below the downpipe outlet',
+        ],
+        chantier_details: [
+          'water running freely along the bottom of the cleaned gutter — trough clear',
+          'downpipe carrying flush water cleanly to the drain below',
+          'small debris flush visible at the downpipe outlet from residual gutter sediment',
+        ],
+      },
+      {
+        _for:          'nettoy|entretien|curag|debris|feuill',
+        scene_note:    'gutter joint being sealed after cleaning — silicone sealant being applied to a leaking joint between two gutter sections with a cartridge gun',
+        scene_camera:  'close-up from the ladder at the gutter joint, framing the sealant cartridge gun applying a bead at the junction between two gutter sections',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'silicone cartridge gun applying sealant at the gutter joint — fresh sealant bead visible',
+          midground:  'two gutter sections joining at the clip — joint being sealed',
+          background: 'gutter run continuing in both directions, fascia board above',
+        },
+        scene_debris:  'old dried sealant fragments removed from the joint — grey dried bead pieces beside the gutter',
+        scene_exclude: ['new gutter sections', 'drill and fascia brackets', 'compacted debris in gutter'],
+        tools: [
+          'silicone cartridge gun applying sealant at the gutter joint',
+          'small putty knife for smoothing the sealant bead',
+        ],
+        protections: [],
+        chantier_details: [
+          'fresh silicone sealant bead along the gutter joint — shiny and uncured',
+          'old dried sealant fragments removed from the joint before resealing',
+          'gutter joint sealed and clean — leaking section now repaired',
+        ],
+      },
+
+      // --- débouchage ---
+      {
+        _for:          'deboucha|bouchon|obstruct',
+        scene_note:    'blocked downpipe being cleared with a flexible drainage rod — rod being fed into the downpipe from the top, blockage being worked through from above',
+        scene_camera:  'standing at the ladder beside the downpipe head, framing the flexible rod being fed into the downpipe opening at gutter level',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'flexible drainage rod being fed into the downpipe opening at gutter level',
+          midground:  'downpipe running down the house wall — standing water backed up in the gutter at the blocked inlet',
+          background: 'house wall, garden beyond',
+        },
+        scene_debris:  'standing water in the gutter at the blocked downpipe inlet, debris mat at the outlet edge',
+        scene_exclude: ['new gutter sections', 'fascia brackets', 'hose flushing free-flowing pipe'],
+        tools: [
+          'flexible drainage rod sections being fed into the blocked downpipe from above',
+          'aluminium ladder at the downpipe head',
+        ],
+        protections: [
+          'plastic sheet at the base of the downpipe to catch expelled debris',
+        ],
+        chantier_details: [
+          'standing water in the gutter at the blocked inlet — pipe fully obstructed',
+          'flexible rod disappearing into the downpipe — blockage being worked through',
+          'debris mat at the gutter outlet edge — partial obstruction visible from above',
+        ],
+      },
+      {
+        _for:          'deboucha|bouchon|obstruct',
+        scene_note:    'compacted debris plug being expelled from the base of a blocked downpipe — dark compacted mass of leaves and silt pushed out at the downpipe foot',
+        scene_camera:  'crouching at the downpipe base, framing the expelled debris plug on the ground at the pipe foot',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'expelled debris plug on the ground at the downpipe foot — dark compacted mass of leaves and silt',
+          midground:  'downpipe base and drain outlet, water beginning to run again after clearance',
+          background: 'house wall above, garden or path beside',
+        },
+        scene_debris:  'expelled debris plug at the downpipe base — compacted leaves, moss, silt clearly visible',
+        scene_exclude: ['new gutter sections', 'fascia brackets', 'flexible rod still in pipe'],
+        tools: [
+          'flexible drainage rod leaning against the house wall after use',
+          'drain hook tool beside the expelled debris plug',
+        ],
+        protections: [
+          'plastic sheet soiled with expelled silt at the pipe foot',
+        ],
+        chantier_details: [
+          'expelled debris plug at the downpipe base — compacted leaves and silt clearly visible',
+          'water beginning to flow freely at the downpipe outlet after clearance',
+          'plastic sheet containing the expelled debris at the pipe foot',
+        ],
+      },
+      {
+        _for:          'deboucha|bouchon|obstruct',
+        scene_note:    'blocked gutter outlet being inspected — phone torch or site torch held at the downpipe inlet, debris bridge visible in the pipe opening with backed-up water in the gutter',
+        scene_camera:  'close-up from the ladder at the gutter outlet, framing the torch illuminating inside the outlet',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'phone torch or site torch held over the downpipe outlet — light shining into the inlet, debris bridge visible',
+          midground:  'gutter trough around the outlet — standing water backed up behind the blockage',
+          background: 'gutter run continuing, house wall beyond',
+        },
+        scene_debris:  'debris bridge across the downpipe inlet visible under torch light, backed-up standing water in the gutter',
+        scene_exclude: ['new gutter sections', 'fascia brackets', 'free-flowing drain'],
+        tools: [
+          'phone torch or compact site torch held at the gutter outlet for inspection',
+          'gutter scoop nearby ready to extract debris after inspection',
+        ],
+        protections: [],
+        chantier_details: [
+          'debris bridge clearly visible in the downpipe inlet under torch light',
+          'standing water backed up in the gutter behind the blockage',
+          'outlet inlet soiled with dark compacted debris from the blockage',
+        ],
+      },
+
+      // --- remplacement / pose gouttières ---
+      {
+        _for:          'remplace|pose|install|neuf|nouveau',
+        scene_note:    'new gutter section being lifted into position on pre-fitted fascia brackets — new PVC gutter being clipped onto the bracket row along the eave',
+        scene_camera:  'standing back from the house, framing the new gutter section being lifted and aligned with the fascia bracket row along the eave edge',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'new PVC gutter section being lifted and aligned with the fascia bracket row along the eave edge',
+          midground:  'row of new fascia brackets already fitted to the board — new gutter going in',
+          background: 'house facade, bare eave on the section not yet fitted',
+        },
+        scene_debris:  'old gutter sections on the ground below — removed from the eave before fitting new',
+        scene_exclude: ['gutter cleaning equipment', 'flexible drainage rod', 'moss debris', 'old stained gutter still in place'],
+        tools: [
+          'new PVC gutter section being lifted into the bracket row along the eave',
+          'gutter clip tool for securing the section into the fascia brackets',
+        ],
+        protections: [
+          'soft cloth on the ladder top to protect the new gutter section during installation',
+        ],
+        chantier_details: [
+          'new PVC gutter section bright and unweathered — clear contrast with existing facade',
+          'fascia brackets already fitted in a straight row — new gutter clicking in',
+          'old gutter sections on the ground below — replaced before fitting new',
+        ],
+      },
+      {
+        _for:          'remplace|pose|install|neuf|nouveau',
+        scene_note:    'fascia bracket being drilled and screwed to the barge board — new bracket going in, gutter run about to begin',
+        scene_camera:  'close-up at the fascia level, framing the cordless drill fixing the bracket to the board with the new gutter section visible nearby',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'cordless drill fixing a new gutter fascia bracket to the barge board — screw being driven home',
+          midground:  'row of already-fitted brackets along the fascia, new gutter section waiting to be clipped in',
+          background: 'house facade, eave soffit above, garden below',
+        },
+        scene_debris:  'drill bit case on the ladder shelf, packaging from new brackets on the ground below',
+        scene_exclude: ['gutter cleaning equipment', 'flexible drainage rod', 'moss debris'],
+        tools: [
+          'cordless drill fixing new fascia bracket to the barge board',
+          'new fascia brackets in a bag on the ladder shelf',
+          'new PVC gutter section leaning against the house wall below',
+        ],
+        protections: [],
+        chantier_details: [
+          'new bracket being fixed — drill bit in the screw head clearly visible',
+          'row of already-fitted brackets defining the new gutter line along the fascia',
+          'new gutter section on the ground below — ready to clip in after brackets',
+        ],
+      },
+      {
+        _for:          'remplace|pose|install|neuf|nouveau',
+        scene_note:    'new downpipe section being clipped to the house wall — wall clip being screwed through the render, new PVC pipe section aligned in the clip',
+        scene_camera:  'close-up at the wall beside the downpipe run, framing the wall clip being fixed and the new pipe aligned',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'new downpipe wall clip being screwed through the render — drill and clip visible',
+          midground:  'new PVC downpipe section aligned in the clip, previous clip already fixed above',
+          background: 'house wall, old downpipe offset at the eave above',
+        },
+        scene_debris:  'drill dust from the rawlbolt holes on the render surface beside the clip',
+        scene_exclude: ['gutter cleaning equipment', 'flexible drainage rod', 'moss debris', 'old stained pipe in position'],
+        tools: [
+          'cordless drill fixing the downpipe wall clip through the house render',
+          'new PVC downpipe section being aligned in the clip',
+        ],
+        protections: [],
+        chantier_details: [
+          'new white PVC downpipe — unweathered and bright against the house render',
+          'wall clip being fixed — drill dust on the render surface below the hole',
+          'previous clip already fixed above — downpipe run building down the wall',
+        ],
+      },
+    ],
     tools: [
       'aluminium ladder leaning against the house wall beside the gutter run',
       'plastic gutter scoop resting on the path below the downpipe',
@@ -4722,6 +5134,376 @@ const SITE_REALISM = {
     ],
   },
   toiture: {
+    scenarios: [
+
+      // --- rénovation / réfection complète ---
+      {
+        _for:          'renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert',
+        scene_note:    'full roof renovation — old tiles stripped, bare battens and rafter tops visible, scaffold platform loaded with stacked old tiles awaiting removal',
+        scene_camera:  'standing back from the house, framing the full roof with one slope stripped to bare battens and the scaffold loaded with old tiles',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'scaffold platform with stripped old tiles stacked — terracotta fragments and whole tiles mixed',
+          midground:  'stripped roof slope — bare battens visible across the full width, underlayer felt partly exposed',
+          background: 'other roof slope still tiled or gable wall at the end',
+        },
+        scene_debris:  'broken tile fragments on the scaffold boards, old mortar lumps from the stripped ridge on the scaffold deck',
+        scene_exclude: ['finished new roof', 'garden far away', 'moss treatment equipment', 'concrete mixer at ground level'],
+        tools: [
+          'tile breaker bar resting on the scaffold — used to lift and break old tiles',
+          'scaffold hoist hook at the platform edge for lowering tile skips',
+        ],
+        protections: [
+          'debris netting below the scaffold to catch falling tile fragments',
+          'protective tarp over the garden below the scaffold',
+        ],
+        chantier_details: [
+          'bare battens across the stripped slope — original tile peg marks visible on batten faces',
+          'scaffold loaded with stacks of stripped tiles ready to be lowered',
+          'underlayer felt visible between rafters where battens are exposed — felt torn in places',
+        ],
+      },
+      {
+        _for:          'renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert',
+        scene_note:    'new roof battens being nailed to the rafters — carpenter measuring from the eave upward, sawn timber battens being fixed in parallel rows at the correct gauge',
+        scene_camera:  'close-up on the rafter surface, framing the batten being nailed down and the measuring rule beside the next batten position',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'new sawn timber batten being nailed to the rafter tops — nail gun at the nail point',
+          midground:  'rows of new battens already fixed below — straight parallel lines down the rafter slope',
+          background: 'scaffold boards and stack of new batten lengths waiting to be cut and fixed',
+        },
+        scene_debris:  'batten offcuts on the scaffold board, nail heads across the previously fixed batten rows',
+        scene_exclude: ['tiles going on', 'old tile stack', 'finished roof from afar', 'moss treatment'],
+        tools: [
+          'nail gun nailing new batten to the rafter tops',
+          'folding rule measuring the batten gauge from the last row',
+          'stack of new sawn timber battens on the scaffold board',
+        ],
+        protections: [
+          'scaffold platform as working surface',
+          'debris netting below scaffold',
+        ],
+        chantier_details: [
+          'rows of new battens fixed to the rafters — straight and evenly gauged',
+          'new sawn timber pale and raw — clearly new material on existing rafters',
+          'batten offcuts on the scaffold board from the cut-to-length process',
+        ],
+      },
+      {
+        _for:          'renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert',
+        scene_note:    'new tile coursing in progress — first courses of new terracotta tiles on the new battens, chalk line defining the next course, tile stack on the scaffold',
+        scene_camera:  'from the scaffold level, framing the tile being placed on the batten with the chalk line above defining the next row',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'new terracotta tile being placed on the batten — tile lug engaging the batten edge',
+          midground:  'three or four new courses of tiles below the active row — uniform and unweathered',
+          background: 'scaffold board with tile stack, chalk line drum at the side',
+        },
+        scene_debris:  'tile lug chips on the scaffold board from tile cutting, cardboard tile packaging beside the stack',
+        scene_exclude: ['old tiles', 'moss treatment equipment', 'garden from far away'],
+        tools: [
+          'new terracotta tile being placed on the batten by hand',
+          'chalk line drum on the scaffold board for row alignment',
+          'tile stack on the scaffold ready for the next course',
+        ],
+        protections: [
+          'scaffold platform as working surface',
+          'debris netting below scaffold',
+        ],
+        chantier_details: [
+          'new tile lug hooked over the new batten — tile clicking into position',
+          'new tile courses below — uniform colour and profile, no weathering',
+          'chalk line marking the correct height for the next tile course',
+        ],
+      },
+
+      // --- réparation / remplacement tuile ou ardoise ---
+      {
+        _for:          'repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit',
+        scene_note:    'damaged tile being removed — adjacent tiles being slid aside with a tile lifter to access the broken tile, cracked face clearly visible once exposed',
+        scene_camera:  'close-up on the tile surface, framing the tile lifter being inserted under the adjacent tile to slide it up and expose the damaged one below',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'tile lifter inserted under the adjacent tile — tool levering the tile up to expose the nail below',
+          midground:  'damaged tile visible once the adjacent tile is raised — cracked or broken face clearly visible',
+          background: 'surrounding tile courses, roof slope continuing',
+        },
+        scene_debris:  'broken tile fragment on the roof surface beside the repair point',
+        scene_exclude: ['full scaffold loaded with tiles', 'new battens being nailed', 'moss treatment equipment'],
+        tools: [
+          'tile lifter or slate ripper inserted under the adjacent tile to raise it',
+        ],
+        protections: [
+          'roof ladder or cat ladder hooked over the ridge for safe access',
+        ],
+        chantier_details: [
+          'tile lifter levering the adjacent tile — damaged tile now accessible below',
+          'cracked or broken tile clearly visible once the adjacent tile is raised',
+          'surrounding tiles undisturbed — targeted single-tile repair in progress',
+        ],
+      },
+      {
+        _for:          'repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit',
+        scene_note:    'replacement tile being slid into position — new tile being fed into the course gap with the lug aligned over the batten',
+        scene_camera:  'close-up from the roof surface, framing the new tile being guided into the gap left by the removed damaged tile',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'new replacement tile being slid horizontally into the course gap, lug engaging the batten',
+          midground:  'surrounding weathered tiles — the new tile slightly brighter in colour than its neighbours',
+          background: 'roof slope around the repair point',
+        },
+        scene_debris:  'old tile fragments removed and set aside on the roof surface near the repair',
+        scene_exclude: ['full tile stripping', 'scaffold loaded with tiles', 'moss treatment'],
+        tools: [
+          'replacement tile being guided into the course gap with both hands',
+          'tile lifter resting on the adjacent tile beside the repair point',
+        ],
+        protections: [
+          'roof ladder hooked over the ridge beside the repair zone',
+        ],
+        chantier_details: [
+          'new tile being slid into the gap — lug engaging the batten below',
+          'new tile slightly brighter in colour against the weathered tiles on either side',
+          'removed damaged tile fragments to the side — comparison of old vs. new visible',
+        ],
+      },
+      {
+        _for:          'repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit',
+        scene_note:    'repaired tile section — new replacement tiles among weathered neighbours, fresh mortar pointing visible at the edges, surrounding tiles undisturbed',
+        scene_camera:  'standing back slightly from the repair, framing the new tiles among the weathered surrounding tiles with fresh mortar visible',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'fresh white mortar pointing around the new tile edge — still uncured and bright white',
+          midground:  'one or two replacement tiles among the weathered surrounding tiles — slight colour difference',
+          background: 'roof slope continuing undisturbed, cat ladder beside the repair',
+        },
+        scene_debris:  'trowel mortar smear on the adjacent tile surface beside the pointing',
+        scene_exclude: ['full tile stripping', 'scaffold loaded', 'moss treatment equipment'],
+        tools: [
+          'pointing trowel resting on the adjacent tile beside the fresh mortar work',
+          'small bucket of fresh mortar at the roof ladder platform',
+        ],
+        protections: [
+          'roof ladder hooked over the ridge — access route visible',
+        ],
+        chantier_details: [
+          'fresh mortar pointing around the new tile edge — bright white against the weathered tile',
+          'replacement tile slightly different in colour from the weathered tiles around it',
+          'minimal repair footprint — only the damaged section replaced, surrounding tiles untouched',
+        ],
+      },
+
+      // --- charpente ---
+      {
+        _for:          'charpente|ferme|fermette|structure.*toit|isolation.*comble|comble',
+        scene_note:    'bare timber roof structure — rafters, purlins, and ridge board exposed before tiling, fermette frame layout visible across the full span',
+        scene_camera:  'standing at the eave level, framing the bare timber fermette structure rising from the wall plate to the ridge',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'timber wall plate at the eave level — rafter feet seated on the plate',
+          midground:  'fermette structure — diagonal rafters rising to the ridge, collar ties visible across the span',
+          background: 'ridge board at the apex, sky or gable wall beyond',
+        },
+        scene_debris:  'timber offcuts at the eave base, nail packaging on the scaffold board',
+        scene_exclude: ['tiles going on', 'finished roof surface', 'moss or old tiles', 'moss treatment equipment'],
+        tools: [
+          'claw hammer and nail bar on the scaffold board beside the rafter toe',
+          'chalk line drum on the wall plate for alignment',
+        ],
+        protections: [
+          'scaffold platform at the working level',
+          'debris netting below',
+        ],
+        chantier_details: [
+          'bare timber fermette structure — rafters pale and raw, still unweathered',
+          'collar ties visible across the rafter pairs — structural bracing in place',
+          'ridge board at the apex — fermettes bearing onto it at the top',
+        ],
+      },
+      {
+        _for:          'charpente|ferme|fermette|structure.*toit|isolation.*comble|comble',
+        scene_note:    'first eave battens going on a freshly erected timber frame — nail gun fixing the first batten across the rafter tops before the tile courses begin',
+        scene_camera:  'on the rafter surface, framing the first batten being nailed across the rafter tops from the eave upward',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'first eave batten being nailed to the rafter tops — fresh sawn timber, nail gun in use',
+          midground:  'rafter surface above — bare, awaiting the next batten rows',
+          background: 'ridge board at the top, fermette structure visible below',
+        },
+        scene_debris:  'batten off-cut on the scaffold board, nail gun hose running to the compressor below',
+        scene_exclude: ['tiles going on', 'finished roof surface', 'old tiles stripped'],
+        tools: [
+          'nail gun fixing the first eave batten to the rafter tops',
+          'measuring tape for batten gauge spacing',
+          'stack of new sawn battens on the scaffold board ready for nailing',
+        ],
+        protections: [
+          'scaffold platform as the working surface',
+        ],
+        chantier_details: [
+          'first batten nailed across the rafter tops at the eave position',
+          'raw timber rafters above waiting for the batten rows',
+          'nail gun compressor hose coiled on the scaffold board',
+        ],
+      },
+
+      // --- faîtage ---
+      {
+        _for:          'faitage|faite|faitier|faitiere',
+        scene_note:    'old ridge tiles being broken off for replacement — bolster chisel and lump hammer at the old mortar joint, old ridge tile being lifted off the broken bed',
+        scene_camera:  'close-up at the ridge line, framing the bolster and hammer at the mortar joint of the old ridge tile',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'bolster chisel at the old ridge tile mortar joint — hammer striking the bolster to break the mortar',
+          midground:  'old ridge tiles beside the repair zone — mortar-encrusted bases exposed where tiles already removed',
+          background: 'ridge line of the roof, both slopes visible below',
+        },
+        scene_debris:  'old mortar fragments on the top tiles either side of the ridge, old ridge tile pieces on the scaffold beside the ridge',
+        scene_exclude: ['fresh mortar applied', 'new tiles on slopes', 'moss treatment equipment'],
+        tools: [
+          'bolster chisel and lump hammer breaking the old ridge tile mortar joint',
+        ],
+        protections: [
+          'safety goggles beside the lump hammer',
+          'roof ladder hooked over the ridge for access',
+        ],
+        chantier_details: [
+          'old mortar joint being broken — mortar fragments on the tile surface around the impact',
+          'old ridge tile mortar-encrusted base visible where adjacent tiles already removed',
+          'bolster impact marks in the old mortar — progressive breaking along the ridge',
+        ],
+      },
+      {
+        _for:          'faitage|faite|faitier|faitiere',
+        scene_note:    'new mortar bed being applied along the ridge for new ridge tiles — trowel spreading fresh mortar across the top tile course on both sides of the apex',
+        scene_camera:  'close-up at the ridge, framing the trowel spreading fresh mortar across the apex — mortar bed building on the top tiles',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'trowel spreading fresh grey mortar across the top tile course at the ridge apex',
+          midground:  'mortar bed growing along the ridge line — several tiles\' worth already laid',
+          background: 'both roof slopes visible below the ridge line',
+        },
+        scene_debris:  'mortar splashes on the top tiles around the trowel work',
+        scene_exclude: ['old ridge tile removal', 'new tiles on slope', 'moss treatment'],
+        tools: [
+          'brick trowel spreading fresh mortar along the ridge apex',
+          'mortar bucket at the ridge side — fresh mix in the bucket',
+        ],
+        protections: [
+          'roof ladder at the side for ridge access',
+        ],
+        chantier_details: [
+          'fresh grey mortar bed being spread on both top tile courses at the apex',
+          'mortar bed building progressively along the ridge length',
+          'mortar splashes on the top tiles around the trowel work area',
+        ],
+      },
+      {
+        _for:          'faitage|faite|faitier|faitiere',
+        scene_note:    'new ridge tile being bedded and tapped into the fresh mortar — rubber mallet tapping the ridge tile level, mortar squeezing from beneath both sides',
+        scene_camera:  'close-up at the ridge, framing the rubber mallet tapping the new ridge tile level with mortar squeezing from beneath',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'rubber mallet tapping a new ridge tile down into the fresh mortar bed — mortar squeezing from both sides beneath the tile',
+          midground:  'completed ridge section behind the active point — neatly pointed mortar on both sides',
+          background: 'ridge line continuing, roof slopes below',
+        },
+        scene_debris:  'excess mortar on the top tiles beside the newly bedded ridge tile',
+        scene_exclude: ['old tile removal', 'ridge demolition', 'moss treatment'],
+        tools: [
+          'rubber mallet tapping the new ridge tile into the mortar bed',
+          'pointing trowel to flush the mortar either side after bedding',
+        ],
+        protections: [
+          'roof ladder beside the active ridge section',
+        ],
+        chantier_details: [
+          'rubber mallet impact on the ridge tile — tile being driven into the mortar bed',
+          'mortar squeezing from both sides of the ridge tile base as it is tapped level',
+          'completed ridge section behind — mortar pointed and flushed neatly on both sides',
+        ],
+      },
+
+      // --- zinguerie / solins / métallerie toiture ---
+      {
+        _for:          'zinguerie|zinc|solin|larmier|noue.*zinc|bavette.*zinc',
+        scene_note:    'zinc sheet being cut to length on the scaffold — tin snips cutting through flat zinc sheet, scored fold lines marked with a marker pen',
+        scene_camera:  'close-up on the scaffold board, framing the tin snips cutting through the zinc sheet with fold marks visible beside the cut line',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'tin snips cutting through a flat zinc sheet — cut edge turning up on one side',
+          midground:  'zinc sheet on the scaffold board — fold lines marked with marker pen, some sections already bent',
+          background: 'scaffold board surface, house wall visible beyond',
+        },
+        scene_debris:  'zinc strip offcut curling beside the cut point, marker pen cap on the scaffold board',
+        scene_exclude: ['tiles going on', 'moss treatment', 'gutter cleaning', 'concrete mixer'],
+        tools: [
+          'tin snips cutting through a flat zinc sheet',
+          'marker pen on the scaffold board beside the fold marks',
+        ],
+        protections: [
+          'heavy-duty work gloves beside the zinc sheet — zinc edges sharp',
+        ],
+        chantier_details: [
+          'tin snips cutting through the zinc sheet — cut edge with slight turn-up visible',
+          'fold lines marked in marker pen across the zinc sheet beside the cut',
+          'zinc offcut strip curling on the scaffold board after trimming',
+        ],
+      },
+      {
+        _for:          'zinguerie|zinc|solin|larmier|noue.*zinc|bavette.*zinc',
+        scene_note:    'lead flashing being dressed at a chimney abutment — lead dresser forming the malleable lead into the brick joint, top edge going into a raked-out mortar joint',
+        scene_camera:  'close-up at the chimney-roof junction, framing the lead dresser being used to press the lead into the brick abutment joint',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'lead dresser forming the malleable lead into the brick abutment joint at the chimney base',
+          midground:  'lead apron and soaker visible at the chimney base — dressed and bedded on both sides',
+          background: 'chimney stack above, roof tiles either side of the abutment',
+        },
+        scene_debris:  'old lead offcuts on the roof tiles beside the chimney, mortar dust from the raked-out joint on the brick face',
+        scene_exclude: ['moss treatment', 'gutter cleaning', 'tile stripping', 'new tile coursing'],
+        tools: [
+          'lead dresser forming the malleable lead flashing into the brick joint',
+          'cold chisel for raking out the old mortar joint above the lead edge',
+        ],
+        protections: [
+          'heavy gloves beside the lead dresser',
+          'roof ladder hooked over the ridge for chimney access',
+        ],
+        chantier_details: [
+          'lead being dressed into the brick abutment joint — malleable material conforming to the brick face',
+          'top lead edge going into the raked-out mortar course — will be pointed after dressing',
+          'old mortar dust on the brick face from the raked-out joint beside the new lead edge',
+        ],
+      },
+      {
+        _for:          'zinguerie|zinc|solin|larmier|noue.*zinc|bavette.*zinc',
+        scene_note:    'solin mortar joint being re-pointed at a wall abutment — fresh mortar being applied to the wall-tile junction with a pointing trowel',
+        scene_camera:  'close-up at the wall-to-tile junction, framing the pointing trowel applying fresh mortar to the solin joint',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'pointing trowel applying fresh mortar to the solin joint at the wall-tile abutment — mortar bead building along the junction',
+          midground:  'wall face beside the roof tiles — old weathered solin visible where not yet re-pointed',
+          background: 'roof tiles, wall continuing above the junction',
+        },
+        scene_debris:  'old mortar fragments from the raked-out joint on the tile surface below the solin',
+        scene_exclude: ['zinc cutting', 'lead dresser at chimney', 'tile stripping', 'moss treatment'],
+        tools: [
+          'pointing trowel applying fresh mortar to the solin joint',
+          'mortar bucket at the roof access platform',
+          'cold chisel for raking out the old solin before re-pointing',
+        ],
+        protections: [
+          'roof ladder for access to the wall junction',
+        ],
+        chantier_details: [
+          'fresh mortar bead building along the solin joint — bright white against the weathered tile and wall',
+          'old solin mortar — cracked and recessed — visible beside the fresh re-pointed section',
+          'old mortar fragments on the tile surface below from the raking-out process',
+        ],
+      },
+    ],
     tools: [
       'palettes of terracotta roof tiles stacked near the base of the house',
       'bags of roofing mortar stacked beside the wall',
@@ -4767,6 +5549,385 @@ const SITE_REALISM = {
   },
 
   abattage: {
+    scenarios: [
+
+      // --- abattage direct ---
+      {
+        _for:          'abattage.*arbre|abattage.*peup|abattage.*conif',
+        scene_note:    'tree felling in progress — notch and back-cut made at the base, directional guide rope tensioned from high on the trunk, tree still standing with the hinge cut visible',
+        scene_camera:  'standing at a safe distance from the fall zone, framing the base of the tree with the notch cut and the guide rope running upward',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'yellow safety tape exclusion zone at the fall area perimeter, guide stake at the fall direction',
+          midground:  'tree trunk base — notch and back-cut clearly visible in the wood, rope attached high and tensioned',
+          background: 'crown of the tree, open fall zone beyond',
+        },
+        scene_debris:  'fresh sawdust at the base of the trunk around the notch cut, wood chip pile from the notch removal',
+        scene_exclude: ['felled tree on the ground', 'only stump visible', 'dessouchage equipment', 'simple light pruning', 'tree completely intact'],
+        tools: [
+          'chainsaw beside the cut — notch cut just completed',
+          'guide rope running from the trunk base up to the attachment point high on the tree',
+          'wedge blocks on the ground near the trunk base',
+        ],
+        protections: [
+          'yellow safety tape marking the exclusion zone in the fall direction',
+          'guide stake driven into the ground at the calculated fall direction',
+        ],
+        chantier_details: [
+          'notch and back-cut clearly visible in the trunk at base level',
+          'guide rope tensioned from the trunk attachment point toward the desired fall direction',
+          'fresh sawdust pile at the base from the notch cut',
+        ],
+      },
+      {
+        _for:          'abattage.*arbre|abattage.*peup|abattage.*conif',
+        scene_note:    'tree mid-fall — trunk at 30–45 degrees, crown swinging into the fall zone, guide rope under tension, exclusion zone clear',
+        scene_camera:  'standing well outside the fall zone, framing the leaning trunk at 30–45 degrees with the crown swinging',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'exclusion zone tape and safety cones at the near perimeter',
+          midground:  'tree trunk at 30–45 degrees — crown swinging into the prepared fall zone',
+          background: 'cleared fall zone, open garden or field where the tree will land',
+        },
+        scene_debris:  'small bark fragments at the base from the cut, guide rope slack forming behind the falling trunk',
+        scene_exclude: ['tree standing upright intact', 'stump only', 'dessouchage', 'log pile', 'simple pruning'],
+        tools: [
+          'guide rope in tension from the upper trunk toward the direction of fall',
+          'chainsaw on the ground at the safe distance — cut already made',
+        ],
+        protections: [
+          'yellow safety tape exclusion zone visibly clear of the fall direction',
+          'operator at safe distance away from the fall zone',
+        ],
+        chantier_details: [
+          'trunk at steep lean angle — crown clearly in motion',
+          'guide rope tracking the controlled fall direction — rope in tension',
+          'fall zone prepared and clear ahead of the falling crown',
+        ],
+      },
+      {
+        _for:          'abattage.*arbre|abattage.*peup|abattage.*conif',
+        scene_note:    'tree freshly felled — full trunk on the ground in the fall zone, fresh-cut stump visible at trunk base, sawdust around the stump, exclusion tape still in place',
+        scene_camera:  'standing beside the stump, framing the full length of the fallen trunk on the ground with the stump in the foreground',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'fresh-cut stump with growth rings visible — sawdust and wood chips around the base',
+          midground:  'fallen trunk stretching along the ground — bark, crown foliage at the far end',
+          background: 'open fall zone, safety tape still in place at the perimeter',
+        },
+        scene_debris:  'sawdust ring around the stump base, wood chips from the notch cut, bark fragments on the ground',
+        scene_exclude: ['tree standing', 'sections already cut up', 'dessouchage', 'log pile stacked'],
+        tools: [
+          'chainsaw on the ground near the stump — felling just completed',
+          'measuring tape near the stump base',
+        ],
+        protections: [
+          'yellow safety tape exclusion zone still in place around the fall area',
+        ],
+        chantier_details: [
+          'fresh-cut stump with concentric growth rings visible on the flat face',
+          'fallen trunk on the ground — full length visible from stump to crown',
+          'sawdust ring around the stump from the cut',
+        ],
+      },
+
+      // --- démontage par sections / zone difficile ---
+      {
+        _for:          'zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage',
+        scene_note:    'tree being dismantled section by section from the top — upper sections already removed, arborist climber at the top of the shortened stub trunk, multiple log sections at the base',
+        scene_camera:  'standing back from the tree, framing the partially dismantled stub trunk with the climber at the top against the sky',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'log sections on the ground at the base — stacked and arranged, sawdust around them',
+          midground:  'shortened stub trunk — much shorter than original height, climber in harness at the top',
+          background: 'sky above, property or tight garden space visible beside the work area',
+        },
+        scene_debris:  'sawdust ring around the base, bark fragments from previous sections on the ground',
+        scene_exclude: ['intact standing full tree', 'simple felling', 'tree in open field', 'dessouchage'],
+        tools: [
+          'climbing rope running from the climber at the top of the stub down to ground handlers',
+          'chainsaw at the climber\'s position for the next section cut',
+          'log sections on the ground from previous section removals',
+        ],
+        protections: [
+          'full climbing harness and helmet on the climber at the stub top',
+          'exclusion zone below the working area',
+          'lowering rope for controlled section descent',
+        ],
+        chantier_details: [
+          'stub trunk significantly shorter than the original tree — sections removed progressively from top',
+          'climber in harness at the top of the shortened stub — height still significant',
+          'log section pile at the base growing as each section is lowered',
+        ],
+      },
+      {
+        _for:          'zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage',
+        scene_note:    'large trunk section being lowered by rope — section suspended mid-air between the stub and the ground, rope under tension, ground handler controlling the descent speed',
+        scene_camera:  'standing back, framing the suspended trunk section hanging from the lowering rope between canopy height and the ground',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'ground handler with the lowering rope — hands gripping the rope, rope taut under the section weight',
+          midground:  'large trunk section suspended mid-air — bark clearly visible, rope through the top ring',
+          background: 'stub trunk above, property or structure beside the controlled lowering zone',
+        },
+        scene_debris:  'bark fragments on the ground below the suspended section from the cut, sawdust at the ground immediately below',
+        scene_exclude: ['tree falling uncontrolled', 'intact standing tree', 'simple felling', 'dessouchage'],
+        tools: [
+          'lowering rope through a rigging ring at the top of the suspended section',
+          'ground handler with gloved hands on the rope controlling the descent',
+        ],
+        protections: [
+          'hard hat and gloves on the ground handler',
+          'exclusion zone below the lowering path',
+        ],
+        chantier_details: [
+          'trunk section suspended mid-air — log mass visible, rope taut under tension',
+          'ground handler controlling descent speed with the lowering rope',
+          'controlled lowering arc clear of the adjacent property',
+        ],
+      },
+      {
+        _for:          'zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage',
+        scene_note:    'partially dismantled tree — several upper sections removed, leaving a reduced stub trunk still standing, log billets at the base, tight garden or property boundary visible',
+        scene_camera:  'standing in the garden, framing the reduced stub trunk with the log billets at the base and the property boundary close beside',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'log billets on the ground at the base — varied section lengths, fresh cut ends visible',
+          midground:  'reduced stub trunk — upper sections removed, clean cut at the current top level',
+          background: 'tight property boundary beside the work area — fence, wall or house clearly close to the trunk',
+        },
+        scene_debris:  'sawdust around the billet pile, bark fragments on the ground',
+        scene_exclude: ['full intact tree', 'open field felling', 'dessouchage', 'tree completely down'],
+        tools: [
+          'chainsaw resting against the stub trunk',
+          'rigging rope coiled beside the billet pile',
+        ],
+        protections: [
+          'exclusion zone tape still in place around the work area',
+        ],
+        chantier_details: [
+          'stub trunk clean-cut at the current working height — progressive dismantling visible',
+          'log billet pile at the base — each section from a previous cut',
+          'tight property boundary clearly visible beside the trunk — confined working space',
+        ],
+      },
+
+      // --- dessouchage ---
+      {
+        _for:          'dessouchage|souche',
+        scene_note:    'stump grinder working on a fresh stump — rotating cutting wheel engaged with the stump surface, wood chips being thrown to the side, operator behind the machine',
+        scene_camera:  'standing to the side of the stump grinder, framing the cutting wheel engaged with the fresh stump',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'stump grinder with the rotating cutting wheel engaged on the stump surface — chips being thrown',
+          midground:  'fresh stump being ground — surface visibly decreasing in height as the wheel removes wood',
+          background: 'garden or lawn around the stump, sawdust and chip debris scattered wide',
+        },
+        scene_debris:  'wood chips being thrown to the sides from the grinding wheel, sawdust and chip ring forming around the machine',
+        scene_exclude: ['intact standing tree', 'simple pruning', 'felling in progress', 'log pile from felling'],
+        tools: [
+          'stump grinder machine with rotating cutting wheel engaged on the stump surface',
+        ],
+        protections: [
+          'chip deflector guard on the grinder protecting the operator',
+          'eye protection on the operator',
+          'chip splash zone cleared around the grinder',
+        ],
+        chantier_details: [
+          'cutting wheel actively engaged with the stump — top surface being progressively reduced',
+          'fresh wood chip shower being thrown to the sides from the grinding wheel',
+          'stump clearly decreasing in height as the grinder works across it',
+        ],
+      },
+      {
+        _for:          'dessouchage|souche',
+        scene_note:    'partially ground stump — circular grinding marks visible on the stump face, wood chips scattered wide, stump reduced to below-grade level on one side',
+        scene_camera:  'crouching beside the stump, framing the grinding marks and the wood chip scatter',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'fresh grinding marks on the stump face — circular grinder path clearly visible in the wood',
+          midground:  'stump partially ground — one side reduced to below-grade, other side still full height',
+          background: 'garden lawn, wood chips scattered across the surrounding grass',
+        },
+        scene_debris:  'fresh wood chips scattered wide around the stump from the grinding operation',
+        scene_exclude: ['intact standing tree', 'full stump untouched', 'felling in progress'],
+        tools: [
+          'stump grinder parked beside the stump between passes',
+        ],
+        protections: [],
+        chantier_details: [
+          'circular grinding path marks clearly visible on the stump face',
+          'stump partially reduced — one side to below-grade, revealing the grinding depth',
+          'wood chip scatter wide around the stump from the grinding operation',
+        ],
+      },
+      {
+        _for:          'dessouchage|souche',
+        scene_note:    'dessouchage completed — stump removed to below-grade level, depression in the lawn where the stump was, wood chip pile in the hollow, surrounding lawn intact',
+        scene_camera:  'standing above the completed area, framing the ground-level result where the stump was',
+        scene_framing: {
+          work_pct:   45,
+          foreground: 'ground-level depression where the stump was — wood chip pile filling the hollow',
+          midground:  'lawn around the removal area — grass intact, slight disturbance from the machine tracks',
+          background: 'garden surroundings, fence or garden edge beyond',
+        },
+        scene_debris:  'wood chip pile in the depression, fine sawdust on the surrounding grass from the grinding',
+        scene_exclude: ['intact standing tree', 'stump still visible above ground', 'felling in progress'],
+        tools: [
+          'stump grinder parked away — work completed',
+          'rake on the ground beside the chip pile for tidying',
+        ],
+        protections: [],
+        chantier_details: [
+          'depression in the lawn at ground level — stump ground to below grade',
+          'wood chip pile filling the hollow from the grinding debris',
+          'surrounding lawn intact with slight machine track marks beside the area',
+        ],
+      },
+
+      // --- après tempête ---
+      {
+        _for:          'tempete|orage|vent.*fort|apres.*vent|arbre.*tombe',
+        scene_note:    'wind-fallen tree leaning against a garden fence or low wall — root ball exposed, trunk on the ground at a low angle, grey overcast sky and wet ground after the storm',
+        scene_camera:  'standing back, framing the fallen tree leaning against the fence with the exposed root ball at the base',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'exposed root ball on the wet ground — earth and roots upended, depression in the lawn beside it',
+          midground:  'trunk at a low angle resting on the fence or wall — bark and crown visible',
+          background: 'grey overcast sky, wet garden, fence partially visible under the trunk',
+        },
+        scene_debris:  'wet mud and soil debris around the exposed root ball, small branches and leaves on the wet ground',
+        scene_exclude: ['catastrophic structural damage', 'house destroyed', 'multiple fallen trees', 'sunny dry weather', 'dramatic sky'],
+        tools: [
+          'orange safety cones placed around the danger area',
+          'safety tape visible around the fallen tree perimeter',
+        ],
+        protections: [
+          'safety tape marking the hazard area around the fallen tree',
+          'orange cones beside the root ball',
+        ],
+        chantier_details: [
+          'root ball fully exposed — roots and compacted earth visible on the upended side',
+          'depression in the lawn where the root ball was anchored',
+          'wet conditions throughout — wet ground, wet bark, wet leaves',
+        ],
+      },
+      {
+        _for:          'tempete|orage|vent.*fort|apres.*vent|arbre.*tombe',
+        scene_note:    'storm tree being sectioned on a blocked path or driveway — trunk already on the ground, chainsaw cutting sections, cones and safety tape in place, grey sky, ground wet',
+        scene_camera:  'standing beside the trunk, framing the chainsaw cutting into a trunk section with cones and tape visible',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'orange safety cones and safety tape at the roadside or path edge — cleared public area',
+          midground:  'trunk section being cut by chainsaw — sawdust flying, operator in HV vest',
+          background: 'grey overcast sky, wet surfaces, utility vehicle or van visible in the background',
+        },
+        scene_debris:  'sawdust on the wet ground at the cut point, cut sections beside the trunk, wet leaves on the path',
+        scene_exclude: ['catastrophic damage', 'multiple trees down', 'house destroyed', 'dry sunny weather'],
+        tools: [
+          'chainsaw cutting a trunk section on the ground',
+          'utility van visible in the background — crew on site',
+        ],
+        protections: [
+          'high-visibility vests on all workers',
+          'orange cones at the site perimeter',
+          'safety tape across the blocked path',
+          'hard hats on the workers',
+        ],
+        chantier_details: [
+          'trunk section on the wet ground — chainsaw actively cutting',
+          'sawdust on the wet path surface from the cut',
+          'cut sections already separated beside the trunk — sections being progressively created',
+        ],
+      },
+
+      // --- intervention de nuit / urgence ---
+      {
+        _for:          'urgence|nuit|nocturne|route.*bloqu',
+        time_of_day:   'night',
+        scene_note:    'night emergency felling — work floodlights illuminating a fallen or dangerous tree on a road or driveway, workers in high-visibility vests with chainsaw, orange cones, dark background',
+        scene_camera:  'standing outside the light zone, framing the lit work area with the dark surroundings beyond',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'orange cones and safety tape at the lit perimeter — blocking the road or driveway',
+          midground:  'workers in HV vests operating chainsaw on the fallen trunk, work floodlight illuminating the scene',
+          background: 'dark background — trees silhouetted against the dark sky beyond the light zone',
+        },
+        scene_debris:  'sawdust visible in the floodlight cone on the ground beside the cut, cut log sections in the light',
+        scene_exclude: ['daytime lighting', 'cinematic lighting', 'police flashing lights unless specified', 'completely dark unreadable scene'],
+        tools: [
+          'chainsaw operated by a worker in HV vest in the floodlight zone',
+          'work floodlight on tripod providing the main illumination',
+        ],
+        protections: [
+          'high-visibility vests on all workers — clearly lit by the floodlight',
+          'hard hats on workers',
+          'orange cones blocking the road or driveway approach',
+          'safety tape across the hazard zone',
+        ],
+        chantier_details: [
+          'floodlight cone illuminating the work area — sharp light-dark boundary',
+          'HV vests bright in the floodlight — professional emergency response visible',
+          'dark surroundings beyond the light zone — night conditions clearly communicated',
+        ],
+      },
+      {
+        _for:          'urgence|nuit|nocturne|route.*bloqu',
+        time_of_day:   'night',
+        scene_note:    'night emergency — van headlights and work floodlight creating combined illumination on a fresh stump or fallen trunk, workers visible in HV gear, dark sky above',
+        scene_camera:  'standing outside the combined light zone, framing the van headlights and floodlight overlapping on the work area',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'van parked with headlights on, orange cones at the road edge',
+          midground:  'work floodlight zone with workers in HV vests at the fallen trunk or fresh stump',
+          background: 'dark sky, tree silhouettes beyond the light, distant surroundings in darkness',
+        },
+        scene_debris:  'sawdust and cut sections visible in the combined light zone on the ground',
+        scene_exclude: ['daylight', 'overly dramatic cinematic light', 'scene too dark to read work'],
+        tools: [
+          'work floodlight on tripod in the combined light zone',
+          'utility van with headlights on',
+          'chainsaw or hand tools in the workers\' hands',
+        ],
+        protections: [
+          'HV vests on all workers clearly visible in the combined light',
+          'orange cones at the road edge or perimeter',
+        ],
+        chantier_details: [
+          'combined light from van headlights and floodlight — overlapping warm and cool tones',
+          'workers\' HV vests clearly visible in the combined light zone',
+          'dark sky and silhouetted trees beyond the lit area — unmistakable night context',
+        ],
+      },
+
+      // Fallback: abattage général
+      {
+        scene_note:    'tree felling work in progress — trunk on the ground or stump visible, safety exclusion zone in place, fresh sawdust and wood chips on the ground',
+        scene_camera:  'standing beside the stump or fallen trunk, framing the evidence of felling with the exclusion zone visible',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'fresh-cut stump with growth rings visible, sawdust ring around the base',
+          midground:  'fallen trunk on the ground or cut sections nearby, exclusion tape visible',
+          background: 'garden or site surroundings, cleared fall zone',
+        },
+        scene_debris:  'fresh sawdust at the stump base, wood chip pile, bark fragments on the ground',
+        scene_exclude: ['intact standing tree with no work', 'dessouchage equipment if not relevant'],
+        tools: [
+          'guide stake driven into the ground at the calculated fall direction',
+          'measuring tape on the ground near the base of the tree',
+          'rope coil resting at the base for directional pull',
+        ],
+        protections: [
+          'yellow safety tape marking the exclusion zone around the felling area',
+          'tarp spread on the ground at the expected landing zone',
+        ],
+        chantier_details: [
+          'fresh wood chips scattered on the ground at the base of the tree',
+          'cut branch sections stacked in a pile nearby',
+          'sap mark on the freshly exposed cut end of a branch',
+        ],
+      },
+    ],
     tools: [
       'guide stake driven into the ground at the calculated fall direction',
       'measuring tape on the ground near the base of the tree',
@@ -4788,6 +5949,259 @@ const SITE_REALISM = {
   },
 
   peinture: {
+    scenarios: [
+
+      // --- peinture intérieure (murs) ---
+      {
+        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        scene_note:    'interior wall being painted — roller working across a half-painted wall, fresh new colour on the upper half, old paint still visible on the lower half, roller tray on the drop cloth',
+        scene_camera:  'standing in the room, framing the half-painted wall with the roller mid-stroke and the drop cloth on the floor',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'canvas drop cloth on the floor, roller tray with fresh paint beside the wall',
+          midground:  'half-painted wall — new colour above the mid-line, old colour below, paint edge sharp',
+          background: 'room interior — door frame or window visible at the side',
+        },
+        scene_debris:  'paint drip on the drop cloth below the roller line, thin wet brush stroke at the unpainted edge',
+        scene_exclude: ['exterior facade painting', 'masonry construction', 'roofing', 'pressure washer', 'wet render on wall'],
+        tools: [
+          'paint roller mid-stroke on the wall surface',
+          'roller tray with fresh paint on the drop cloth',
+          'flat brush on the rim of the tray for cutting-in',
+        ],
+        protections: [
+          'canvas drop cloth spread across the full floor below the painted wall',
+          'masking tape strip along the ceiling junction and skirting board',
+          'plastic sheet over nearby furniture',
+        ],
+        chantier_details: [
+          'fresh paint edge sharp between new and old colour at the mid-wall line',
+          'roller texture marks visible at the leading edge of the painted section',
+          'paint drips on the drop cloth below the active stroke area',
+        ],
+      },
+      {
+        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        scene_note:    'room being prepared for painting — canvas drop cloth covering the full floor, masking tape along the skirting board edge, unpainted wall above ready, paint tin open on the cloth',
+        scene_camera:  'standing in the doorway, framing the drop-cloth-covered room with masking tape along all edges and the open paint tin',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'canvas drop cloth covering the full floor — taped at the skirting board base',
+          midground:  'unpainted walls above the masking tape line, window frame masked with tape and paper',
+          background: 'far wall and ceiling visible, furniture pushed to the room centre and covered',
+        },
+        scene_debris:  'masking tape roll on the floor near the skirting, torn tape packaging on the drop cloth',
+        scene_exclude: ['exterior painting', 'masonry construction', 'roofing', 'pressure washer'],
+        tools: [
+          'masking tape strip freshly applied along the skirting board edge',
+          'paint tin open on the drop cloth, stir stick resting on the lid',
+          'roller and tray on the cloth ready to start',
+        ],
+        protections: [
+          'canvas drop cloth covering the full floor area — taped at the edges',
+          'masking tape along all skirting boards, window frames, and ceiling junction',
+          'plastic sheet over furniture pushed to the room centre',
+        ],
+        chantier_details: [
+          'masking tape clearly applied along all edges — skirting, ceiling junction, window frames',
+          'drop cloth on the full floor — room fully protected before painting starts',
+          'furniture moved to centre and covered — room prepared for painting',
+        ],
+      },
+      {
+        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        scene_note:    'interior wall corner being cut in — flat brush cutting a precise line at the inside corner, both walls freshly painted around the angle, drop cloth on the floor',
+        scene_camera:  'close-up at the inside corner, framing the brush at the angle making the cut-in line',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'flat brush at the inside corner — cutting a precise paint line between the two adjacent wall surfaces',
+          midground:  'both wall surfaces freshly painted around the corner — uniform colour on both planes',
+          background: 'room interior, skirting board and floor at the base',
+        },
+        scene_debris:  'thin wet paint brush stroke still wet at the corner cut-in line, paint drip at the skirting below',
+        scene_exclude: ['exterior painting', 'masonry', 'roofing', 'pressure washer'],
+        tools: [
+          'flat brush making the cut-in line at the inside corner',
+          'small paint pot beside the brush for the cutting-in work',
+        ],
+        protections: [
+          'masking tape along the skirting board below the corner',
+          'drop cloth at the base of the wall',
+        ],
+        chantier_details: [
+          'precise cut-in line at the inside corner — brush work clean',
+          'both wall surfaces freshly painted — uniform tone, no runs',
+          'brush held close to the wall surface at the angle for control',
+        ],
+      },
+
+      // --- peinture plafond ---
+      {
+        _for:          'plafond',
+        scene_note:    'ceiling being painted with an extension roller — roller on a long pole being pushed across the flat ceiling, freshly painted section white and wet beside the old unpainted area still warm-toned',
+        scene_camera:  'standing in the room looking up, framing the roller on the extension pole being pushed across the ceiling',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'canvas drop cloth covering the entire floor — furniture removed or covered',
+          midground:  'extension roller on a long pole being pushed across the ceiling surface',
+          background: 'ceiling — freshly painted white section beside the old unpainted area still showing the base tone',
+        },
+        scene_debris:  'paint fleck on the drop cloth from the ceiling roller, thin drip on the wall at the ceiling junction',
+        scene_exclude: ['wall painting', 'exterior painting', 'masonry', 'roofing', 'pressure washer'],
+        tools: [
+          'roller on an extension pole being pushed across the ceiling surface',
+          'roller tray with white paint on the drop cloth at the room side',
+        ],
+        protections: [
+          'full floor coverage with canvas drop cloth — no floor visible',
+          'masking tape along the ceiling-wall junction',
+          'ceiling light fitting wrapped in plastic sheeting',
+        ],
+        chantier_details: [
+          'fresh white ceiling paint wet and shiny beside the old warm-toned unpainted area',
+          'roller marks visible in the freshly applied paint — normal texture',
+          'paint fleck on the drop cloth from the roller',
+        ],
+      },
+      {
+        _for:          'plafond',
+        scene_note:    'ceiling paint almost complete — last strip being finished at the room perimeter with a short roller, ceiling junction cutting-in done, full floor drop cloth visible below',
+        scene_camera:  'standing at the room edge, framing the short roller finishing the perimeter strip with the drop cloth below',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'canvas drop cloth on the floor, roller tray with white paint at the room edge',
+          midground:  'short roller finishing the last ceiling strip at the wall junction — almost complete',
+          background: 'freshly painted ceiling — uniform white across the full room area',
+        },
+        scene_debris:  'paint drip at the ceiling-wall junction from the perimeter work',
+        scene_exclude: ['wall painting', 'exterior', 'masonry', 'roofing'],
+        tools: [
+          'short roller finishing the perimeter strip at the ceiling edge',
+          'flat brush on the drop cloth from the cutting-in pass',
+        ],
+        protections: [
+          'full drop cloth on the floor — no boards visible',
+          'masking tape at the ceiling-wall junction',
+        ],
+        chantier_details: [
+          'ceiling almost uniformly white — last strip at the perimeter being finished',
+          'cutting-in line at the ceiling junction clean — brush work done before the roller pass',
+          'drop cloth fully covering the floor — complete room protection',
+        ],
+      },
+
+      // --- peinture extérieure ---
+      {
+        _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        scene_note:    'timber shutters removed and laid on trestles outdoors — old paint being sanded before repainting, both shutters side by side on the outdoor workstation, sanding dust visible',
+        scene_camera:  'standing beside the trestles, framing both shutters flat on the workstation with the sanding equipment',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'two timber shutters flat on trestles — old paint surface being sanded, sanding dust visible',
+          midground:  'electric sander or sanding block in use on the shutter surface',
+          background: 'house wall with the empty shutter mounting brackets, garden beyond',
+        },
+        scene_debris:  'sanding dust on the shutter surface and on the ground below the trestles',
+        scene_exclude: ['shutters painted and hung', 'interior painting', 'masonry', 'roofing', 'pressure washer'],
+        tools: [
+          'electric orbital sander in use on the shutter surface',
+          'sanding block beside the sander for the hand-finish areas',
+          'trestles holding both shutters at working height',
+        ],
+        protections: [
+          'dust sheet under the trestles catching sanding dust',
+          'safety goggles on the worker sanding',
+        ],
+        chantier_details: [
+          'old paint surface being sanded — surface scratched and abraded to take new paint',
+          'sanding dust visible on the shutter surface and below',
+          'empty mounting brackets on the house wall where the shutters were removed',
+        ],
+      },
+      {
+        _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        scene_note:    'exterior facade paint in progress — upper section freshly painted in new colour, lower section still original paint, clear horizontal boundary, ladder and paint tray beside the wall',
+        scene_camera:  'standing back from the facade, framing the full wall height with the painted upper section and the old lower section, ladder beside the work',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'ladder base against the facade, paint tray and roller on the ground below',
+          midground:  'facade — upper section freshly painted in new colour, lower section old paint still showing',
+          background: 'garden surroundings, sky above the roof edge',
+        },
+        scene_debris:  'paint drip at the boundary line between old and new paint',
+        scene_exclude: ['interior painting', 'masonry construction', 'roofing tiles', 'pressure washer'],
+        tools: [
+          'roller on an extension pole at the ladder working height',
+          'paint tray with exterior paint on the step of the ladder',
+          'masking tape strip along the window frame edge',
+        ],
+        protections: [
+          'plastic sheeting taped over the window glass',
+          'tarp on the ground below the wall to catch paint drips',
+          'masking tape along window frames and door frames',
+        ],
+        chantier_details: [
+          'fresh paint on the upper facade — clean new colour uniform and wet',
+          'clear horizontal boundary between new and old paint at the work line',
+          'paint drip at the boundary from the active roller edge',
+        ],
+      },
+      {
+        _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        scene_note:    'garden gate being painted — masking tape along the adjacent wall junction, tarp on the ground below, new paint colour on the upper bars with old finish still on the lower section',
+        scene_camera:  'standing in front of the gate, framing the painted upper bars with the masking tape at the wall junction and the tarp below',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'tarp on the ground below the gate, paint brush on the tarp beside the small paint pot',
+          midground:  'gate — upper bars freshly painted in new colour, lower section old finish still showing',
+          background: 'masking tape at the wall junction beside the gate frame, garden path beyond',
+        },
+        scene_debris:  'paint drip at the boundary between new and old finish on a vertical bar',
+        scene_exclude: ['interior painting', 'masonry', 'roofing', 'pressure washer', 'overspray on plants'],
+        tools: [
+          'brush applying paint to the gate bar surface',
+          'small paint pot balanced on the gate frame beside the brush',
+          'masking tape along the adjacent wall junction',
+        ],
+        protections: [
+          'tarp on the ground below the gate catching drips',
+          'masking tape protecting the adjacent wall and hinge hardware',
+        ],
+        chantier_details: [
+          'upper gate bars freshly painted — new colour uniform and wet',
+          'old paint colour still visible on the lower bars — work in progress',
+          'masking tape at the wall junction clearly protecting adjacent surfaces',
+        ],
+      },
+
+      // Fallback
+      {
+        scene_note:    'painting work in progress — wall section partially covered with fresh paint, canvas drop cloth on the floor, roller and paint tray visible',
+        scene_camera:  'standing in the room or in front of the wall, framing the partially painted surface with the roller and tray visible',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'canvas drop cloth on the floor, roller tray with paint residue beside the wall',
+          midground:  'wall surface — partly freshly painted, partly old base coat still showing',
+          background: 'room interior or exterior surroundings, door or window visible at the side',
+        },
+        scene_debris:  'paint drip on the drop cloth below the active stroke area',
+        scene_exclude: ['masonry construction', 'roofing', 'pressure washer', 'wet render on wall'],
+        tools: [
+          'paint roller with extension pole resting against the wall',
+          'flat brush balanced on the edge of an open paint can',
+          'roller tray with paint residue on the floor',
+        ],
+        protections: [
+          'canvas drop cloth spread across the floor below the painted wall',
+          'masking tape strip along the ceiling junction or skirting board edge',
+        ],
+        chantier_details: [
+          'paint drip marks on the drop cloth below the working section',
+          'fresh wet brush stroke visible at the unpainted edge of the wall',
+          'roller texture marks visible near the unpainted corner',
+        ],
+      },
+    ],
     tools: [
       'paint roller with extension pole resting against the wall',
       'flat brush balanced on the edge of an open paint can',
@@ -4811,6 +6225,295 @@ const SITE_REALISM = {
   },
 
   ravalement: {
+    scenarios: [
+
+      // --- ravalement complet / enduit de façade ---
+      {
+        _for:          'ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit',
+        scene_note:    'fresh render being applied to the facade — large float spreading a thick render coat across a section, trowel marks still wet, scaffolding board at the work level',
+        scene_camera:  'standing back from the scaffold, framing the worker applying render to a section with the fresh render surface beside the older section',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'render hawk and trowel on the scaffold board beside the freshly rendered section',
+          midground:  'facade — freshly rendered section (pale and smooth) beside the old weathered render',
+          background: 'scaffold tube and board structure, garden or street level below',
+        },
+        scene_debris:  'render drip at the base of the freshly applied section, empty render bag folded on the scaffold',
+        scene_exclude: ['cleaning equipment', 'pressure washer', 'roofing materials', 'finished clean facade without any work visible'],
+        tools: [
+          'large render float spreading fresh render across the facade section',
+          'hawk and trowel on the scaffold board beside the work',
+          'render mixing bucket with mortar residue at the scaffold edge',
+        ],
+        protections: [
+          'plastic sheeting taped over the window frame and glass',
+          'wooden board protecting the garden bed at the base of the wall',
+          'kraft paper taped along the window frame edge for a clean render line',
+        ],
+        chantier_details: [
+          'fresh render surface pale and smooth — trowel marks still visible and wet',
+          'old render beside the new section — darker and textured from weathering',
+          'render drip at the base of the fresh section from the application',
+        ],
+      },
+      {
+        _for:          'ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit',
+        scene_note:    'facade half-rendered — right section freshly applied render pale and smooth, left section old weathered render still dirty and textured, clear vertical demarcation line',
+        scene_camera:  'standing back from the facade, framing the full wall height with the half-rendered/half-old contrast clearly visible',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'scaffold base on the ground, mortar bucket and tools at the work station',
+          midground:  'facade — right half freshly rendered pale and smooth, left half old render weathered and dirty — vertical division line sharp',
+          background: 'sky above the roof edge, garden or street beside the facade',
+        },
+        scene_debris:  'render drips at the demarcation line, empty render bags on the scaffold',
+        scene_exclude: ['pressure washer', 'roofing', 'fully finished clean facade', 'interior painting'],
+        tools: [
+          'render hawk and trowel at the work station on the scaffold',
+          'straight edge rule leaning against the freshly rendered panel',
+          'spray bottle for dampening the substrate on the scaffold board',
+        ],
+        protections: [
+          'plastic sheeting taped over all windows on the rendered section',
+          'scaffold debris netting at the working level',
+        ],
+        chantier_details: [
+          'sharp vertical demarcation between new pale render and old dirty render',
+          'new render side — uniform pale tone, float marks still visible',
+          'old render side — darker tone, weathering texture, old paint or staining visible',
+        ],
+      },
+      {
+        _for:          'ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit',
+        scene_note:    'fresh render being finished with a sponge float — circular float marks being worked into the wet surface, texture developing as the render tightens',
+        scene_camera:  'close-up at the render surface, framing the sponge float being worked in circular passes across the wet render',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'sponge float in circular motion on the wet render surface — aggregate texture being raised',
+          midground:  'freshly floated section — uniform aggregate texture developing beside the un-floated fresh render',
+          background: 'scaffold board, facade wall above',
+        },
+        scene_debris:  'render laitance on the float face from the texturing pass',
+        scene_exclude: ['pressure washer', 'roofing', 'interior painting', 'stone wall visible'],
+        tools: [
+          'sponge float being worked in circular passes on the wet render surface',
+          'trowel on the scaffold board beside the floated section',
+        ],
+        protections: [],
+        chantier_details: [
+          'aggregate texture developing on the floated section — granular finish building',
+          'un-floated fresh render beside the active section — smooth comparison visible',
+          'render laitance on the float face from the circular passes',
+        ],
+      },
+
+      // --- réparation de fissures ---
+      {
+        _for:          'fissure|reprise.*local|traitement.*fissur|rebouchage',
+        scene_note:    'facade crack repair — wide crack opened and cleaned, repair mortar being drawn flush with the surrounding render by a pointing trowel',
+        scene_camera:  'close-up at the crack, framing the pointing trowel working the repair mortar flush with the facade surface',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'crack in the facade render — fresh repair mortar being smoothed flush by the pointing trowel',
+          midground:  'surrounding facade render — older and slightly darker, the repair mortar visibly lighter in colour',
+          background: 'facade wall extending on both sides, window or corner at the edge',
+        },
+        scene_debris:  'old render fragments chipped from the crack edges on the ground below the repair',
+        scene_exclude: ['full section render application', 'pressure washer', 'roofing', 'interior painting'],
+        tools: [
+          'pointing trowel drawing repair mortar flush with the surrounding render',
+          'small cold chisel on the ground — used to open the crack before filling',
+        ],
+        protections: [],
+        chantier_details: [
+          'fresh repair mortar in the crack — slightly lighter in colour than the surrounding render',
+          'crack edges showing the render depth — crack was opened and cleaned before repair',
+          'old render fragments on the ground below from the preparation',
+        ],
+      },
+      {
+        _for:          'fissure|reprise.*local|traitement.*fissur|rebouchage',
+        scene_note:    'crack repair mesh being embedded — fibreglass mesh being pressed into fresh repair render over a repaired crack on the facade surface',
+        scene_camera:  'close-up at the facade, framing the fibreglass mesh being embedded in the fresh render over the crack',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'fibreglass mesh being pressed into the fresh skim render over the repaired crack',
+          midground:  'render skim around the mesh — mesh slightly submerged, render being trowelled over',
+          background: 'facade wall extending, the repaired area isolated on the larger surface',
+        },
+        scene_debris:  'mesh offcut on the scaffold beside the repair area',
+        scene_exclude: ['full section render', 'pressure washer', 'roofing', 'interior painting'],
+        tools: [
+          'trowel pressing the fibreglass mesh into the fresh render skim',
+          'mesh roll on the scaffold board beside the repair',
+        ],
+        protections: [],
+        chantier_details: [
+          'fibreglass mesh being pressed into the render — mesh pattern just visible below the render surface',
+          'render skim surrounding the mesh — trowelled smooth over the mesh edges',
+          'repair area isolated on the facade — localised repair with no disturbance to adjacent render',
+        ],
+      },
+
+      // --- peinture façade ---
+      {
+        _for:          'peinture.*facade|peinture.*ext|peint.*facade',
+        scene_note:    'facade paint being applied — roller on an extension pole working across the wall, freshly painted section (new colour) beside the old paint still showing below the roller',
+        scene_camera:  'standing back from the facade, framing the roller mid-stroke with the painted upper section and old lower section visible',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'paint tray and extension pole base at the scaffold level, drop sheet below the wall',
+          midground:  'facade — upper section freshly painted in new colour, lower section old paint colour still showing',
+          background: 'full facade width, windows protected, sky above the roof edge',
+        },
+        scene_debris:  'paint drip at the leading edge of the paint line',
+        scene_exclude: ['render application', 'pressure washer', 'roofing', 'interior painting'],
+        tools: [
+          'roller on an extension pole being pushed across the facade surface',
+          'paint tray at the scaffold level beside the roller',
+        ],
+        protections: [
+          'plastic sheeting taped over the window glass',
+          'masking tape along the window frame edge',
+          'drop sheet on the ground below the wall',
+        ],
+        chantier_details: [
+          'fresh paint on the upper facade — clean new colour uniform and wet-looking',
+          'old paint colour still visible below the paint line',
+          'window protection tape line clearly visible at the frame edge',
+        ],
+      },
+      {
+        _for:          'peinture.*facade|peinture.*ext|peint.*facade',
+        scene_note:    'facade almost fully painted — last section being finished at the edge, fresh uniform colour covering most of the facade, stepladder at the final corner',
+        scene_camera:  'standing back, framing the nearly fully painted facade with the ladder and the final corner section being finished',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'ladder at the final section corner, paint tray on the ladder shelf',
+          midground:  'facade almost entirely in new colour — final small section still unpainted at the corner edge',
+          background: 'full facade width, garden, street or adjacent facade visible',
+        },
+        scene_debris:  'paint drip on the tarp below the ladder at the final section',
+        scene_exclude: ['render application', 'pressure washer', 'roofing', 'interior painting'],
+        tools: [
+          'small brush cutting in at the final edge and corner',
+          'stepladder at the final corner section',
+        ],
+        protections: [
+          'tarp on the ground at the ladder base',
+          'window tape protection still in place',
+        ],
+        chantier_details: [
+          'facade nearly fully in new colour — last unpainted section clearly visible at the corner',
+          'window tape lines sharp — clean paint edge at every frame',
+          'fresh colour uniform across the main facade area',
+        ],
+      },
+
+      // --- traitement humidité ---
+      {
+        _for:          'humid|traitement.*humid|moisissure|salpetre|infiltrat',
+        scene_note:    'water-repellent treatment being applied to a stone or render facade — roller or brush applying the treatment product to the dry surface, product slightly darkening the treated area',
+        scene_camera:  'standing back from the facade, framing the roller or brush applying the treatment with the treated section visibly darker than the untreated',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'treatment product bucket on the ground at the wall base',
+          midground:  'facade — treated section slightly darker from the absorbed product beside the dry untreated section',
+          background: 'full facade, window and corner visible',
+        },
+        scene_debris:  'treatment product drip on the wall base below the treated section',
+        scene_exclude: ['render application', 'pressure washer', 'roofing', 'interior painting'],
+        tools: [
+          'roller or brush applying the water-repellent treatment to the facade surface',
+          'treatment product bucket on the ground with the label visible',
+        ],
+        protections: [
+          'plastic sheet protecting the garden bed at the wall base',
+        ],
+        chantier_details: [
+          'treated section visibly darker — product absorbed into the render or stone surface',
+          'treatment product drip at the base of the treated area',
+          'dry untreated section beside — colour difference clearly visible',
+        ],
+      },
+
+      // --- rénovation pierre / rejointoiement façade ---
+      {
+        _for:          'pierre.*renov|traitement.*facade.*pierre|rejointoi.*facade|joint.*facade|pierre',
+        scene_note:    'stone facade being repointed — pointing trowel pressing fresh grey mortar into raked-out joints between the stone blocks, contrast with the recessed dark old joints below',
+        scene_camera:  'close-up at the stone facade, framing the pointing trowel at a joint with the repointed section above and old joints below',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'pointing trowel pressing fresh mortar into a raked-out joint between stone blocks',
+          midground:  'stone facade — repointed upper section with pale flush mortar above, darker recessed old joints below',
+          background: 'facade wall extending, scaffold tube at the side',
+        },
+        scene_debris:  'old mortar fragments on the scaffold board from the raking pass',
+        scene_exclude: ['render over stone', 'pressure washer on stone', 'roofing', 'interior painting'],
+        tools: [
+          'pointing trowel pressing fresh mortar into the raked-out joint',
+          'mortar bucket at the scaffold work level',
+          'cold chisel and hammer for raking old joints',
+        ],
+        protections: [],
+        chantier_details: [
+          'fresh grey mortar joints on the upper section — pale and flush with the stone faces',
+          'old dark recessed joints on the lower section — clearly depleted and weathered',
+          'old mortar fragments on the scaffold board from the joint raking',
+        ],
+      },
+      {
+        _for:          'pierre.*renov|traitement.*facade.*pierre|rejointoi.*facade|joint.*facade|pierre',
+        scene_note:    'stone facade after partial repointing — lower two-thirds freshly jointed, upper section still with old black recessed joints, scaffold beside the wall at mid-height',
+        scene_camera:  'standing back from the facade, framing the full wall height with the repointed lower section and the old-jointed upper section',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'scaffold base and mortar bucket on the ground at the wall base',
+          midground:  'stone facade — lower two-thirds repointed (pale grey flush mortar), upper third old black recessed joints — horizontal division clear',
+          background: 'roof edge above, garden or street at the side',
+        },
+        scene_debris:  'old mortar raking fragments on the ground below the work area',
+        scene_exclude: ['render over stone', 'pressure washer', 'roofing', 'interior painting'],
+        tools: [
+          'scaffold at mid-height beside the wall — work above the repointed section ongoing',
+          'mortar bucket on the scaffold board at the current work level',
+        ],
+        protections: [],
+        chantier_details: [
+          'clear horizontal demarcation between repointed lower section and old-jointed upper section',
+          'repointed section — pale flush joints, clean stone faces',
+          'old section — black recessed joints, deeply weathered mortar',
+        ],
+      },
+
+      // Fallback
+      {
+        scene_note:    'facade work in progress — wall with partially applied fresh render or paint, hawk and trowel resting against the base, window and garden bed protected',
+        scene_camera:  'standing back from the facade, framing the partial render or paint work with tools visible at the base',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'hawk and trowel resting against the wall at the work section, render bucket on the ground',
+          midground:  'facade — fresh render or paint on one section, old surface on the adjacent section',
+          background: 'full facade, scaffold tube visible, garden or street at the base',
+        },
+        scene_debris:  'mortar drip at the base of the freshly rendered section',
+        scene_exclude: ['pressure washer', 'roofing', 'interior painting'],
+        tools: [
+          'hawk and trowel resting against the wall at the work section',
+          'plastic mixing bucket with mortar residue beside the wall base',
+          'straight edge rule leaning against the freshly rendered panel',
+        ],
+        protections: [
+          'plastic sheeting draped and taped over the window opening',
+          'wooden board protecting the garden bed at the base of the wall',
+        ],
+        chantier_details: [
+          'fresh render patch on the facade showing trowel lines still wet',
+          'empty mortar bag folded on the ground near the wall base',
+          'mortar splash marks on the concrete apron at the wall base',
+        ],
+      },
+    ],
     tools: [
       'hawk and trowel resting against the wall at the work section',
       'plastic mixing bucket with mortar residue beside the wall base',
@@ -4829,6 +6532,442 @@ const SITE_REALISM = {
       'chalk reference marks on the wall showing render depth guide lines',
       'mortar splash marks on the concrete apron at the wall base',
       'water bucket with a sponge resting on the rim beside the wall',
+    ],
+  },
+
+  'maçonnerie': {
+    scenarios: [
+
+      // --- mur / muret parpaings ou briques ---
+      {
+        _for:          'mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur',
+        scene_note:    'concrete block wall being built — courses laid to waist height, mason\'s string line pulled taut defining the next course, trowel and mortar hawk on the top course',
+        scene_camera:  'standing beside the wall, framing the half-built wall with the string line and mortar trowel on the top course',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'mason\'s string line pulled taut along the top of the last course, mortar hawk with fresh mortar resting on the wall',
+          midground:  'half-built concrete block wall — courses built to waist height, mortar joints visible between blocks',
+          background: 'block pallet and bags of mortar beside the wall, garden or building behind',
+        },
+        scene_debris:  'mortar squeeze-out at the block joints — fresh grey mortar visible at the bed joint faces',
+        scene_exclude: ['finished plastered wall', 'tiling equipment', 'roofing materials', 'pressure washer', 'terrassement excavation'],
+        tools: [
+          'brick trowel on the top course beside the mortar hawk',
+          'spirit level resting on the last laid block',
+          'mason\'s string line pulled taut along the course',
+        ],
+        protections: [
+          'safety boots visible in the foreground',
+        ],
+        chantier_details: [
+          'mortar squeeze-out at the block bed joints — fresh grey mortar visible at the joint faces',
+          'string line pulled taut — next course height clearly defined',
+          'block pallet with remaining blocks stacked beside the wall',
+        ],
+      },
+      {
+        _for:          'mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur',
+        scene_note:    'brick being pressed into the fresh mortar bed — spirit level placed on top of the last course, mortar squeeze-out at the joint faces, trowel beside the mason\'s hand',
+        scene_camera:  'close-up at the wall face, framing the brick being pressed down into the mortar bed with the spirit level on top',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'brick being pressed into the fresh mortar bed — mortar squeezing out at the perpend joints',
+          midground:  'spirit level on the top course — bubble centred between the lines',
+          background: 'wall courses below, trowel on the adjacent course surface',
+        },
+        scene_debris:  'mortar squeeze-out at the perpend and bed joints, mortar drip below on the lower course face',
+        scene_exclude: ['concrete formwork', 'foundation trench', 'render or plaster', 'roofing tiles', 'pressure washer'],
+        tools: [
+          'brick trowel on the wall surface beside the just-laid brick',
+          'spirit level on the top course — level being checked',
+          'rubber mallet on the wall top for tapping bricks level',
+        ],
+        protections: [],
+        chantier_details: [
+          'mortar squeeze-out at the perpend and bed joints — fresh grey mortar at all joint faces',
+          'spirit level bubble centred — brick laid level and plumb',
+          'mortar drips on the lower course face from the laying process',
+        ],
+      },
+      {
+        _for:          'mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur',
+        scene_note:    'low garden wall nearing completion — final course of blocks in place, fresh mortar joints uncured and dark, coping stones or pointing trowel at the top',
+        scene_camera:  'standing back, framing the nearly complete low wall with the fresh top course and coping detail',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'trowel and pointing tool beside the fresh top course — mortar joints still dark and uncured',
+          midground:  'completed low wall — all courses laid, top course freshly bedded, coping begun',
+          background: 'garden behind the wall, adjacent ground level on both sides',
+        },
+        scene_debris:  'mortar drips on the wall face at the most recent courses, cement bag off-cut on the ground',
+        scene_exclude: ['wall fully plastered', 'tiling', 'roofing', 'pressure washer', 'heavy excavation equipment'],
+        tools: [
+          'pointing trowel beside the fresh top course joints',
+          'bag of mortar mix on the ground near the wall end',
+          'spirit level resting against the wall face',
+        ],
+        protections: [],
+        chantier_details: [
+          'fresh top course laid — mortar joints dark and uncured across the full wall length',
+          'wall finished to its target height — last course clearly visible',
+          'mortar drips on the face from the upper courses during laying',
+        ],
+      },
+
+      // --- dalle béton / terrasse béton ---
+      {
+        _for:          'dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton',
+        scene_note:    'reinforcement mesh laid for a concrete slab — steel mesh on spacer chairs across the full slab area, perimeter formwork boards in place, ready for the pour',
+        scene_camera:  'standing at the edge of the slab area, framing the steel mesh on the spacer chairs within the formwork perimeter',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'perimeter formwork boards at the slab edge — pegged and levelled',
+          midground:  'steel reinforcement mesh on spacer chairs across the whole area — parallel bars visible',
+          background: 'garden or ground surrounding the formwork area',
+        },
+        scene_debris:  'tie wire off-cuts on the mesh surface, spacer chair packaging on the ground beside',
+        scene_exclude: ['wet concrete', 'finished smooth slab', 'masonry wall', 'roofing materials', 'pressure washer'],
+        tools: [
+          'steel reinforcement mesh resting on concrete spacer chairs',
+          'formwork boards pegged at the slab perimeter',
+          'tie wire reel beside the mesh',
+        ],
+        protections: [
+          'safety mesh at the open site edge',
+        ],
+        chantier_details: [
+          'steel mesh on spacer chairs — bars parallel and evenly spaced',
+          'spacer chairs visible below the mesh — ensuring correct concrete cover',
+          'formwork boards levelled and pegged at the slab perimeter',
+        ],
+      },
+      {
+        _for:          'dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton',
+        scene_note:    'concrete slab being poured — wet concrete flowing from a mixer drum across the reinforced area, screed board levelling the surface, concrete fully covering the mesh',
+        scene_camera:  'standing at the side of the slab, framing the wet concrete pour with the mixer chute and the screed board levelling the surface',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'wet concrete spreading across the formed area — grey shiny surface at the pour front',
+          midground:  'screed board being pulled across the concrete surface to level it',
+          background: 'concrete mixer or transit mixer at the pour end, site surroundings',
+        },
+        scene_debris:  'concrete splash on the formwork edges at the pour point, wet concrete boot prints on the path',
+        scene_exclude: ['dry finished slab', 'masonry wall', 'roofing', 'tiling already laid', 'pressure washer'],
+        tools: [
+          'screed board being dragged across the wet concrete surface to level it',
+          'concrete vibrator probe beside the pour point',
+          'concrete mixer drum at the pour end of the slab',
+        ],
+        protections: [
+          'safety boots on the workers in the concrete',
+          'safety mesh at the open edge',
+        ],
+        chantier_details: [
+          'wet grey concrete spreading to fill the formed area — shiny and fluid at the pour front',
+          'screed board leaving a flat level surface behind it',
+          'concrete splash on the formwork board edges at the pour point',
+        ],
+      },
+      {
+        _for:          'dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton',
+        scene_note:    'freshly screeded concrete slab — surface uniformly pale and smooth, edge formwork still in place, trowel marks visible at the corners where hand-finishing was done',
+        scene_camera:  'standing at the edge, framing the smooth flat slab surface with the perimeter formwork still in place',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'perimeter formwork boards still in place — concrete surface meeting the board top edge cleanly',
+          midground:  'smooth freshly trowelled concrete slab surface — pale, uniform, lightly textured',
+          background: 'garden or site surround beyond the formwork perimeter',
+        },
+        scene_debris:  'trowel marks at the slab corners from the hand-finishing pass',
+        scene_exclude: ['slab fully cured and dry', 'tiles on the slab', 'masonry wall', 'roofing', 'pressure washer'],
+        tools: [
+          'steel float resting at the slab edge — used for the final trowel pass',
+          'screed board leaning against the formwork at the side',
+        ],
+        protections: [
+          'formwork boards still in place — protecting the slab edge',
+        ],
+        chantier_details: [
+          'concrete surface pale and smooth — hand-trowelled finish visible at the edges',
+          'formwork boards still in place along all four sides of the slab',
+          'trowel marks at the corners from the finishing pass',
+        ],
+      },
+
+      // --- fondations ---
+      {
+        _for:          'fondation|semelle|ferraillage|ancrage|infrastructure',
+        scene_note:    'strip foundation rebar cage in the trench — rebar tied and laid along the trench base before the concrete pour, tie wire ends visible, spacers under the bars',
+        scene_camera:  'standing at the trench edge, framing the rebar cage along the trench base',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'rebar cage in the trench — parallel bars tied with wire, concrete spacers beneath',
+          midground:  'trench continuing — rebar cage running along its full length',
+          background: 'trench walls, site surroundings at the surface',
+        },
+        scene_debris:  'tie wire off-cuts on the rebar surface, spacer packaging on the ground beside the trench',
+        scene_exclude: ['concrete pour already done', 'finished slab on top', 'masonry wall up', 'roofing'],
+        tools: [
+          'tie wire reel beside the trench — used to tie the rebar joints',
+          'pliers on the trench edge beside the rebar cage',
+          'concrete spacers under the rebar bars',
+        ],
+        protections: [
+          'orange safety mesh at the open trench edge',
+        ],
+        chantier_details: [
+          'rebar cage tied and laid along the trench base — parallel bars clearly visible',
+          'tie wire joints at the rebar intersections — wire tails left on the underside',
+          'concrete spacers under the bars ensuring correct foundation cover',
+        ],
+      },
+      {
+        _for:          'fondation|semelle|ferraillage|ancrage|infrastructure',
+        scene_note:    'foundation concrete being poured — wet concrete flowing into the reinforced trench from a mixer chute, vibrator probe being used to compact the pour',
+        scene_camera:  'standing above the trench, framing the concrete flowing in from one end, vibrator probe in use',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'concrete pour point — wet grey concrete flowing from the chute into the rebar-filled trench',
+          midground:  'trench section with rising concrete level — rebar gradually submerging',
+          background: 'mixer at the pour end, open trench ahead still to be poured',
+        },
+        scene_debris:  'concrete splash on the trench walls at the pour point, concrete boot prints on the ground beside',
+        scene_exclude: ['finished slab', 'masonry wall already up', 'tiling', 'roofing', 'pressure washer'],
+        tools: [
+          'concrete vibrator probe being inserted in the fresh pour — compacting the concrete',
+          'mixer chute directing wet concrete into the trench',
+        ],
+        protections: [
+          'safety mesh at the open trench edge',
+          'safety boots on the workers in the trench',
+        ],
+        chantier_details: [
+          'wet concrete rising in the trench — rebar progressively submerging as the pour advances',
+          'vibrator probe compacting the concrete — surface rippling at the insertion point',
+          'concrete splash on the trench walls at the pour point',
+        ],
+      },
+      {
+        _for:          'fondation|semelle|ferraillage|ancrage|infrastructure',
+        scene_note:    'foundation formwork with concrete poured inside — ply boards holding the wet concrete, tie rods at intervals, fresh concrete surface just level with the board top edge',
+        scene_camera:  'standing at the end of the formwork run, framing the poured concrete held between the ply boards',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'ply formwork board at the near end — tie rod visible at board mid-height',
+          midground:  'fresh concrete surface between the formwork boards — grey and smooth at the top edge',
+          background: 'formwork run continuing, site surroundings beyond',
+        },
+        scene_debris:  'concrete splash on the formwork board face outside at the pour point',
+        scene_exclude: ['formwork struck', 'finished foundation surface', 'masonry wall up', 'tiling', 'roofing'],
+        tools: [
+          'ply formwork boards tied with rods at intervals — holding the wet concrete',
+          'screeding board on the top of the formwork used to level the pour',
+        ],
+        protections: [
+          'safety mesh at the trench edge perimeter',
+        ],
+        chantier_details: [
+          'fresh concrete surface level with the formwork board top edge',
+          'tie rod heads visible on the outside face of the ply boards',
+          'ply board face soiled with concrete splash at the pour point',
+        ],
+      },
+
+      // --- escalier / seuil / linteau / ouverture ---
+      {
+        _for:          'escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture',
+        scene_note:    'lintel being set above a newly created wall opening — concrete or steel lintel supported at both bearing points, freshly cut masonry on either side of the opening',
+        scene_camera:  'standing in front of the wall opening, framing the lintel resting on the bearing seats on both sides of the gap',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'open wall gap — freshly cut masonry edges on both sides of the opening',
+          midground:  'lintel resting on both bearing seats — propped from below while the mortar sets',
+          background: 'wall continuing on both sides, room interior or exterior beyond the opening',
+        },
+        scene_debris:  'masonry dust and cut block fragments on the floor below the opening, prop adjustment wedge beside the prop',
+        scene_exclude: ['finished door frame fitted', 'rendering over', 'window fitted', 'roofing', 'pressure washer', 'tiling'],
+        tools: [
+          'adjustable acrow prop supporting the lintel from below during curing',
+          'spirit level on the lintel surface — checking level',
+          'pointing trowel for the bearing mortar bed',
+        ],
+        protections: [
+          'debris sheet on the floor below the opening',
+        ],
+        chantier_details: [
+          'lintel resting on both bearing seats — prop supporting from below',
+          'freshly cut masonry edges on both jambs — concrete dust still on the floor',
+          'fresh mortar visible at both lintel bearing points',
+        ],
+      },
+      {
+        _for:          'escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture',
+        scene_note:    'concrete staircase formwork being assembled — ply shuttering boards at each step profile, reinforcement visible through the open side, formwork propped from below',
+        scene_camera:  'standing beside the stair formwork, framing the step profiles and the reinforcement visible through the open side',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'stair step profiles in ply shuttering — riser boards at each step, tread form visible',
+          midground:  'reinforcement bars visible through the open side of the formwork — tied cage in place',
+          background: 'site surroundings, wall face behind the stair run',
+        },
+        scene_debris:  'saw offcuts from the ply shuttering on the ground beside the formwork',
+        scene_exclude: ['finished concrete stairs', 'tiled stairs', 'roofing', 'pressure washer'],
+        tools: [
+          'ply shuttering boards forming the step profile — propped from below',
+          'rebar visible through the open formwork side',
+          'circular saw or hand saw on the ground beside the formwork',
+        ],
+        protections: [
+          'formwork propped securely — no movement under pour weight',
+        ],
+        chantier_details: [
+          'ply step profiles forming clear riser and tread shapes',
+          'rebar cage visible through the open side of the formwork',
+          'saw offcuts on the ground from cutting the ply shuttering to shape',
+        ],
+      },
+      {
+        _for:          'escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture',
+        scene_note:    'concrete door threshold being formed — wet concrete in a threshold formwork, trowel marks on the fresh surface, adjacent floor tile visible on one side',
+        scene_camera:  'crouching at floor level, framing the threshold formwork with wet concrete and the trowel marks on the surface',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'threshold formwork at floor level — wet concrete inside, trowel marks across the surface',
+          midground:  'door frame or reveal on one side, adjacent floor surface on the other side',
+          background: 'room interior or exterior beyond the threshold level',
+        },
+        scene_debris:  'concrete splash on the adjacent floor surface at the threshold edge',
+        scene_exclude: ['finished tiled threshold', 'door fully fitted', 'roofing', 'pressure washer'],
+        tools: [
+          'pointing trowel on the threshold surface — used to level and smooth',
+          'short spirit level resting on the threshold formwork edge',
+        ],
+        protections: [],
+        chantier_details: [
+          'wet concrete in the threshold form — surface trowelled level and smooth',
+          'trowel marks visible at the far edge of the threshold',
+          'concrete splash on the adjacent floor surface',
+        ],
+      },
+
+      // --- fissures / rejointoiement ---
+      {
+        _for:          'fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint',
+        scene_note:    'facade crack being repaired — wide crack in old render filled with repair mortar, pointing trowel drawing the fresh mortar flush with the surrounding render surface',
+        scene_camera:  'close-up on the facade, framing the crack with the fresh mortar being applied by the pointing trowel',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'crack in the facade render — fresh repair mortar being drawn flush by a pointing trowel',
+          midground:  'surrounding render — older, slightly discoloured, the repaired crack clearly different in colour',
+          background: 'facade wall extending, window or corner visible at the side',
+        },
+        scene_debris:  'old render fragments chipped from the crack edges on the ground below the repair',
+        scene_exclude: ['large render section', 'scaffold for full ravalement', 'roofing materials', 'pressure washer', 'tiling'],
+        tools: [
+          'pointing trowel drawing repair mortar flush with the surrounding render',
+          'small scraper on the ground beside the wall — used to open and clean the crack',
+        ],
+        protections: [],
+        chantier_details: [
+          'fresh repair mortar visible in the crack — slightly lighter in colour than the surrounding render',
+          'crack edges showing old render depth — crack had been opened and cleaned before filling',
+          'old render fragments on the ground below from the preparation work',
+        ],
+      },
+      {
+        _for:          'fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint',
+        scene_note:    'stone wall repointing in progress — pointing trowel pressing fresh grey mortar into raked-out joints between stones, contrast between fresh mortar and weathered dark old joints clearly visible',
+        scene_camera:  'close-up at the wall surface, framing the pointing trowel working a joint with the fresh-pointed section above and the old recessed joints below',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'pointing trowel pressing fresh mortar into a raked-out joint between two stones',
+          midground:  'wall face — fresh mortar joints on the upper section contrast sharply with recessed dark old joints on the lower section',
+          background: 'stone wall continuing, ladder or platform visible at the side',
+        },
+        scene_debris:  'old mortar fragments raked out from the joints on the ground below the work area',
+        scene_exclude: ['smooth rendered wall', 'tiling', 'roofing', 'pressure washer', 'concrete block wall'],
+        tools: [
+          'pointing trowel pressing fresh mortar into the raked joint',
+          'mortar bucket with fresh mortar mix at the base of the wall',
+          'cold chisel and hammer on the ground for raking out old joints',
+        ],
+        protections: [],
+        chantier_details: [
+          'fresh grey mortar joints on the upper section — pale and flush with the stone faces',
+          'old dark recessed joints below — clearly depleted and weathered',
+          'raked-out mortar fragments on the ground from the joint preparation',
+        ],
+      },
+      {
+        _for:          'fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint',
+        scene_note:    'half-repointed stone wall — left half freshly pointed with pale grey mortar, right half still showing original dark recessed joints, sharp vertical demarcation line between them',
+        scene_camera:  'standing back from the wall, framing the full wall height with the half-pointed/half-old contrast clearly visible',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'mortar bucket on the ground at the base of the wall, pointing tools beside it',
+          midground:  'wall face — left half freshly pointed pale grey, right half dark recessed old joints — vertical division line sharp',
+          background: 'garden behind the wall, adjacent structures visible at the sides',
+        },
+        scene_debris:  'old mortar fragments on the ground below the right half from raking — still to be pointed',
+        scene_exclude: ['smooth rendered wall', 'tiling', 'roofing', 'concrete block wall', 'pressure washer'],
+        tools: [
+          'pointing trowel resting on the mortar bucket',
+          'cold chisel on the ground from the joint raking pass',
+          'ladder resting against the wall at the halfway point',
+        ],
+        protections: [],
+        chantier_details: [
+          'sharp vertical demarcation between fresh pale mortar joints and dark old recessed joints',
+          'left half fully repointed — mortar flush with stone faces',
+          'right half still original — joints deeply recessed and dark with age',
+        ],
+      },
+
+      // Fallback
+      {
+        scene_note:    'masonry work in progress — partially built concrete block or stone wall, mortar tools at the top course, materials stacked at the wall base',
+        scene_camera:  'standing beside the work, framing the wall section being built with the tools and materials around the base',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'block pallet or sand-cement bags stacked at the wall base, bucket of mortar nearby',
+          midground:  'partially built wall — several courses laid, mortar joints visible',
+          background: 'site surroundings, garden or building behind',
+        },
+        scene_debris:  'mortar squeeze-out at the block joints, cement bag off-cut on the ground',
+        scene_exclude: ['finished plastered or tiled wall', 'roofing materials', 'pressure washer', 'tiling equipment'],
+        tools: [
+          'brick trowel resting on the top course of a partially built wall',
+          'spirit level leaning against the wall beside the freshly laid block',
+          'mason\'s string line pulled taut along the block course',
+          'plastic mixing bucket with fresh mortar residue beside the wall base',
+        ],
+        protections: [
+          'safety boots visible at the base of the wall',
+        ],
+        chantier_details: [
+          'mortar squeeze-out at the block bed joints — fresh grey mortar at the joint faces',
+          'string line pulled taut defining the next course height',
+          'cement bag off-cuts on the ground beside the mixer',
+        ],
+      },
+    ],
+    tools: [
+      'brick trowel resting on the top course of a partially built wall',
+      'spirit level leaning against the wall beside the freshly laid block',
+      'mason\'s string line pulled taut along the block course',
+      'plastic mixing bucket with fresh mortar residue beside the wall base',
+      'bag of sand-cement mix stacked against the house wall',
+      'wooden mallet on the ground near the block pile',
+    ],
+    protections: [
+      'safety mesh at the open excavation or trench edge',
+      'wooden board protecting the garden bed at the wall base',
+    ],
+    chantier_details: [
+      'mortar squeeze-out at the block joint faces — fresh grey mortar visible',
+      'string line pulled taut defining the next course height',
+      'cement bag off-cuts on the ground beside the mixer',
+      'block off-cut near the end of the wall run',
     ],
   },
 
@@ -4854,6 +6993,198 @@ const SITE_REALISM = {
   },
 
   nettoyage: {
+    scenarios: [
+
+      // --- nettoyage façade ---
+      {
+        _for:          'facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade',
+        scene_note:    'facade half-cleaned — left section bright and clean after the pressure wash, right section still dark with algae and pollution streaks, sharp vertical cleaning line between them',
+        scene_camera:  'standing back from the facade, framing the full wall height with the sharp cleaning boundary line between the cleaned and uncleaned sections',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'ground at the base of the wall — dirty water runoff and moss fragments below the uncleaned section',
+          midground:  'facade — left half clean and bright, right half dark with algae and staining — sharp vertical division line',
+          background: 'roof edge above, garden or pavement at the sides',
+        },
+        scene_debris:  'dirty brown water running down from the impact point, algae and grime residue at the base of the uncleaned section',
+        scene_exclude: ['terrace or paving in focus', 'pressure washer on garden path', 'roofing tiles', 'interior painting', 'render application'],
+        tools: [
+          'high-pressure lance resting against the wall between passes',
+          'high-pressure hose coiled on the ground beside the machine',
+        ],
+        protections: [
+          'plastic bag taped over the exterior electrical socket at the facade',
+          'plastic sheeting taped over the window glass and frame',
+          'tarp on the garden bed at the base of the cleaned section',
+        ],
+        chantier_details: [
+          'sharp vertical cleaning line — bright facade on the cleaned side, dark and stained on the other',
+          'dirty water running down from the impact zone below the uncleaned section',
+          'algae and grime residue at the base of the wall below the uncleaned section',
+        ],
+      },
+      {
+        _for:          'facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade',
+        scene_note:    'facade being cleaned with a high-pressure lance — jet directed at the facade surface, dirty water running down in dark rivulets from the impact point',
+        scene_camera:  'standing to the side, framing the lance directing the jet at the facade with dirty water running down from the impact zone',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'dirty water runoff channel on the ground at the wall base, algae and grime fragments at the base',
+          midground:  'facade surface — jet impact zone visible with dirty water running downward from it',
+          background: 'full facade height, windows protected, garden or street at the side',
+        },
+        scene_debris:  'algae and staining residue being dislodged at the jet impact point, dirty water rivulets on the facade surface',
+        scene_exclude: ['terrace or paving as main subject', 'roofing', 'interior painting', 'render application'],
+        tools: [
+          'high-pressure lance directing jet at the facade surface',
+          'pressure washer hose running along the ground to the machine',
+        ],
+        protections: [
+          'plastic sheeting taped over the windows in the cleaned section',
+          'plastic bag over the exterior electrical socket',
+          'tarp protecting garden plants at the base of the facade',
+        ],
+        chantier_details: [
+          'jet impact zone visible on the facade — dirty water running from it downward',
+          'algae and staining being dislodged at the impact point',
+          'window protection sheeting clearly visible beside the cleaned section',
+        ],
+      },
+      {
+        _for:          'facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade',
+        scene_note:    'facade cleaning setup — plastic sheet protecting windows, tarp on the garden bed, pressure washer on the ground, facade clearly dirty with algae and pollution streaks above the protected section',
+        scene_camera:  'standing back, framing the protected facade section with the cleaning equipment on the ground and the dirty facade above',
+        scene_framing: {
+          work_pct:   45,
+          foreground: 'tarp on the garden bed at the wall base, pressure washer on the ground with hose coiled beside it',
+          midground:  'facade — window protected by plastic sheet, facade above dirty with algae and dark streaks',
+          background: 'full facade height, roof edge above, surroundings at the side',
+        },
+        scene_debris:  'light algae and dust debris on the tarp from the initial test spray',
+        scene_exclude: ['terrace or paving as main subject', 'interior painting', 'roofing', 'render application'],
+        tools: [
+          'pressure washer on the ground — setup ready to begin',
+          'high-pressure hose coiled beside the machine',
+          'lance resting against the wall between uses',
+        ],
+        protections: [
+          'plastic sheet taped over the window glass and frame',
+          'tarp protecting the garden bed at the wall base',
+          'plastic bag taped over the exterior socket',
+        ],
+        chantier_details: [
+          'facade clearly dirty above the protected section — algae and pollution streaks visible',
+          'window protection plastic sheet and tape clearly applied before cleaning',
+          'pressure washer and hose ready on the ground — setup complete',
+        ],
+      },
+
+      // --- nettoyage terrasse / dallage ---
+      {
+        _for:          'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        scene_note:    'terrace half-cleaned — bright clean paving on one half, green moss-covered dark paving on the other, sharp cleaning line across the terrace surface',
+        scene_camera:  'standing at the terrace edge, framing the full surface with the bright clean section and the mossy dark section clearly side by side',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'edge of the terrace — dirty water and dislodged moss fragments at the cleaning line',
+          midground:  'terrace surface — clean bright paving on the near half, dark moss-covered paving on the far half — sharp cleaning line',
+          background: 'garden boundary, house wall at the far end of the terrace',
+        },
+        scene_debris:  'dislodged moss clumps at the cleaning line, dirty water runoff on the cleaned section draining toward the edge',
+        scene_exclude: ['facade as the main subject', 'garden planting in focus', 'roofing', 'interior', 'render application'],
+        tools: [
+          'pressure washer lance at the cleaning line, working across the terrace',
+          'pressure washer hose running along the terrace edge',
+        ],
+        protections: [
+          'garden furniture moved aside and covered with a tarp at the terrace edge',
+        ],
+        chantier_details: [
+          'sharp cleaning line across the terrace — bright clean paving on one side, moss-covered on the other',
+          'dislodged moss clumps at the cleaning line from the jet impact',
+          'dirty grey water draining across the cleaned section toward the garden edge',
+        ],
+      },
+      {
+        _for:          'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        scene_note:    'terrace cleaning — dirty grey water and dislodged moss being pushed toward the drain with a stiff broom, drain grate visible at the low end of the terrace',
+        scene_camera:  'standing at the high end of the terrace, framing the stiff broom pushing the dirty water and moss debris toward the drain',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'stiff broom pushing dirty grey water and moss debris across the freshly cleaned paving',
+          midground:  'terrace surface — cleaned paving, dirty water flowing toward the drain at the low end',
+          background: 'drain grate at the far end of the terrace, garden beyond',
+        },
+        scene_debris:  'dirty grey water and dislodged moss being swept toward the drain, moss clumps at the broom head',
+        scene_exclude: ['facade as main subject', 'garden planting in focus', 'roofing', 'interior', 'render application'],
+        tools: [
+          'stiff outdoor broom pushing dirty water and moss to the drain',
+          'pressure washer on the ground at the side — used before the sweeping pass',
+        ],
+        protections: [
+          'garden furniture covered and moved to the dry section',
+        ],
+        chantier_details: [
+          'dirty grey water and moss debris being swept toward the drain',
+          'cleaned paving bright behind the broom — terrace recovering its original colour',
+          'drain grate visible at the low end of the terrace',
+        ],
+      },
+      {
+        _for:          'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        scene_note:    'terrace nearly fully cleaned — garden furniture moved to one side and covered, freshly cleaned paving bright in the foreground, last section with old moss stains at the back edge',
+        scene_camera:  'standing at the clean end of the terrace, framing the bright cleaned paving in the foreground and the remaining mossy section at the far back edge',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'freshly cleaned bright paving — original paving colour fully restored in the front section',
+          midground:  'garden furniture covered and moved to one side of the terrace',
+          background: 'last remaining mossy section at the back terrace edge — still to be cleaned',
+        },
+        scene_debris:  'residual dirty water puddle at the junction between clean and remaining mossy sections',
+        scene_exclude: ['facade as main subject', 'roofing', 'interior', 'render application'],
+        tools: [
+          'pressure washer lance resting at the boundary of the last mossy section',
+          'rubber squeegee on the ground for removing pooled water after cleaning',
+        ],
+        protections: [
+          'garden furniture covered with a tarp to one side',
+          'tarp at the garden edge protecting plants from the dirty runoff',
+        ],
+        chantier_details: [
+          'bright clean paving in the foreground — original colour fully recovered',
+          'remaining mossy dark section at the back — contrast with cleaned area clear',
+          'garden furniture moved and covered at the terrace side',
+        ],
+      },
+
+      // Fallback
+      {
+        scene_note:    'exterior cleaning in progress — pressure washer equipment on the ground, dark wet cleaning line marking the boundary between cleaned and uncleaned surface areas',
+        scene_camera:  'standing back, framing the cleaning equipment on the ground and the surface with the visible cleaning line',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'pressure washer on the ground, hose coiled beside it',
+          midground:  'surface — cleaning line visible between the cleaned bright section and the dirty uncleaned section',
+          background: 'site surroundings, wall or garden boundary beyond',
+        },
+        scene_debris:  'dirty water runoff channel on the terrace or path leading to the drain, leaf and grit debris pushed to the uncleaned edge',
+        scene_exclude: ['interior painting', 'render application', 'roofing'],
+        tools: [
+          'high-pressure lance resting against the wall between uses',
+          'high-pressure hose coiled on the ground nearby',
+          'trigger handle for the pressure washer resting on the coiled hose',
+        ],
+        protections: [
+          'plastic bag tied over a nearby electrical outlet or exterior socket',
+          'garden furniture moved aside and covered with a tarp',
+        ],
+        chantier_details: [
+          'dark wet cleaning line on the surface marking the border between cleaned and uncleaned areas',
+          'dirty water runoff channel on the terrace or driveway leading to the drain',
+          'leaf and grit debris pushed to the untreated edge',
+        ],
+      },
+    ],
     tools: [
       'high-pressure lance resting against the wall between uses',
       'high-pressure hose coiled on the ground nearby',
@@ -5036,6 +7367,605 @@ const SITE_REALISM = {
             'small exposed area showing the roof batten',
             'new tiles positioned ready to slide into place',
             'tile lifter wedge visible under the adjacent tile edge',
+          ],
+        },
+
+        // --- solin / cheminée (4 additional) ---
+        {
+          _for:          'solin|cheminee|faitage',
+          scene_note:    'chimney solin mortar removal — old mortar being struck out at the chimney base with a chisel and hammer, debris falling onto the tile surface',
+          scene_camera:  'crouching close to the chimney base, framing the chisel tip at the mortar joint and the fresh debris on the tiles',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'chisel at the chimney base mortar joint, old mortar chips on the surrounding tiles',
+            midground:  'chimney brickwork and adjacent tiles on the pitched slope',
+            background: 'tiled roof continuing normally, open sky above',
+          },
+          scene_debris:  'old mortar chips scattered on the tiles beside the chimney base, a few pieces on the knee pad',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'cold chisel held at the mortar joint',
+            'club hammer beside the chimney on the tile surface',
+            'stiff-bristle brush for clearing mortar dust beside the chisel',
+          ],
+          protections: [
+            'knee pad on the tile surface at the chimney work zone',
+          ],
+          chantier_details: [
+            'old mortar joint crumbling at the chisel point',
+            'mortar chips on the tiles around the chimney base',
+            'clean chimney brick face revealed where mortar has been removed',
+          ],
+        },
+        {
+          _for:          'solin|cheminee|faitage',
+          scene_note:    'chimney base primer application — bituminous primer being brushed onto the cleaned masonry before new zinc or membrane solin is fitted',
+          scene_camera:  'crouching at the chimney foot, framing the brush applying primer at the base joint between chimney and tile',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'primer brush being drawn along the cleaned chimney base — dark primer coat visible on the brickwork',
+            midground:  'chimney brickwork above and cleaned mortar joint, tin of primer on the tile nearby',
+            background: 'tiled roof slope and open sky',
+          },
+          scene_debris:  'primer tin open on the tile beside the chimney, brush resting on the tin lid between strokes',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'flat brush applying bituminous primer to the chimney base',
+            'primer tin open on the tile surface',
+          ],
+          protections: [
+            'knee pad on the tile at the work zone',
+          ],
+          chantier_details: [
+            'dark primer coat visible on the cleaned chimney brickwork',
+            'primer applied along the full base perimeter of the chimney',
+            'primer tin and brush on the tile beside the work zone',
+          ],
+        },
+        {
+          _for:          'solin|cheminee|faitage',
+          scene_note:    'completed chimney solin repair — new zinc flashing installed, tiles re-bedded around the chimney, mortar joint fresh and grey',
+          scene_camera:  'standing or crouching slightly back, framing the completed chimney repair zone in its finished state',
+          scene_framing: {
+            work_pct:   55,
+            foreground: 'new zinc strip installed at the chimney base, fresh mortar joint along the flashing edge',
+            midground:  'tiles re-seated around the chimney on the pitched slope',
+            background: 'tiled roof continuing normally, open sky',
+          },
+          scene_debris:  'small mortar residue smear on the tile beside the fresh joint',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse', 'tools on site'],
+          tools: [
+            'pointing trowel resting on the tile nearby — work done',
+          ],
+          protections: [
+            'knee pad on the tile beside the finished work area',
+          ],
+          chantier_details: [
+            'new zinc strip installed and bedded at the chimney base',
+            'fresh grey mortar joint along the upper flashing edge',
+            'tiles re-seated on both sides of the chimney',
+          ],
+        },
+        {
+          _for:          'solin|cheminee|faitage',
+          scene_note:    'failing solin pre-repair assessment — old corroded zinc still in place, rust staining visible on tiles, damage being marked before work starts',
+          scene_camera:  'crouching at chimney level, framing the failing solin and the rust stain on the adjacent tiles',
+          scene_framing: {
+            work_pct:   60,
+            foreground: 'old corroded zinc strip at the chimney base, rust staining on the tile beside it',
+            midground:  'chimney brickwork with efflorescence marks, tile surface around the chimney',
+            background: 'tiled roof slope, open sky',
+          },
+          scene_debris:  'rust streak on the tile running down from the failing zinc join',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'tools being used yet'],
+          tools: [
+            'pointing stick or putty knife tapping the failing flashing to check adhesion',
+          ],
+          protections: [
+            'knee pad on the tile at the assessment zone',
+          ],
+          chantier_details: [
+            'old zinc strip visibly corroded and lifting at one edge',
+            'rust stain on the tile beside the chimney base',
+            'mortar joint cracked or missing in places around the chimney',
+          ],
+        },
+
+        // --- Velux (4 additional) ---
+        {
+          _for:          'velux|lucarne|fenetre.*toit|chassis.*toit',
+          scene_note:    'Velux frame old gasket removal — dried sealant being scraped from the window frame edge with a putty knife, old strip set aside',
+          scene_camera:  'crouching at the Velux frame edge, framing the putty knife scraping the old gasket from the frame corner',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'putty knife scraping dried sealant from the Velux frame edge, old sealant strip curling off',
+            midground:  'Velux window frame and adjacent tiles, frame corner visible',
+            background: 'tiled roof slope extending away, open sky',
+          },
+          scene_debris:  'strip of old dried sealant curled on the tile beside the window frame',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'putty knife scraping old sealant from the Velux frame edge',
+            'stiff brush for clearing sealant residue beside the frame',
+          ],
+          protections: [
+            'knee pad on the tile at the window work zone',
+          ],
+          chantier_details: [
+            'dried sealant strip peeling off the frame edge under the putty knife',
+            'frame edge cleaned on one side, old sealant still intact on the other',
+            'old sealant strip on the tile beside the frame',
+          ],
+        },
+        {
+          _for:          'velux|lucarne|fenetre.*toit|chassis.*toit',
+          scene_note:    'Velux flashing kit components laid out — new flashing pieces arranged on the surrounding tiles before fitting',
+          scene_camera:  'standing above, looking down on the Velux and the flashing kit components laid out on the surrounding tiles',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'flashing kit components — corner pieces, side aprons, top piece — laid on the tiles around the window',
+            midground:  'Velux window frame with old flashing still in place',
+            background: 'tiled roof slope, flashing kit cardboard packaging beside the array',
+          },
+          scene_debris:  'flashing kit cardboard packaging open on the tile beside the window',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'Velux flashing kit components laid out on the tiles — corner pieces, side strips, top cap',
+            'tin snips beside the components for sizing',
+          ],
+          protections: [
+            'knee pad on the tile above the window',
+          ],
+          chantier_details: [
+            'flashing components laid in order on the tiles around the window',
+            'cardboard kit packaging open beside the array',
+            'Velux window frame waiting for the new flashing to be fitted',
+          ],
+        },
+        {
+          _for:          'velux|lucarne|fenetre.*toit|chassis.*toit',
+          scene_note:    'Velux frame corner piece fitting — corner flashing element being pressed into the window corner junction between frame and tile',
+          scene_camera:  'crouching at the window corner, close view of the corner flashing piece being pressed into place',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'corner flashing piece being pressed into the window corner — fingers applying pressure to seat it',
+            midground:  'Velux frame and adjacent tile, other corner still to be done visible',
+            background: 'tiled slope beyond the window',
+          },
+          scene_debris:  'small strip of butyl tape removed from the corner flashing backing beside the work zone',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'corner flashing piece being pressed into the window frame corner',
+            'rubber roller for pressing the flashing flat on the adjacent tile',
+          ],
+          protections: [
+            'knee pad on the tile beside the window',
+          ],
+          chantier_details: [
+            'corner flashing piece seated and pressed at the window corner',
+            'butyl tape backing strip removed beside the corner piece',
+            'opposite corner still showing old flashing to be replaced',
+          ],
+        },
+        {
+          _for:          'velux|lucarne|fenetre.*toit|chassis.*toit',
+          scene_note:    'Velux repair complete — new flashing installed, tiles re-seated around the frame, silicone bead fresh along the inner frame',
+          scene_camera:  'stepping back on the roof slope, framing the complete Velux window with the new flashing visible around the frame',
+          scene_framing: {
+            work_pct:   50,
+            foreground: 'Velux frame with new corner and side flashing pieces installed around it, tiles re-seated on all sides',
+            midground:  'tiled roof surface beside the window — tiles flat and ordered',
+            background: 'roof slope continuing beyond the window, open sky',
+          },
+          scene_debris:  'fresh silicone bead line along the inner frame edge, no other debris',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse', 'tools still at the window'],
+          tools: [
+            'silicone gun on the tile beside the window — work done',
+          ],
+          protections: [
+            'knee pad on the tile — work complete',
+          ],
+          chantier_details: [
+            'new flashing pieces installed around the full Velux frame',
+            'tiles re-seated on all four sides of the window',
+            'fresh silicone bead along the inner frame edge',
+          ],
+        },
+
+        // --- noue (4 additional) ---
+        {
+          _for:          'noue|vallee|jonction.*pente',
+          scene_note:    'old valley zinc removal — corroded valley strip being pulled out from under the tiles, tiles already lifted on either side',
+          scene_camera:  'crouching at the valley, framing the old zinc strip being lifted out of the channel',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'old corroded zinc strip being lifted from the noue channel — corrosion marks visible',
+            midground:  'tiles lifted on either side of the valley, valley channel exposed',
+            background: 'two tiled roof slopes meeting at the ridge above, sky beyond',
+          },
+          scene_debris:  'old zinc strip on the tile beside the valley, dark moss and leaf debris from the channel cleared to one side',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'old corroded zinc strip being lifted from the valley channel',
+            'tin snips on the tile near the valley for cutting the old strip',
+          ],
+          protections: [
+            'knee pad on the tile at the valley edge',
+          ],
+          chantier_details: [
+            'old zinc strip being removed — corrosion clearly visible on the surface',
+            'valley channel exposed between the lifted tiles on either side',
+            'dark debris from the valley cleared to one side of the channel',
+          ],
+        },
+        {
+          _for:          'noue|vallee|jonction.*pente',
+          scene_note:    'valley tile lifting — tiles stacked beside the noue on both slopes, valley channel fully exposed for new zinc laying',
+          scene_camera:  'crouching at the junction of the two slopes, framing the exposed valley channel with stacked tiles on either side',
+          scene_framing: {
+            work_pct:   60,
+            foreground: 'exposed valley channel between the two slopes — old channel substrate visible',
+            midground:  'stacked tiles on the tiles beside the valley on both sides',
+            background: 'two meeting roof slopes extending away, sky',
+          },
+          scene_debris:  'old moss and leaf debris raked from the channel and placed in a small pile beside the valley',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'tile lifter on the tile surface beside the stacked tiles',
+            'small hand brush for clearing the channel',
+          ],
+          protections: [
+            'knee pad on the tile at the valley edge',
+          ],
+          chantier_details: [
+            'tiles lifted and stacked neatly beside the exposed valley on both sides',
+            'valley channel exposed from eaves to ridge',
+            'old debris cleared from the channel — channel floor visible',
+          ],
+        },
+        {
+          _for:          'noue|vallee|jonction.*pente',
+          scene_note:    'valley moss clearance — accumulated moss and debris being removed from the noue channel before fitting the new zinc strip',
+          scene_camera:  'looking down along the valley channel from above, framing the moss-clearing tool and the revealed channel substrate',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'stiff brush or hook tool clearing compacted moss from the valley channel, moss pile at the side',
+            midground:  'valley channel clearing in progress — part clear, part still blocked',
+            background: 'two roof slopes meeting at the valley, sky above',
+          },
+          scene_debris:  'pile of compacted moss and leaf fragments cleared to one side of the valley',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'stiff wire brush clearing moss from the valley channel',
+            'hand rake beside the moss pile',
+          ],
+          protections: [
+            'knee pad on the tile at the valley edge',
+          ],
+          chantier_details: [
+            'compacted moss pile cleared from the valley channel, stacked to one side',
+            'channel substrate visible on the cleared section',
+            'remaining moss at the far end of the valley still to be cleared',
+          ],
+        },
+        {
+          _for:          'noue|vallee|jonction.*pente',
+          scene_note:    'valley repair complete — new zinc valley strip installed, tiles re-laid on both slopes, channel clean and weathertight',
+          scene_camera:  'standing or crouching back, framing the full valley with the new zinc visible in the channel between re-laid tiles',
+          scene_framing: {
+            work_pct:   50,
+            foreground: 'new zinc strip glistening in the valley channel, tiles re-seated on both sides of the channel',
+            midground:  'tiled slopes meeting cleanly at the valley, zinc strip running the length',
+            background: 'roof slopes extending away to eaves and ridge, sky beyond',
+          },
+          scene_debris:  'small amount of fresh mortar smear on the tile at the valley edge — pointing complete',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse', 'tools at the site'],
+          tools: [
+            'pointing trowel resting on the tile — work complete',
+          ],
+          protections: [],
+          chantier_details: [
+            'new zinc strip installed and glistening in the valley channel',
+            'tiles re-laid on both sides — neat and flat',
+            'fresh mortar smear at the valley tile edge — pointing done',
+          ],
+        },
+
+        // --- raccord mur / toiture (4 additional) ---
+        {
+          _for:          'raccord.*mur|jonction.*mur|mur.*toit|solin.*mur',
+          scene_note:    'wall-roof junction — old flashing being peeled back from the wall base, tiles already lifted to allow access',
+          scene_camera:  'crouching at the wall base, framing the old flashing being pulled away from the brickwork',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'old flashing peeling off the wall base — dried mastic residue visible on the brickwork',
+            midground:  'tiles lifted to reveal the junction, wall base masonry exposed',
+            background: 'house wall above and tiled slope to the side, sky beyond',
+          },
+          scene_debris:  'old flashing strip removed and placed on the tile beside the wall, dried mastic residue on the brickwork',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'old flashing strip being peeled from the wall base',
+            'stiff putty knife for removing mastic residue from the brickwork',
+          ],
+          protections: [
+            'protective board over the adjacent tiles near the wall',
+          ],
+          chantier_details: [
+            'old flashing peeled back — dried mastic residue visible on brickwork',
+            'tiles lifted to expose the full junction width',
+            'removed flashing strip on the tile beside the wall',
+          ],
+        },
+        {
+          _for:          'raccord.*mur|jonction.*mur|mur.*toit|solin.*mur',
+          scene_note:    'primer application at wall-roof junction — brush applying bituminous primer to the cleaned masonry before new membrane fitting',
+          scene_camera:  'crouching at the wall base, framing the primer brush at the junction between wall and tile surface',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'primer brush being drawn along the wall base at the tile junction — dark primer coat on the brickwork',
+            midground:  'wall surface above and tile slope beside the primed strip',
+            background: 'house wall and tiled roof, sky beyond',
+          },
+          scene_debris:  'primer tin open on the tile beside the wall, brush resting on the tin lid',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'flat brush applying bituminous primer at the wall base',
+            'primer tin open beside the junction',
+          ],
+          protections: [
+            'protective plastic sheet on the adjacent tiles at the primer edge',
+          ],
+          chantier_details: [
+            'primer coat visible on the cleaned wall base brickwork',
+            'primer applied in a band from the tile surface up the wall',
+            'tin and brush on the tile beside the work zone',
+          ],
+        },
+        {
+          _for:          'raccord.*mur|jonction.*mur|mur.*toit|solin.*mur',
+          scene_note:    'self-adhesive membrane strip being pressed into the wall-roof junction — peel backing removed, membrane being bedded from tile onto wall',
+          scene_camera:  'crouching at the junction, framing the membrane strip being peeled and pressed from the tile surface up onto the wall',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'membrane strip being pressed onto the junction — one half on the tile, one half on the wall, backing still on the upper portion',
+            midground:  'wall and tile meeting at the junction, a few lifted tiles beside the work area',
+            background: 'house wall and tiled slope, sky',
+          },
+          scene_debris:  'membrane backing strip removed and on the tile beside the junction',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'self-adhesive membrane strip being pressed onto the junction — partially applied',
+            'rubber roller on the tile ready to press the membrane flat',
+          ],
+          protections: [
+            'protective board on the adjacent tiles',
+          ],
+          chantier_details: [
+            'membrane strip bridging the tile-to-wall junction — lower half adhered to tile',
+            'backing paper removed from the lower section, upper section still backed',
+            'roller ready on the tile to press the membrane onto the wall surface',
+          ],
+        },
+        {
+          _for:          'raccord.*mur|jonction.*mur|mur.*toit|solin.*mur',
+          scene_note:    'wall-roof junction with metal clip fixings — membrane strip held at the wall with a line of metal clips and screws above the primary mastic bead',
+          scene_camera:  'crouching close at the wall, framing the line of fixing clips being screwed into the wall above the membrane strip',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'row of metal fixing clips screwed to the wall above the membrane — clip and screw heads visible',
+            midground:  'membrane strip bedded at the junction, mastic bead along the upper clip edge',
+            background: 'wall surface above and tiled slope below, sky',
+          },
+          scene_debris:  'screw heads and drill dust on the tile beside the wall',
+          scene_exclude: ['flat membrane surface', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'cordless drill-driver at the wall for driving fixing clips',
+            'metal fixing clips being screwed above the membrane top edge',
+            'mastic gun on the tile ready for the sealant bead over the clips',
+          ],
+          protections: [
+            'protective board over the adjacent tiles',
+          ],
+          chantier_details: [
+            'row of metal fixing clips screwed into the wall above the membrane',
+            'membrane strip sandwiched between wall and clips',
+            'fresh mastic bead along the clip line — sealing the upper edge',
+          ],
+        },
+
+        // --- rive / gable (4 additional) ---
+        {
+          _for:          'rive|gable|debord.*toit|arretier',
+          scene_note:    'gable tile displaced — gable edge tile has slid out of position, gap visible at the verge, assessment before re-bedding',
+          scene_camera:  'crouching at the gable end, framing the displaced tile and the gap it has left at the roof verge',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'gable tile slid out of position — visible gap between the tile and the barge board or wall below',
+            midground:  'adjacent gable tiles still in position, roof slope surface beside',
+            background: 'gable wall below, sky to the side',
+          },
+          scene_debris:  'old mortar crumbs on the tile and gutter below the displaced gable tile',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'pointing stick or putty knife examining the gap at the displaced tile',
+          ],
+          protections: [],
+          chantier_details: [
+            'gable tile clearly displaced — gap visible between tile edge and barge',
+            'old mortar crumbs on the tile surface below the displacement',
+            'adjacent gable tiles intact, showing the correct position',
+          ],
+        },
+        {
+          _for:          'rive|gable|debord.*toit|arretier',
+          scene_note:    'fresh mortar preparation for gable tile re-bedding — mortar being mixed in a small bucket beside the rive repair zone',
+          scene_camera:  'crouching at the gable edge, framing the small mortar bucket and the gap at the gable tile ready to be filled',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'small bucket with fresh mortar mix beside the gable tile gap, pointing trowel in the mortar',
+            midground:  'gable tile waiting to be re-seated, tile surface beside the gap',
+            background: 'gable wall and tiled slope, sky',
+          },
+          scene_debris:  'mortar mixing residue on the tile beside the bucket',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'small mortar mixing bucket on the tile beside the gap',
+            'pointing trowel for applying and shaping the mortar',
+          ],
+          protections: [],
+          chantier_details: [
+            'fresh mortar mix ready in the small bucket on the tile',
+            'pointing trowel in the mortar — ready to apply',
+            'displaced gable tile placed beside the gap ready to be bedded',
+          ],
+        },
+        {
+          _for:          'rive|gable|debord.*toit|arretier',
+          scene_note:    'section of multiple gable tiles being re-pointed — four to five consecutive rive tiles being re-mortared along the verge',
+          scene_camera:  'standing at the gable end, framing the section of rive tiles being worked on — fresh mortar joints visible on several tiles',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'fresh mortar joint along the section of rive tiles being re-pointed — pointing trowel at the leading tile',
+            midground:  'completed tiles further along the gable with fresh joints set',
+            background: 'roof slope, gable wall, sky beyond',
+          },
+          scene_debris:  'old mortar chunks on the tile below the rive section being worked',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'pointing trowel at the active rive tile being pointed',
+            'mortar bucket on the tile at the working end',
+            'gauging trowel beside the bucket for loading the pointing trowel',
+          ],
+          protections: [],
+          chantier_details: [
+            'fresh mortar joints along the rive tile section — pointing complete on first few',
+            'active tile at the leading edge with fresh mortar being shaped',
+            'old mortar chunk on the tile below the active section',
+          ],
+        },
+        {
+          _for:          'rive|gable|debord.*toit|arretier',
+          scene_note:    'gable edge repair complete — fresh mortar joints along the rive, gable tiles bedded and pointing set, clean verge line',
+          scene_camera:  'stepping back, framing the completed gable edge — fresh mortar line running along the verge from the near end',
+          scene_framing: {
+            work_pct:   50,
+            foreground: 'fresh grey mortar joint running along the gable tile line at the roof verge',
+            midground:  'gable tiles all bedded and in line, no gaps',
+            background: 'gable wall below and tiled slope above, sky to the side',
+          },
+          scene_debris:  'small mortar smear on the tile face near the joint — to be cleaned once set',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse', 'tools still at the site'],
+          tools: [
+            'pointing trowel resting on the tile — work done',
+          ],
+          protections: [],
+          chantier_details: [
+            'fresh mortar joint along the full rive section — grey and even',
+            'gable tiles all seated and level along the verge',
+            'clean verge line from eave to ridge',
+          ],
+        },
+
+        // --- tuile / ardoise (4 additional) ---
+        {
+          _for:          'tuile|ardoise|remplacement.*tuile|tuile.*cass',
+          scene_note:    'single cracked tile being lifted — tile lifter wedged under the adjacent tile, cracked tile being lifted for removal',
+          scene_camera:  'crouching on the roof slope, close view of the tile lifter wedge under the adjacent tile and the cracked tile being raised',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'tile lifter wedge under the adjacent tile, cracked tile raised and held clear',
+            midground:  'surrounding intact tiles on the slope, crack line visible across the tile face',
+            background: 'tiled slope continuing, open sky',
+          },
+          scene_debris:  'crack debris — small tile fragment beside the raised tile',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'tile lifter wedge under the adjacent tile to lift the cracked one',
+            'replacement tile on the tile beside the repair zone',
+          ],
+          protections: [
+            'knee pad on the tile at the repair zone',
+          ],
+          chantier_details: [
+            'cracked tile raised above the adjacent tile using the lifter wedge',
+            'crack line clearly visible across the tile face',
+            'replacement tile already on the slope ready to slide in',
+          ],
+        },
+        {
+          _for:          'tuile|ardoise|remplacement.*tuile|tuile.*cass',
+          scene_note:    'roof batten briefly exposed — tiles removed, timber batten visible in the small opening, new tile about to be slid into place',
+          scene_camera:  'close view of the small opening in the tiled surface, framing the exposed batten and the gap where the tile will slide in',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'small open section showing the timber roof batten — 2 or 3 tiles removed, batten briefly visible',
+            midground:  'surrounding intact tiles framing the opening, tile lifter wedges under adjacent tiles',
+            background: 'tiled slope continuing, open sky above',
+          },
+          scene_debris:  'old lichen or tile residue on the batten surface at the opening',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'tile lifter wedges under the adjacent tiles holding them up',
+            'replacement tile on the slope beside the opening ready to slide in',
+          ],
+          protections: [
+            'knee pad on the tile at the work zone',
+          ],
+          chantier_details: [
+            'timber batten visible in the small tile opening',
+            'batten surface showing lichen marks or old tile contact residue',
+            'replacement tile positioned at the opening ready to slide under the adjacent tiles',
+          ],
+        },
+        {
+          _for:          'tuile|ardoise|remplacement.*tuile|tuile.*cass',
+          scene_note:    'ridge tile re-mortaring — a ridge tile being re-set in fresh mortar, old mortar removed, fresh joint being formed along the ridge',
+          scene_camera:  'crouching at the ridge, framing the ridge tile being pressed into fresh mortar along the roof apex',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'ridge tile being pressed into fresh mortar at the roof apex — mortar visible along the base edge',
+            midground:  'adjacent ridge tiles on either side — some still with old mortar, others fresh',
+            background: 'pitched tiled slopes falling away on both sides of the ridge, sky above',
+          },
+          scene_debris:  'old mortar chunks removed from the ridge beside the fresh joint',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'pointing trowel shaping the mortar joint along the ridge tile base',
+            'small mortar bucket at the ridge level beside the work zone',
+          ],
+          protections: [
+            'knee pad at the ridge apex',
+          ],
+          chantier_details: [
+            'ridge tile bedded in fresh mortar at the roof apex',
+            'fresh mortar joint visible along the ridge tile base on both sides',
+            'old mortar chunks removed and placed on the tile beside the work zone',
+          ],
+        },
+        {
+          _for:          'tuile|ardoise|remplacement.*tuile|tuile.*cass',
+          scene_note:    'hip tile section replacement — hip tiles on a roof ridge junction being removed and re-bedded with fresh mortar',
+          scene_camera:  'crouching at the hip junction, framing the hip tile being lifted and the fresh mortar being applied beneath',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'hip tile being lifted at the junction, fresh mortar being applied underneath with the trowel',
+            midground:  'hip line tiles on either side, tiled slopes meeting at the hip',
+            background: 'tiled slopes extending away from the hip junction, sky',
+          },
+          scene_debris:  'old mortar removed from the hip tile bed on the tile surface below',
+          scene_exclude: ['flat membrane', 'parapet wall', 'HVAC units', 'large flat roof expanse'],
+          tools: [
+            'pointing trowel applying fresh mortar under the hip tile',
+            'small mortar bucket at the hip work zone',
+          ],
+          protections: [
+            'knee pad at the hip junction',
+          ],
+          chantier_details: [
+            'hip tile lifted, fresh mortar being applied to the hip line beneath',
+            'old mortar removed — debris on the adjacent tile',
+            'hip line where the two tiled slopes meet clearly visible at the junction',
           ],
         },
       ],
@@ -5243,6 +8173,318 @@ const SITE_REALISM = {
           'trench walls showing the full depth with soil layers visible',
         ],
       },
+
+      // --- decaissment (3 additional) ---
+      {
+        _for:          'decaiss|fouill|excavat|percement|terrassem',
+        scene_note:    'excavation post-machine cleanup — digger bucket marks on the trench walls, manual shovel work finishing the trench bottom to exact level',
+        scene_camera:  'standing at the trench edge, framing the bucket-marked walls and the manual shovel levelling the bottom',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'shovel levelling the trench bottom — fresh earth being scraped to grade level',
+          midground:  'trench walls showing wide machine bucket cut marks and ridges',
+          background: 'excavated earth stockpile beside the trench, site boundary beyond',
+        },
+        scene_debris:  'machine-cut soil ridges on the trench walls, loose earth clods at the trench base',
+        scene_exclude: ['decorative paving', 'finished surface', 'green grass lawn', 'concrete pour', 'rebar'],
+        tools: [
+          'long-handled shovel levelling the trench floor',
+          'spirit level on the trench edge to check the bottom grade',
+        ],
+        protections: [
+          'orange safety mesh across the open trench at ground level',
+        ],
+        chantier_details: [
+          'machine bucket cut marks — wide horizontal ridges on the trench walls',
+          'shovel levelling the trench base to the specified grade',
+          'excavated soil stockpile beside the trench — machine-cut clods',
+        ],
+      },
+      {
+        _for:          'decaiss|fouill|excavat|percement|terrassem',
+        scene_note:    'trench depth verification — measuring rod or tape held vertically in the trench, checking the excavation has reached the required depth',
+        scene_camera:  'crouching at the trench edge, framing the measuring rod held vertically in the trench with the depth marking visible',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'measuring rod or folding ruler held vertically from the trench base, reading at the trench lip',
+          midground:  'trench interior showing raw soil walls and flat bottom',
+          background: 'surrounding site surface, earth stockpile at the side',
+        },
+        scene_debris:  'loose earth at the trench base near the measuring rod foot',
+        scene_exclude: ['decorative paving', 'finished surface', 'green grass', 'concrete pour'],
+        tools: [
+          'folding measuring rod held vertically in the trench',
+          'spirit level beside the trench top for horizontal reference',
+        ],
+        protections: [
+          'orange safety mesh along the open trench',
+        ],
+        chantier_details: [
+          'measuring rod showing the trench depth at the lip — reading visible',
+          'trench walls raw and vertical, bottom flat after manual finishing',
+          'site datum peg visible at the trench edge for reference',
+        ],
+      },
+      {
+        _for:          'decaiss|fouill|excavat|percement|terrassem',
+        scene_note:    'L-shaped excavation corner — two trench directions meeting at a 90-degree corner, corner profile showing the full depth on both runs',
+        scene_camera:  'standing at the inside of the corner, framing the two trench runs meeting at 90 degrees, depth visible in both directions',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'L-shaped corner at the bottom of the excavation — clean right-angle profile in the soil',
+          midground:  'two trench runs extending away from the corner in perpendicular directions',
+          background: 'site surface at trench edge, earth stockpile beyond',
+        },
+        scene_debris:  'corner spoil pile at the trench junction — small mound from the corner dig',
+        scene_exclude: ['finished surface', 'decorative paving', 'green lawn', 'pipe in trench'],
+        tools: [
+          'shovel resting in one of the trench runs at the corner',
+          'corner profile board used to check the 90-degree angle',
+        ],
+        protections: [
+          'orange safety mesh across both trench runs at ground level',
+        ],
+        chantier_details: [
+          'L-shaped corner clearly visible in the excavation — two runs at 90 degrees',
+          'depth consistent on both trench runs from the corner',
+          'corner spoil pile on the site surface at the junction',
+        ],
+      },
+
+      // --- allée / cour (3 additional) ---
+      {
+        _for:          'allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext',
+        scene_note:    'sub-base aggregate spreading — MOT type 1 stone being raked across the prepared formation level, uniform depth being achieved',
+        scene_camera:  'standing at the end of the driveway, framing the aggregate rake in use spreading the stone across the full width',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'wide landscape rake spreading MOT stone across the prepared surface',
+          midground:  'driveway width — aggregate spread evenly on one section, not yet started on the next',
+          background: 'aggregate stockpile at the side, house wall or fence at the far end',
+        },
+        scene_debris:  'large aggregate stone pieces pushed aside during raking, disturbed edge gravel',
+        scene_exclude: ['deep trench', 'rebar', 'concrete pour', 'finished paving', 'green lawn'],
+        tools: [
+          'wide landscape rake spreading MOT type 1 aggregate',
+          'vibrating plate compactor parked at the section end',
+          'spirit level resting on the aggregate after raking',
+        ],
+        protections: [
+          'safety cones at the driveway work zone ends',
+        ],
+        chantier_details: [
+          'MOT aggregate raked level across the prepared surface — grey stone visible',
+          'aggregate depth consistent — ruler check mark visible at the edge',
+          'vibrating plate compactor ready at the section end for compaction pass',
+        ],
+      },
+      {
+        _for:          'allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext',
+        scene_note:    'block paving being laid in herringbone pattern — pavers being placed at 45 degrees and tapped level on the sand bed',
+        scene_camera:  'crouching at the laying face, framing the herringbone pattern being built block by block',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'block paver being tapped down with a rubber mallet on the sand bed, herringbone pattern building',
+          midground:  'laid section of herringbone paving behind the active face',
+          background: 'string line at the far end, uncompacted sand bed ahead still to be laid',
+        },
+        scene_debris:  'sand bed displaced by mallet tapping, small paver fragment beside the cutting zone',
+        scene_exclude: ['deep trench', 'concrete foundations', 'rebar', 'green lawn'],
+        tools: [
+          'rubber mallet tapping block paver onto the sand bed',
+          'string line defining the 45-degree laying angle',
+          'block paving spacer gauge beside the laid section',
+        ],
+        protections: [
+          'safety cones at the driveway ends',
+        ],
+        chantier_details: [
+          'herringbone pattern clearly forming on the laid section',
+          'block being tapped level with the rubber mallet',
+          'sand bed visible at the laying face ahead of the laid blocks',
+        ],
+      },
+      {
+        _for:          'allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext',
+        scene_note:    'kiln-dried jointing sand being brushed into block paving joints — stiff broom being swept across the completed surface',
+        scene_camera:  'standing at the laid surface, framing the kiln-dried sand being swept across the paving with a stiff broom',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'stiff broom sweeping kiln-dried sand across the paving joints — sand visible in the joints and on the surface',
+          midground:  'completed paved surface — herringbone pattern or regular pattern laid',
+          background: 'house wall or fence at the far end, sand bag open at the side',
+        },
+        scene_debris:  'kiln-dried sand scattered on the surface waiting to be swept into joints',
+        scene_exclude: ['deep trench', 'aggregate base exposed', 'rebar', 'concrete pour'],
+        tools: [
+          'stiff broom sweeping kiln-dried sand across the paved surface',
+          'open bag of kiln-dried jointing sand beside the work area',
+          'plate compactor at the far end — used to vibrate sand into joints',
+        ],
+        protections: [
+          'safety cones at the work zone boundary',
+        ],
+        chantier_details: [
+          'kiln-dried sand being swept across the paving — joints filling with fine sand',
+          'paving joints progressively filling — some fully packed, others still open',
+          'sand bag open and half-emptied on the paving beside the broom',
+        ],
+      },
+
+      // --- fondation (3 additional) ---
+      {
+        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        scene_note:    'concrete being poured into the foundation trench — concrete flowing from a mixer chute or bucket, vibrator probe nearby',
+        scene_camera:  'standing above the trench, framing the wet concrete pouring in from the end and flowing along the formwork length',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'wet concrete flowing into the formwork, pool of concrete growing at the pour point',
+          midground:  'concrete filling between the formwork boards, rebar partially submerged',
+          background: 'concrete mixer chute or bucket at the trench end, site surroundings',
+        },
+        scene_debris:  'concrete splashes on the formwork top and trench edge at the pour point',
+        scene_exclude: ['finished driveway', 'decorative garden', 'green grass', 'pipe in trench'],
+        tools: [
+          'concrete being poured from a mixer chute into the foundation trench',
+          'concrete vibrator probe beside the trench ready for compaction',
+          'screed board for levelling the pour',
+        ],
+        protections: [
+          'hard hat beside the trench edge',
+          'orange safety mesh around the open excavation',
+        ],
+        chantier_details: [
+          'wet concrete flowing and pooling at the pour point between the formwork',
+          'rebar cage being covered progressively as the pour advances',
+          'concrete splash marks on the formwork top boards',
+        ],
+      },
+      {
+        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        scene_note:    'concrete vibrator compacting the fresh pour — vibrator probe inserted into the concrete, air bubbles being released at the surface',
+        scene_camera:  'crouching beside the trench, framing the vibrator probe submerged in the fresh concrete with the motor unit above',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'concrete vibrator probe inserted in the fresh concrete — surface rippling with vibration',
+          midground:  'wet concrete in the formwork, small air bubbles visible at the probe insertion point',
+          background: 'formwork boards on the trench sides, site surroundings beyond',
+        },
+        scene_debris:  'concrete laitance brought to the surface by vibration — thin grey liquid at the vibrator point',
+        scene_exclude: ['finished surface', 'decorative garden', 'green grass', 'pipe in trench'],
+        tools: [
+          'concrete vibrator probe inserted in the fresh pour, motor unit at trench level',
+        ],
+        protections: [
+          'hard hat beside the trench',
+          'safety mesh around the pour area',
+        ],
+        chantier_details: [
+          'vibrator probe submerged — concrete surface rippling at the insertion point',
+          'laitance visible at the probe point — compaction releasing trapped air',
+          'concrete level rising in the formwork as it is compacted and settled',
+        ],
+      },
+      {
+        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        scene_note:    'formwork being struck after concrete has set — ply boards being removed to reveal the concrete strip or pad surface',
+        scene_camera:  'standing at the trench end, framing the formwork board being levered off to reveal the fresh concrete face',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'formwork ply board being levered away — fresh concrete face being revealed below it',
+          midground:  'concrete strip or pad surface visible where boards already removed, rebar cast in at the top',
+          background: 'trench walls, site surroundings',
+        },
+        scene_debris:  'formwork tie wire ends on the ground, ply board with concrete residue leaning against the trench wall',
+        scene_exclude: ['finished surface', 'decorative garden', 'green grass'],
+        tools: [
+          'wrecking bar or pry bar for levering off the formwork boards',
+        ],
+        protections: [
+          'hard hat near the trench',
+          'safety mesh at the trench edge',
+        ],
+        chantier_details: [
+          'fresh concrete face revealed as the board is levered away',
+          'formwork tie holes visible in the concrete surface',
+          'ply board with concrete residue leaning against the trench wall',
+        ],
+      },
+
+      // --- tranchée / VRD (3 additional) ---
+      {
+        _for:          'tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr',
+        scene_note:    'pipe joint being made — pipe collar or push-fit coupling being pushed onto the adjacent pipe section in the trench bedding',
+        scene_camera:  'crouching beside the trench, framing the pipe coupling being pushed together at the joint in the bedding',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'pipe collar or push-fit coupling being pushed onto the adjacent pipe section in the gravel bedding',
+          midground:  'trench with pipe run visible in the bedding layer, gravel surround around it',
+          background: 'trench walls and site surface at the edge',
+        },
+        scene_debris:  'pipe jointing lubricant smeared on the pipe at the coupling point',
+        scene_exclude: ['rebar or formwork', 'decorative paving', 'finished surface', 'green grass'],
+        tools: [
+          'push-fit pipe coupling being pressed onto the adjacent pipe end',
+          'pipe jointing lubricant tube beside the coupling point',
+        ],
+        protections: [
+          'orange safety mesh along the trench edge',
+        ],
+        chantier_details: [
+          'pipe coupling being pushed home at the joint — socket visible at the join',
+          'jointing lubricant smear on the pipe surface beside the coupling',
+          'gravel bedding around the pipe run on both sides of the joint',
+        ],
+      },
+      {
+        _for:          'tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr',
+        scene_note:    'warning tape being laid over the pipe run before backfilling — yellow or orange tape being unrolled along the top of the pipe',
+        scene_camera:  'standing at the trench edge, framing the warning tape being unrolled along the pipe run visible below',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'yellow or orange warning tape being unrolled over the pipe run in the trench — tape reading "ATTENTION CANALISATIONS" or similar',
+          midground:  'trench with pipe visible below the tape, partial backfill layer beneath the tape',
+          background: 'trench running along the site, safety mesh at the edge above',
+        },
+        scene_debris:  'tape roll end resting at the trench edge, tape being fed off the roll into the trench',
+        scene_exclude: ['rebar', 'finished paving', 'green grass'],
+        tools: [
+          'warning tape roll being unrolled along the pipe run',
+        ],
+        protections: [
+          'orange safety mesh at the trench edges',
+        ],
+        chantier_details: [
+          'yellow or orange warning tape being laid over the pipe run',
+          'tape running along the trench — warning marking above the pipe',
+          'partial backfill layer visible beneath the tape line',
+        ],
+      },
+      {
+        _for:          'tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr',
+        scene_note:    'trench backfill in progress — excavated material being shovelled back into the trench in compacted layers over the pipe',
+        scene_camera:  'standing at the trench side, framing the backfill being shovelled in and the compaction layer building up',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'shovel delivering backfill material into the open trench, pipe visible below the growing fill layer',
+          midground:  'trench being progressively filled — pipe now partly buried under the backfill layer',
+          background: 'stockpile of excavated material beside the trench, warning mesh at the edge',
+        },
+        scene_debris:  'clod of excavated material on the trench edge from the shovel,',
+        scene_exclude: ['rebar', 'finished surface', 'green grass'],
+        tools: [
+          'long-handled shovel delivering backfill into the trench',
+          'hand tamper on the ground beside the trench for layer compaction',
+        ],
+        protections: [
+          'orange safety mesh at the trench edges',
+        ],
+        chantier_details: [
+          'backfill layer building up in the trench over the warning tape and pipe',
+          'pipe partially buried — top of pipe just visible at the compaction face',
+          'trench half-filled — original depth visible on the far wall',
+        ],
+      },
     ],
     tools: [
       'shovel stuck vertically into the fresh earth pile',
@@ -5344,6 +8586,183 @@ const SITE_REALISM = {
             'old battery set aside on the ground near the front wheel, terminals facing up',
             'new battery in the tray, hold-down bracket about to be fitted',
             'terminal posts clean and ready for cable connection',
+          ],
+        },
+        {
+          scene_note:    'battery voltage diagnostic — multimeter clipped to battery terminals, bonnet open, pre-repair assessment',
+          scene_camera:  'close view from above the open engine bay, framing the multimeter display and the clamp leads on the battery posts',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'digital multimeter resting on the engine bay ledge, clamp leads on battery positive and negative terminals',
+            midground:  'battery top visible, fuse box and engine components around it',
+            background: 'open bonnet edge and outdoor surface beyond',
+          },
+          scene_debris:  'multimeter carry case open on the ground near the front bumper',
+          scene_exclude: ['jump cables between two cars', 'second vehicle', 'hydraulic jack', 'spare tyre', 'tow strap', 'door wedge'],
+          tools: [
+            'digital multimeter with clamp leads on battery terminals',
+            'torch resting on the wheel arch above the battery',
+          ],
+          protections: [
+            'reflective safety vest on the car roof',
+            'warning triangle placed on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'multimeter display visible showing battery voltage reading',
+            'clamp leads firmly attached to positive and negative posts',
+            'multimeter carry pouch open on the ground near the front bumper',
+          ],
+        },
+        {
+          scene_note:    'battery terminal cleaning — corroded terminals being treated with wire brush and anti-corrosion spray before reconnection',
+          scene_camera:  'close macro view of the open engine bay, framing the battery terminal and the wire brush mid-scrub',
+          scene_framing: {
+            work_pct:   80,
+            foreground: 'wire brush on a battery terminal, white corrosion powder residue beside the post',
+            midground:  'battery top with second terminal, anti-corrosion spray can nearby',
+            background: 'engine bay components around the battery, bonnet edge above',
+          },
+          scene_debris:  'white corrosion powder residue on the battery tray surface beside the terminal',
+          scene_exclude: ['jump cables', 'second vehicle', 'new battery in box', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'wire brush resting on the battery terminal after scrubbing',
+            'anti-corrosion spray can beside the battery',
+            'small flat-head screwdriver for terminal clamp bolt on the ledge',
+          ],
+          protections: [
+            'nitrile gloves on the engine bay ledge near the battery',
+            'warning triangle on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'corrosion powder residue on the battery tray surface',
+            'terminal surface visibly cleaner on the scrubbed side',
+            'anti-corrosion spray nozzle pointed toward the terminal',
+          ],
+        },
+        {
+          scene_note:    'post-jump cleanup — jump cables being coiled after a successful restart, bonnet about to close, tools being packed',
+          scene_camera:  'standing at the front of the car, framing the cables being gathered and the bonnet propped open for the last moments',
+          scene_framing: {
+            work_pct:   55,
+            foreground: 'jump cables being coiled into a loop on the ground near the bumper',
+            midground:  'bonnet still propped open, engine bay visible and undisturbed',
+            background: 'road or outdoor surface, warning triangle about to be retrieved',
+          },
+          scene_debris:  'cable end cap resting on the bumper where the cable just hung, carry bag open on the ground',
+          scene_exclude: ['cables attached to battery', 'second vehicle bonnet open', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'jump cables being coiled — clamps visible at the end of the loop',
+            'cable carry bag open on the ground near the front wheel',
+          ],
+          protections: [
+            'reflective safety vest folded on the car roof ready to be stowed',
+            'warning triangle visible on the road about to be retrieved',
+          ],
+          chantier_details: [
+            'jump cables coiled into a loop near the bumper',
+            'carry bag open on the ground for the cables to go back in',
+            'bonnet still propped open on the hood rod',
+          ],
+        },
+        {
+          scene_note:    'night battery intervention — portable work light or torch illuminating the engine bay, booster pack LED display glowing in the dark',
+          scene_camera:  'slightly wider angle at engine bay level, framing the lit-up engine bay against a dark background, booster LEDs prominent',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'portable booster pack on the wheel arch, LED charge indicator glowing, clamp cables connected to battery',
+            midground:  'engine bay illuminated by a portable LED work light clipped to the bonnet edge',
+            background: 'dark road or parking area beyond, hazard light reflection visible',
+          },
+          scene_debris:  'booster carry case open on the ground, torchlight casting shadows in the engine bay',
+          scene_exclude: ['daylight conditions', 'second vehicle', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'portable booster pack with lit LED indicator on the wheel arch',
+            'clip-on LED work light on the bonnet edge illuminating the engine bay',
+            'clamp cables connected to battery posts',
+          ],
+          protections: [
+            'reflective safety vest visible in the light near the car',
+            'warning triangle with reflector active on the road behind the car',
+          ],
+          chantier_details: [
+            'engine bay lit by portable LED work light — strong contrast with surrounding dark',
+            'booster pack LED charge display lit up on the casing',
+            'hazard lights reflected on the road surface beside the car',
+          ],
+        },
+        {
+          scene_note:    'winter breakdown — engine bay open in cold conditions, frost visible on the windshield, booster or cables ready for a cold start',
+          scene_camera:  'standing at the front of the car, framing the open bonnet and the frost-covered windshield as a background detail',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'booster pack cables connected to battery terminals in the open engine bay',
+            midground:  'engine bay in cold conditions — condensation or frost residue on the surfaces near the battery',
+            background: 'frost-covered windshield and car roof visible behind the raised bonnet edge',
+          },
+          scene_debris:  'fine frost crystals on the engine bay plastic covers, condensation on the battery casing',
+          scene_exclude: ['summer conditions', 'second vehicle', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'booster pack clipped to battery terminals, ready for cold start',
+            'torch resting on the wheel arch',
+          ],
+          protections: [
+            'reflective safety vest on the car roof',
+            'warning triangle on the icy road behind the vehicle',
+          ],
+          chantier_details: [
+            'frost on the windshield visible in the background',
+            'condensation on the battery casing and plastic covers in the cold air',
+            'exhaust residue on the road surface near the rear of the car',
+          ],
+        },
+        {
+          scene_note:    'hidden battery access — plastic battery cover removed to access a concealed or trunk-mounted battery, cover set aside beside the car',
+          scene_camera:  'close view of the battery compartment with the plastic cover removed, battery now visible and accessible',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'battery revealed in its compartment, terminals exposed — plastic cover set aside on the adjacent surface',
+            midground:  'battery tray surroundings — wiring loom, mounting brackets',
+            background: 'open boot or side panel, indoor parking area or roadside beyond',
+          },
+          scene_debris:  'plastic battery cover on the ground or boot floor beside the open compartment',
+          scene_exclude: ['second vehicle bonnet open', 'long jump cables between two cars', 'hydraulic jack', 'spare tyre'],
+          tools: [
+            'plastic battery cover removed and set aside, revealing the battery',
+            'terminal clamp spanner beside the battery',
+            'torch resting near the open compartment',
+          ],
+          protections: [
+            'warning triangle placed behind the vehicle',
+          ],
+          chantier_details: [
+            'plastic battery cover set aside exposing the battery compartment',
+            'battery terminals now accessible after cover removal',
+            'wiring loom routed around the battery tray visible after cover off',
+          ],
+        },
+        {
+          scene_note:    'initial breakdown scene — vehicle on roadside, bonnet just propped open, battery visible, no repair started yet',
+          scene_camera:  'standing back at the front corner of the car, framing the raised bonnet and the roadside context — tools not yet out',
+          scene_framing: {
+            work_pct:   45,
+            foreground: 'bonnet propped open on hood rod, engine bay visible, battery tray in view',
+            midground:  'front of the stalled vehicle at roadside, no repair equipment visible yet',
+            background: 'road or parking edge, technician van or background vehicles at distance',
+          },
+          scene_debris:  'warning triangle freshly placed on the road behind the vehicle',
+          scene_exclude: ['cables attached to battery', 'booster pack on battery', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'warning triangle placed freshly on the road behind the vehicle',
+            'tool bag closed on the ground near the front wheel — not yet opened',
+          ],
+          protections: [
+            'reflective safety vest on the car roof',
+            'warning triangle on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'bonnet raised and propped on the hood rod — nothing disturbed yet',
+            'battery visible in the engine bay, terminals in original state',
+            'warning triangle freshly placed on the road surface',
           ],
         },
       ],
@@ -5451,6 +8870,180 @@ const SITE_REALISM = {
             'wheel nuts arranged near the spare',
           ],
         },
+        {
+          scene_note:    'flat tyre initial assessment — tyre flat on the road, nail or screw still visible in the tread, no repair started',
+          scene_camera:  'crouching close beside the flat tyre at road level, framing the deflated tyre profile and the puncture cause in the tread',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'flat tyre against the road surface — tyre visibly deflated and squashed, small nail or screw visible in the tread center',
+            midground:  'wheel arch above, vehicle body panel behind the tyre',
+            background: 'road surface extending away, kerbside or verge beyond',
+          },
+          scene_debris:  'small nail or screw visible in the tread — puncture cause not yet removed',
+          scene_exclude: ['hydraulic jack', 'spare tyre', 'lug wrench', 'jump cables', 'tow strap', 'door wedge'],
+          tools: [
+            'warning triangle placed on the road behind the vehicle',
+            'tyre pressure gauge on the ground near the flat tyre',
+          ],
+          protections: [
+            'reflective safety vest on the car roof',
+            'warning triangle on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'tyre profile completely flat against the road surface',
+            'nail or screw clearly visible in the tyre tread',
+            'small oil mark under the tyre from the road surface contact',
+          ],
+        },
+        {
+          scene_note:    'hydraulic jack positioning — jack being placed under the vehicle sill point, wheel still on the ground before lifting',
+          scene_camera:  'crouching at the sill level, framing the jack being slid into position under the jacking point — wheel still ground-level',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'hydraulic jack being positioned under the vehicle sill, contact point visible',
+            midground:  'vehicle sill and lower door panel, flat tyre still on the road',
+            background: 'road surface, verge or kerbside behind the vehicle',
+          },
+          scene_debris:  'small stone moved aside from the jack foot position, lug wrench on the ground nearby',
+          scene_exclude: ['vehicle raised off the ground', 'spare tyre fitted', 'jump cables', 'tow strap', 'door wedge'],
+          tools: [
+            'hydraulic jack being slid under the sill jacking point',
+            'lug wrench on the ground near the wheel — not yet in use',
+          ],
+          protections: [
+            'reflective safety vest near the wheel',
+            'warning cone placed on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'jack saddle contacting the sill reinforcement point — not yet pumped',
+            'flat tyre still full contact with the road surface',
+            'small stone cleared from under the jack foot',
+          ],
+        },
+        {
+          scene_note:    'lug nuts loosening — cross wrench on wheel nut, wheel still on the road surface, loosening before lifting',
+          scene_camera:  'crouching at the wheel, framing the cross wrench on the wheel nut, tyre still flat on the ground',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'cross wrench engaged on a wheel nut, tyre flat on the road, wrench handle horizontal',
+            midground:  'remaining wheel nuts on the wheel, jack placed nearby but not yet pumped',
+            background: 'road surface, vehicle body panel, verge beyond',
+          },
+          scene_debris:  'wheel nut already removed resting on the road near the tyre',
+          scene_exclude: ['vehicle lifted off ground', 'wheel removed', 'spare tyre', 'jump cables', 'tow strap'],
+          tools: [
+            'cross lug wrench engaged on a wheel nut',
+            'hydraulic jack placed under the sill ready to pump',
+          ],
+          protections: [
+            'reflective safety vest on the car roof',
+            'warning cone on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'cross wrench on the wheel nut with tyre still flat on the road',
+            'one nut already removed and placed on the road beside the tyre',
+            'jack positioned under the sill ready to lift after all nuts loosened',
+          ],
+        },
+        {
+          scene_note:    'tyre pressure check after plug repair — pressure gauge on valve stem, portable compressor inflating the tyre',
+          scene_camera:  'crouching close at the tyre valve, framing the pressure gauge locked onto the valve and the compressor hose running to it',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'tyre pressure gauge locked on the valve stem, compressor hose connected',
+            midground:  'tyre now inflated and round — visibly firmer than before',
+            background: 'portable compressor on the ground near the wheel, road surface beyond',
+          },
+          scene_debris:  'plug tool on the ground near the tyre, small piece of plug strip beside it',
+          scene_exclude: ['hydraulic jack', 'spare tyre', 'removed wheel', 'jump cables', 'tow strap'],
+          tools: [
+            'tyre pressure gauge locked on the valve stem',
+            'portable compressor hose running to the valve',
+            'plug tool on the ground near the tyre',
+          ],
+          protections: [
+            'reflective vest near the wheel',
+            'warning triangle on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'pressure gauge showing bar or PSI reading on the valve',
+            'tyre now round and firm — visibly re-inflated after plug repair',
+            'portable compressor on the ground with cord running to the valve hose',
+          ],
+        },
+        {
+          scene_note:    'spare wheel retrieved from the boot — spare being lifted out of the boot floor well, still at the boot opening',
+          scene_camera:  'standing at the open boot, framing the spare wheel being lifted from its well in the boot floor',
+          scene_framing: {
+            work_pct:   55,
+            foreground: 'spare wheel being lifted from the boot floor well, foam insert removed beside it',
+            midground:  'open boot floor, toolkit bag and emergency triangle stored beside the well',
+            background: 'boot opening, car bodywork, road or outdoor surface',
+          },
+          scene_debris:  'foam insert or cardboard boot cover removed and leaning against the car bumper',
+          scene_exclude: ['wheel on the car', 'jack in use', 'jump cables', 'tow strap', 'door wedge'],
+          tools: [
+            'spare wheel being lifted from the boot floor well',
+            'wheel brace and jack kit beside the spare in the boot',
+          ],
+          protections: [
+            'warning triangle still folded, visible in the boot kit',
+          ],
+          chantier_details: [
+            'boot floor open, spare wheel well visible',
+            'foam boot insert set aside against the bumper',
+            'jack and brace kit visible beside the spare in the well',
+          ],
+        },
+        {
+          scene_note:    'roadside safety setup — warning triangle being placed on the road before tyre change begins, vehicle with hazard lights implied',
+          scene_camera:  'standing on the road behind the vehicle, framing the warning triangle being positioned at distance',
+          scene_framing: {
+            work_pct:   40,
+            foreground: 'warning triangle being placed on the road surface, reflective panels catching the light',
+            midground:  'stalled vehicle with flat tyre visible in the distance ahead',
+            background: 'road continuing beyond, verge or kerbside, open sky',
+          },
+          scene_debris:  'gravel or road dirt disturbed at the triangle position',
+          scene_exclude: ['jack in use', 'wheel removed', 'lug wrench on wheel', 'jump cables', 'tow strap'],
+          tools: [
+            'warning triangle being placed on the road surface',
+            'reflective safety vest on the car roof visible in the background',
+          ],
+          protections: [
+            'warning triangle placed at recommended distance behind the vehicle',
+          ],
+          chantier_details: [
+            'warning triangle reflectors catching the light at road level',
+            'stalled vehicle with flat tyre visible ahead at distance',
+            'road markings visible either side of the triangle position',
+          ],
+        },
+        {
+          scene_note:    'post-change verification — spare fitted and torqued, old flat tyre being lifted into the boot, tools being gathered',
+          scene_camera:  'standing back from the car, framing the newly fitted spare and the flat tyre being loaded into the boot',
+          scene_framing: {
+            work_pct:   50,
+            foreground: 'flat tyre being carried to the open boot, spare clearly fitted on the car',
+            midground:  'open boot ready to receive the flat tyre and tools',
+            background: 'road or outdoor surface, vehicle rear and the road ahead',
+          },
+          scene_debris:  'lug wrench and jack being placed into the boot beside the old flat tyre',
+          scene_exclude: ['jack still under car', 'wheel gap at sill', 'jump cables', 'tow strap', 'door wedge'],
+          tools: [
+            'flat tyre being carried to the open boot',
+            'lug wrench and jack being packed away beside it',
+          ],
+          protections: [
+            'reflective safety vest being folded ready to stow',
+            'warning triangle about to be retrieved from the road',
+          ],
+          chantier_details: [
+            'spare wheel clearly fitted on the car — visibly rounder and firmer than the flat',
+            'flat tyre being lifted into the boot floor well',
+            'tools being loaded — jack and lug wrench into the boot kit bag',
+          ],
+        },
       ],
       scene_note: 'roadside breakdown — flat tyre, tyre change in progress beside a stalled vehicle',
       tools: [
@@ -5553,6 +9146,177 @@ const SITE_REALISM = {
             'displaced earth and grass at the stuck wheel positions',
           ],
         },
+        {
+          scene_note:    'winch cable attachment — steel winch cable from the recovery truck being hooked to the stalled car front recovery point',
+          scene_camera:  'low angle at bumper level, framing the winch cable hook being attached to the recovery point under the front bumper',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'steel winch cable with hook at the front recovery point under the bumper — hook engaged',
+            midground:  'front bumper and underside of the car, recovery truck cable running taut toward it',
+            background: 'road surface, recovery truck at the far end of the cable',
+          },
+          scene_debris:  'recovery point plastic cap removed and on the ground near the bumper',
+          scene_exclude: ['tow strap between bumpers', 'flatbed ramp', 'jump cables', 'spare tyre', 'door wedge'],
+          tools: [
+            'steel winch cable with hook engaged at the front recovery point',
+            'recovery shackle at the hook attachment',
+          ],
+          protections: [
+            'reflective safety vest near the scene',
+            'warning cone on the road behind the stalled vehicle',
+          ],
+          chantier_details: [
+            'winch cable taut between recovery truck and stalled car front',
+            'recovery point visible under the bumper with hook attached',
+            'plastic tow eye cover removed and on the road nearby',
+          ],
+        },
+        {
+          scene_note:    'wheel dolly positioning — wheel dolly being slid under the front driven wheel before flatbed loading',
+          scene_camera:  'crouching at the front wheel, framing the wheel dolly being manoeuvred under the tyre',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'wheel dolly being slid under the front tyre, tyre resting in the dolly cup',
+            midground:  'front wheel arch and lower bumper, car at ground level',
+            background: 'road surface, flatbed truck visible behind the stalled car',
+          },
+          scene_debris:  'dolly carry straps on the road near the front wheel',
+          scene_exclude: ['car already on flatbed', 'tow strap between cars', 'jump cables', 'spare tyre', 'door wedge'],
+          tools: [
+            'wheel dolly being positioned under the front tyre',
+            'low-profile guide handle for pushing the dolly into place',
+          ],
+          protections: [
+            'reflective vest near the scene',
+            'warning cone on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'wheel dolly cup visible under the tyre — engaged and loaded',
+            'carry straps on the road near the front wheel',
+            'flatbed truck visible behind the stalled car',
+          ],
+        },
+        {
+          scene_note:    'vehicle secured on flatbed — ratchet straps being cranked tight over the car tyres on the deck, ready for transport',
+          scene_camera:  'standing on the flatbed deck, framing the ratchet strap being tightened over the car tyre',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'ratchet strap being cranked over the car tyre on the flatbed deck',
+            midground:  'car on the deck, wheel chock beside the tyre',
+            background: 'flatbed ramp in its raised position, road visible behind',
+          },
+          scene_debris:  'unused strap length hanging from the ratchet head beside the tyre',
+          scene_exclude: ['car driving up ramp', 'tow strap between two cars on flat road', 'jump cables', 'spare tyre', 'door wedge'],
+          tools: [
+            'ratchet strap cranked over the car tyre on the deck',
+            'wheel chock placed against the tyre to prevent rolling',
+          ],
+          protections: [
+            'reflective vest on the recovery operator on the flatbed deck',
+          ],
+          chantier_details: [
+            'ratchet handle being cranked — strap tightening over the car tyre',
+            'wheel chock wedged against the tyre face on the deck',
+            'flatbed ramp raised behind the loaded car',
+          ],
+        },
+        {
+          scene_note:    'pre-tow underside inspection — low angle view under the stalled car checking for damage or fluid loss before recovery',
+          scene_camera:  'ground-level view looking under the car front, framing the underside — subframe, exhaust, and bumper edge visible',
+          scene_framing: {
+            work_pct:   55,
+            foreground: 'car underside at ground level — subframe, exhaust pipe, and lower bumper edge',
+            midground:  'road surface under the car, fluid mark or damage visible',
+            background: 'road behind the car, recovery vehicle at distance',
+          },
+          scene_debris:  'oil spot or fluid drip on the road surface under the engine',
+          scene_exclude: ['cable attached to car', 'flatbed ramp active', 'spare tyre', 'jump cables', 'door wedge'],
+          tools: [
+            'torch directed under the car to inspect the underside',
+          ],
+          protections: [
+            'warning triangle on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'car underside visible — subframe, exhaust pipe, and bumper edge',
+            'oil or fluid drip mark on the road surface under the engine bay',
+            'torch beam illuminating the underside from the front',
+          ],
+        },
+        {
+          scene_note:    'night vehicle recovery — amber beacon lights on the recovery truck, reflective warning cones and vest visible in the dark',
+          scene_camera:  'wider angle from the roadside, framing the recovery truck with amber beacons flashing beside the stalled car at night',
+          scene_framing: {
+            work_pct:   50,
+            foreground: 'amber beacon light on the recovery truck roof bar, reflective cone on the road',
+            midground:  'stalled car with hazard lights implied, cable or strap visible between vehicles',
+            background: 'dark road, vehicle reflections and headlight beams on the dark surface',
+          },
+          scene_debris:  'amber light reflection on the road surface near the recovery truck',
+          scene_exclude: ['daytime conditions', 'spare tyre', 'jump cables', 'door wedge'],
+          tools: [
+            'amber beacon bar on the recovery truck roof — lights active',
+            'reflective warning cones on both sides of the scene',
+          ],
+          protections: [
+            'reflective safety vest clearly visible in the amber light',
+            'warning cones with reflective bands on both sides of the scene',
+          ],
+          chantier_details: [
+            'amber beacon light flashing on the recovery truck roof bar',
+            'amber light reflected on the dark road surface',
+            'reflective vest and cones bright against the dark background',
+          ],
+        },
+        {
+          scene_note:    'pre-recovery condition documentation — vehicle condition being noted on a clipboard beside the stalled car',
+          scene_camera:  'standing at the side of the stalled car, framing the clipboard with a condition form beside the vehicle bodywork',
+          scene_framing: {
+            work_pct:   45,
+            foreground: 'clipboard with a vehicle condition record being filled in, pen at the page',
+            midground:  'stalled car bodywork — relevant damage area visible alongside the clipboard',
+            background: 'road or outdoor area, recovery vehicle at distance',
+          },
+          scene_debris:  'key on the car roof near the clipboard — car unmoved',
+          scene_exclude: ['cable attached to car', 'ramp active', 'spare tyre', 'jump cables', 'door wedge'],
+          tools: [
+            'clipboard with pre-recovery condition form being filled in',
+            'torch resting on the car roof near the area being documented',
+          ],
+          protections: [
+            'reflective safety vest near the car',
+            'warning triangle visible on the road behind the vehicle',
+          ],
+          chantier_details: [
+            'clipboard with condition record at the side of the car',
+            'pen marking damage positions on the form',
+            'car bodywork detail visible behind the clipboard',
+          ],
+        },
+        {
+          scene_note:    'vehicle fully loaded and secured — flatbed ramp raised, straps tight over all four tyres, ready for transport',
+          scene_camera:  'standing behind the flatbed, framing the loaded car on the deck with the raised ramp and secured straps',
+          scene_framing: {
+            work_pct:   50,
+            foreground: 'raised flatbed ramp, ratchet strap ends secured, car roof visible above the deck',
+            midground:  'car on the flatbed deck — all strapped, wheel chocks in place',
+            background: 'flatbed cab visible ahead, road clear for departure',
+          },
+          scene_debris:  'strap excess neatly tied off on the deck edge',
+          scene_exclude: ['car driving up ramp', 'tow strap between two cars', 'jump cables', 'spare tyre', 'door wedge'],
+          tools: [
+            'ratchet straps over each tyre — fully tightened',
+            'wheel chocks wedged against all tyres on the deck',
+          ],
+          protections: [
+            'amber beacon bar on the truck roof — ready for road',
+          ],
+          chantier_details: [
+            'car fully loaded and level on the flatbed deck',
+            'ratchet straps taut over all four tyres',
+            'ramp raised flat under the car — road visible behind the truck',
+          ],
+        },
       ],
       scene_note: 'roadside recovery — vehicle being prepared for towing, tow strap or hook attached',
       tools: [
@@ -5652,6 +9416,175 @@ const SITE_REALISM = {
             'keys or key fob visible through the window on the seat',
             'hooked rod tip approaching the interior lock through the gap',
             'door gap barely 5 mm — held by the wedge',
+          ],
+        },
+        {
+          scene_note:    'lockout tool kit assessment — specialist tools laid out on the bonnet or ground before starting, selecting the right approach',
+          scene_camera:  'standing at the side of the car, framing the tools spread out on the bonnet or a protective mat',
+          scene_framing: {
+            work_pct:   50,
+            foreground: 'assorted door opening tools laid out on a protective mat on the bonnet — wedges, rods, and air pump',
+            midground:  'car bonnet surface and door panel beside',
+            background: 'road or parking area, vehicle interior through the window',
+          },
+          scene_debris:  'tool carry case open on the ground beside the car, foam inserts visible',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'assorted plastic and metal door wedges laid out on a protective mat',
+            'long-reach rods of different lengths beside the wedges',
+            'air wedge pump and tube on the mat',
+            'protective film strips beside the tools',
+          ],
+          protections: [
+            'reflective vest on the car roof',
+          ],
+          chantier_details: [
+            'tools laid out in order of use on the protective mat',
+            'tool carry case with foam inserts open on the ground',
+            'keys or key fob visible inside the car through the window',
+          ],
+        },
+        {
+          scene_note:    'door gap pre-assessment — testing the door frame flexibility with a thin wedge at the corner before committing to the full opening approach',
+          scene_camera:  'close view at the top door corner, framing the thin test wedge being tapped lightly into the gap',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'thin feeler or test wedge being placed gently at the top door corner — no significant gap yet',
+            midground:  'door frame and window glass, car roof above',
+            background: 'road or parking area, car interior dimly visible',
+          },
+          scene_debris:  'protective film strip being peeled ready to apply to the door frame',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'thin test wedge being placed at the door frame top corner',
+            'protective film strip being peeled ready for application',
+          ],
+          protections: [
+            'protective film on the adjacent door frame area',
+          ],
+          chantier_details: [
+            'thin wedge barely inserted at the corner — pre-assessment only',
+            'door frame undisturbed, paint protection film being prepared',
+            'keys visible inside through the window',
+          ],
+        },
+        {
+          scene_note:    'two-wedge setup — second wedge added lower on the door frame to widen the gap further for longer rod access',
+          scene_camera:  'standing back slightly, framing both wedges visible in the door frame — one at the top corner, one lower on the frame',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'two plastic wedges visible in the door frame at different heights, door gap widened between them',
+            midground:  'door panel and window glass, rod entering through the larger gap',
+            background: 'car interior visible, road or parking area beyond',
+          },
+          scene_debris:  'protective film strip at both wedge contact points on the door paint',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap', 'air pump wedge'],
+          tools: [
+            'two plastic wedges in the door frame — one at top corner, one lower',
+            'long-reach rod through the widened gap',
+            'protective film at both wedge contact points',
+          ],
+          protections: [
+            'protective film at both wedge positions on the door frame paint',
+          ],
+          chantier_details: [
+            'two wedges in the door frame creating a wider working gap',
+            'long-reach rod visible through the gap, more room to manoeuvre',
+            'protective film preventing paint damage at both wedge points',
+          ],
+        },
+        {
+          scene_note:    'rear door lockout — tools applied to the rear door frame rather than the front, giving access to the rear interior lock mechanism',
+          scene_camera:  'standing beside the rear door, close view of the wedge and rod at the rear door top corner',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'wedge in the rear door frame top corner, long rod visible through the gap',
+            midground:  'rear door panel and rear window glass',
+            background: 'rear interior visible through the glass, road or parking area beyond',
+          },
+          scene_debris:  'protective film strip at the wedge contact point on the rear door frame',
+          scene_exclude: ['front door tools', 'jump cables', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'plastic wedge in the rear door frame top corner',
+            'long-reach rod visible entering through the rear door gap',
+          ],
+          protections: [
+            'protective film at the wedge contact point on the rear door frame',
+          ],
+          chantier_details: [
+            'rear door wedge and gap — working from the rear instead of the front',
+            'rod tip approaching the rear interior door lock mechanism',
+            'rear window glass showing the interior of the back seat',
+          ],
+        },
+        {
+          scene_note:    'interior door handle reach — hooked rod extended through the door gap, angled toward the interior door handle mechanism',
+          scene_camera:  'close view through the window glass, framing the hooked rod tip approaching the interior door handle',
+          scene_framing: {
+            work_pct:   75,
+            foreground: 'hooked rod tip visible close to the interior door handle through the glass and gap',
+            midground:  'interior door trim, door handle lever, and arm rest',
+            background: 'car interior, seat visible beyond',
+          },
+          scene_debris:  'protective film at the door frame entry point for the rod',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap'],
+          tools: [
+            'hooked long-reach rod with tip angled toward the interior door handle',
+            'wedge holding the door gap open at the frame top',
+          ],
+          protections: [
+            'protective film at the rod entry point on the door frame',
+          ],
+          chantier_details: [
+            'rod tip visibly close to the interior door handle lever through the window',
+            'door handle mechanism visible in the car interior panel',
+            'door gap held by the wedge while rod manoeuvres toward the handle',
+          ],
+        },
+        {
+          scene_note:    'full-jamb protection setup — protective film applied along the entire door frame edge before inserting any tools, preventing all paint damage',
+          scene_camera:  'standing at the door, framing the protective film strip applied along the full length of the door frame edge',
+          scene_framing: {
+            work_pct:   60,
+            foreground: 'protective film strip applied along the full height of the door frame edge, no tools inserted yet',
+            midground:  'door panel and window glass beside the protected edge',
+            background: 'road or parking area, vehicle interior visible',
+          },
+          scene_debris:  'film backing paper peel on the ground near the door',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap', 'wedge inserted'],
+          tools: [
+            'protective film strip applied along the full door frame edge',
+            'roller or finger pressing the film flat to the frame paint',
+          ],
+          protections: [
+            'full-length protective film on the door frame — paint fully protected',
+          ],
+          chantier_details: [
+            'protective film covering the full door frame edge top to bottom',
+            'film backing paper beside the door on the ground',
+            'door frame paint fully protected — film applied before any tool entry',
+          ],
+        },
+        {
+          scene_note:    'lockout complete — car door open, keys retrieved, door being checked from outside before closing',
+          scene_camera:  'standing at the open car door, framing the open interior and the keys visible in the lock or held near the door',
+          scene_framing: {
+            work_pct:   45,
+            foreground: 'car door open wide, interior visible, key in the ignition or on the seat',
+            midground:  'door frame and window, now fully open — no tools in the gap',
+            background: 'road or parking area, tools being gathered on the ground',
+          },
+          scene_debris:  'protective film strip removed and on the ground near the door, tool carry case open',
+          scene_exclude: ['jump cables', 'hydraulic jack', 'spare tyre', 'tow strap', 'wedge in frame'],
+          tools: [
+            'door fully open — keys on the seat or in the ignition visible',
+            'tools being placed back into the carry case on the ground',
+          ],
+          protections: [],
+          chantier_details: [
+            'car door fully open — lockout resolved',
+            'keys visible on the seat or dashboard inside',
+            'protective film strip removed and on the ground near the door',
           ],
         },
       ],
@@ -5837,6 +9770,384 @@ const SITE_REALISM = {
           'edging strip off-cut on the ground near the active end',
         ],
       },
+
+      // --- création / plantation (3 additional) ---
+      {
+        _for:          'creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie',
+        scene_note:    'planting bed soil preparation — rotavator marks in the freshly turned topsoil, bed being raked level before planting',
+        scene_camera:  'standing at the bed edge, framing the raked topsoil surface and the rotavator marks in the turned earth',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'wide landscape rake being drawn through the turned topsoil, rotavator tine marks in the earth',
+          midground:  'planting bed surface — turned and raked, ready for planting',
+          background: 'garden fence or hedge, existing lawn or path beside the new bed',
+        },
+        scene_debris:  'small stones raked to the bed edge from the turned topsoil, rotavator fuel can on the ground beside',
+        scene_exclude: ['finished planted bed', 'hedge trimmer', 'leaf blower', 'lawn mower'],
+        tools: [
+          'wide landscape rake levelling the freshly turned topsoil',
+          'rotavator parked at the bed edge — tines still with fresh earth',
+        ],
+        protections: [
+          'flat board on the raked surface to avoid footprint compaction',
+        ],
+        chantier_details: [
+          'rotavator tine marks clearly visible in the freshly turned topsoil',
+          'rake marks forming the level bed surface',
+          'stones raked to the bed edge during levelling',
+        ],
+      },
+      {
+        _for:          'creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie',
+        scene_note:    'tree root ball unwrapping — hessian or plastic wrapping being removed from a tree root ball before planting into the prepared hole',
+        scene_camera:  'crouching beside the tree root ball, framing the hessian being cut and removed from the root mass',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'hessian or plastic wrapping being cut from the tree root ball, roots visible where unwrapped',
+          midground:  'tree root ball on the prepared planting area, open planting hole visible nearby',
+          background: 'garden boundary, existing plantings beyond',
+        },
+        scene_debris:  'cut hessian pieces on the ground beside the root ball, binding wire removed to one side',
+        scene_exclude: ['finished planted bed', 'hedge trimmer', 'leaf blower', 'lawn mower'],
+        tools: [
+          'secateurs cutting the hessian binding on the tree root ball',
+          'planting hole open beside the root ball, ready to receive the tree',
+        ],
+        protections: [
+          'gardening gloves beside the secateurs',
+        ],
+        chantier_details: [
+          'hessian cut and partially removed from the root ball — roots partially visible',
+          'binding wire and cut hessian pieces on the ground beside the root ball',
+          'planting hole open and ready beside the root ball',
+        ],
+      },
+      {
+        _for:          'creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie',
+        scene_note:    'newly planted tree being staked — timber stake driven beside the tree, soft tree tie being applied around the trunk to secure it',
+        scene_camera:  'standing back, framing the newly planted tree and the stake being driven beside it',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'timber stake driven into the planting soil beside the newly planted tree trunk',
+          midground:  'newly planted tree with topsoil mounded at the base, tree tie being looped around trunk',
+          background: 'garden boundary, existing garden beyond the planting zone',
+        },
+        scene_debris:  'stake mallet on the ground beside the driven stake, empty tree tie packaging near the tree base',
+        scene_exclude: ['finished planted bed without work visible', 'hedge trimmer', 'leaf blower'],
+        tools: [
+          'timber stake driven beside the tree — bark still on the stake',
+          'soft rubber tree tie being applied around the trunk',
+          'mallet on the ground beside the stake',
+        ],
+        protections: [
+          'gardening gloves near the tree tie',
+        ],
+        chantier_details: [
+          'timber stake driven firmly into the soil beside the tree trunk',
+          'tree tie looped around trunk and stake — figure-8 tie visible',
+          'topsoil mounded and firmed around the tree base',
+        ],
+      },
+
+      // --- gazon / pelouse (3 additional) ---
+      {
+        _for:          'gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse',
+        scene_note:    'soil preparation before turf laying — topsoil being raked level with a landscape rake, final surface ready for turf rolls',
+        scene_camera:  'standing at the edge of the prepared area, framing the rake working the last section of topsoil',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'landscape rake levelling the prepared topsoil, fine tilth visible at the surface',
+          midground:  'prepared topsoil area — raked and level, ready for turf',
+          background: 'garden boundary, adjacent existing surface or fence',
+        },
+        scene_debris:  'stones raked to the bed edge, small clod of topsoil beside the rake',
+        scene_exclude: ['turf rolls visible', 'hedge trimmer', 'leaf blower', 'finished lawn'],
+        tools: [
+          'wide landscape rake levelling the final topsoil layer',
+          'spirit level on the prepared surface checking the grade',
+        ],
+        protections: [
+          'flat board on the prepared surface to avoid compaction during raking',
+        ],
+        chantier_details: [
+          'fine topsoil tilth raked to a level surface — ready for turf',
+          'stones and debris at the bed edge from the raking pass',
+          'grade level consistent across the prepared area',
+        ],
+      },
+      {
+        _for:          'gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse',
+        scene_note:    'freshly laid turf being rolled — flat lawn roller being pushed across the newly laid strips to press the root contact and seams',
+        scene_camera:  'standing at the end of the lawn, framing the lawn roller being pushed across the turf strips',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'heavy flat lawn roller being pushed across the freshly laid turf strips',
+          midground:  'newly laid turf — bright green strips with seam lines visible',
+          background: 'garden boundary and adjacent surfaces, remaining turf rolls at the far side',
+        },
+        scene_debris:  'turf roll off-cut end at the lawn edge beside the roller path',
+        scene_exclude: ['hedge trimmer', 'leaf blower', 'planting holes', 'finished manicured lawn without work visible'],
+        tools: [
+          'heavy flat lawn roller being pushed across the turf',
+        ],
+        protections: [],
+        chantier_details: [
+          'lawn roller pressing each turf strip — seams visibly compressed',
+          'freshly laid turf — bright green against the prepared soil edge',
+          'turf seam lines running parallel across the new lawn area',
+        ],
+      },
+      {
+        _for:          'gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse',
+        scene_note:    'first watering of newly laid turf — hose or sprinkler soaking the fresh turf thoroughly after laying',
+        scene_camera:  'standing at the lawn edge, framing the water jet or sprinkler wetting the newly laid turf',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'hose nozzle directing water across the freshly laid turf, water spreading across the surface',
+          midground:  'freshly laid turf — deep green, water pooling at the low points between strips',
+          background: 'garden boundary, hose connection at the fence side',
+        },
+        scene_debris:  'water pooling in the seam lines between turf strips',
+        scene_exclude: ['hedge trimmer', 'leaf blower', 'planting holes', 'dry turf just laid'],
+        tools: [
+          'garden hose with spray nozzle watering the freshly laid turf',
+        ],
+        protections: [],
+        chantier_details: [
+          'water spreading across the freshly laid turf surface from the hose',
+          'turf deepening in colour as it soaks in',
+          'water pooling at the seam lines between strips',
+        ],
+      },
+
+      // --- taille / haie (3 additional) ---
+      {
+        _for:          'taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie',
+        scene_note:    'ladder positioned for tall hedge trimming — aluminium ladder against the hedge before cutting starts, no cuts made yet',
+        scene_camera:  'standing back, framing the ladder leaning against the tall hedge with the hedge trimmer on the ground beside it',
+        scene_framing: {
+          work_pct:   45,
+          foreground: 'aluminium ladder leaning against the tall hedge, hedge trimmer on the ground at the ladder base',
+          midground:  'full height of the overgrown hedge — top above ladder reach',
+          background: 'garden boundary or fence behind the hedge, garden beside',
+        },
+        scene_debris:  'small quantity of old hedge debris on the lawn at the hedge base',
+        scene_exclude: ['cut clippings piles', 'trimmed hedge section visible', 'lawn mower', 'planting'],
+        tools: [
+          'aluminium ladder leaning against the tall hedge',
+          'hedge trimmer on the ground at the ladder base',
+          'long-handled hedge shear resting against the fence nearby',
+        ],
+        protections: [
+          'safety goggles on the ground near the trimmer',
+          'cut-resistant gloves near the hedge trimmer',
+        ],
+        chantier_details: [
+          'ladder positioned against the hedge at the starting point',
+          'overgrown hedge top extending above the ladder reach',
+          'hedge trimmer and shears laid out at the base ready for use',
+        ],
+      },
+      {
+        _for:          'taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie',
+        scene_note:    'hedge top trimming from working platform — flat top of hedge being trimmed, clippings falling on both sides',
+        scene_camera:  'side view at hedge top level, framing the trimmer working along the flat top with clippings falling',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'fresh-cut hedge top — flat and even, cut clippings caught on the top surface',
+          midground:  'trimmed section beside the untrimmed section, height difference clearly visible',
+          background: 'garden below on one side, neighbouring garden or open sky on the other',
+        },
+        scene_debris:  'cut clippings on the hedge top surface after the trimmer pass',
+        scene_exclude: ['planting holes', 'turf rolls', 'lawn mower', 'no cut visible'],
+        tools: [
+          'hedge trimmer at the hedge top — blade horizontal across the flat top',
+          'string line pulled taut above the hedge defining the cut height',
+        ],
+        protections: [
+          'safety goggles near the trimmer on the hedge top',
+        ],
+        chantier_details: [
+          'flat hedge top — freshly trimmed, clippings caught on the surface',
+          'cut and uncut sections side by side — height difference visible',
+          'string line above the hedge defining the target height',
+        ],
+      },
+      {
+        _for:          'taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie',
+        scene_note:    'clippings collection with leaf blower — cut clippings being blown into a pile from the lawn and adjacent path after hedge trimming',
+        scene_camera:  'standing at the lawn beside the hedge, framing the leaf blower directing the clippings into a pile',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'leaf blower directing cut clippings into a growing pile at the lawn edge',
+          midground:  'freshly trimmed hedge behind — flat top and tidy sides visible',
+          background: 'garden boundary, path or lawn continuing beyond',
+        },
+        scene_debris:  'growing pile of cut clippings at the lawn edge, loose clippings still on the lawn ahead of the blower',
+        scene_exclude: ['planting holes', 'turf rolls', 'no trimming done yet'],
+        tools: [
+          'leaf blower directing clippings into a pile',
+          'garden refuse sack open beside the pile ready to receive the clippings',
+        ],
+        protections: [
+          'ear defenders or ear plugs near the leaf blower',
+        ],
+        chantier_details: [
+          'clippings pile at the lawn edge — building up as blower collects more',
+          'freshly trimmed hedge visible behind — flat top and sides tidy',
+          'loose clippings on the lawn ahead of the blower still to be collected',
+        ],
+      },
+
+      // --- désherbage (3 additional) ---
+      {
+        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        scene_note:    'knapsack sprayer in use — chemical weed treatment being applied to a gravel path or paved area between plants',
+        scene_camera:  'standing behind the sprayer, framing the spray lance directing chemical onto the target weeds',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'spray lance of the knapsack sprayer directing fine spray onto weeds in the gravel or paved surface',
+          midground:  'gravel path or paving with weeds in the joints, treated section darker from the spray',
+          background: 'garden boundary, adjacent planting bed or hedge beyond',
+        },
+        scene_debris:  'wet spray residue on the gravel around the treated weeds',
+        scene_exclude: ['hedge trimmer', 'turf rolls', 'planting holes'],
+        tools: [
+          'knapsack sprayer with lance directing herbicide onto the weeds',
+        ],
+        protections: [
+          'chemical-resistant gloves near the sprayer pump',
+          'safety goggles beside the knapsack',
+        ],
+        chantier_details: [
+          'fine spray being directed from the lance onto weeds in the path',
+          'treated gravel visibly darker and wet around the sprayed weeds',
+          'warning marker at the treated area edge',
+        ],
+      },
+      {
+        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        scene_note:    'tap-root weed extraction — dandelion or deep-rooted weed being pulled by a long tap-root extractor tool, intact root beside the hole',
+        scene_camera:  'crouching on the lawn, framing the tap-root extractor tool in the soil with the extracted root beside the hole',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'tap-root extractor tool inserted in the lawn, extracted weed root beside the small hole',
+          midground:  'lawn surface around the extraction point, small soil plug from the corer beside the hole',
+          background: 'garden beyond the lawn, fence or hedge at distance',
+        },
+        scene_debris:  'tap root complete with crown beside the extractor hole, small soil plug on the lawn',
+        scene_exclude: ['hedge trimmer', 'sprayer', 'turf rolls', 'planting holes'],
+        tools: [
+          'tap-root weed extractor inserted in the lawn at the weed position',
+        ],
+        protections: [
+          'gardening gloves beside the extractor',
+        ],
+        chantier_details: [
+          'tap-root extractor in the soil — ready to twist and extract',
+          'extracted root complete with crown beside the small hole',
+          'lawn plug of soil beside the extraction point',
+        ],
+      },
+      {
+        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        scene_note:    'post-treatment clearance — wilted and dying weeds being raked up from the bed after chemical treatment, debris going into sacks',
+        scene_camera:  'crouching low at the bed, framing the wilted weed plants being raked into a pile for removal',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'wilted and yellowing weeds on the ground, hand rake gathering them into a pile',
+          midground:  'bed surface — partly cleared, wilted plants on one section, bare soil on the cleared section',
+          background: 'garden boundary, adjacent hedge or fence beyond',
+        },
+        scene_debris:  'pile of wilted weed plants on the cleared section, garden refuse sack open nearby',
+        scene_exclude: ['hedge trimmer', 'turf rolls', 'fresh healthy plants'],
+        tools: [
+          'hand rake gathering wilted weeds into a pile',
+          'garden refuse sack open beside the pile',
+        ],
+        protections: [
+          'gardening gloves beside the rake',
+        ],
+        chantier_details: [
+          'wilted yellow weeds clearly dead from the treatment — limp on the soil',
+          'rake gathering them into a pile for bagging',
+          'bare soil visible on the cleared section — treatment effective',
+        ],
+      },
+
+      // --- bordure / paillage (3 additional) ---
+      {
+        _for:          'bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin',
+        scene_note:    'bulk bark chip bag being opened — large polypropylene bag of bark chips being cut open, chips cascading out',
+        scene_camera:  'standing beside the bag, framing the cut bag with bark chips spilling onto the prepared bed',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'large polypropylene bag cut open, bark chips cascading out onto the prepared bed surface',
+          midground:  'prepared bed waiting for mulch, edging strip already set at the border',
+          background: 'garden boundary, existing plantings beside the bed',
+        },
+        scene_debris:  'bark chips spread around the bag cut point, packaging ties on the ground',
+        scene_exclude: ['hedge trimmer', 'turf rolls', 'planting holes filled'],
+        tools: [
+          'utility knife or scissors used to cut the bulk bag open',
+          'garden rake on the ground ready to spread the bark chips',
+        ],
+        protections: [
+          'gardening gloves near the bag',
+        ],
+        chantier_details: [
+          'large bark chip bag cut open — chips cascading out',
+          'edging strip already set at the bed border',
+          'prepared bed waiting for the mulch layer',
+        ],
+      },
+      {
+        _for:          'bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin',
+        scene_note:    'decorative gravel being spread over weed-control fabric — gravel being raked across the fabric surface for a gravel garden bed',
+        scene_camera:  'standing at the bed edge, framing the gravel rake spreading the stone across the black fabric',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'garden rake spreading decorative gravel across the weed-control fabric',
+          midground:  'gravel-covered section beside the still-bare fabric waiting for gravel',
+          background: 'garden boundary, existing plantings or path beside the gravel area',
+        },
+        scene_debris:  'gravel spill at the bed edge near the fabric, empty gravel bag beside the spread section',
+        scene_exclude: ['hedge trimmer', 'turf rolls', 'deep planting holes'],
+        tools: [
+          'garden rake spreading decorative gravel across the weed-control fabric',
+          'empty gravel bag beside the active section',
+        ],
+        protections: [],
+        chantier_details: [
+          'decorative gravel being raked evenly across the black weed-control fabric',
+          'covered and uncovered fabric sections side by side — transition visible',
+          'gravel spill at the bed edge being raked back in',
+        ],
+      },
+      {
+        _for:          'bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin',
+        scene_note:    'flexible plastic edging being shaped around a curved garden border — strip being bent to follow the curve and pegged into the soil',
+        scene_camera:  'crouching at the bed edge, framing the flexible edging strip being shaped and the peg being driven at the curve',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'flexible edging strip being shaped along the curve, peg being driven into the soil to hold it',
+          midground:  'curved bed edge — edging already set on one arc section, fresh section being positioned',
+          background: 'garden lawn or path on the outside, planting bed inside the curve',
+        },
+        scene_debris:  'peg packaging on the ground, excess edging strip end at the arc join',
+        scene_exclude: ['hedge trimmer', 'turf rolls', 'straight edging'],
+        tools: [
+          'flexible edging strip being shaped along the curved bed border',
+          'rubber mallet for driving the holding pegs into the soil',
+          'pegs on the ground ready to be driven at intervals',
+        ],
+        protections: [],
+        chantier_details: [
+          'flexible edging strip following a smooth curve at the bed border',
+          'peg being driven at the curve hold point — strip held to the curve',
+          'edging set on the previous arc section, extending into the new curve',
+        ],
+      },
     ],
     tools: [
       'garden stake driven into the soil at a planting mark',
@@ -5880,6 +10191,463 @@ const SITE_REALISM = {
   },
 
   'élagage': {
+    scenarios: [
+
+      // --- taille douce / éclaircissement / couronnage / émondage / recépage ---
+      {
+        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron',
+        scene_note:    'crown reduction in progress — climber in harness positioned mid-canopy with a small chainsaw at a lateral branch being shortened, tree fully standing and main structure preserved',
+        scene_camera:  'standing back from the tree at ground level, framing the climber in the mid-canopy against the sky above',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'tarp on the ground at the tree base, cut branch lengths already laid out on the tarp',
+          midground:  'tree trunk and primary branches, climber with harness and small chainsaw visible in the canopy',
+          background: 'sky above the canopy, garden or fence line behind the tree',
+        },
+        scene_debris:  'small green leaf clusters and cut twig sections on the tarp below the working position',
+        scene_exclude: ['felled tree on ground', 'stump alone', 'large log sections in pile', 'tree completely bare', 'chainsaw at trunk base'],
+        tools: [
+          'small chainsaw operated by the climber at the branch cut point',
+          'climbing rope running from the harness to the anchor branch above',
+        ],
+        protections: [
+          'helmet and full harness visible on the climber in the canopy',
+          'tarp spread on the ground at the tree base to catch debris',
+          'yellow safety tape marking the drop zone around the base',
+        ],
+        chantier_details: [
+          'climber in harness positioned mid-canopy at the active cut point',
+          'cut branch sections on the tarp below — sorted by length',
+          'fresh cut stubs visible in the crown at previously removed positions',
+        ],
+      },
+      {
+        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron',
+        scene_note:    'crown thinning completed — tree standing with crown noticeably more open on one side, cut branches piled on tarp below, loppers and pruning saw on the ground',
+        scene_camera:  'standing back from the tree, framing the full tree height with the thinned crown visible and the cut branch pile below',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'cut branch pile on tarp with loppers and pruning saw beside the pile',
+          midground:  'full tree standing — crown visibly lighter and more open on the thinned side',
+          background: 'garden, fence or house wall behind the tree',
+        },
+        scene_debris:  'small leaf clusters and cut twigs scattered on the ground around the tarp edge',
+        scene_exclude: ['felled tree', 'large log sections', 'stump only', 'chainsaw at trunk level', 'bare tree'],
+        tools: [
+          'loppers on the ground beside the cut branch pile',
+          'hand pruning saw resting on the pile',
+          'telescopic pruning pole leaning against the trunk',
+        ],
+        protections: [
+          'tarp loaded with sorted cut branches below the crown',
+          'yellow safety tape on the ground defining the drop zone',
+        ],
+        chantier_details: [
+          'crown clearly more open on the thinned side — lighter canopy density visible',
+          'sorted cut branch pile on the tarp — sections of various diameters',
+          'sap marks on the fresh cut stubs still visible in the crown',
+        ],
+      },
+      {
+        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron',
+        scene_note:    'garden tree pruning — stepladder beside a fruit or ornamental tree, long-handled loppers at a medium lateral branch making a clean collar cut',
+        scene_camera:  'standing in the garden beside the tree, framing the stepladder against the trunk and the loppers at the branch being cut',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'stepladder leaning against the trunk, loppers at the branch collar',
+          midground:  'fruit or ornamental tree at full height — other branches undisturbed',
+          background: 'garden wall or fence, shrubs behind',
+        },
+        scene_debris:  'small cut twig section on the garden ground below the ladder, leaf debris at the ladder feet',
+        scene_exclude: ['felled tree', 'stump', 'chainsaw', 'climbing harness in tree', 'large cut logs'],
+        tools: [
+          'long-handled loppers at the lateral branch collar — clean collar cut being made',
+          'stepladder positioned against the tree trunk',
+        ],
+        protections: [
+          'stable stepladder on level ground beside the trunk',
+        ],
+        chantier_details: [
+          'lopper blades at the branch collar — clean angled cut position',
+          'other branches undisturbed — targeted individual pruning only',
+          'small cut twig on the ground below from the previous cut',
+        ],
+      },
+
+      // --- suppression branches mortes ---
+      {
+        _for:          'branche.*mort|mort.*branche|bois.*mort|supp.*mort',
+        scene_note:    'dead branch removal — grey-brown leafless branch being cut from the canopy, pruning saw at the collar, living green foliage clearly surrounding the dead wood',
+        scene_camera:  'close-up in the canopy, framing the pruning saw at the dead branch base with living branches on either side',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'pruning saw at the dead branch base collar — grey-brown dead wood clearly distinct from the green living branches beside it',
+          midground:  'dead branch extending away — bare and leafless, cracked bark visible',
+          background: 'living green canopy surrounding, sky beyond',
+        },
+        scene_debris:  'dry bark fragments at the stub base where the cut is being made',
+        scene_exclude: ['felled tree', 'stump', 'all branches green and healthy', 'chainsaw at trunk level'],
+        tools: [
+          'hand pruning saw at the dead branch base collar',
+        ],
+        protections: [
+          'hard hat visible on the worker in the canopy',
+          'climbing harness visible',
+          'tarp below to catch the dead branch',
+        ],
+        chantier_details: [
+          'grey-brown dead branch — cracked bark and no leaves visible against the green canopy',
+          'pruning saw making a clean cut at the branch collar',
+          'living green branches at adjacent junctions — healthy tree context evident',
+        ],
+      },
+      {
+        _for:          'branche.*mort|mort.*branche|bois.*mort|supp.*mort',
+        scene_note:    'dead branch pile after removal — dry grey leafless sections piled beside the still-standing living tree, crown visible and green behind the pile',
+        scene_camera:  'standing in the garden, framing the dead branch pile in the foreground and the living tree crown behind',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'pile of grey dry dead branch sections — no leaves, cracked bark, chalky dried cut ends',
+          midground:  'tree trunk, lower crown intact and green',
+          background: 'full tree canopy — living and green, visibly cleared of the dead wood',
+        },
+        scene_debris:  'dry bark fragments beside the dead branch pile',
+        scene_exclude: ['felled tree', 'living green branches mixed in the pile', 'stump', 'chainsaw at trunk level'],
+        tools: [
+          'pruning saw on the ground beside the dead branch pile',
+          'loppers beside the pile',
+        ],
+        protections: [
+          'tarp under the pile',
+        ],
+        chantier_details: [
+          'dead branch pile — grey, dry, chalky cut ends — clearly not living wood',
+          'living tree canopy above — green and dense, cleared of the dead wood',
+          'colour contrast between grey dead branches and green living canopy clearly visible',
+        ],
+      },
+      {
+        _for:          'branche.*mort|mort.*branche|bois.*mort|supp.*mort',
+        scene_note:    'close-up of a fresh cut on a dead branch stub — dry grey wood face at the cut, flaking bark around the base, no sap, clean cut revealing dry internal wood grain',
+        scene_camera:  'close-up on the branch stub in the tree, framing the cut face of the dead branch',
+        scene_framing: {
+          work_pct:   80,
+          foreground: 'fresh cut face on the dead branch stub — grey dry wood, no sap, dry crumbly internal structure',
+          midground:  'living bark of the parent branch and healthy collar forming around the stub base',
+          background: 'green canopy surrounding the stub position',
+        },
+        scene_debris:  'dry bark fragments at the stub base where the cut was made',
+        scene_exclude: ['fresh sap on the cut face', 'living green branch', 'felled tree', 'stump'],
+        tools: [
+          'pruning saw resting on the adjacent living branch beside the cut stub',
+        ],
+        protections: [],
+        chantier_details: [
+          'cut face of the dead branch — grey dry wood, no sap, contrasting with living tissue',
+          'living bark collar at the stub base — healthy tree tissue forming a ring around the dead wood',
+          'dry bark flaking at the stub edges',
+        ],
+      },
+
+      // --- élagage de sécurité / arbres dangereux ---
+      {
+        _for:          'danger|securite|risque',
+        scene_note:    'hazardous branch removal — large inclined branch overhanging a fence or property with a rope attached high for controlled drop, exclusion zone marked with safety tape',
+        scene_camera:  'standing back from the tree, framing the hazardous inclined branch with the guide rope running from its upper section',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'yellow safety tape defining the exclusion zone below the hazardous branch',
+          midground:  'tree with the inclined or cracked branch — rope visible running from the upper section of the branch',
+          background: 'fence, house wall or garden structure that the branch threatens',
+        },
+        scene_debris:  'light bark debris at the base of the trunk from preliminary assessment',
+        scene_exclude: ['healthy well-balanced tree', 'simple taille légère', 'no exclusion zone', 'completed log pile'],
+        tools: [
+          'guide rope attached to the hazardous branch upper section for controlled drop',
+          'chainsaw at the cut point on the hazardous branch',
+        ],
+        protections: [
+          'yellow safety tape marking the exclusion zone',
+          'hard hat and harness on the climber at the cut point',
+        ],
+        chantier_details: [
+          'rope attached and tensioned on the hazardous branch — ready for controlled lowering',
+          'branch inclined or cracked — visible structural failure or overhang threat',
+          'exclusion zone marked with safety tape — property beyond the tape visible',
+        ],
+      },
+      {
+        _for:          'danger|securite|risque',
+        scene_note:    'climber in a structurally compromised tree — harness and lanyard visible, chainsaw at a dangerous split fork, house or fence clearly visible below as the threatened structure',
+        scene_camera:  'looking up from the garden, framing the climber in harness at the dangerous fork with the property visible behind',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'tree trunk at the base, exclusion zone tape around the base',
+          midground:  'climber in harness positioned at the dangerous fork — chainsaw in hand at the cut point',
+          background: 'house wall or garden fence clearly visible below the canopy — the threatened property',
+        },
+        scene_debris:  'small bark fragments on the ground below from preliminary cuts',
+        scene_exclude: ['healthy balanced tree', 'simple taille', 'no harness', 'completed log pile'],
+        tools: [
+          'small chainsaw in the climber\'s hand at the dangerous fork junction',
+          'climbing rope and lanyard keeping the climber secured to the trunk',
+        ],
+        protections: [
+          'full climbing harness and helmet on the climber',
+          'exclusion zone tape at the base',
+        ],
+        chantier_details: [
+          'climber at the compromised fork — structural crack or bark inclusion visible at the junction',
+          'chainsaw ready at the cut point — controlled removal about to begin',
+          'property clearly visible below — risk context unmistakable',
+        ],
+      },
+      {
+        _for:          'danger|securite|risque',
+        scene_note:    'controlled branch lowering — large heavy branch just cut, suspended mid-air by the lowering rope between the canopy and the ground, rope under tension, ground handler controlling the descent',
+        scene_camera:  'standing back, framing the branch suspended by the rope between the canopy and the ground',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'rope handler at the base with hands on the rope — rope taut under the branch load',
+          midground:  'large branch suspended mid-air — hanging from the rope between canopy height and the ground',
+          background: 'tree canopy above, fence or property that was threatened beyond the branch path',
+        },
+        scene_debris:  'leaf fragments dislodged during the cut on the ground below the suspension point',
+        scene_exclude: ['branch fallen without control', 'no rope visible', 'small lightweight branch'],
+        tools: [
+          'lowering rope under tension from the suspended branch to the ground handler',
+          'friction saver or rigging ring at the anchor point above',
+        ],
+        protections: [
+          'hard hat on the ground handler',
+          'exclusion zone tape visible at the perimeter',
+        ],
+        chantier_details: [
+          'large branch suspended mid-air by the lowering rope — rope taut under visible load',
+          'ground handler controlling the descent speed — hands clearly on the rope',
+          'property safely clear of the controlled lowering arc',
+        ],
+      },
+
+      // --- taille en hauteur ---
+      {
+        _for:          'hauteur|haute.*tige|haut.*tige',
+        scene_note:    'telescopic pruning pole at full extension — operator at ground level directing the pole head deep into the high canopy, both arms raised, cut twig sections falling',
+        scene_camera:  'standing beside the operator, framing the extended pole disappearing into the upper canopy',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'operator at ground level, both arms raised holding the extended pole at an angle into the canopy',
+          midground:  'tall tree — pole disappearing into the upper crown at full extension',
+          background: 'garden or open area beyond the tree',
+        },
+        scene_debris:  'small cut twig sections and leaf clusters falling from the canopy around the operator',
+        scene_exclude: ['ladder', 'climbing harness in tree', 'aerial platform', 'felled tree', 'stump'],
+        tools: [
+          'telescopic pruning pole at full extension with pole saw head in the upper canopy',
+        ],
+        protections: [
+          'hard hat on the operator at ground level',
+          'safety goggles on the operator',
+        ],
+        chantier_details: [
+          'telescopic pole at full extension — straight line from operator hands to upper canopy',
+          'cut twig sections falling from the canopy as the pole saw works',
+          'operator both arms raised — guiding the pole head through the canopy from below',
+        ],
+      },
+      {
+        _for:          'hauteur|haute.*tige|haut.*tige',
+        scene_note:    'arborist climber high in the upper canopy — looking up from the garden, climber in full gear positioned in the upper crown against the open sky',
+        scene_camera:  'looking up from ground level, framing the climber high in the canopy against the sky above',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'tree trunk rising from the ground, climbing rope running upward from the harness',
+          midground:  'upper canopy — climber with harness, helmet, and small chainsaw visible high in the crown',
+          background: 'open sky above and behind the climber',
+        },
+        scene_debris:  'small leaf clusters and bark fragments on the ground below from work at height',
+        scene_exclude: ['operator at ground level', 'telescopic pole', 'aerial platform', 'felled tree'],
+        tools: [
+          'small arborist chainsaw in the climber\'s hand at height',
+          'climbing rope running from the harness through the branch anchor above',
+        ],
+        protections: [
+          'full climbing harness, helmet and face visor visible on the climber at height',
+        ],
+        chantier_details: [
+          'climber high in the upper crown — tree scale clearly visible from ground perspective',
+          'climbing rope running from the harness to the anchor point above the climber',
+          'open sky behind the climber — height and exposure clearly communicated',
+        ],
+      },
+      {
+        _for:          'hauteur|haute.*tige|haut.*tige',
+        scene_note:    'articulated aerial work platform beside a tall tree — operator in the basket at upper canopy height trimming outer branches, basket elevated to full reach',
+        scene_camera:  'standing back from the tree, framing the aerial platform arm extended to canopy height with the operator in the basket',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'aerial platform base on the ground beside the tree — outriggers deployed',
+          midground:  'platform arm extended upward, basket at upper canopy height with operator',
+          background: 'upper canopy of the tall tree, sky above',
+        },
+        scene_debris:  'cut branch sections on the ground below from trimming work',
+        scene_exclude: ['climbing harness in tree', 'telescopic pole from ground', 'felled tree', 'stump'],
+        tools: [
+          'operator in the basket using chainsaw or loppers at canopy height',
+          'aerial work platform with fully extended arm beside the tree',
+        ],
+        protections: [
+          'operator harness clipped to the basket safety rail',
+          'outriggers deployed at the base for platform stability',
+          'safety tape around the platform work zone',
+        ],
+        chantier_details: [
+          'aerial platform basket at full height — operator level with the upper canopy',
+          'platform arm fully elevated and extended — mechanical reach clearly visible',
+          'cut branch sections on the ground below from the trimming work',
+        ],
+      },
+
+      // --- après tempête ---
+      {
+        _for:          'tempete|orage|vent.*fort|apres.*vent|branche.*cass',
+        scene_note:    'storm-broken branch — large branch broken at a V-shaped split mid-canopy, hanging at a dangerous angle with green foliage still attached, grey overcast sky, wet ground',
+        scene_camera:  'standing back from the tree, framing the broken hanging branch clearly visible against the grey sky',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'wet ground surface, small puddles from the recent storm',
+          midground:  'tree with the broken branch hanging — V-shaped split at the break point clearly visible',
+          background: 'grey overcast sky, wet garden or fence line visible',
+        },
+        scene_debris:  'torn wood fibres at the branch break point, scattered wet leaves on the ground below',
+        scene_exclude: ['catastrophic damage', 'multiple fallen trees', 'destroyed house', 'sunny dry weather'],
+        tools: [
+          'safety tape or rope marking the exclusion zone below the hanging branch',
+        ],
+        protections: [
+          'orange safety cones placed below the hanging branch',
+          'safety tape defining the danger area',
+        ],
+        chantier_details: [
+          'V-shaped break at the branch split — wood fibres torn, branch still connected',
+          'branch hanging at a dangerous angle with full foliage — clear storm damage',
+          'wet ground and puddles from the recent storm — damp atmosphere throughout',
+        ],
+      },
+      {
+        _for:          'tempete|orage|vent.*fort|apres.*vent|branche.*cass',
+        scene_note:    'post-storm clearance — damaged branch just removed, worker in high-visibility vest, wet road or garden, safety cones in place, grey sky, scattered wet debris on the ground',
+        scene_camera:  'standing back, framing the worker in HV vest with the removed branch on the ground and safety cones visible',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'safety cones on the wet surface, removed branch section on the ground',
+          midground:  'worker in high-visibility vest — chainsaw or loppers in hand, work just completed',
+          background: 'grey overcast sky, wet road or garden, utility vehicle visible in background',
+        },
+        scene_debris:  'wet leaf and twig debris scattered on the ground around the removed branch',
+        scene_exclude: ['catastrophic damage', 'multiple trees down', 'destroyed structure', 'dry sunny weather'],
+        tools: [
+          'chainsaw in the worker\'s hand — branch just cut',
+          'utility vehicle in the background',
+        ],
+        protections: [
+          'high-visibility vest on the worker',
+          'safety cones placed around the work area',
+          'safety tape visible at the perimeter',
+          'hard hat on the worker',
+        ],
+        chantier_details: [
+          'removed branch section on the wet ground — work just completed',
+          'worker in full HV gear — professional emergency response clearly visible',
+          'wet conditions throughout — ground, debris, and cones all visibly wet',
+        ],
+      },
+
+      // --- intervention de nuit / urgence ---
+      {
+        _for:          'urgence|nuit|nocturne',
+        time_of_day:   'night',
+        scene_note:    'night pruning emergency — work floodlight illuminating a tree or broken branch, arborist in high-visibility vest with chainsaw, orange safety cones, dark background',
+        scene_camera:  'standing at the edge of the light cone, framing the worker and tree illuminated by the work floodlight against the dark background',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'work floodlight on a tripod at the edge of the lit zone, orange cones in the light',
+          midground:  'worker in HV vest with chainsaw at the tree, trunk illuminated in the floodlight cone',
+          background: 'dark background — trees or garden in darkness beyond the light cone boundary',
+        },
+        scene_debris:  'cut branch sections on the ground in the floodlight cone, bark chips visible in the light',
+        scene_exclude: ['daytime bright sunlight', 'cinematic dramatic lighting', 'completely dark unreadable scene'],
+        tools: [
+          'chainsaw in the worker\'s hand in the floodlight zone',
+          'work floodlight on tripod as the main illumination',
+        ],
+        protections: [
+          'high-visibility vest on the worker — clearly visible in the work light',
+          'hard hat on the worker',
+          'orange safety cones in the lit area around the tree base',
+        ],
+        chantier_details: [
+          'work floodlight cone illuminating the tree and worker — sharp light-dark boundary',
+          'HV vest bright in the floodlight — professional emergency response visible',
+          'dark background beyond the light cone — night conditions clearly communicated',
+        ],
+      },
+      {
+        _for:          'urgence|nuit|nocturne',
+        time_of_day:   'night',
+        scene_note:    'night call-out — van headlights and work floodlight creating combined illumination on the work area, tree silhouetted against the dark sky, worker in HV vest active',
+        scene_camera:  'standing outside the combined light zone, framing the overlapping van headlights and floodlight on the work area',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'van parked with headlights on, orange cones at the road edge',
+          midground:  'work floodlight zone with worker in HV vest at the tree in the combined light',
+          background: 'dark sky, tree silhouetted against the darkness, surroundings in shadow',
+        },
+        scene_debris:  'light debris visible in the headlight zone on the ground',
+        scene_exclude: ['daylight', 'overly cinematic lighting', 'scene too dark to read the work'],
+        tools: [
+          'work floodlight on tripod in the combined light zone',
+          'utility van parked with headlights on',
+        ],
+        protections: [
+          'high-visibility vests on all workers clearly visible in the combined light',
+          'orange cones at the roadside or perimeter',
+        ],
+        chantier_details: [
+          'combined light cone from van headlights and floodlight — overlapping illumination',
+          'tree silhouetted against the dark sky beyond the lit zone',
+          'HV vests clearly visible in the combined light — unmistakable night emergency context',
+        ],
+      },
+
+      // Fallback: élagage général
+      {
+        scene_note:    'tree pruning in progress — tree fully standing, cut branches piled on tarp below, pruning tools visible at the base, canopy structure preserved',
+        scene_camera:  'standing back from the tree, framing the full height with cut branches on the tarp below',
+        scene_framing: {
+          work_pct:   50,
+          foreground: 'tarp with cut branch pile at the tree base, pruning tools on the ground',
+          midground:  'tree at full height — canopy intact, fresh cut stubs visible in the lower crown',
+          background: 'garden or open space behind the tree',
+        },
+        scene_debris:  'small leaf clusters and twig sections on the ground around the tarp edge',
+        scene_exclude: ['felled tree on ground', 'stump alone', 'large log billets', 'dessouchage equipment'],
+        tools: [
+          'telescopic pruning pole leaning against the tree trunk',
+          'lopper handles resting on the ground near the tree base',
+          'hand pruning saw resting on a cut branch stub',
+        ],
+        protections: [
+          'tarp spread below the canopy to catch cut branches and leaf debris',
+          'yellow safety tape marking the drop zone around the tree base',
+        ],
+        chantier_details: [
+          'tree standing — canopy structure preserved, targeted branches removed',
+          'cut branch pile on the tarp — sorted by size',
+          'sap marks on the fresh cut stubs visible in the lower crown',
+        ],
+      },
+    ],
     tools: [
       'telescopic pruning pole leaning against the tree trunk',
       'lopper handles resting on the ground near the tree base',
@@ -6082,6 +10850,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism.scene_framing) obj.framing          = realism.scene_framing;
           if (realism.scene_debris)  obj.site_debris      = realism.scene_debris;
           if (Array.isArray(realism.scene_exclude)) obj.exclude = [...(obj.exclude || []), ...realism.scene_exclude];
+          if (realism.time_of_day) obj.time_of_day = realism.time_of_day;
         }
       }
     }
@@ -6132,7 +10901,9 @@ function _applyVariation(jsonStr, imageIndex) {
   const lightLib = VARIATION_ENGINE.light_quality.filter(q => q.meteo.includes(meteo)).map(q => q.text);
 
   obj.var_camera  = _pick(angleLib,                             1, seed     )[0] || null;
-  obj.var_light   = lightLib.length ? _pick(lightLib,          1, seed + 7 )[0] : null;
+  obj.var_light   = obj.time_of_day === 'night'
+    ? 'work floodlight as the main light source, dark background, slightly underexposed smartphone photo'
+    : (lightLib.length ? _pick(lightLib, 1, seed + 7)[0] : null);
   obj.var_framing = _pick(VARIATION_ENGINE.framing_emphasis,   1, seed + 13)[0] || null;
 
   return JSON.stringify(obj);
