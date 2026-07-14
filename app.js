@@ -10896,7 +10896,524 @@ function _applySiteRealism(jsonStr, imageIndex) {
   return JSON.stringify(obj);
 }
 
-function _applyVariation(jsonStr, imageIndex) {
+// ─── Worker Scene Rules ──────────────────────────────────────────────────────
+// Définit par métier les actions, postures, accès, sécurité, interdits et présence indirecte.
+// Utilisé par _buildWorkerDesc pour générer une description cohérente et par
+// _validateWorkerScene pour garantir la sécurité et l'exclusion des éléments interdits.
+const WORKER_SCENE_RULES = {
+  toiture: {
+    max_workers: 2,
+    actions: [
+      'laying replacement tiles on the exposed roof pitch',
+      'nailing battens along the rafter line',
+      'pointing ridge tiles with fresh mortar',
+      'fitting zinc flashing at the valley or eave',
+    ],
+    postures: [
+      'kneeling on the roof pitch beside a tile stack, both hands on the work — back to camera',
+      'crouching at the ridge line with the trowel working the mortar bed — back to camera',
+      'leaning against the roof ladder hooked at the ridge, working the pitch below — in profile',
+    ],
+    access: ['roof ladder hooked over the ridge', 'scaffold platform at eave level', 'mobile elevated platform'],
+    safety_required: ['safety harness with lanyard clipped to a ridge anchor', 'roof ladder clearly hooked over the ridge'],
+    forbidden: [
+      'standing upright on steep pitch without visible safety line',
+      'feet hanging over the gutter edge',
+      'full pallet of tiles balanced on the slope',
+      'free-standing ladder propped against tiles without ridge hook',
+      'improvised plank platform balanced on tiles',
+    ],
+    presence_indirect: [
+      'roof ladder hooked over the ridge — no one on it, tile stack halfway up the pitch',
+      'safety line rigged across the pitch with the lanyard hanging free — no roofer visible',
+      'mortar bucket hoisted to the ridge level, pulley rope tied to the chimney — no worker on roof',
+    ],
+  },
+  nettoyage_toiture: {
+    max_workers: 1,
+    actions: [
+      'directing the pressure lance jet at the moss on the tile surface',
+      'brushing moss from the tile course with a stiff deck broom',
+      'applying hydrofuge spray with a knapsack pump sprayer',
+    ],
+    postures: [
+      'kneeling on the scaffold platform at eave height, lance aimed at the roof pitch — back to camera',
+      'standing on a mobile elevated platform beside the eave, directing the lance — in profile',
+      'walking slowly up the roof pitch beside the roof ladder, brush in hand — back to camera',
+    ],
+    access: ['scaffold platform at eave level', 'mobile elevated work platform', 'roof ladder for access only'],
+    safety_required: ['safety harness', 'waterproof jacket and trousers', 'non-slip work boots'],
+    forbidden: [
+      'standing unsupported on wet moss-covered tiles without harness',
+      'leaning over the gutter edge without guardrail',
+      'bare hands on wet chemical-treated tiles',
+    ],
+    presence_indirect: [
+      'pressure lance resting on the scaffold platform at eave level — tarpaulin below catching moss runoff, no operator',
+      'knapsack sprayer on the scaffold platform beside the eave — no one visible',
+      'moss removal debris collected on the tarpaulin below the roof edge — no worker on roof',
+    ],
+  },
+  nettoyage_gouttieres: {
+    max_workers: 1,
+    actions: [
+      'scooping compacted leaf debris from the gutter trough with a plastic gutter scoop',
+      'flushing the downpipe connection with a garden hose',
+      'resealing a leaking gutter joint with silicone sealant',
+    ],
+    postures: [
+      'at the top of an extending ladder, both hands inside the gutter trough — back to camera',
+      'on a scaffold platform level with the gutter, reaching along the trough — in profile',
+    ],
+    access: ['extending ladder with standoff bracket footed on level ground', 'scaffold platform at gutter height'],
+    safety_required: ['ladder footed securely with standoff bracket keeping it clear of the gutter', 'work gloves'],
+    forbidden: [
+      'ladder leaning directly against the gutter channel',
+      'person reaching far sideways off the ladder',
+      'standing on the top two rungs of the ladder',
+    ],
+    presence_indirect: [
+      'extending ladder footed against the house wall with standoff — gutter scoop resting in the trough at the top, no one climbing',
+      'bucket of leaf debris at the base of the ladder — no operator visible on the ladder',
+      'garden hose trailing from the downpipe outlet — no one holding the top end',
+    ],
+  },
+  etancheite: {
+    max_workers: 2,
+    actions: [
+      'rolling out an EPDM membrane across the flat roof surface',
+      'welding the membrane lap joint with a hot air gun',
+      'applying bitumen primer to the prepared deck with a mop roller',
+    ],
+    postures: [
+      'crouching on the flat roof surface, both hands pressing the membrane edge — back to camera',
+      'standing at the parapet inner face applying sealant at the upstand — in profile',
+      'kneeling at the lap joint, hot air gun in hand — back to camera',
+    ],
+    access: ['flat roof access via internal hatch or external scaffold stair'],
+    safety_required: ['safety harness clipped to a parapet anchor when working within 2 m of the edge', 'protective goggles when using hot air gun'],
+    forbidden: [
+      'person balanced on the parapet coping',
+      'open-flame torch near a loose membrane edge',
+      'membrane roll blocking the only roof access hatch',
+    ],
+    presence_indirect: [
+      'EPDM roll partially unrolled across the flat roof deck — no one on the roof',
+      'hot air gun resting on the parapet coping between welds — power cable trailing to hatch',
+      'adhesive drum open beside the unrolled membrane — mop roller resting across the drum top',
+    ],
+  },
+  ravalement: {
+    max_workers: 2,
+    actions: [
+      'applying render to the facade with a hawk and float',
+      'sanding the old render surface with a disc sander from the scaffold platform',
+      'spraying crépi texture onto the primed wall face',
+    ],
+    postures: [
+      'standing on a scaffold plank at wall mid-height, both hands on the float and hawk — back to camera',
+      'crouching at the base of the scaffold to refill the mortar hawk — in profile',
+      'standing at the upper scaffold lift, float arm extended to reach the top course — back to camera',
+    ],
+    access: ['tube-and-fitting scaffold fixed to the building facade', 'mobile scaffold tower', 'articulated boom lift'],
+    safety_required: ['scaffold guardrail and toe board in place at every lift above 2 m', 'safety helmet on platform above 2 m'],
+    forbidden: [
+      'person leaning out past the scaffold guardrail',
+      'unsupported plank bridging two scaffold frames without mid-rail',
+      'scaffold platform above 2 m without guardrail',
+    ],
+    presence_indirect: [
+      'hawk and float resting on the scaffold plank at mid-height — no operator visible',
+      'scaffold tower beside the wall, tools on the platform — empty, platform secured',
+      'mortar bucket hoisted on the scaffold gin wheel — rope tied, no worker on the platform',
+    ],
+  },
+  peinture: {
+    max_workers: 1,
+    actions: [
+      'rolling paint onto the wall surface with a roller and long extension pole',
+      'cutting in at the ceiling junction with a flat brush',
+      'applying a second coat over the primed wall with a medium roller',
+    ],
+    postures: [
+      'standing 1 m from the wall, arm extended with the roller on the extension pole — back to camera',
+      'on a low stepladder cutting in at the top wall edge with a flat brush — in profile',
+      'crouching at the skirting board to cut the base edge — back to camera',
+    ],
+    access: ['low stepladder for ceiling-height cutting in', 'no elevated access for standard wall height'],
+    safety_required: [],
+    forbidden: [
+      'person on a scaffolding tower inside the room',
+      'bare feet on the drop cloth near open paint tins',
+      'person hanging from the window frame to reach the exterior',
+    ],
+    presence_indirect: [
+      'roller resting in the tray on the drop cloth beside the freshly painted wall — no painter visible',
+      'paint tin open with brush balanced across the rim, drop cloth with fresh roller marks — no operator',
+      'masking tape along the ceiling junction, drop cloth covering the floor — painter absent',
+    ],
+  },
+  'élagage': {
+    max_workers: 2,
+    actions: [
+      'sawing a branch with a chainsaw while suspended in the tree canopy by climbing ropes',
+      'pulling a guide rope from the ground to direct a falling cut branch',
+      'operating an aerial platform at canopy height to reach a crown reduction cut',
+    ],
+    postures: [
+      'suspended in the tree canopy in a full-body climbing harness, chainsaw in both hands — back to camera',
+      'standing on the ground below the canopy, both hands on the guide rope — back to camera',
+      'in the basket of an aerial platform at canopy height, pruning saw extended — in profile',
+    ],
+    access: ['rope climbing technique with saddle and footlocks', 'aerial platform / cherry picker positioned beside the tree', 'stepladder for branches under 4 m'],
+    safety_required: ['full-body climbing harness with positioning lanyard clearly visible on the tree climber', 'arborist helmet with visor and ear defenders'],
+    forbidden: [
+      'person standing directly under a branch being cut',
+      'climber in the tree with no visible rope or harness',
+      'chainsaw held with one hand above shoulder height',
+      'person balancing on a branch without safety attachment',
+    ],
+    presence_indirect: [
+      'climbing rope rigged through the tree crown with a throw bag on the ground — no climber visible',
+      'wood chipper running at the base of the tree, chip pile building — no operator in frame',
+      'guide rope attached to a cut branch running to the ground — no one holding it, slack on the ground',
+    ],
+  },
+  abattage: {
+    max_workers: 2,
+    actions: [
+      'making the notch cut at the base of the trunk with a large chainsaw',
+      'sectioning the felled trunk into lengths on the ground',
+      'operating a stump grinder positioned over the root flare',
+    ],
+    postures: [
+      'standing at the base of the trunk, chainsaw held in both hands at waist height — in profile',
+      'crouching over the felled trunk to make a cross-cut — back to camera',
+      'standing behind the stump grinder controls directing the cutter head — in profile',
+    ],
+    access: ['ground level — no elevated access required', 'stump grinder on tracks positioned over the stump'],
+    safety_required: ['chainsaw chaps clearly visible on the legs of the operator', 'arborist helmet with visor', 'non-slip chainsaw work boots'],
+    forbidden: [
+      'person standing in the planned fall zone in front of the notch cut',
+      'chainsaw cutting overhead above the operator's shoulder',
+      'person on the far side of the trunk from the operator during the felling cut',
+    ],
+    presence_indirect: [
+      'felled trunk sections laid on the ground, chainsaw resting across one — no operator visible',
+      'stump grinder parked over the stump, engine running, cab empty — chip pile spreading beside',
+      'sawdust pile and cut rounds at the stump base — tools visible, no worker in frame',
+    ],
+  },
+  'maçonnerie': {
+    max_workers: 2,
+    actions: [
+      'laying concrete blocks with a trowel and full mortar hawk',
+      'checking the freshly laid course with a long spirit level and string line',
+      'mixing a batch of mortar at the drum mixer beside the wall',
+    ],
+    postures: [
+      'standing at the wall top course, trowel in hand bedding the next block — back to camera',
+      'crouching beside the drum mixer to load mortar — in profile',
+      'kneeling to check the base course with the spirit level — back to camera',
+    ],
+    access: ['ground level for walls up to 2 m', 'scaffold platform for walls above 2 m'],
+    safety_required: ['safety boots', 'work gloves for block handling'],
+    forbidden: [
+      'person balanced on top of an unfinished wall course higher than 1.5 m without scaffold',
+      'single block being lifted overhead without mechanical aid',
+    ],
+    presence_indirect: [
+      'trowel resting across the mortar hawk on the wall top course — no mason visible',
+      'string line pulled taut along the block course at waist height — mortar hawk on the ground below',
+      'drum mixer running at the wall base — no operator in frame, mortar ready in bucket',
+    ],
+  },
+  nettoyage: {
+    max_workers: 1,
+    actions: [
+      'directing the pressure lance jet at the terrasse or facade surface',
+      'sweeping the cleaning water toward the drain with a water broom',
+      'applying cleaning product to the facade with a pump sprayer at arm height',
+    ],
+    postures: [
+      'standing 1–2 m from the surface, lance held at hip height — in profile',
+      'pushing the water broom away from the body toward the drain — back to camera',
+      'walking slowly along the wall applying product at shoulder height — back to camera',
+    ],
+    access: ['ground level for terrasse and base of facade', 'low scaffold platform for facade above 3 m'],
+    safety_required: ['waterproof work boots', 'protective goggles when using chemical products'],
+    forbidden: [
+      'operator pointing lance directly at their feet',
+      'unprotected electrical socket near the wet work area',
+      'lance aimed upward at angle greater than 45° from standing position without platform',
+    ],
+    presence_indirect: [
+      'pressure lance resting on the ground pointing at the base of the wall — dark wet cleaning line visible ahead of the lance tip',
+      'cleaning product drum open beside the pump unit — hose trailing to the lance on the ground, no operator',
+      'wet cleaning line across the terrasse surface marking work already done — no one visible',
+    ],
+  },
+  carrelage: {
+    max_workers: 1,
+    actions: [
+      'pressing a floor tile into the adhesive bed with a rubber mallet',
+      'spreading tile adhesive across the subfloor with a notched trowel',
+      'cutting a border tile to size at the tile cutter on the floor edge',
+    ],
+    postures: [
+      'kneeling on the untiled subfloor section, mallet raised to tap the tile level — back to camera',
+      'crouching over the tile cutter at the room perimeter — back to camera',
+      'sitting back on heels checking the tile level with a spirit level — in profile',
+    ],
+    access: ['floor level — no elevated access required'],
+    safety_required: ['knee pads visible on the tiler's knees', 'cut-resistant gloves near the tile cutter'],
+    forbidden: [
+      'person kneeling on freshly laid tiles before adhesive cure time',
+      'tile cutter left unguarded with blade exposed',
+    ],
+    presence_indirect: [
+      'rubber mallet resting on the freshly laid tile surface beside a tile spacer row — no tiler visible',
+      'notched trowel resting in the open adhesive bucket — tiles stacked beside it, no operator',
+      'tile spacers set in the joints across the floor — spirit level resting on the last row, no one in frame',
+    ],
+  },
+  vitrier: {
+    max_workers: 2,
+    actions: [
+      'carrying a large glass pane using suction cup handles in pairs',
+      'fitting a new double-glazed unit into the prepared window frame',
+      'applying glazing compound around the new pane edge with a glazing gun',
+    ],
+    postures: [
+      'standing upright, both hands on suction cup handles, glass pane vertical — in profile',
+      'crouching at the window sill to apply the glazing compound — back to camera',
+      'holding the pane steady against the frame from outside while a second person secures it — seen from indoors',
+    ],
+    access: ['ground level for ground-floor windows', 'low scaffold platform or extending ladder for upper-floor windows'],
+    safety_required: ['cut-resistant gloves on both hands when handling glass', 'suction cup handles on any pane over 1 m²'],
+    forbidden: [
+      'bare hands on large glass pane edges without gloves',
+      'glass pane balanced upright against the wall without support cradle',
+      'broken glass on the floor with no protective footwear visible',
+    ],
+    presence_indirect: [
+      'suction cup handles left leaning against the wall — glass pane in the opening, not yet sealed',
+      'glazing gun resting on the window sill beside the open pane — glazing compound partially applied',
+      'glass offcut wrapped in protective paper leaning against the wall beside the window',
+    ],
+  },
+  'débarras': {
+    max_workers: 2,
+    actions: [
+      'carrying a heavy item of furniture through the front door in a two-person carry',
+      'loading boxes onto a furniture trolley beside the van',
+      'wrapping a fragile item in protective blanket before loading',
+    ],
+    postures: [
+      'back to camera, carrying the front end of a wardrobe through the doorway',
+      'standing at the open van doors, stacking boxes in — seen from the side',
+      'crouching beside a dismantled item on the floor, wrapping with moving blanket — back to camera',
+    ],
+    access: ['ground-floor building entry', 'stair access for upper floors', 'furniture trolley on flat ground'],
+    safety_required: ['work gloves for heavy item handling', 'solid work footwear with toe cap'],
+    forbidden: [
+      'single person carrying a large wardrobe or sofa alone',
+      'item balanced on a stair handrail',
+      'van visibly overloaded above the roofline',
+    ],
+    presence_indirect: [
+      'furniture trolley loaded with stacked boxes at the building entrance — van rear doors open, no operator',
+      'van rear doors open with partial load visible — protective blankets draped over the furniture, no driver or mover in frame',
+      'hand truck propped against the wall beside a stack of boxes in the hallway — no operator',
+    ],
+  },
+  terrassement: {
+    max_workers: 2,
+    actions: [
+      'operating the mini-excavator bucket to dig the trench or cut',
+      'levelling the excavated surface with a long-handled rake from the edge',
+      'guiding the machine operator from the ground beside the trench with hand signals',
+    ],
+    postures: [
+      'seated in the cab of the mini-excavator, both hands on the controls — seen from the side',
+      'standing at the trench edge with a rake, back to the camera, supervising the cut',
+      'crouching to check the trench level with a measuring rod — in profile',
+    ],
+    access: ['ground-level site access', 'mini-excavator on rubber tracks for most surfaces'],
+    safety_required: ['high-visibility jacket on all ground workers within 5 m of the machine', 'safety helmet on site'],
+    forbidden: [
+      'person standing inside the trench directly under the excavator bucket',
+      'person between the rotating cab and the trench edge',
+      'machine operating with no ground spotter visible when near a structure',
+    ],
+    presence_indirect: [
+      'mini-excavator parked at the trench edge, engine running, cab empty — excavated spoil pile beside',
+      'excavated spoil pile with wheelbarrow beside the trench — no workers visible',
+      'warning tape stretched around the open trench perimeter — trench clearly fresh-cut, no one on site',
+    ],
+  },
+  paysagiste: {
+    max_workers: 2,
+    actions: [
+      'planting a shrub in the prepared bed and backfilling around the root ball',
+      'laying turf rolls across the prepared subgrade and tamping the edges',
+      'operating a walk-behind mower along the lawn edge',
+    ],
+    postures: [
+      'kneeling in the garden bed placing a plant in the hole — back to camera',
+      'crouching to press the turf edge firmly with both hands — back to camera',
+      'standing behind the walk-behind mower, both hands on the handles — in profile',
+    ],
+    access: ['ground level garden — no elevated access required'],
+    safety_required: ['sun protection / hat for outdoor summer work', 'hearing protection when using petrol machinery'],
+    forbidden: [
+      'mower operating on a slope visually steeper than 15°',
+      'person pruning a large tree from a domestic household stepladder',
+      'chainsaw used without visible leg protection',
+    ],
+    presence_indirect: [
+      'ride-on mower parked on the finished lawn area — freshly cut stripes visible, no operator',
+      'wheelbarrow of compost tipped beside a planting bed — tools resting against it, no gardener in frame',
+      'newly planted shrubs in the bed, watering can beside them — no one visible',
+    ],
+  },
+  depannage_auto: {
+    max_workers: 1,
+    actions: [
+      'connecting jump-start cables to the vehicle battery terminals under the open bonnet',
+      'jacking the vehicle and removing the flat tyre with a lug wrench',
+      'running a diagnostic tool connected to the OBD port — reading the display',
+    ],
+    postures: [
+      'crouching beside the open engine bay, both hands inside — back to camera',
+      'kneeling beside the jacked wheel arch with the lug wrench — in profile',
+      'standing at the open bonnet leaning slightly forward — back to camera',
+    ],
+    access: ['roadside or car park ground level'],
+    safety_required: ['warning triangle visible on the road behind the vehicle', 'high-visibility jacket'],
+    forbidden: [
+      'person lying under the vehicle without visible axle stands',
+      'sparks near an open fuel cap',
+      'person positioned between the vehicle and passing traffic without barrier',
+    ],
+    presence_indirect: [
+      'warning triangle placed on the road behind the vehicle, high-visibility jacket draped over the open door — no technician visible',
+      'diagnostic cable trailing from the open bonnet into the passenger footwell — tool display on the dashboard, no operator in frame',
+      'jack and lug wrench on the ground beside the jacked wheel arch — wheel removed, no technician visible',
+    ],
+  },
+};
+
+// Construit la description worker en sélectionnant action + posture + sécurité depuis WORKER_SCENE_RULES.
+function _buildWorkerDesc(key, n, seed) {
+  const rules = WORKER_SCENE_RULES[key];
+  if (!rules) return 'tradesperson in work clothes naturally at work — seen from behind or in profile, never posing or looking at the camera';
+  const action  = _pick(rules.actions,  1, seed + 11)[0] || 'working on the job';
+  const posture = _pick(rules.postures, 1, seed + 13)[0] || 'seen from behind or in profile';
+  const safety  = (rules.safety_required || []).slice(0, 1).join(', ');
+  return `${posture}, ${action}${safety ? ` — ${safety} clearly visible` : ''}`;
+}
+
+// Valide la cohérence de la scène worker après _applyVariation.
+// En cas d'élément interdit : ajoute exclusions. Si trop grave : supprime les workers.
+// Returns { ok, issues, fixedStr }.
+// If a scene is dangerous/incoherent and cannot be corrected, falls back to presence='none'.
+function _validateWorkerScene(jsonStr) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return { ok: true, issues: [], fixedStr: jsonStr }; }
+
+  if (obj.var_presence !== 'workers') return { ok: true, issues: [], fixedStr: jsonStr };
+
+  const issues = [];
+  const fixed  = Object.assign({}, obj);
+  const rules  = WORKER_SCENE_RULES[fixed._matched_key];
+
+  if (!rules) {
+    issues.push('missing_dedicated_rules');
+    fixed._worker_validation_issues = issues;
+    return { ok: false, issues, fixedStr: JSON.stringify(fixed) };
+  }
+
+  // 1. Cap max_workers (always fixable)
+  if (fixed.var_workers > rules.max_workers) {
+    issues.push('too_many_workers');
+    fixed.var_workers   = rules.max_workers;
+    fixed._worker_count = fixed.var_workers;
+  }
+
+  // 2. Always inject forbidden terms into exclude so DALL-E avoids them
+  if (rules.forbidden?.length) {
+    fixed.exclude = [...new Set([...(fixed.exclude || []), ...rules.forbidden])];
+  }
+
+  // 3. Check forbidden scenario in worker description — attempt regen
+  const _descHasForbidden = (d) => (rules.forbidden || []).some(f =>
+    d.includes(f.toLowerCase().split(' ').slice(0, 4).join(' '))
+  );
+  if (_descHasForbidden((fixed.var_worker_desc || '').toLowerCase())) {
+    issues.push('forbidden_action_in_desc');
+    fixed.var_worker_desc = _buildWorkerDesc(fixed._matched_key, fixed.var_workers,
+      _hashSeed(`${fixed._matched_key}${fixed._matched_service || ''}regen1`));
+  }
+
+  // 4. Check safety terms in description — attempt regen
+  const _descMissesSafety = (d) => (rules.safety_required || []).length > 0 &&
+    !rules.safety_required.some(s => d.includes(s.split(' ')[0].toLowerCase()));
+  if (_descMissesSafety((fixed.var_worker_desc || '').toLowerCase())) {
+    issues.push('missing_safety_mention');
+    fixed.var_worker_desc = _buildWorkerDesc(fixed._matched_key, fixed.var_workers,
+      _hashSeed(`${fixed._matched_key}${fixed._matched_service || ''}regen2`));
+  }
+
+  // 5. Final check: if description still fails safety after 2 regen attempts → fallback to none
+  const descFinal = (fixed.var_worker_desc || '').toLowerCase();
+  const unresolvable = _descHasForbidden(descFinal) ||
+    (issues.includes('forbidden_action_in_desc') && _descMissesSafety(descFinal));
+  if (unresolvable) {
+    issues.push('fallback_to_none');
+    fixed.var_presence = 'none';
+    fixed.var_workers  = 0;
+    fixed.no_people    = true;
+    fixed._worker_count = 0;
+    delete fixed.var_worker_desc;
+    delete fixed._worker_action;
+    delete fixed._worker_access_mode;
+    delete fixed._worker_safety_mode;
+  }
+
+  fixed._worker_validation_issues = issues.length ? issues : null;
+  return { ok: issues.length === 0, issues, fixedStr: JSON.stringify(fixed) };
+}
+
+// Returns a deterministic shuffled array of presences for a whole batch.
+// Guarantees the target distribution across the batch instead of independent per-image rolls.
+function _buildPresencePlan(imageCount, stateLevel, key, seed) {
+  const _dist = {
+    debut:     { workers: 0.60, none: 0.35, indirect: 0.05 },
+    encours:   { workers: 0.50, none: 0.45, indirect: 0.05 },
+    semifinal: { workers: 0.30, none: 0.65, indirect: 0.05 },
+    final:     { workers: 0.075, none: 0.875, indirect: 0.05 },
+  };
+  const d = _dist[stateLevel] || _dist.encours;
+  const n = Math.max(1, imageCount);
+
+  // indirect always at least 0 (rounds to 0 for small batches), workers fills proportionally
+  const nIndirect = Math.max(0, Math.min(1, Math.round(n * d.indirect)));
+  const remain    = n - nIndirect;
+  const nWorkers  = Math.max(0, Math.round(remain * (d.workers / (d.workers + d.none))));
+  const nNone     = n - nWorkers - nIndirect;
+
+  const plan = [
+    ...Array(nWorkers).fill('workers'),
+    ...Array(Math.max(0, nNone)).fill('none'),
+    ...Array(nIndirect).fill('indirect'),
+  ];
+
+  // Seeded full shuffle using _pick (re-picks entire array = shuffle)
+  return _pick(plan, plan.length, seed);
+}
+
+function _applyVariation(jsonStr, imageIndex, presenceOverride) {
   let obj;
   try { obj = JSON.parse(jsonStr); } catch { return jsonStr; }
 
@@ -10932,42 +11449,48 @@ function _applyVariation(jsonStr, imageIndex) {
                  : authorRoll < 95 ? 'contractor'
                  : 'neighbor';
 
-  // Worker count — state-conditional distribution
-  const _workerDist = {
-    debut:     [70, 20,  8,  2],
-    encours:   [70, 20,  8,  2],
-    semifinal: [85, 13,  2,  0],
-    final:     [95,  5,  0,  0],
+  // 3-category presence: none / workers / indirect — state-conditional distribution
+  const _presenceDist = {
+    debut:     { none: 30, workers: 65, indirect: 5 },
+    encours:   { none: 45, workers: 50, indirect: 5 },
+    semifinal: { none: 65, workers: 30, indirect: 5 },
+    final:     { none: 88, workers:  7, indirect: 5 },
   };
-  const _wdist = _workerDist[obj.state_level] || _workerDist.encours;
-  const _wcum  = [_wdist[0], _wdist[0]+_wdist[1], _wdist[0]+_wdist[1]+_wdist[2], 100];
+  const _pd = _presenceDist[obj.state_level] || _presenceDist.encours;
   const workerSeed = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}workers${imageIndex}`);
   const workerRoll = workerSeed % 100;
-  obj.var_workers = workerRoll < _wcum[0] ? 0
-                  : workerRoll < _wcum[1] ? 1
-                  : workerRoll < _wcum[2] ? 2
-                  : 3;
-  obj.no_people   = obj.var_workers === 0;
+  // presenceOverride from batch plan takes priority over per-image roll
+  obj.var_presence = presenceOverride != null ? presenceOverride
+                   : (workerRoll < _pd.none ? 'none'
+                     : workerRoll < (_pd.none + _pd.workers) ? 'workers'
+                     : 'indirect');
 
-  // Worker type description by métier — always from behind or in profile, never posing
-  const _workerDesc = {
-    toiture:              'roofer crouching at the ridge or working on the tile field — seen from below, back to camera',
-    nettoyage_toiture:    'operative on the roof holding a pressure lance — seen from behind',
-    nettoyage_gouttieres: 'operative at the top of a ladder working at the gutters — in profile',
-    'élagage':            'arborist in the tree with a chainsaw and harness — back to camera',
-    abattage:             'operative with a chainsaw at the base of the tree — in profile, back to camera',
-    'maçonnerie':         'mason laying blocks with a trowel — standing or crouching at the wall, back to camera',
-    ravalement:           'plasterer on the scaffold applying render with a hawk and float — back to camera',
-    peinture:             'painter with a roller or brush working on the surface — back or in profile, never looking at the camera',
-    nettoyage:            'operative holding the pressure lance directing the jet at the surface — in profile',
-    carrelage:            'tiler kneeling on the floor laying tiles — back to camera',
-    vitrier:              'glazier handling a window pane or frame — in profile or from the side',
-    'débarras':           'operative carrying boxes or furniture through a doorway — back to camera',
-    etancheite:           'waterproofing technician on the flat roof applying membrane — back to camera',
-    depannage_auto:       'breakdown technician crouching beside the vehicle — in profile',
-  };
-  obj.var_worker_desc = _workerDesc[obj._matched_key]
-    || 'tradesperson in work clothes naturally engaged in the task — seen from behind or in profile, never posing';
+  if (obj.var_presence === 'none') {
+    obj.var_workers = 0;
+    obj.no_people   = true;
+  } else if (obj.var_presence === 'indirect') {
+    obj.var_workers = 0;
+    obj.no_people   = true;
+    const _iRules = WORKER_SCENE_RULES[obj._matched_key];
+    const _iSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}indirect${imageIndex}`);
+    obj.var_indirect_presence = _iRules
+      ? (_pick(_iRules.presence_indirect, 1, _iSeed)[0] || null)
+      : null;
+  } else {
+    const _wRules = WORKER_SCENE_RULES[obj._matched_key];
+    const _maxW   = _wRules ? _wRules.max_workers : 2;
+    const _cSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}count${imageIndex}`);
+    const _dSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}desc${imageIndex}`);
+    obj.var_workers     = (_cSeed % 100) < 65 ? 1 : Math.min(2, _maxW);
+    obj.no_people       = false;
+    obj.var_worker_desc = _buildWorkerDesc(obj._matched_key, obj.var_workers, _dSeed);
+    // Worker detail debug fields (aligned with _dSeed for determinism)
+    if (_wRules) {
+      obj._worker_action      = _pick(_wRules.actions, 1, _dSeed + 11)[0] || null;
+      obj._worker_access_mode = _pick(_wRules.access,  1, _dSeed + 17)[0] || null;
+      obj._worker_safety_mode = (_wRules.safety_required || []).slice(0, 1).join(', ') || null;
+    }
+  }
 
   // For customer/neighbor authors, override var_camera with a matching perspective pool
   if (obj.var_author !== 'contractor') {
@@ -10982,6 +11505,7 @@ function _applyVariation(jsonStr, imageIndex) {
   obj._camera_author     = obj.var_author;
   obj._worker_count      = obj.var_workers;
   obj._variation_setting = vSetting;
+  obj._presence          = obj.var_presence;
 
   return JSON.stringify(obj);
 }
@@ -11131,8 +11655,10 @@ const PromptBuilder = {
       // 7 — Style rules
       PHOTO_STYLE_RULES.style,
 
-      // 8 — People
+      // 8 — People / presence
       (() => {
+        if (s.var_presence === 'indirect' && s.var_indirect_presence)
+          return `Empty worksite — signs of recent activity: ${s.var_indirect_presence}.`;
         const n = s.var_workers !== undefined ? s.var_workers : (s.no_people ? 0 : 1);
         if (n === 0) return 'Empty worksite — no workers or people in the scene.';
         const desc = s.var_worker_desc || 'tradesperson in work clothes naturally engaged in the task — seen from behind or in profile, never posing or looking at the camera';
@@ -11179,6 +11705,25 @@ const _SCENE_PLANNER_MODEL = 'gpt-4.1';
 // Reads entirely from WORK_SCENES via _getWorkDetail — no more _SCENE_LIBRARY.
 // Backward-compat state mapping: desordre→debut, propre→semifinal.
 // Adds state_level field without removing any existing fields.
+// Socle spatial complet pour une scène peinture intérieure.
+// Remplace intégralement les champs géométriques issus de WORK_SCENES.peinture (extérieur)
+// quand _resolveServiceSetting retourne 'interior'.
+const INTERIOR_SCENE_BASE = {
+  camera_position: 'standing naturally inside the room near the doorway, smartphone held at chest height — casual handheld angle',
+  framing: {
+    work_pct:   55,
+    foreground: 'protected floor edge with a canvas drop cloth, paint tray or part of the doorway frame',
+    midground:  'wall or ceiling currently being painted — masking tape at the edges, fresh colour against the old',
+    background: 'opposite interior wall, ordinary room depth with skirting board, door frame or window frame — no outdoor elements',
+  },
+  architecture: 'ordinary occupied French residential interior — plaster walls, skirting boards, standard doors and windows',
+  light:        'soft natural daylight entering from the room window, supplemented by ordinary indoor ambient ceiling light',
+  exclude: [
+    'exterior facade', 'street', 'garden', 'pavement', 'scaffolding',
+    'roof', 'open sky', 'outdoor architecture', 'house exterior',
+  ],
+};
+
 // Résout le setting réel à partir du sous-service, avant que WORK_SCENES ne soit lu.
 // Évite que peinture chambre soit traité comme exterior parce que WORK_SCENES.peinture est exterior.
 function _resolveServiceSetting(metier, travaux, defaultSetting) {
@@ -11233,6 +11778,11 @@ function buildDallePromptV2(row) {
     ? ((_metierCtx.find(o => o.value === row.contexte) || {}).desc || null)
     : ((work.context_map || {})[row.contexte] || null);
 
+  // Quand le service résolu est intérieur ET que la scène de base (WORK_SCENES) est extérieure,
+  // on substitue intégralement le socle spatial pour éviter tout champ géométrique incohérent.
+  const intBase = (resolvedSetting === 'interior' && work.setting !== 'interior')
+    ? INTERIOR_SCENE_BASE : null;
+
   return JSON.stringify({
     photo_goal:        'work-progress documentation by French contractor, cheap Android smartphone',
     location:          (row.ville || '').trim() ? `${row.ville.trim()}, France` : 'France',
@@ -11240,17 +11790,15 @@ function buildDallePromptV2(row) {
     setting:           resolvedSetting,
     state:             stateData.description || stateKey,
     state_level:       stateKey,
-    camera_position:   (isInt && row.metier === 'peinture')
-                         ? 'standing in the room, 2–3 m from the work surface, casual handheld angle'
-                         : work.camera,
-    framing:           stateData.framing || { work_pct: 55, foreground: '', midground: '', background: '' },
+    camera_position:   intBase ? intBase.camera_position : work.camera,
+    framing:           intBase ? intBase.framing : (stateData.framing || { work_pct: 55, foreground: '', midground: '', background: '' }),
     site_debris:       stateData.debris  || 'construction debris on site',
     photo_defects:     work.photo_defects,
-    architecture:      city.arch,
-    light:             meteo,
+    architecture:      intBase ? intBase.architecture : city.arch,
+    light:             intBase ? intBase.light : meteo,
     contexte:          row.contexte || 'maison',
-    roadside_context:  roadContext,
-    exclude:           work.exclusions || [],
+    roadside_context:  intBase ? null : roadContext,
+    exclude:           intBase ? [...intBase.exclude, ...(work.exclusions || [])] : (work.exclusions || []),
     no_people:         !work.hasWorkers,
     _matched_category: _lastMatch.matched_category,
     _matched_key:      _lastMatch.matched_key,
@@ -11267,8 +11815,11 @@ function _validateScene(jsonStr) {
   if (!obj.work_type)                        issues.push('work_type is missing');
   if (!obj.framing?.foreground)              issues.push('framing.foreground is missing');
   if (!obj.framing?.midground)               issues.push('framing.midground is missing');
-  if (obj.setting === 'interior' && (obj.framing?.background || '').toLowerCase().includes('sky'))
-    issues.push('interior scene has sky in background — incoherent');
+  const _bg1 = (obj.framing?.background || '').toLowerCase();
+  const _skyOpen1   = /\b(?:open\s+sky|sky\s+(?:in\s+(?:the\s+)?)?background|rooftops?\s+and\s+sky|garden\s+and\s+sky|sky\s+(?:above|overhead)|sky\s+visible\b)/.test(_bg1);
+  const _skyWindow1 = /sky\s+(?:visible\s+)?through\s+(?:the\s+)?window|faint\s+sky\s+(?:through|behind)/.test(_bg1);
+  if (obj.setting === 'interior' && _skyOpen1 && !_skyWindow1)
+    issues.push('interior scene has open sky in background — incoherent');
   if (obj.setting === 'exterior' && (obj.camera_position || '').toLowerCase().includes('inside'))
     issues.push('exterior work but camera is described as inside');
   return issues;
@@ -11289,8 +11840,11 @@ function _validateSceneStrict(obj) {
   if (!['interior', 'exterior'].includes(obj.setting)) issues.push('setting must be interior or exterior');
   if (!Array.isArray(obj.photo_defects) || obj.photo_defects.length !== 2)
     issues.push('photo_defects must be an array of exactly 2 items');
-  if (obj.setting === 'interior' && (obj.framing?.background || '').toLowerCase().includes('sky'))
-    issues.push('interior scene has sky in background — incoherent');
+  const _bg2 = (obj.framing?.background || '').toLowerCase();
+  const _skyOpen2   = /\b(?:open\s+sky|sky\s+(?:in\s+(?:the\s+)?)?background|rooftops?\s+and\s+sky|garden\s+and\s+sky|sky\s+(?:above|overhead)|sky\s+visible\b)/.test(_bg2);
+  const _skyWindow2 = /sky\s+(?:visible\s+)?through\s+(?:the\s+)?window|faint\s+sky\s+(?:through|behind)/.test(_bg2);
+  if (obj.setting === 'interior' && _skyOpen2 && !_skyWindow2)
+    issues.push('interior scene has open sky in background — incoherent');
   if (obj.setting === 'exterior' && (obj.camera_position || '').toLowerCase().includes('inside'))
     issues.push('exterior work but camera is inside — incoherent');
   return issues;
@@ -11685,21 +12239,32 @@ async function generateAllImages() {
       jsonScene = await _generateSceneJSON(baseScene, key);
     }
 
+    // Build deterministic presence plan for this batch — guarantees target distribution
+    const _planBase    = JSON.parse(jsonScene);
+    const _planSeed    = _hashSeed(`${_planBase._matched_key || ''}${_planBase._matched_service || ''}plan`);
+    const presencePlan = _buildPresencePlan(nb, _planBase.state_level, _planBase._matched_key, _planSeed);
+    console.log(`[PresencePlan] ${JSON.stringify({ key: _planBase._matched_key, service: _planBase._matched_service, state: _planBase.state_level, imageCount: nb, plan: presencePlan })}`);
+
     let rowOk = true;
     for (let i = 0; i < nb; i++) {
       try {
         // Step 1: apply SITE_REALISM (varies photo_defects + tools per image)
         const realistScene = _applySiteRealism(jsonScene, i);
 
-        // Step 1b: apply VARIATION_ENGINE (varies viewpoint + light per image)
-        const variedScene  = _applyVariation(realistScene, i);
+        // Step 1b: apply VARIATION_ENGINE — presencePlan[i] ensures batch-level distribution
+        const variedScene  = _applyVariation(realistScene, i, presencePlan[i]);
 
-        // Step 1c: quality gate — validate and auto-patch or fallback
-        const _qObj    = JSON.parse(variedScene);
+        // Step 1c: real worker coherence validator — issues logged, fallback-to-none if unsafe
+        const workerResult = _validateWorkerScene(variedScene);
+        if (workerResult.issues?.length)
+          console.warn(`[WorkerScene] ${_planBase._matched_key} #${i}: ${workerResult.issues.join(' | ')}`);
+
+        // Step 1d: quality gate — validate and auto-patch or fallback
+        const _qObj    = JSON.parse(workerResult.fixedStr);
         const _qCheck  = _validateQuality(_qObj);
         let   finalScene;
         if (_qCheck.ok) {
-          finalScene = variedScene;
+          finalScene = workerResult.fixedStr;
         } else if (_qCheck.fixedObj) {
           finalScene = JSON.stringify(_qCheck.fixedObj);
           console.warn(`[QualityGate] patched — ${_qObj._matched_key}: ${_qCheck.issues.join(' | ')}`);
