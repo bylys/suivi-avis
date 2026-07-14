@@ -11647,6 +11647,19 @@ function _validateQuality(obj) {
   return                          { ok: false,  issues,        fixedObj: null };
 }
 
+// Per-métier pre-generation safety constraint — first line of defense before the image API call.
+const _PRE_GEN_SAFETY = {
+  toiture:           'Roof materials must be in small quantities only. Never show a full industrial pallet, heavy crate, or large load on the roof slope or battens. A few tiles or a small hand-portable stack on a secured material bracket is the maximum.',
+  nettoyage_toiture: 'Worker must be on scaffold or platform, not unsupported on wet moss-covered tiles. Never show bare hands on chemical-treated surface or worker leaning over the gutter edge without a guardrail.',
+  etancheite:        'Worker near flat roof edge must have a harness. No person on the parapet coping. No open-flame torch near a loose membrane. Roof hatch must remain clear.',
+  ravalement:        'Scaffold platforms above 2 m must have visible guardrails. No person leaning past the guardrail into the void.',
+  'élagage':         'If a worker is visible at height: harness and rope must be clearly attached to a credible anchor. No person under a branch being cut. No chainsaw without a two-handed grip. No floating figure with no visible support.',
+  abattage:          'The operator must stand beside the trunk, never in the fall zone in front of the notch. No chainsaw cutting overhead. No bystander on the far side of the trunk during felling.',
+  terrassement:      'No person inside the open trench under the excavator bucket. No person between the rotating cab and the trench edge. Machine needs a visible ground spotter when near a structure.',
+  'maçonnerie':      'No person on top of an incomplete wall above 1.5 m without scaffold. No block or heavy load overhead without mechanical lifting aid.',
+  depannage_auto:    'Breakdown must be off the carriageway. Visible warning triangle required. No cables crossing the roadway. No person between vehicle and traffic.',
+};
+
 const PromptBuilder = {
   build(jsonStr) {
     const s   = JSON.parse(jsonStr);
@@ -11712,10 +11725,18 @@ const PromptBuilder = {
         return items.length ? `Scattered nearby: ${items.join('; ')}.` : '';
       })(),
 
-      // 10b — Per-métier material safety rule (WORKER_SCENE_RULES.site_material_rule)
+      // 10b — Pre-gen safety constraint (per métier) + material rule
       (() => {
-        const rule = WORKER_SCENE_RULES[s._matched_key]?.site_material_rule;
-        return rule ? `On-site materials: ${rule}.` : '';
+        const safety = _PRE_GEN_SAFETY[s._matched_key];
+        const rule   = WORKER_SCENE_RULES[s._matched_key]?.site_material_rule;
+        const parts  = [safety, rule ? `On-site materials: ${rule}.` : ''].filter(Boolean);
+        return parts.length ? parts.join(' ') : '';
+      })(),
+
+      // 10c — Forbidden elements (scene_always_exclude merged into exclude by validator)
+      (() => {
+        const excl = (s.exclude || []).slice(0, 8);
+        return excl.length ? `Never include: ${excl.join('; ')}.` : '';
       })(),
 
       // 11 — Camera viewpoint variation (VARIATION_ENGINE)
@@ -11761,11 +11782,20 @@ const INTERIOR_SCENE_BASE = {
 // Évite que peinture chambre soit traité comme exterior parce que WORK_SCENES.peinture est exterior.
 function _resolveServiceSetting(metier, travaux, defaultSetting) {
   const svc = (travaux || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  if (metier === 'peinture') {
+  const met = (metier  || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (met === 'peinture') {
     if (/chambre|salon|cuisine|couloir|plafond|interieur|interieure|cage.*escal|boiserie.*int|papier.*peint|enduit.*decor/.test(svc))
       return 'interior';
     if (/facade|volet|portail|cloture|exterieur|exterieure|boiserie.*ext|sous.*face|soffit/.test(svc))
       return 'exterior';
+  }
+  if (met === 'debarras') {
+    if (/cave|appartement|studio|grenier|sous.*sol|comble|interieur|interieure|piece|bureau|chambre|couloir/.test(svc))
+      return 'interior';
+  }
+  if (met === 'carrelage') {
+    if (/salle.*bain|salle.*eau|cuisine.*sol|salon.*sol|chambre.*sol|couloir.*sol|interieur|interieure/.test(svc))
+      return 'interior';
   }
   return defaultSetting;
 }
@@ -11961,7 +11991,7 @@ async function _generateSceneJSON(baseScene, key) {
 }
 
 async function _rewritePromptWithGPT(jsonScene, key) {
-  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+  const resp   = await _fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -11973,13 +12003,10 @@ async function _rewritePromptWithGPT(jsonScene, key) {
       max_tokens: 350,
       temperature: 0.75
     })
-  });
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}));
-    throw new Error('Scene planner error: ' + (err.error?.message || resp.statusText));
-  }
-  const data = await resp.json();
-  return data.choices[0].message.content.trim();
+  }, 30000);
+  const parsed = await _readResponseOnce(resp);
+  if (!parsed.ok) throw new Error('Scene planner error: ' + (parsed.data?.error?.message || parsed.raw || `HTTP ${parsed.status}`));
+  return parsed.data.choices[0].message.content.trim();
 }
 
 function _escHtml(s) {
@@ -12217,32 +12244,66 @@ function slugify(str) {
     .slice(0, 40);
 }
 
+// ─── Task-status infrastructure ───────────────────────────────────────────────
+
+const IMAGE_TASK_STATUS = {
+  PENDING:             'pending',
+  GENERATING:          'generating',
+  CHECKING_SAFETY:     'checking_safety',
+  RETRYING:            'retrying',
+  SUCCESS:             'success',
+  FAILED:              'failed',
+  REJECTED_SAFETY:     'rejected_safety',
+  SAFETY_CHECK_FAILED: 'safety_check_failed',
+};
+const _TERMINAL_STATUSES = new Set([
+  IMAGE_TASK_STATUS.SUCCESS, IMAGE_TASK_STATUS.FAILED,
+  IMAGE_TASK_STATUS.REJECTED_SAFETY, IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED,
+]);
+function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+async function _fetchWithTimeout(url, options = {}, timeoutMs = 120000) {
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`Request timeout after ${timeoutMs / 1000}s: ${url.split('/').pop()}`);
+    throw e;
+  } finally { clearTimeout(timeoutId); }
+}
+async function _readResponseOnce(response) {
+  const raw = await response.text();
+  let data = null;
+  try { if (raw) data = JSON.parse(raw); } catch { }
+  return { ok: response.ok, status: response.status, raw, data };
+}
+
 // ─── Safety image gate ────────────────────────────────────────────────────────
 
 const SAFETY_CHECK_RULES = {
-  toiture:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: full industrial pallet on pitched roof; worker feet/body over gutter with no platform; worker on roof with no harness/rope/roof-hook; ladder used as horizontal platform; heavy unsecured stack near roof edge; materials above a doorway. Default safe:true if in doubt.",
-  nettoyage_toiture:    "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: worker on wet moss-covered tiles without harness; leaning over gutter edge without guardrail; bare hands on chemical-treated surface without gloves; open spray nozzle aimed at face. Default safe:true if in doubt.",
-  nettoyage_gouttieres: "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: ladder leaning directly against the gutter channel without standoff; person reaching far sideways past their center of gravity off the ladder; person standing on the top two rungs. Default safe:true if in doubt.",
-  etancheite:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person balanced on parapet coping; open-flame torch near a loose membrane edge; roll blocking the only roof access hatch; person within 2 m of flat roof edge with no harness. Default safe:true if in doubt.",
-  ravalement:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person leaning out past scaffold guardrail over the void; scaffold platform above 2 m with no guardrail; unsupported plank bridging two scaffold frames. Default safe:true if in doubt.",
+  toiture:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: full industrial pallet on pitched roof; worker feet/body over gutter with no platform; worker on roof with no harness/rope/roof-hook; ladder used as horizontal platform; heavy unsecured stack near roof edge. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  nettoyage_toiture:    "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: worker on wet moss-covered tiles without harness; leaning over gutter edge without guardrail; bare hands on chemical-treated surface without gloves. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  nettoyage_gouttieres: "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: ladder leaning directly against the gutter channel without standoff; person reaching far sideways past their center of gravity off the ladder; person standing on the top two rungs. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  etancheite:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person balanced on parapet coping; open-flame torch near a loose membrane edge; roll blocking the only roof access hatch; person within 2 m of flat roof edge with no harness. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  ravalement:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person leaning out past scaffold guardrail over the void; scaffold platform above 2 m with no guardrail; unsupported plank bridging two scaffold frames. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   // peinture — skipped: indoor low-risk, forbidden[] covers edge cases
   // nettoyage — skipped: ground-level, low visual safety signal
   // carrelage — skipped: floor-level, blade guard already in prompt rules
   // débarras  — skipped: two-person carry enforced by max_workers + forbidden[]
-  'élagage':            "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: climber in tree with no rope or harness; person standing directly under a branch being cut; climber feet dangling unsupported; chainsaw in obviously impossible posture. Default safe:true if in doubt.",
-  abattage:             "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person in the direct fall zone in front of the notch cut; chainsaw cutting overhead; person on far side of trunk during felling. Default safe:true if in doubt.",
-  'maçonnerie':         "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person balanced on top of unfinished wall above 1.5 m without scaffold; single block being lifted overhead without mechanical aid. Default safe:true if in doubt.",
-  vitrier:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: bare hands on large glass pane edges without cut-resistant gloves; glass pane balanced upright against a wall with no support cradle; broken glass on the floor with bare feet visible. Default safe:true if in doubt.",
-  terrassement:         "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person standing inside the open trench directly under the excavator bucket; person between the rotating excavator cab and the trench edge; machine operating near a structure with no ground spotter visible. Default safe:true if in doubt.",
-  paysagiste:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: mower operating on a visibly steep slope with the operator at tipping risk; chainsaw used without visible leg protection; person on an unstable household stepladder pruning a tall tree. Default safe:true if in doubt.",
-  depannage_auto:       "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: technician on the live carriageway lane with no warning triangle visible; vehicle lifted with no visible axle stand or support; person between the vehicle and traffic; cables crossing the carriageway. Default safe:true if in doubt.",
+  'élagage':            "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: climber in tree with no rope or harness; person standing directly under a branch being cut; climber feet dangling unsupported; chainsaw in obviously impossible posture. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  abattage:             "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person in the direct fall zone in front of the notch cut; chainsaw cutting overhead; person on far side of trunk during felling. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  'maçonnerie':         "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person balanced on top of unfinished wall above 1.5 m without scaffold; single block being lifted overhead without mechanical aid. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  vitrier:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: bare hands on large glass pane edges without cut-resistant gloves; glass pane balanced upright against a wall with no support cradle; broken glass on the floor with bare feet visible. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  terrassement:         "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person standing inside the open trench directly under the excavator bucket; person between the rotating excavator cab and the trench edge; machine operating near a structure with no ground spotter visible. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  paysagiste:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: mower operating on a visibly steep slope with the operator at tipping risk; chainsaw used without visible leg protection; person on an unstable household stepladder pruning a tall tree. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  depannage_auto:       "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: technician on the live carriageway lane with no warning triangle visible; vehicle lifted with no visible axle stand or support; person between the vehicle and traffic; cables crossing the carriageway. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
 };
 
 async function _checkImageSafety(b64, matchedKey, apiKey) {
   const prompt = SAFETY_CHECK_RULES[matchedKey];
   if (!prompt) return { safe: true };
   try {
-    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    const resp   = await _fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -12254,20 +12315,21 @@ async function _checkImageSafety(b64, matchedKey, apiKey) {
         ]}],
         response_format: { type: 'json_object' },
       })
-    });
-    if (!resp.ok) return { safe: null, checkFailed: true };
-    const data = await resp.json();
-    const parsed = JSON.parse(data.choices[0].message.content);
-    if (parsed.safe == null) return { safe: null, checkFailed: true };
-    return parsed;
-  } catch { return { safe: null, checkFailed: true }; }
+    }, 60000);
+    const parsed = await _readResponseOnce(resp);
+    if (!parsed.ok || !parsed.data) return { safe: null, checkFailed: true, reason: `HTTP ${parsed.status}` };
+    const raw = parsed.data.choices?.[0]?.message?.content;
+    let obj;
+    try { obj = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return { safe: null, checkFailed: true, reason: 'JSON parse error' }; }
+    if (obj?.safe == null) return { safe: null, checkFailed: true, reason: 'missing safe field' };
+    return { safe: obj.safe, severity: obj.severity || 'ok', reason: obj.reason || '' };
+  } catch (e) { return { safe: null, checkFailed: true, reason: e.message }; }
 }
 
 // ─── Per-image scene build + API call (extracted for reuse by batch queue) ────
 
 async function _generateSingleImage(task, key) {
   const { jsonScene, presencePlan, i, slug, _planBase } = task;
-
   const realistScene = _applySiteRealism(jsonScene, i);
   const variedScene  = _applyVariation(realistScene, i, presencePlan[i]);
   const workerResult = _validateWorkerScene(variedScene);
@@ -12291,29 +12353,33 @@ async function _generateSingleImage(task, key) {
     ? PromptBuilder.build(finalScene)
     : await _rewritePromptWithGPT(finalScene, key);
 
-  let resp = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'gpt-image-2', prompt, n: 1, size: '1536x1024', quality: 'high', output_format: 'jpeg', output_compression: 85 })
-  });
-  if (!resp.ok) {
-    const errBody = await resp.json();
-    const errMsg  = errBody.error?.message || '';
-    if (errMsg.includes('does not exist') || errMsg.includes('not found') || resp.status === 404) {
-      resp = await fetch('https://api.openai.com/v1/images/generations', {
+  let parsed;
+  {
+    const rawResp = await _fetchWithTimeout('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-image-2', prompt, n: 1, size: '1536x1024', quality: 'high', output_format: 'jpeg', output_compression: 85 })
+    }, 180000);
+    parsed = await _readResponseOnce(rawResp);
+  }
+
+  if (!parsed.ok) {
+    const errMsg = parsed.data?.error?.message || '';
+    if (errMsg.includes('does not exist') || errMsg.includes('not found') || parsed.status === 404) {
+      const fallbackResp = await _fetchWithTimeout('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024', quality: 'high', output_format: 'jpeg', output_compression: 85 })
-      });
+      }, 180000);
+      parsed = await _readResponseOnce(fallbackResp);
     }
-    if (!resp.ok) {
-      const err2 = await resp.json();
-      throw new Error(err2.error?.message || resp.statusText);
+    if (!parsed.ok) {
+      throw new Error(parsed.data?.error?.message || `HTTP ${parsed.status}`);
     }
   }
 
-  const data     = await resp.json();
-  const item     = data.data[0];
+  const item     = parsed.data?.data?.[0];
+  if (!item) throw new Error('No image returned by API');
   const b64      = item.b64_json || null;
   const imgUrl   = item.url     || null;
   const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
@@ -12321,32 +12387,33 @@ async function _generateSingleImage(task, key) {
 
   // Visual safety gate — only for métiers with a SAFETY_CHECK_RULES entry and b64 available
   if (b64 && SAFETY_CHECK_RULES[_planBase._matched_key]) {
+    if (task) task.status = IMAGE_TASK_STATUS.CHECKING_SAFETY;
     const safety = await _checkImageSafety(b64, _planBase._matched_key, key);
     if (safety.checkFailed) {
-      console.warn(`[SafetyGate] checker unavailable — ${_planBase._matched_key} #${i}`);
-      return { safetyCheckFailed: true, b64, imgUrl, filename, src };
+      console.warn(`[SafetyGate] checker unavailable — ${_planBase._matched_key} #${i}: ${safety.reason}`);
+      return { safetyCheckFailed: true, reason: safety.reason, b64, imgUrl, filename, src };
     }
     if (!safety.safe && safety.severity === 'critical') {
-      console.warn(`[SafetyGate] rejected — ${_planBase._matched_key} #${i}: ${(safety.issues || []).join(' | ')}`);
-      return { rejectedSafety: true, safetyIssues: safety.issues || [], b64, imgUrl, filename, src };
+      console.warn(`[SafetyGate] rejected — ${_planBase._matched_key} #${i}: ${safety.reason}`);
+      return { rejectedSafety: true, reason: safety.reason, b64, imgUrl, filename, src };
     }
   }
 
   return { rejectedSafety: false, b64, imgUrl, filename, src };
 }
 
-// ─── Concurrency queue — max 3 simultaneous, max 2 retries each ──────────────
+// ─── Concurrency queue — max 3 simultaneous, max 3 attempts each ─────────────
 
 async function _runImageBatch(tasks, key, progressBar, progressLbl) {
-  const total = tasks.length;
+  const total       = tasks.length;
   const CONCURRENCY = 3;
-  const MAX_RETRIES = 2;
+  const MAX_ATTEMPTS = 3;
   let doneCount = 0;
   let cursor    = 0;
 
   const updateProgress = () => {
-    const ok   = tasks.filter(t => t.status === 'success').length;
-    const fail = tasks.filter(t => ['failed', 'rejected_safety', 'safety_check_failed'].includes(t.status)).length;
+    const ok   = tasks.filter(t => t.status === IMAGE_TASK_STATUS.SUCCESS).length;
+    const fail = tasks.filter(t => _TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS).length;
     if (progressBar) progressBar.style.width = Math.round(doneCount / total * 100) + '%';
     if (progressLbl) progressLbl.textContent =
       `${ok} générée(s)${fail ? ` · ${fail} échec(s)` : ''} — ${doneCount}/${total}`;
@@ -12354,52 +12421,58 @@ async function _runImageBatch(tasks, key, progressBar, progressLbl) {
   updateProgress();
 
   const processTask = async (task) => {
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      if (attempt > 0) {
-        task.status = 'retrying';
-        updateProgress();
-        await new Promise(r => setTimeout(r, attempt * 2500));
-      } else {
-        task.status = 'generating';
-        updateProgress();
+    try {
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        task.attempts = attempt;
+        if (attempt > 1) {
+          task.status = IMAGE_TASK_STATUS.RETRYING;
+          updateProgress();
+          await _sleep(attempt * 2500);
+        } else {
+          task.status = IMAGE_TASK_STATUS.GENERATING;
+          updateProgress();
+        }
+
+        try {
+          const result = await _generateSingleImage(task, key);
+
+          if (result.safetyCheckFailed) {
+            task.error = result.reason || 'safety checker unavailable';
+            if (attempt < MAX_ATTEMPTS) continue;
+            task.status = IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED;
+            return;
+          }
+
+          if (result.rejectedSafety) {
+            task.error = result.reason || 'critical safety violation';
+            if (attempt < MAX_ATTEMPTS) continue;
+            task.status = IMAGE_TASK_STATUS.REJECTED_SAFETY;
+            return;
+          }
+
+          task.status = IMAGE_TASK_STATUS.SUCCESS;
+          task.result = result;
+          task.row.images.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
+          _generatedImages.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
+          appendImgCard(result.src, result.filename, task.row.fiche || task.row.travaux);
+          return;
+
+        } catch (e) {
+          task.error = e.message;
+          if (attempt === MAX_ATTEMPTS) {
+            task.status = IMAGE_TASK_STATUS.FAILED;
+            return;
+          }
+        }
       }
-      try {
-        const result = await _generateSingleImage(task, key);
-        if (result.safetyCheckFailed && attempt < MAX_RETRIES) {
-          task.error = 'safety_check_failed';
-          continue;
-        }
-        if (result.safetyCheckFailed) {
-          task.status = 'safety_check_failed';
-          task.error  = 'safety checker unavailable after retries';
-          break;
-        }
-        if (result.rejectedSafety && attempt < MAX_RETRIES) {
-          task.error = `safety: ${result.safetyIssues.slice(0, 2).join(', ')}`;
-          continue;
-        }
-        if (result.rejectedSafety) {
-          task.status = 'rejected_safety';
-          task.error  = `safety: ${result.safetyIssues.slice(0, 2).join(', ')}`;
-          break;
-        }
-        task.status = 'success';
-        task.result = result;
-        task.row.images.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
-        _generatedImages.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
-        appendImgCard(result.src, result.filename, task.row.fiche || task.row.travaux);
-        break;
-      } catch (e) {
-        task.error = e.message;
-        if (attempt === MAX_RETRIES) task.status = 'failed';
+    } finally {
+      doneCount++;
+      updateProgress();
+      const rowTasks = tasks.filter(t => t.row === task.row);
+      if (rowTasks.every(t => _TERMINAL_STATUSES.has(t.status))) {
+        task.row.status = rowTasks.some(t => t.status === IMAGE_TASK_STATUS.SUCCESS) ? 'done' : 'error';
+        renderImgPlanning();
       }
-    }
-    doneCount++;
-    updateProgress();
-    const rowTasks = tasks.filter(t => t.row === task.row);
-    if (rowTasks.every(t => ['success', 'failed', 'rejected_safety', 'safety_check_failed'].includes(t.status))) {
-      task.row.status = rowTasks.some(t => t.status === 'success') ? 'done' : 'error';
-      renderImgPlanning();
     }
   };
 
@@ -12411,6 +12484,14 @@ async function _runImageBatch(tasks, key, progressBar, progressLbl) {
   };
 
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, total) }, () => runWorker()));
+
+  // sentinel: force any non-terminal task to FAILED (should never fire, but guards against edge cases)
+  for (const task of tasks) {
+    if (!_TERMINAL_STATUSES.has(task.status)) {
+      task.status = IMAGE_TASK_STATUS.FAILED;
+      task.error  = task.error || 'task did not complete';
+    }
+  }
 }
 
 // ─── Summary UI ───────────────────────────────────────────────────────────────
@@ -12425,9 +12506,13 @@ function _showGenerationSummary(total, succeedCount, failedTasks, key) {
     el.innerHTML = `<span class="img-gen-ok">✓ ${total} / ${total} images générées</span>`;
   } else {
     const failLines = failedTasks.map(t => {
-      const label  = _escHtml((t.row.fiche || t.row.travaux) + ' #' + (t.i + 1));
-      const reason = t.error ? ' — ' + _escHtml(t.error.slice(0, 80)) : '';
-      return `<li>${label}${reason}</li>`;
+      const metier  = _escHtml(t._planBase?._matched_key || '—');
+      const service = _escHtml((t.row.travaux || t.row.fiche || '').slice(0, 40));
+      const idx     = t.i + 1;
+      const status  = _escHtml(t.status || '—');
+      const tries   = t.attempts || 1;
+      const err     = t.error ? ' — ' + _escHtml(t.error.slice(0, 120)) : '';
+      return `<li><b>${metier}</b> · ${service} · #${idx} · ${status} (×${tries})${err}</li>`;
     }).join('');
     el.innerHTML = `
       <div class="img-gen-summary-row">
@@ -12458,7 +12543,12 @@ async function _retryFailedImages() {
   const tasks = window._lastFailedTasks;
   if (!key || !tasks?.length) return;
 
-  tasks.forEach(t => { t.status = 'pending'; t.attempts = 0; t.error = null; t.result = null; });
+  tasks.forEach(t => {
+    t.status   = IMAGE_TASK_STATUS.PENDING;
+    t.attempts = 0;
+    t.error    = null;
+    t.result   = null;
+  });
   _hideSummary();
 
   const progressBar = document.getElementById('img-progress-bar');
@@ -12469,14 +12559,73 @@ async function _retryFailedImages() {
   await _runImageBatch(tasks, key, progressBar, progressLbl);
 
   document.getElementById('btn-generate-all').disabled = false;
-  const succeeded = tasks.filter(t => t.status === 'success');
-  const failed    = tasks.filter(t => ['failed', 'rejected_safety', 'safety_check_failed'].includes(t.status));
+  const succeeded = tasks.filter(t => t.status === IMAGE_TASK_STATUS.SUCCESS);
+  const failed    = tasks.filter(t => _TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
   if (_generatedImages.length > 0) {
     const btn = document.getElementById('btn-download-zip');
     btn.textContent = _generatedImages.length === 1 ? "↓ Télécharger l'image" : '↓ Télécharger le ZIP';
     btn.style.display = 'inline-flex';
   }
   _showGenerationSummary(tasks.length, succeeded.length, failed, key);
+}
+
+// ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
+
+async function _runLocalTests() {
+  const pass = (name) => console.log(`[TEST] PASS — ${name}`);
+  const fail = (name, msg) => console.error(`[TEST] FAIL — ${name}: ${msg}`);
+
+  // T1: _readResponseOnce reads body only once, no double-read error
+  try {
+    const r = new Response(JSON.stringify({ ok: 1 }), { status: 200 });
+    const p = await _readResponseOnce(r);
+    if (p.ok && p.data?.ok === 1) pass('T1: _readResponseOnce single-read');
+    else fail('T1: _readResponseOnce single-read', JSON.stringify(p));
+  } catch (e) { fail('T1: _readResponseOnce single-read', e.message); }
+
+  // T2: 50/45/5 distribution holds for nb=20 (encours: workers='workers', none='none', indirect='indirect')
+  try {
+    const plan = _buildPresencePlan(20, 'encours', 'toiture', 42);
+    const workers  = plan.filter(p => p === 'workers').length;
+    const worksite = plan.filter(p => p === 'none').length;
+    const material = plan.filter(p => p === 'indirect').length;
+    const wOk = workers  === 10, sOk = worksite === 9, mOk = material === 1;
+    if (wOk && sOk && mOk) pass('T2: 50/45/5 distribution (nb=20)');
+    else fail('T2: 50/45/5 distribution (nb=20)', `workers=${workers} none=${worksite} indirect=${material}`);
+  } catch (e) { fail('T2: _buildPresencePlan', e.message); }
+
+  // T3: _resolveServiceSetting — débarras cave → interior
+  try {
+    const s = _resolveServiceSetting('débarras', 'Débarras cave', 'exterior');
+    if (s === 'interior') pass('T3: _resolveServiceSetting débarras cave → interior');
+    else fail('T3: _resolveServiceSetting débarras cave', `got ${s}`);
+  } catch (e) { fail('T3: _resolveServiceSetting', e.message); }
+
+  // T4: _resolveServiceSetting — carrelage salle de bain → interior
+  try {
+    const s = _resolveServiceSetting('carrelage', 'Pose carrelage salle de bain', 'exterior');
+    if (s === 'interior') pass('T4: _resolveServiceSetting carrelage salle de bain → interior');
+    else fail('T4: _resolveServiceSetting carrelage salle de bain', `got ${s}`);
+  } catch (e) { fail('T4: _resolveServiceSetting', e.message); }
+
+  // T5: IMAGE_TASK_STATUS all values present and _TERMINAL_STATUSES covers 4 terminal states
+  try {
+    const required = ['pending','generating','checking_safety','retrying','success','failed','rejected_safety','safety_check_failed'];
+    const missing  = required.filter(v => !Object.values(IMAGE_TASK_STATUS).includes(v));
+    const termOk   = _TERMINAL_STATUSES.size === 4;
+    if (!missing.length && termOk) pass('T5: IMAGE_TASK_STATUS + _TERMINAL_STATUSES');
+    else fail('T5: IMAGE_TASK_STATUS + _TERMINAL_STATUSES', `missing=${JSON.stringify(missing)} termSize=${_TERMINAL_STATUSES.size}`);
+  } catch (e) { fail('T5: IMAGE_TASK_STATUS', e.message); }
+
+  // T6: SAFETY_CHECK_RULES has exactly 12 entries and no "Default safe:true" leak
+  try {
+    const keys    = Object.keys(SAFETY_CHECK_RULES);
+    const leaked  = keys.filter(k => SAFETY_CHECK_RULES[k].includes('Default safe:true'));
+    if (keys.length === 12 && !leaked.length) pass('T6: SAFETY_CHECK_RULES (12 entries, no default-safe leak)');
+    else fail('T6: SAFETY_CHECK_RULES', `count=${keys.length} leaked=${JSON.stringify(leaked)}`);
+  } catch (e) { fail('T6: SAFETY_CHECK_RULES', e.message); }
+
+  console.log('[TEST] Done.');
 }
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
@@ -12542,8 +12691,8 @@ async function generateAllImages() {
   // ── Phase 4: finalize + summary ───────────────────────────────────────────
   document.getElementById('btn-generate-all').disabled = false;
 
-  const succeeded = tasks.filter(t => t.status === 'success');
-  const failed    = tasks.filter(t => ['failed', 'rejected_safety', 'safety_check_failed'].includes(t.status));
+  const succeeded = tasks.filter(t => t.status === IMAGE_TASK_STATUS.SUCCESS);
+  const failed    = tasks.filter(t => _TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
 
   if (succeeded.length > 0) {
     const btn = document.getElementById('btn-download-zip');
