@@ -10910,7 +10910,7 @@ const WORKER_SCENE_RULES = {
       'fitting zinc flashing at the valley or eave',
     ],
     postures: [
-      'kneeling on the roof pitch beside a tile stack, both hands on the work — back to camera',
+      'kneeling on the roof pitch beside a small tile stack on a secured material bracket, both hands on the work — back to camera',
       'crouching at the ridge line with the trowel working the mortar bed — back to camera',
       'leaning against the roof ladder hooked at the ridge, working the pitch below — in profile',
     ],
@@ -10919,12 +10919,26 @@ const WORKER_SCENE_RULES = {
     forbidden: [
       'standing upright on steep pitch without visible safety line',
       'feet hanging over the gutter edge',
-      'full pallet of tiles balanced on the slope',
+      'worker standing directly on the gutter',
+      'worker suspended or leaning above the gutter without platform',
       'free-standing ladder propped against tiles without ridge hook',
+      'ladder used as a horizontal platform across the pitch',
+      'unsupported ladder lying across the roof',
       'improvised plank platform balanced on tiles',
+      'rope without a visible certified anchor point',
+      'worker body floating or feet off the roof surface',
     ],
+    scene_always_exclude: [
+      'full industrial pallet of tiles on pitched roof',
+      'unsecured tile pallet on slope',
+      'heavy crate resting directly on roof battens',
+      'loose stack of tiles near roof edge',
+      'materials positioned above doorway or pedestrian area',
+      'large heavy load balanced on roof pitch',
+    ],
+    site_material_rule: 'a small manually transportable stack of approximately 5–12 tiles placed on a secured roof material bracket or scaffold platform, well away from the roof edge — no industrial pallet on the pitch',
     presence_indirect: [
-      'roof ladder hooked over the ridge — no one on it, tile stack halfway up the pitch',
+      'roof ladder hooked over the ridge — no one on it, small tile stack on a material bracket halfway up the pitch',
       'safety line rigged across the pitch with the lanyard hanging free — no roofer visible',
       'mortar bucket hoisted to the ridge level, pulley rope tied to the chimney — no worker on roof',
     ],
@@ -11072,6 +11086,10 @@ const WORKER_SCENE_RULES = {
       'climber in the tree with no visible rope or harness',
       'chainsaw held with one hand above shoulder height',
       'person balancing on a branch without safety attachment',
+      'unstable ladder propped against the tree trunk with no foot brace',
+      'rope crossing through or around the climber body in an impossible configuration',
+      'climber with feet or legs dangling without support point',
+      'person positioned in the direct fall path of a branch mid-cut',
     ],
     presence_indirect: [
       'climbing rope rigged through the tree crown with a throw bag on the ground — no climber visible',
@@ -11321,6 +11339,15 @@ function _buildWorkerDesc(key, n, seed) {
 function _validateWorkerScene(jsonStr) {
   let obj;
   try { obj = JSON.parse(jsonStr); } catch { return { ok: true, issues: [], fixedStr: jsonStr }; }
+
+  // Apply scene_always_exclude regardless of presence (materials, structural rules)
+  const _earlyRules = WORKER_SCENE_RULES[obj._matched_key];
+  if (_earlyRules?.scene_always_exclude?.length) {
+    const patched = Object.assign({}, obj);
+    patched.exclude = [...new Set([...(patched.exclude || []), ..._earlyRules.scene_always_exclude])];
+    jsonStr = JSON.stringify(patched);
+    obj = patched;
+  }
 
   if (obj.var_presence !== 'workers') return { ok: true, issues: [], fixedStr: jsonStr };
 
@@ -11683,6 +11710,12 @@ const PromptBuilder = {
       (() => {
         const items = (s.site_details || []).slice(0, 2);
         return items.length ? `Scattered nearby: ${items.join('; ')}.` : '';
+      })(),
+
+      // 10b — Per-métier material safety rule (WORKER_SCENE_RULES.site_material_rule)
+      (() => {
+        const rule = WORKER_SCENE_RULES[s._matched_key]?.site_material_rule;
+        return rule ? `On-site materials: ${rule}.` : '';
       })(),
 
       // 11 — Camera viewpoint variation (VARIATION_ENGINE)
@@ -12184,6 +12217,270 @@ function slugify(str) {
     .slice(0, 40);
 }
 
+// ─── Safety image gate ────────────────────────────────────────────────────────
+
+const SAFETY_CHECK_RULES = {
+  toiture:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: full industrial pallet on pitched roof; worker feet/body over gutter with no platform; worker on roof with no harness/rope/roof-hook; ladder used as horizontal platform; heavy unsecured stack near roof edge; materials above a doorway. Default safe:true if in doubt.",
+  nettoyage_toiture:    "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: worker on wet moss-covered tiles without harness; leaning over gutter edge without guardrail; bare hands on chemical-treated surface without gloves; open spray nozzle aimed at face. Default safe:true if in doubt.",
+  nettoyage_gouttieres: "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: ladder leaning directly against the gutter channel without standoff; person reaching far sideways past their center of gravity off the ladder; person standing on the top two rungs. Default safe:true if in doubt.",
+  etancheite:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person balanced on parapet coping; open-flame torch near a loose membrane edge; roll blocking the only roof access hatch; person within 2 m of flat roof edge with no harness. Default safe:true if in doubt.",
+  ravalement:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person leaning out past scaffold guardrail over the void; scaffold platform above 2 m with no guardrail; unsupported plank bridging two scaffold frames. Default safe:true if in doubt.",
+  // peinture — skipped: indoor low-risk, forbidden[] covers edge cases
+  // nettoyage — skipped: ground-level, low visual safety signal
+  // carrelage — skipped: floor-level, blade guard already in prompt rules
+  // débarras  — skipped: two-person carry enforced by max_workers + forbidden[]
+  'élagage':            "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: climber in tree with no rope or harness; person standing directly under a branch being cut; climber feet dangling unsupported; chainsaw in obviously impossible posture. Default safe:true if in doubt.",
+  abattage:             "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person in the direct fall zone in front of the notch cut; chainsaw cutting overhead; person on far side of trunk during felling. Default safe:true if in doubt.",
+  'maçonnerie':         "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person balanced on top of unfinished wall above 1.5 m without scaffold; single block being lifted overhead without mechanical aid. Default safe:true if in doubt.",
+  vitrier:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: bare hands on large glass pane edges without cut-resistant gloves; glass pane balanced upright against a wall with no support cradle; broken glass on the floor with bare feet visible. Default safe:true if in doubt.",
+  terrassement:         "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: person standing inside the open trench directly under the excavator bucket; person between the rotating excavator cab and the trench edge; machine operating near a structure with no ground spotter visible. Default safe:true if in doubt.",
+  paysagiste:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: mower operating on a visibly steep slope with the operator at tipping risk; chainsaw used without visible leg protection; person on an unstable household stepladder pruning a tall tree. Default safe:true if in doubt.",
+  depannage_auto:       "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"issues\":[]}. CRITICAL if you clearly see: technician on the live carriageway lane with no warning triangle visible; vehicle lifted with no visible axle stand or support; person between the vehicle and traffic; cables crossing the carriageway. Default safe:true if in doubt.",
+};
+
+async function _checkImageSafety(b64, matchedKey, apiKey) {
+  const prompt = SAFETY_CHECK_RULES[matchedKey];
+  if (!prompt) return { safe: true };
+  try {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: [
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}`, detail: 'low' } },
+          { type: 'text', text: prompt },
+        ]}],
+        response_format: { type: 'json_object' },
+      })
+    });
+    if (!resp.ok) return { safe: null, checkFailed: true };
+    const data = await resp.json();
+    const parsed = JSON.parse(data.choices[0].message.content);
+    if (parsed.safe == null) return { safe: null, checkFailed: true };
+    return parsed;
+  } catch { return { safe: null, checkFailed: true }; }
+}
+
+// ─── Per-image scene build + API call (extracted for reuse by batch queue) ────
+
+async function _generateSingleImage(task, key) {
+  const { jsonScene, presencePlan, i, slug, _planBase } = task;
+
+  const realistScene = _applySiteRealism(jsonScene, i);
+  const variedScene  = _applyVariation(realistScene, i, presencePlan[i]);
+  const workerResult = _validateWorkerScene(variedScene);
+  if (workerResult.issues?.length)
+    console.warn(`[WorkerScene] ${_planBase._matched_key} #${i}: ${workerResult.issues.join(' | ')}`);
+
+  const _qObj   = JSON.parse(workerResult.fixedStr);
+  const _qCheck = _validateQuality(_qObj);
+  let finalScene;
+  if (_qCheck.ok) {
+    finalScene = workerResult.fixedStr;
+  } else if (_qCheck.fixedObj) {
+    finalScene = JSON.stringify(_qCheck.fixedObj);
+    console.warn(`[QualityGate] patched — ${_qObj._matched_key}: ${_qCheck.issues.join(' | ')}`);
+  } else {
+    finalScene = jsonScene;
+    console.warn(`[QualityGate] fallback — ${_qObj._matched_key}: ${_qCheck.issues.join(' | ')}`);
+  }
+
+  const prompt = _USE_PROMPT_BUILDER
+    ? PromptBuilder.build(finalScene)
+    : await _rewritePromptWithGPT(finalScene, key);
+
+  let resp = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'gpt-image-2', prompt, n: 1, size: '1536x1024', quality: 'high', output_format: 'jpeg', output_compression: 85 })
+  });
+  if (!resp.ok) {
+    const errBody = await resp.json();
+    const errMsg  = errBody.error?.message || '';
+    if (errMsg.includes('does not exist') || errMsg.includes('not found') || resp.status === 404) {
+      resp = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024', quality: 'high', output_format: 'jpeg', output_compression: 85 })
+      });
+    }
+    if (!resp.ok) {
+      const err2 = await resp.json();
+      throw new Error(err2.error?.message || resp.statusText);
+    }
+  }
+
+  const data     = await resp.json();
+  const item     = data.data[0];
+  const b64      = item.b64_json || null;
+  const imgUrl   = item.url     || null;
+  const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
+  const src      = b64 ? `data:image/jpeg;base64,${b64}` : imgUrl;
+
+  // Visual safety gate — only for métiers with a SAFETY_CHECK_RULES entry and b64 available
+  if (b64 && SAFETY_CHECK_RULES[_planBase._matched_key]) {
+    const safety = await _checkImageSafety(b64, _planBase._matched_key, key);
+    if (safety.checkFailed) {
+      console.warn(`[SafetyGate] checker unavailable — ${_planBase._matched_key} #${i}`);
+      return { safetyCheckFailed: true, b64, imgUrl, filename, src };
+    }
+    if (!safety.safe && safety.severity === 'critical') {
+      console.warn(`[SafetyGate] rejected — ${_planBase._matched_key} #${i}: ${(safety.issues || []).join(' | ')}`);
+      return { rejectedSafety: true, safetyIssues: safety.issues || [], b64, imgUrl, filename, src };
+    }
+  }
+
+  return { rejectedSafety: false, b64, imgUrl, filename, src };
+}
+
+// ─── Concurrency queue — max 3 simultaneous, max 2 retries each ──────────────
+
+async function _runImageBatch(tasks, key, progressBar, progressLbl) {
+  const total = tasks.length;
+  const CONCURRENCY = 3;
+  const MAX_RETRIES = 2;
+  let doneCount = 0;
+  let cursor    = 0;
+
+  const updateProgress = () => {
+    const ok   = tasks.filter(t => t.status === 'success').length;
+    const fail = tasks.filter(t => ['failed', 'rejected_safety', 'safety_check_failed'].includes(t.status)).length;
+    if (progressBar) progressBar.style.width = Math.round(doneCount / total * 100) + '%';
+    if (progressLbl) progressLbl.textContent =
+      `${ok} générée(s)${fail ? ` · ${fail} échec(s)` : ''} — ${doneCount}/${total}`;
+  };
+  updateProgress();
+
+  const processTask = async (task) => {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        task.status = 'retrying';
+        updateProgress();
+        await new Promise(r => setTimeout(r, attempt * 2500));
+      } else {
+        task.status = 'generating';
+        updateProgress();
+      }
+      try {
+        const result = await _generateSingleImage(task, key);
+        if (result.safetyCheckFailed && attempt < MAX_RETRIES) {
+          task.error = 'safety_check_failed';
+          continue;
+        }
+        if (result.safetyCheckFailed) {
+          task.status = 'safety_check_failed';
+          task.error  = 'safety checker unavailable after retries';
+          break;
+        }
+        if (result.rejectedSafety && attempt < MAX_RETRIES) {
+          task.error = `safety: ${result.safetyIssues.slice(0, 2).join(', ')}`;
+          continue;
+        }
+        if (result.rejectedSafety) {
+          task.status = 'rejected_safety';
+          task.error  = `safety: ${result.safetyIssues.slice(0, 2).join(', ')}`;
+          break;
+        }
+        task.status = 'success';
+        task.result = result;
+        task.row.images.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
+        _generatedImages.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
+        appendImgCard(result.src, result.filename, task.row.fiche || task.row.travaux);
+        break;
+      } catch (e) {
+        task.error = e.message;
+        if (attempt === MAX_RETRIES) task.status = 'failed';
+      }
+    }
+    doneCount++;
+    updateProgress();
+    const rowTasks = tasks.filter(t => t.row === task.row);
+    if (rowTasks.every(t => ['success', 'failed', 'rejected_safety', 'safety_check_failed'].includes(t.status))) {
+      task.row.status = rowTasks.some(t => t.status === 'success') ? 'done' : 'error';
+      renderImgPlanning();
+    }
+  };
+
+  const runWorker = async () => {
+    while (cursor < tasks.length) {
+      const task = tasks[cursor++];
+      await processTask(task);
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, total) }, () => runWorker()));
+}
+
+// ─── Summary UI ───────────────────────────────────────────────────────────────
+
+function _showGenerationSummary(total, succeedCount, failedTasks, key) {
+  _hideSummary();
+  const el = document.createElement('div');
+  el.id = 'img-gen-summary';
+  el.className = 'img-gen-summary';
+
+  if (!failedTasks.length) {
+    el.innerHTML = `<span class="img-gen-ok">✓ ${total} / ${total} images générées</span>`;
+  } else {
+    const failLines = failedTasks.map(t => {
+      const label  = _escHtml((t.row.fiche || t.row.travaux) + ' #' + (t.i + 1));
+      const reason = t.error ? ' — ' + _escHtml(t.error.slice(0, 80)) : '';
+      return `<li>${label}${reason}</li>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="img-gen-summary-row">
+        <span class="img-gen-ok">${succeedCount} générée(s)</span>
+        <span class="img-gen-fail"> · ${failedTasks.length} échec(s)</span>
+        <span class="img-gen-total"> sur ${total} demandée(s)</span>
+      </div>
+      <ul class="img-gen-fail-list">${failLines}</ul>
+      <button class="btn btn-secondary img-gen-retry" onclick="_retryFailedImages()">
+        ↺ Relancer les ${failedTasks.length} échec(s)
+      </button>`;
+    window._lastFailedTasks = failedTasks;
+    window._lastApiKey      = key;
+  }
+
+  const grid = document.getElementById('img-results-grid');
+  grid.parentNode.insertBefore(el, grid);
+}
+
+function _hideSummary() {
+  const el = document.getElementById('img-gen-summary');
+  if (el) el.remove();
+  window._lastFailedTasks = null;
+}
+
+async function _retryFailedImages() {
+  const key   = window._lastApiKey || document.getElementById('openai-key')?.value.trim();
+  const tasks = window._lastFailedTasks;
+  if (!key || !tasks?.length) return;
+
+  tasks.forEach(t => { t.status = 'pending'; t.attempts = 0; t.error = null; t.result = null; });
+  _hideSummary();
+
+  const progressBar = document.getElementById('img-progress-bar');
+  const progressLbl = document.getElementById('img-progress-label');
+  document.getElementById('img-progress-wrap').style.display = 'block';
+  document.getElementById('btn-generate-all').disabled = true;
+
+  await _runImageBatch(tasks, key, progressBar, progressLbl);
+
+  document.getElementById('btn-generate-all').disabled = false;
+  const succeeded = tasks.filter(t => t.status === 'success');
+  const failed    = tasks.filter(t => ['failed', 'rejected_safety', 'safety_check_failed'].includes(t.status));
+  if (_generatedImages.length > 0) {
+    const btn = document.getElementById('btn-download-zip');
+    btn.textContent = _generatedImages.length === 1 ? "↓ Télécharger l'image" : '↓ Télécharger le ZIP';
+    btn.style.display = 'inline-flex';
+  }
+  _showGenerationSummary(tasks.length, succeeded.length, failed, key);
+}
+
+// ─── Main entry point ─────────────────────────────────────────────────────────
+
 async function generateAllImages() {
   const key = document.getElementById('openai-key')?.value.trim();
   if (!key) { alert('Renseigne ta clé API OpenAI (sk-...) en haut de la page.'); return; }
@@ -12194,159 +12491,67 @@ async function generateAllImages() {
   _generatedImages = [];
   document.getElementById('img-results-grid').innerHTML = '';
   document.getElementById('btn-download-zip').style.display = 'none';
+  _hideSummary();
 
-  const total = rows.reduce((s, r) => s + (parseInt(r.nb) || 1), 0);
-  let done = 0;
+  // ── Phase 1: build all image tasks synchronously ──────────────────────────
+  const tasks = [];
+  for (const row of rows) {
+    row.status = 'running';
+    row.images = [];
 
+    const nb        = parseInt(row.nb) || 1;
+    const baseScene = buildDallePromptV2(row);
+    const slug      = slugify(row.fiche || row.travaux);
+
+    const sceneIssues = _validateScene(baseScene);
+    if (sceneIssues.length) {
+      row.status = 'error';
+      console.warn('[scene validation]', sceneIssues);
+      continue;
+    }
+
+    let jsonScene = baseScene;
+    if (_USE_GPT_SCENE_JSON) {
+      jsonScene = await _generateSceneJSON(baseScene, key);
+    }
+
+    const _planBase    = JSON.parse(jsonScene);
+    const _planSeed    = _hashSeed(`${_planBase._matched_key || ''}${_planBase._matched_service || ''}plan`);
+    const presencePlan = _buildPresencePlan(nb, _planBase.state_level, _planBase._matched_key, _planSeed);
+    console.log(`[PresencePlan] ${JSON.stringify({ key: _planBase._matched_key, state: _planBase.state_level, imageCount: nb, plan: presencePlan })}`);
+
+    for (let i = 0; i < nb; i++) {
+      tasks.push({ row, i, nb, jsonScene, presencePlan, slug, _planBase, status: 'pending', attempts: 0, result: null, error: null });
+    }
+  }
+  renderImgPlanning();
+
+  const total = tasks.length;
+  if (total === 0) { document.getElementById('btn-generate-all').disabled = false; return; }
+
+  // ── Phase 2: progress bar ─────────────────────────────────────────────────
   const progressWrap = document.getElementById('img-progress-wrap');
   const progressBar  = document.getElementById('img-progress-bar');
   const progressLbl  = document.getElementById('img-progress-label');
   progressWrap.style.display = 'block';
-
-  const updateProgress = () => {
-    const pct = total > 0 ? Math.round(done / total * 100) : 0;
-    progressBar.style.width = pct + '%';
-    progressLbl.textContent = `${done} / ${total} images générées`;
-  };
-  updateProgress();
-
   document.getElementById('btn-generate-all').disabled = true;
 
-  for (const row of rows) {
-    row.status = 'running';
-    row.images = [];
-    renderImgPlanning();
+  // ── Phase 3: concurrent queue (3 parallel, 2 retries each) ───────────────
+  await _runImageBatch(tasks, key, progressBar, progressLbl);
 
-    const nb         = parseInt(row.nb) || 1;
-    const baseScene  = buildDallePromptV2(row);
-    const slug       = slugify(row.fiche || row.travaux);
-
-    // Validate scene before sending to GPT
-    const sceneIssues = _validateScene(baseScene);
-    if (sceneIssues.length) {
-      row.status = 'error';
-      renderImgPlanning();
-      console.warn('[scene validation]', sceneIssues);
-      done += nb;
-      updateProgress();
-      continue;
-    }
-
-    // GPT refinement (once per row, outside image loop)
-    let jsonScene = baseScene;
-    if (_USE_GPT_SCENE_JSON) {
-      progressLbl.textContent = `Optimisation scène ${done + 1}/${total}…`;
-      jsonScene = await _generateSceneJSON(baseScene, key);
-    }
-
-    // Build deterministic presence plan for this batch — guarantees target distribution
-    const _planBase    = JSON.parse(jsonScene);
-    const _planSeed    = _hashSeed(`${_planBase._matched_key || ''}${_planBase._matched_service || ''}plan`);
-    const presencePlan = _buildPresencePlan(nb, _planBase.state_level, _planBase._matched_key, _planSeed);
-    console.log(`[PresencePlan] ${JSON.stringify({ key: _planBase._matched_key, service: _planBase._matched_service, state: _planBase.state_level, imageCount: nb, plan: presencePlan })}`);
-
-    let rowOk = true;
-    for (let i = 0; i < nb; i++) {
-      try {
-        // Step 1: apply SITE_REALISM (varies photo_defects + tools per image)
-        const realistScene = _applySiteRealism(jsonScene, i);
-
-        // Step 1b: apply VARIATION_ENGINE — presencePlan[i] ensures batch-level distribution
-        const variedScene  = _applyVariation(realistScene, i, presencePlan[i]);
-
-        // Step 1c: real worker coherence validator — issues logged, fallback-to-none if unsafe
-        const workerResult = _validateWorkerScene(variedScene);
-        if (workerResult.issues?.length)
-          console.warn(`[WorkerScene] ${_planBase._matched_key} #${i}: ${workerResult.issues.join(' | ')}`);
-
-        // Step 1d: quality gate — validate and auto-patch or fallback
-        const _qObj    = JSON.parse(workerResult.fixedStr);
-        const _qCheck  = _validateQuality(_qObj);
-        let   finalScene;
-        if (_qCheck.ok) {
-          finalScene = workerResult.fixedStr;
-        } else if (_qCheck.fixedObj) {
-          finalScene = JSON.stringify(_qCheck.fixedObj);
-          console.warn(`[QualityGate] patched — ${_qObj._matched_key}: ${_qCheck.issues.join(' | ')}`);
-        } else {
-          finalScene = jsonScene;
-          console.warn(`[QualityGate] fallback to base scene — ${_qObj._matched_key}: ${_qCheck.issues.join(' | ')}`);
-        }
-
-        // Step 2: build image prompt — PromptBuilder (deterministic) or GPT rewrite (fallback)
-        let prompt;
-        if (_USE_PROMPT_BUILDER) {
-          prompt = PromptBuilder.build(finalScene);
-        } else {
-          progressLbl.textContent = `Planification scène ${done + 1}/${total}…`;
-          prompt = await _rewritePromptWithGPT(finalScene, key);
-        }
-
-        // Step 2: generate image
-        progressLbl.textContent = `Génération image ${done + 1}/${total}…`;
-        let resp = await fetch('https://api.openai.com/v1/images/generations', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'gpt-image-2',
-            prompt,
-            n: 1,
-            size: '1536x1024',
-            quality: 'high',
-            output_format: 'jpeg',
-            output_compression: 85
-          })
-        });
-        if (!resp.ok) {
-          const errBody = await resp.json();
-          const errMsg  = errBody.error?.message || '';
-          if (errMsg.includes('does not exist') || errMsg.includes('not found') || resp.status === 404) {
-            // Fallback gpt-image-1 si gpt-image-2 indisponible
-            resp = await fetch('https://api.openai.com/v1/images/generations', {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1024', quality: 'high', output_format: 'jpeg', output_compression: 85 })
-            });
-          }
-          if (!resp.ok) {
-            const err2 = await resp.json();
-            throw new Error(err2.error?.message || resp.statusText);
-          }
-        }
-
-        const data     = await resp.json();
-        const item     = data.data[0];
-        const b64      = item.b64_json || null;
-        const imgUrl   = item.url  || null;
-        const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
-        const src      = b64 ? `data:image/jpeg;base64,${b64}` : imgUrl;
-
-        row.images.push({ b64, url: imgUrl, filename });
-        _generatedImages.push({ b64, url: imgUrl, filename });
-        appendImgCard(src, filename, row.fiche || row.travaux);
-
-        done++;
-        updateProgress();
-      } catch (e) {
-        rowOk = false;
-        console.error('DALL-E error:', e);
-        done++;
-        updateProgress();
-      }
-
-      if (i < nb - 1) await new Promise(r => setTimeout(r, 1200));
-    }
-
-    row.status = rowOk ? 'done' : 'error';
-    renderImgPlanning();
-  }
-
+  // ── Phase 4: finalize + summary ───────────────────────────────────────────
   document.getElementById('btn-generate-all').disabled = false;
-  if (_generatedImages.length > 0) {
+
+  const succeeded = tasks.filter(t => t.status === 'success');
+  const failed    = tasks.filter(t => ['failed', 'rejected_safety', 'safety_check_failed'].includes(t.status));
+
+  if (succeeded.length > 0) {
     const btn = document.getElementById('btn-download-zip');
-    btn.textContent = _generatedImages.length === 1 ? '↓ Télécharger l\'image' : '↓ Télécharger le ZIP';
+    btn.textContent = succeeded.length === 1 ? "↓ Télécharger l'image" : '↓ Télécharger le ZIP';
     btn.style.display = 'inline-flex';
   }
+
+  _showGenerationSummary(total, succeeded.length, failed, key);
 }
 
 function appendImgCard(src, filename, label) {
