@@ -12020,7 +12020,7 @@ function _escHtml(s) {
 
 function addImgRow() {
   const id = ++_imgCounter;
-  _imgRows.push({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
+  _imgRows.unshift({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
   renderImgPlanning();
 }
 
