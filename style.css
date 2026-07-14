@@ -1159,6 +1159,31 @@ datalist { display: none; }
 }
 .img-result-card-dl:hover { color: #a5b4fc; }
 
+/* ── GENERATION SUMMARY ── */
+.img-gen-summary {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  font-size: 0.875rem;
+}
+.img-gen-summary-row { margin-bottom: 0.4rem; }
+.img-gen-ok   { color: #4ade80; font-weight: 600; }
+.img-gen-fail { color: #f87171; font-weight: 600; }
+.img-gen-total { color: #94a3b8; }
+.img-gen-fail-list {
+  margin: 0.4rem 0 0.6rem 1.2rem;
+  padding: 0;
+  color: #f87171;
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+.img-gen-retry {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.9rem;
+}
+
 /* ── GMAILS FILTER BAR ── */
 .gmail-toolbar {
   display: flex;
