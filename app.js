@@ -11095,7 +11095,7 @@ const WORKER_SCENE_RULES = {
     safety_required: ['chainsaw chaps clearly visible on the legs of the operator', 'arborist helmet with visor', 'non-slip chainsaw work boots'],
     forbidden: [
       'person standing in the planned fall zone in front of the notch cut',
-      'chainsaw cutting overhead above the operator's shoulder',
+      "chainsaw cutting overhead above the operator's shoulder",
       'person on the far side of the trunk from the operator during the felling cut',
     ],
     presence_indirect: [
@@ -11166,7 +11166,7 @@ const WORKER_SCENE_RULES = {
       'sitting back on heels checking the tile level with a spirit level — in profile',
     ],
     access: ['floor level — no elevated access required'],
-    safety_required: ['knee pads visible on the tiler's knees', 'cut-resistant gloves near the tile cutter'],
+    safety_required: ["knee pads visible on the tiler's knees", 'cut-resistant gloves near the tile cutter'],
     forbidden: [
       'person kneeling on freshly laid tiles before adhesive cure time',
       'tile cutter left unguarded with blade exposed',
