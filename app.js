@@ -130,6 +130,11 @@ async function init() {
   if (savedId)  { const el = document.getElementById('sheets-id');      if (el) el.value = savedId; }
   const savedOpenAI = localStorage.getItem('openai_key');
   if (savedOpenAI) { const el = document.getElementById('openai-key'); if (el) el.value = savedOpenAI; }
+  const savedCount = parseInt(localStorage.getItem('gmb_img_count') || '0', 10);
+  if (savedCount > 0) {
+    const el = document.getElementById('img-gen-counter');
+    if (el) el.textContent = `${savedCount} image${savedCount > 1 ? 's' : ''} générée${savedCount > 1 ? 's' : ''} au total`;
+  }
   if (_imgRows.length === 0) addImgRow(); // Ligne vide par défaut dans le planning
 
   const yearSel = document.getElementById('dash-year');
@@ -12261,6 +12266,12 @@ const _TERMINAL_STATUSES = new Set([
   IMAGE_TASK_STATUS.REJECTED_SAFETY, IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED,
 ]);
 function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function _trackGeneration() {
+  const n = (parseInt(localStorage.getItem('gmb_img_count') || '0', 10)) + 1;
+  localStorage.setItem('gmb_img_count', n);
+  const el = document.getElementById('img-gen-counter');
+  if (el) el.textContent = `${n} image${n > 1 ? 's' : ''} générée${n > 1 ? 's' : ''} au total`;
+}
 async function _fetchWithTimeout(url, options = {}, timeoutMs = 120000) {
   const controller = new AbortController();
   const timeoutId  = setTimeout(() => controller.abort(), timeoutMs);
@@ -12455,6 +12466,7 @@ async function _runImageBatch(tasks, key, progressBar, progressLbl) {
           task.row.images.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
           _generatedImages.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
           appendImgCard(result.src, result.filename, task.row.fiche || task.row.travaux);
+          _trackGeneration();
           return;
 
         } catch (e) {
