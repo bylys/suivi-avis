@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE / outils
+.claude/
+
+# Données sensibles
+*.csv
+*.json.bak
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
