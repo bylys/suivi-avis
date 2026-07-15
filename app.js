@@ -14184,6 +14184,8 @@ Object.defineProperty(window, '__IMAGE_GEN_LEGACY_CONFIG__', {
     CAPTURE_DEFECTS,
     CAPTURE_DEFECT_GROUPS,
     PROFESSIONAL_VEHICLE_RULES,
+    WORK_SCENES,
+    SITE_REALISM,
   }),
   writable: false,
   configurable: false,
@@ -14244,6 +14246,115 @@ async function _runModuleParityTests() {
   return allDiffs;
 }
 window._runModuleParityTests = _runModuleParityTests;
+
+// window._runServiceParityTests — Phase 2 parity test for WORK_SCENES + SITE_REALISM.
+// T43: deep parity. T44: routing parity for 172 sub-services. T45: assembly integrity.
+async function _runServiceParityTests() {
+  function _npFn(v) {
+    if (v instanceof RegExp) return { __type: 'RegExp', source: v.source, flags: v.flags };
+    if (Array.isArray(v)) return v.map(_npFn);
+    if (v !== null && typeof v === 'object') {
+      const out = {};
+      for (const k of Object.keys(v)) out[k] = _npFn(v[k]);
+      return out;
+    }
+    return v;
+  }
+  function _dd(a, b, path) {
+    const na = _npFn(a), nb = _npFn(b);
+    if (JSON.stringify(na) === JSON.stringify(nb)) return [];
+    if (na !== null && typeof na === 'object' && !Array.isArray(na) &&
+        nb !== null && typeof nb === 'object' && !Array.isArray(nb)) {
+      const keys = new Set([...Object.keys(na), ...Object.keys(nb)]);
+      const diffs = [];
+      for (const k of keys) diffs.push(..._dd(a[k], b[k], path ? `${path}.${k}` : k));
+      return diffs;
+    }
+    if (Array.isArray(na) && Array.isArray(nb)) {
+      if (na.length !== nb.length) return [`${path}: length ${na.length} ≠ ${nb.length}`];
+      const diffs = [];
+      for (let i = 0; i < na.length; i++) diffs.push(..._dd(a[i], b[i], `${path}[${i}]`));
+      return diffs;
+    }
+    return [`${path}: expected ${JSON.stringify(nb)} received ${JSON.stringify(na)}`];
+  }
+
+  const svcMod = await import('./src/image-generation/services/index.js');
+  const modWS = svcMod.WORK_SCENES;
+  const modSR = svcMod.SITE_REALISM;
+  const assertIntegrity = svcMod.assertServiceRegistriesIntegrity;
+  const leg = window.__IMAGE_GEN_LEGACY_CONFIG__;
+
+  // --- T43: deep structural parity ---
+  const t43Diffs = [
+    ..._dd(modWS, leg.WORK_SCENES, 'WORK_SCENES'),
+    ..._dd(modSR, leg.SITE_REALISM, 'SITE_REALISM'),
+  ];
+
+  // --- T44: routing parity for all 172 sub-services ---
+  function _normSvc44(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+  function _routePool(sr, metier, normSvc) {
+    const entry = sr[metier];
+    if (!entry) return { type: 'missing' };
+    let realism = entry;
+    let bucket = 'direct';
+    if (entry._dispatch === 'service') {
+      bucket = (typeof _serviceGroup === 'function') ? _serviceGroup(normSvc) : 'default';
+      realism = entry[bucket] || entry.default || null;
+    } else if (entry._dispatch === 'contexte') {
+      realism = entry.default || null;
+      bucket = 'contexte_default';
+    }
+    if (!realism || !Array.isArray(realism.scenarios)) return { type: 'no_scenarios', bucket };
+    const targeted = realism.scenarios.map((s, i) => ({ i, has_for: !!s._for, matches: s._for ? new RegExp(s._for, 'i').test(normSvc) : false })).filter(x => x.matches);
+    const poolType = targeted.length ? 'targeted' : 'fallback';
+    const forPatterns = targeted.map(x => realism.scenarios[x.i]._for);
+    return { type: poolType, bucket, targetedCount: targeted.length, forPatterns };
+  }
+  const t44Diffs = [];
+  let t44Total = 0;
+  for (const [metier, cat] of Object.entries(SERVICE_CATALOG)) {
+    for (const svc of cat.services) {
+      t44Total++;
+      const normSvc = _normSvc44(svc);
+      const legR = _routePool(leg.SITE_REALISM, metier, normSvc);
+      const modR = _routePool(modSR, metier, normSvc);
+      if (JSON.stringify(legR) !== JSON.stringify(modR)) {
+        t44Diffs.push(`${metier}/"${svc}": leg=${JSON.stringify(legR)} mod=${JSON.stringify(modR)}`);
+      }
+    }
+  }
+
+  // --- T45: assembly integrity ---
+  let t45 = { ok: false, error: 'not run' };
+  try { t45 = assertIntegrity(); } catch(e) { t45 = { ok: false, error: e.message }; }
+
+  // --- Stats for T43 report ---
+  function _countSRScenarios(obj, counts) {
+    if (!obj || typeof obj !== 'object') return;
+    if (Array.isArray(obj.scenarios)) {
+      counts.scenarios += obj.scenarios.length;
+      for (const s of obj.scenarios) if (s._for) counts.fors++;
+    }
+    for (const k of Object.keys(obj)) {
+      if (!['scenarios','tools','protections','chantier_details','_trigger_service'].includes(k) && !k.startsWith('_')) {
+        if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) _countSRScenarios(obj[k], counts);
+      }
+    }
+  }
+  const counts = { scenarios: 0, fors: 0 };
+  for (const v of Object.values(leg.SITE_REALISM)) _countSRScenarios(v, counts);
+
+  return {
+    t43: { diffs: t43Diffs, wsKeys: Object.keys(modWS).length, srKeys: Object.keys(modSR).length },
+    t44: { diffs: t44Diffs, total: t44Total },
+    t45,
+    stats: { srScenarios: counts.scenarios, srForPatterns: counts.fors },
+  };
+}
+window._runServiceParityTests = _runServiceParityTests;
 
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
@@ -15052,6 +15163,29 @@ async function _runLocalTests() {
     else
       fail('T42: Legacy/module parity', `${diffs.length} différence(s): ${diffs.slice(0, 3).join('; ')}`);
   } catch(e) { fail('T42: Legacy/module parity', e.message); }
+
+  // T43 / T44 / T45: parité WORK_SCENES + SITE_REALISM, routage, intégrité assemblage
+  let _svcParityResult = null;
+  try { _svcParityResult = await window._runServiceParityTests(); } catch(e) {
+    fail('T43: WORK_SCENES + SITE_REALISM deep parity', e.message);
+    fail('T44: Routing parity', e.message);
+    fail('T45: Assembly integrity', e.message);
+  }
+  if (_svcParityResult) {
+    const { t43, t44, t45 } = _svcParityResult;
+    if (!t43.diffs.length)
+      pass(`T43: WORK_SCENES + SITE_REALISM deep parity — ${t43.wsKeys} WS keys, ${t43.srKeys} SR keys, 0 diffs`);
+    else
+      fail('T43: WORK_SCENES + SITE_REALISM deep parity', `${t43.diffs.length} diff(s): ${t43.diffs.slice(0, 3).join('; ')}`);
+    if (!t44.diffs.length)
+      pass(`T44: Routing parity — ${t44.total} sous-services, même pool sélectionné, 0 diffs`);
+    else
+      fail('T44: Routing parity', `${t44.diffs.length} diff(s) sur ${t44.total} services: ${t44.diffs.slice(0, 3).join('; ')}`);
+    if (t45.ok)
+      pass(`T45: Assembly integrity — ${t45.wsKeys} WS keys, ${t45.srKeys} SR keys, aucune collision`);
+    else
+      fail('T45: Assembly integrity', t45.error || 'assertServiceRegistriesIntegrity failed');
+  }
 
   // T41: pipeline mocké complet — [PENDING Phase 6+]
   // Vérifiera qu'une exécution complète avec fetch mocké produit les mêmes
