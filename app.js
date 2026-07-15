@@ -14170,6 +14170,81 @@ async function _debugFinalPrompt({ metier, travaux, contexte, etat, imageIndex =
   return { sceneObj, mockGPTOut, lockedPrompt };
 }
 
+// ─── Phase 1–4 parity bridge ─────────────────────────────────────────────────
+// Snapshot des constantes de config legacy pour tests de parité T42.
+// À supprimer lors du cutover final.
+// Ne pas faire dépendre le pipeline de production de cet objet.
+Object.defineProperty(window, '__IMAGE_GEN_LEGACY_CONFIG__', {
+  value: Object.freeze({
+    SERVICE_CATALOG,
+    LOCATION_RULES,
+    LOCATION_ALIASES,
+    CAMERA_COMPOSITIONS,
+    COMPOSITION_RULES_BY_METIER,
+    CAPTURE_DEFECTS,
+    CAPTURE_DEFECT_GROUPS,
+    PROFESSIONAL_VEHICLE_RULES,
+  }),
+  writable: false,
+  configurable: false,
+});
+
+// window._runModuleParityTests — Phase 1–4 parity test, callable standalone or from T42.
+// Uses dynamic import() to load ES modules then deep-compares against legacy constants.
+async function _runModuleParityTests() {
+  function _normalizeForParity(v) {
+    if (v instanceof RegExp) return { __type: 'RegExp', source: v.source, flags: v.flags };
+    if (Array.isArray(v)) return v.map(_normalizeForParity);
+    if (v !== null && typeof v === 'object') {
+      const out = {};
+      for (const k of Object.keys(v)) out[k] = _normalizeForParity(v[k]);
+      return out;
+    }
+    return v;
+  }
+  function _deepDiff(a, b, path) {
+    const na = _normalizeForParity(a);
+    const nb = _normalizeForParity(b);
+    if (JSON.stringify(na) === JSON.stringify(nb)) return [];
+    if (na !== null && typeof na === 'object' && !Array.isArray(na) &&
+        nb !== null && typeof nb === 'object' && !Array.isArray(nb)) {
+      const keys = new Set([...Object.keys(na), ...Object.keys(nb)]);
+      const diffs = [];
+      for (const k of keys) diffs.push(..._deepDiff(a[k], b[k], path ? `${path}.${k}` : k));
+      return diffs;
+    }
+    if (Array.isArray(na) && Array.isArray(nb)) {
+      if (na.length !== nb.length) return [`${path}: length ${na.length} ≠ ${nb.length}`];
+      const diffs = [];
+      for (let i = 0; i < na.length; i++) diffs.push(..._deepDiff(a[i], b[i], `${path}[${i}]`));
+      return diffs;
+    }
+    return [`${path}: expected ${JSON.stringify(nb)} received ${JSON.stringify(na)}`];
+  }
+  const [sc, loc, comp, def, veh] = await Promise.all([
+    import('./src/image-generation/config/service-catalog.js'),
+    import('./src/image-generation/config/locations.js'),
+    import('./src/image-generation/config/compositions.js'),
+    import('./src/image-generation/config/capture-defects.js'),
+    import('./src/image-generation/config/vehicles.js'),
+  ]);
+  const leg = window.__IMAGE_GEN_LEGACY_CONFIG__;
+  const checks = [
+    ['SERVICE_CATALOG',             sc.SERVICE_CATALOG,               leg.SERVICE_CATALOG],
+    ['LOCATION_RULES',              loc.LOCATION_RULES,               leg.LOCATION_RULES],
+    ['LOCATION_ALIASES',            loc.LOCATION_ALIASES,             leg.LOCATION_ALIASES],
+    ['CAMERA_COMPOSITIONS',         comp.CAMERA_COMPOSITIONS,         leg.CAMERA_COMPOSITIONS],
+    ['COMPOSITION_RULES_BY_METIER', comp.COMPOSITION_RULES_BY_METIER, leg.COMPOSITION_RULES_BY_METIER],
+    ['CAPTURE_DEFECTS',             def.CAPTURE_DEFECTS,              leg.CAPTURE_DEFECTS],
+    ['CAPTURE_DEFECT_GROUPS',       def.CAPTURE_DEFECT_GROUPS,        leg.CAPTURE_DEFECT_GROUPS],
+    ['PROFESSIONAL_VEHICLE_RULES',  veh.PROFESSIONAL_VEHICLE_RULES,   leg.PROFESSIONAL_VEHICLE_RULES],
+  ];
+  const allDiffs = [];
+  for (const [name, mod, legacy] of checks) allDiffs.push(..._deepDiff(mod, legacy, name));
+  return allDiffs;
+}
+window._runModuleParityTests = _runModuleParityTests;
+
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
 async function _runLocalTests() {
@@ -14969,12 +15044,14 @@ async function _runLocalTests() {
     else fail('T40: buildDallePromptV2 équivalence (stableJson)', t40Failures.slice(0, 3).join('; '));
   } catch(e) { fail('T40: buildDallePromptV2 équivalence', e.message); }
 
-  // T42: parité legacy/modules — [PENDING Phase 1]
-  // Comparera LOCATION_RULES, LOCATION_ALIASES, CAMERA_COMPOSITIONS, COMPOSITION_RULES_BY_METIER,
-  // CAPTURE_DEFECTS, CAPTURE_DEFECT_GROUPS, PROFESSIONAL_VEHICLE_RULES, SERVICE_CATALOG
-  // entre les versions legacy dans app.js et les exports ES modules dans src/image-generation/config/*.
-  // Les RegExp seront comparées via regex.source + regex.flags.
-  console.log('[TEST] PENDING — T42: Legacy/config module parity (Phase 1, non implémenté)');
+  // T42: parité legacy/modules — dynamic import() compare les 8 constantes de config
+  try {
+    const diffs = await window._runModuleParityTests();
+    if (!diffs.length)
+      pass('T42: Legacy/module parity — 8 constantes identiques (SERVICE_CATALOG, LOCATION_RULES, LOCATION_ALIASES, CAMERA_COMPOSITIONS, COMPOSITION_RULES_BY_METIER, CAPTURE_DEFECTS, CAPTURE_DEFECT_GROUPS, PROFESSIONAL_VEHICLE_RULES)');
+    else
+      fail('T42: Legacy/module parity', `${diffs.length} différence(s): ${diffs.slice(0, 3).join('; ')}`);
+  } catch(e) { fail('T42: Legacy/module parity', e.message); }
 
   // T41: pipeline mocké complet — [PENDING Phase 6+]
   // Vérifiera qu'une exécution complète avec fetch mocké produit les mêmes
