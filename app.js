@@ -14922,6 +14922,46 @@ async function _runLocalTests() {
       fail('T37: cross-family defect compatibility', `${t37Failures.length} failures: ${t37Failures.slice(0,3).join('; ')}`);
   } catch(e) { fail('T37: cross-family defect compatibility', e.message); }
 
+  // T39: intégrité module Phase 0 — les 7 fonctions exposées sur window via index.js
+  try {
+    const required = ['generateAllImages','addImgRow','downloadImagesZip','_retryFailedImages','_debugBatchPlan','_debugFinalPrompt','_runLocalTests'];
+    const missing  = required.filter(fn => typeof window[fn] !== 'function');
+    if (!missing.length) pass('T39: Phase 0 bridge — 7 fonctions exposées sur window');
+    else fail('T39: Phase 0 bridge', `manquantes: ${JSON.stringify(missing)}`);
+  } catch(e) { fail('T39: Phase 0 bridge', e.message); }
+
+  // T40: équivalence avant/après — buildDallePromptV2 stable sur 8 rows canoniques
+  // Les hashes de référence sont dans src/image-generation/debug/snapshots-t40.js
+  // (chargés en Phase 7+ ; ici on vérifie le hash en live et on compare à la constante inline)
+  try {
+    const REF = [
+      { metier:'toiture',        travaux:'nettoyage gouttières',      contexte:'maison',      etat:'encours', ville:'Paris', refHash:43274611   },
+      { metier:'toiture',        travaux:'Remplacement de tuiles',     contexte:'maison',      etat:'encours', ville:'Paris', refHash:3368667565  },
+      { metier:'plomberie',      travaux:'Débouchage canalisation',    contexte:'appartement', etat:'encours', ville:'Paris', refHash:2256962858  },
+      { metier:'plomberie',      travaux:"Fuite d'eau",                contexte:'maison',      etat:'debut',   ville:'Paris', refHash:3041528330  },
+      { metier:'électricité',    travaux:'Mise aux normes électrique', contexte:'appartement', etat:'encours', ville:'Paris', refHash:2218385127  },
+      { metier:'depannage_auto', travaux:'batterie à plat',            contexte:'domicile',    etat:'encours', ville:'Paris', refHash:1388930690  },
+      { metier:'peinture',       travaux:'Peinture intérieure',        contexte:'appartement', etat:'encours', ville:'Paris', refHash:3906628003  },
+      { metier:'maçonnerie',     travaux:'Réfection enduit façade',    contexte:'maison',      etat:'encours', ville:'Paris', refHash:590334808   },
+    ];
+    const t40Failures = [];
+    for (const ref of REF) {
+      const row  = { metier: ref.metier, travaux: ref.travaux, contexte: ref.contexte, etat: ref.etat, nb: 1, ville: ref.ville, fiche: '', meteo: 'auto', images: [] };
+      const json = buildDallePromptV2(row);
+      let hash = 0;
+      for (let i = 0; i < json.length; i++) hash = ((hash * 31) + json.charCodeAt(i)) >>> 0;
+      if (hash !== ref.refHash) t40Failures.push(`${ref.metier}/${ref.travaux}: hash ${hash} ≠ ref ${ref.refHash}`);
+    }
+    if (!t40Failures.length) pass('T40: buildDallePromptV2 stable — 8 hashes correspondent aux snapshots Phase 0');
+    else fail('T40: buildDallePromptV2 équivalence', t40Failures.slice(0, 3).join('; '));
+  } catch(e) { fail('T40: buildDallePromptV2 équivalence', e.message); }
+
+  // T41: pipeline mocké complet — [STUB Phase 6+]
+  // Vérifiera qu'une exécution complète avec fetch mocké produit les mêmes
+  // statuts finaux qu'avant le refactoring. Implémenté quand le pipeline sera
+  // migré dans src/image-generation/pipeline/.
+  pass('T41: pipeline mocké complet — STUB Phase 6+ (non implémenté)');
+
   console.log('[TEST] Done.');
 }
 

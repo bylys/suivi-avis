@@ -433,6 +433,11 @@
   </div>
 </div>
 
-<script src="app.js?v=7"></script>
+<script src="app.js?v=9"></script>
+<!-- Phase 0 : point d'entrée modulaire image-generation
+     type="module" est toujours différé (équivalent defer) — s'exécute
+     après app.js qui est un script classique en fin de <body>.
+     Ordre garanti : app.js → DOMContentLoaded → index.js module -->
+<script type="module" src="src/image-generation/index.js"></script>
 </body>
 </html>
