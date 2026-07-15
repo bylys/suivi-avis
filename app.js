@@ -4652,8 +4652,8 @@ function _getCityContext(ville) {
 // Deterministic JS alternative to GPT rewrite (Étape 2).
 // Assembles the final image prompt from the validated scene JSON.
 // _USE_PROMPT_BUILDER = false → falls back to _rewritePromptWithGPT.
-const _USE_PROMPT_BUILDER  = true;
-const _USE_GPT_SCENE_JSON  = true; // false = use buildDallePromptV2 as-is (no GPT refinement)
+const _USE_PROMPT_BUILDER  = false;
+const _USE_GPT_SCENE_JSON  = false; // false = use buildDallePromptV2 as-is (no GPT refinement)
 
 const PHOTO_STYLE_RULES = {
   opening:  'Authentic work-progress snapshot taken on a cheap Android smartphone'
@@ -12249,7 +12249,12 @@ function slugify(str) {
     .slice(0, 40);
 }
 
-// ─── Task-status infrastructure ───────────────────────────────────────────────
+// ─── Task-status infrastructure & call log ────────────────────────────────────
+let _generationRunActive  = false;   // lock: prevents two runs in parallel
+let _generationRunId      = 0;       // incremented per run; stale completions ignored in finally
+let _imgApiCallCount      = 0;       // image API calls (current batch)
+let _imgVisionCallCount   = 0;       // Vision API calls (current batch)
+let _imgTaskIdSeq         = 0;       // unique taskId across all runs
 
 const IMAGE_TASK_STATUS = {
   PENDING:             'pending',
@@ -12265,6 +12270,8 @@ const _TERMINAL_STATUSES = new Set([
   IMAGE_TASK_STATUS.SUCCESS, IMAGE_TASK_STATUS.FAILED,
   IMAGE_TASK_STATUS.REJECTED_SAFETY, IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED,
 ]);
+const MAX_IMAGE_ATTEMPTS            = 3;  // max image API calls per task
+const MAX_SAFETY_ATTEMPTS_PER_IMAGE = 3;  // max Vision retries before SAFETY_CHECK_FAILED
 function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 function _trackGeneration() {
   const n = (parseInt(localStorage.getItem('gmb_img_count') || '0', 10)) + 1;
@@ -12337,9 +12344,9 @@ async function _checkImageSafety(b64, matchedKey, apiKey) {
   } catch (e) { return { safe: null, checkFailed: true, reason: e.message }; }
 }
 
-// ─── Per-image scene build + API call (extracted for reuse by batch queue) ────
+// ─── Image-only generation (NO safety check — handled separately in processTask) ─
 
-async function _generateSingleImage(task, key) {
+async function _generateImageOnly(task, key, runId) {
   const { jsonScene, presencePlan, i, slug, _planBase } = task;
   const realistScene = _applySiteRealism(jsonScene, i);
   const variedScene  = _applyVariation(realistScene, i, presencePlan[i]);
@@ -12364,6 +12371,11 @@ async function _generateSingleImage(task, key) {
     ? PromptBuilder.build(finalScene)
     : await _rewritePromptWithGPT(finalScene, key);
 
+  const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
+  _imgApiCallCount++;
+  window._imgCallLog.push({ type: 'image', runId, taskId: task.taskId, metier: _planBase._matched_key, service: _planBase._matched_service, imageIndex: i, imageAttempt: task.imageAttempt, reason });
+  console.log(`[IMAGE REQUEST] runId=${runId} taskId=${task.taskId} metier=${_planBase._matched_key} service=${_planBase._matched_service} imageIndex=${i} imageAttempt=${task.imageAttempt} reason=${reason}`);
+
   let parsed;
   {
     const rawResp = await _fetchWithTimeout('https://api.openai.com/v1/images/generations', {
@@ -12384,41 +12396,25 @@ async function _generateSingleImage(task, key) {
       }, 180000);
       parsed = await _readResponseOnce(fallbackResp);
     }
-    if (!parsed.ok) {
-      throw new Error(parsed.data?.error?.message || `HTTP ${parsed.status}`);
-    }
+    if (!parsed.ok) throw new Error(parsed.data?.error?.message || `HTTP ${parsed.status}`);
   }
 
-  const item     = parsed.data?.data?.[0];
+  const item = parsed.data?.data?.[0];
   if (!item) throw new Error('No image returned by API');
   const b64      = item.b64_json || null;
   const imgUrl   = item.url     || null;
   const filename = `${slug}-${String(i + 1).padStart(2, '0')}.jpg`;
   const src      = b64 ? `data:image/jpeg;base64,${b64}` : imgUrl;
 
-  // Visual safety gate — only for métiers with a SAFETY_CHECK_RULES entry and b64 available
-  if (b64 && SAFETY_CHECK_RULES[_planBase._matched_key]) {
-    if (task) task.status = IMAGE_TASK_STATUS.CHECKING_SAFETY;
-    const safety = await _checkImageSafety(b64, _planBase._matched_key, key);
-    if (safety.checkFailed) {
-      console.warn(`[SafetyGate] checker unavailable — ${_planBase._matched_key} #${i}: ${safety.reason}`);
-      return { safetyCheckFailed: true, reason: safety.reason, b64, imgUrl, filename, src };
-    }
-    if (!safety.safe && safety.severity === 'critical') {
-      console.warn(`[SafetyGate] rejected — ${_planBase._matched_key} #${i}: ${safety.reason}`);
-      return { rejectedSafety: true, reason: safety.reason, b64, imgUrl, filename, src };
-    }
-  }
-
-  return { rejectedSafety: false, b64, imgUrl, filename, src };
+  return { b64, imgUrl, filename, src };
 }
 
-// ─── Concurrency queue — max 3 simultaneous, max 3 attempts each ─────────────
+// ─── Concurrency queue — max 3 simultaneous ───────────────────────────────────
+// Image retries and Vision retries are handled by separate loops in processTask.
 
-async function _runImageBatch(tasks, key, progressBar, progressLbl) {
+async function _runImageBatch(tasks, key, progressBar, progressLbl, runId, runImages) {
   const total       = tasks.length;
   const CONCURRENCY = 3;
-  const MAX_ATTEMPTS = 3;
   let doneCount = 0;
   let cursor    = 0;
 
@@ -12433,49 +12429,88 @@ async function _runImageBatch(tasks, key, progressBar, progressLbl) {
 
   const processTask = async (task) => {
     try {
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        task.attempts = attempt;
-        if (attempt > 1) {
+      // ── Outer loop: image generation (max MAX_IMAGE_ATTEMPTS API calls) ─────
+      for (let imageAttempt = 1; imageAttempt <= MAX_IMAGE_ATTEMPTS; imageAttempt++) {
+        task.imageAttempt = imageAttempt;
+        if (imageAttempt > 1) {
           task.status = IMAGE_TASK_STATUS.RETRYING;
           updateProgress();
-          await _sleep(attempt * 2500);
+          await _sleep(imageAttempt * 2500);
         } else {
           task.status = IMAGE_TASK_STATUS.GENERATING;
           updateProgress();
         }
 
+        // Step 1: one image API call — throws on network/API error
+        let imageResult;
         try {
-          const result = await _generateSingleImage(task, key);
-
-          if (result.safetyCheckFailed) {
-            task.error = result.reason || 'safety checker unavailable';
-            if (attempt < MAX_ATTEMPTS) continue;
-            task.status = IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED;
-            return;
-          }
-
-          if (result.rejectedSafety) {
-            task.error = result.reason || 'critical safety violation';
-            if (attempt < MAX_ATTEMPTS) continue;
-            task.status = IMAGE_TASK_STATUS.REJECTED_SAFETY;
-            return;
-          }
-
-          task.status = IMAGE_TASK_STATUS.SUCCESS;
-          task.result = result;
-          task.row.images.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
-          _generatedImages.push({ b64: result.b64, url: result.imgUrl, filename: result.filename });
-          appendImgCard(result.src, result.filename, task.row.fiche || task.row.travaux);
-          _trackGeneration();
-          return;
-
+          imageResult = await _generateImageOnly(task, key, runId);
         } catch (e) {
           task.error = e.message;
-          if (attempt === MAX_ATTEMPTS) {
-            task.status = IMAGE_TASK_STATUS.FAILED;
-            return;
+          task._imageRetryReason = 'retry_image_error';
+          if (imageAttempt === MAX_IMAGE_ATTEMPTS) { task.status = IMAGE_TASK_STATUS.FAILED; return; }
+          continue; // retry image generation
+        }
+
+        // Step 2: safety check — retry Vision only, never regenerate the image
+        if (imageResult.b64 && SAFETY_CHECK_RULES[task._planBase._matched_key]) {
+          let safetyPassed = false;
+
+          // ── Inner loop: Vision retries on the SAME image ─────────────────
+          for (let safetyAttempt = 1; safetyAttempt <= MAX_SAFETY_ATTEMPTS_PER_IMAGE; safetyAttempt++) {
+            task.status = IMAGE_TASK_STATUS.CHECKING_SAFETY;
+            updateProgress();
+            _imgVisionCallCount++;
+            window._imgCallLog.push({ type: 'safety', runId, taskId: task.taskId, imageAttempt, safetyAttempt });
+            console.log(`[SAFETY REQUEST] runId=${runId} taskId=${task.taskId} imageAttempt=${imageAttempt} safetyAttempt=${safetyAttempt}`);
+
+            const safety = await _checkImageSafety(imageResult.b64, task._planBase._matched_key, key);
+
+            if (safety.checkFailed) {
+              if (safetyAttempt < MAX_SAFETY_ATTEMPTS_PER_IMAGE) {
+                await _sleep(safetyAttempt * 1500); // wait, then retry Vision on same image
+                continue;
+              }
+              // All Vision attempts failed — reject without new image generation
+              task.status = IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED;
+              task.error  = safety.reason || 'safety check unavailable after 3 attempts';
+              return;
+            }
+
+            if (!safety.safe && safety.severity === 'critical') {
+              task.error = safety.reason || 'critical safety violation';
+              break; // exit inner loop → outer loop regenerates
+            }
+
+            safetyPassed = true;
+            break;
+          }
+
+          if (!safetyPassed) {
+            // Critical violation confirmed — regenerate a new image
+            task._imageRetryReason = 'regenerate_after_safety_reject';
+            if (imageAttempt === MAX_IMAGE_ATTEMPTS) { task.status = IMAGE_TASK_STATUS.REJECTED_SAFETY; return; }
+            continue; // outer loop: new image generation
           }
         }
+
+        // Step 3: SUCCESS — deduplicate by taskId before pushing
+        if (runImages.some(img => img.taskId === task.taskId)) return;
+        task.status = IMAGE_TASK_STATUS.SUCCESS;
+        task.result = imageResult;
+        const imgEntry = { b64: imageResult.b64, url: imageResult.imgUrl, filename: imageResult.filename, taskId: task.taskId };
+        task.row.images.push(imgEntry);
+        runImages.push(imgEntry);
+        appendImgCard(imageResult.src, imageResult.filename, task.row.fiche || task.row.travaux);
+        _trackGeneration();
+        console.log(`[IMAGE SUCCESS] runId=${runId} taskId=${task.taskId} imageAttempt=${imageAttempt} apiCalls=${_imgApiCallCount} visionCalls=${_imgVisionCallCount}`);
+        return;
+      }
+
+      // Outer loop exhausted (only if every image attempt was a safety rejection)
+      if (!_TERMINAL_STATUSES.has(task.status)) {
+        task.status = IMAGE_TASK_STATUS.FAILED;
+        task.error  = task.error || 'all image attempts exhausted';
       }
     } finally {
       doneCount++;
@@ -12497,7 +12532,7 @@ async function _runImageBatch(tasks, key, progressBar, progressLbl) {
 
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, total) }, () => runWorker()));
 
-  // sentinel: force any non-terminal task to FAILED (should never fire, but guards against edge cases)
+  // Sentinel: any non-terminal task means processTask exited early — guard against edge cases
   for (const task of tasks) {
     if (!_TERMINAL_STATUSES.has(task.status)) {
       task.status = IMAGE_TASK_STATUS.FAILED;
@@ -12551,26 +12586,42 @@ function _hideSummary() {
 }
 
 async function _retryFailedImages() {
+  if (_generationRunActive) { console.warn('[Retry] génération déjà en cours'); return; }
   const key   = window._lastApiKey || document.getElementById('openai-key')?.value.trim();
   const tasks = window._lastFailedTasks;
   if (!key || !tasks?.length) return;
 
+  _generationRunActive = true;
+  const runId = ++_generationRunId;
+  document.getElementById('btn-generate-all').disabled = true;
+
   tasks.forEach(t => {
-    t.status   = IMAGE_TASK_STATUS.PENDING;
-    t.attempts = 0;
-    t.error    = null;
-    t.result   = null;
+    t.status       = IMAGE_TASK_STATUS.PENDING;
+    t.imageAttempt = 0;
+    t.error        = null;
+    t.result       = null;
   });
   _hideSummary();
 
   const progressBar = document.getElementById('img-progress-bar');
   const progressLbl = document.getElementById('img-progress-label');
   document.getElementById('img-progress-wrap').style.display = 'block';
-  document.getElementById('btn-generate-all').disabled = true;
 
-  await _runImageBatch(tasks, key, progressBar, progressLbl);
+  const retryImages = [];
+  try {
+    await _runImageBatch(tasks, key, progressBar, progressLbl, runId, retryImages);
+  } finally {
+    if (runId === _generationRunId) {
+      _generationRunActive = false;
+      document.getElementById('btn-generate-all').disabled = false;
+    }
+  }
 
-  document.getElementById('btn-generate-all').disabled = false;
+  // Merge retry successes into _generatedImages (dedup by taskId)
+  for (const img of retryImages) {
+    if (!_generatedImages.some(e => e.taskId === img.taskId)) _generatedImages.push(img);
+  }
+
   const succeeded = tasks.filter(t => t.status === IMAGE_TASK_STATUS.SUCCESS);
   const failed    = tasks.filter(t => _TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
   if (_generatedImages.length > 0) {
@@ -12643,13 +12694,39 @@ async function _runLocalTests() {
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
 async function generateAllImages() {
+  if (_generationRunActive) {
+    console.warn('[Batch] génération déjà en cours — ignoré');
+    return;
+  }
+  _generationRunActive = true;
+  const runId = ++_generationRunId;
+  document.getElementById('btn-generate-all').disabled = true;
+  try {
+    await _generateAllImagesImpl(runId);
+  } catch (e) {
+    console.error('[generateAllImages] fatal runId=' + runId + ':', e);
+    alert('Erreur inattendue : ' + e.message);
+  } finally {
+    if (runId === _generationRunId) {
+      _generationRunActive = false;
+      document.getElementById('btn-generate-all').disabled = false;
+    }
+  }
+}
+
+async function _generateAllImagesImpl(runId) {
+  // Button already disabled by generateAllImages() wrapper.
+  // All early returns re-enable via the wrapper's finally block.
+
   const key = document.getElementById('openai-key')?.value.trim();
   if (!key) { alert('Renseigne ta clé API OpenAI (sk-...) en haut de la page.'); return; }
 
   const rows = _imgRows.filter(r => (r.travaux || '').trim());
   if (!rows.length) { alert('Ajoute au moins une ligne avec un type de travaux.'); return; }
 
-  _generatedImages = [];
+  _imgApiCallCount    = 0;
+  _imgVisionCallCount = 0;
+  window._imgCallLog  = [];
   document.getElementById('img-results-grid').innerHTML = '';
   document.getElementById('btn-download-zip').style.display = 'none';
   _hideSummary();
@@ -12682,33 +12759,44 @@ async function generateAllImages() {
     console.log(`[PresencePlan] ${JSON.stringify({ key: _planBase._matched_key, state: _planBase.state_level, imageCount: nb, plan: presencePlan })}`);
 
     for (let i = 0; i < nb; i++) {
-      tasks.push({ row, i, nb, jsonScene, presencePlan, slug, _planBase, status: 'pending', attempts: 0, result: null, error: null });
+      tasks.push({ taskId: ++_imgTaskIdSeq, row, i, nb, jsonScene, presencePlan, slug, _planBase, status: 'pending', imageAttempt: 0, result: null, error: null });
     }
   }
   renderImgPlanning();
 
   const total = tasks.length;
-  if (total === 0) { document.getElementById('btn-generate-all').disabled = false; return; }
+  if (total === 0) {
+    alert('Aucune image à générer — vérifie que chaque ligne a un type de travaux valide et un métier reconnu.');
+    return;
+  }
 
   // ── Phase 2: progress bar ─────────────────────────────────────────────────
   const progressWrap = document.getElementById('img-progress-wrap');
   const progressBar  = document.getElementById('img-progress-bar');
   const progressLbl  = document.getElementById('img-progress-label');
   progressWrap.style.display = 'block';
-  document.getElementById('btn-generate-all').disabled = true;
 
-  // ── Phase 3: concurrent queue (3 parallel, 2 retries each) ───────────────
-  await _runImageBatch(tasks, key, progressBar, progressLbl);
+  // ── Phase 3: concurrent queue ─────────────────────────────────────────────
+  const runImages = [];  // local — published to _generatedImages only after batch
+  await _runImageBatch(tasks, key, progressBar, progressLbl, runId, runImages);
 
-  // ── Phase 4: finalize + summary ───────────────────────────────────────────
-  document.getElementById('btn-generate-all').disabled = false;
+  // ── Phase 4: publish + finalize ───────────────────────────────────────────
+  _generatedImages = runImages;  // atomic publish; no partial state visible during the batch
 
   const succeeded = tasks.filter(t => t.status === IMAGE_TASK_STATUS.SUCCESS);
   const failed    = tasks.filter(t => _TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
 
-  if (succeeded.length > 0) {
+  console.log(
+    `[BATCH SUMMARY] Images demandées : ${total} | Appels API Image : ${_imgApiCallCount} | Contrôles Vision : ${_imgVisionCallCount} | Images finales validées : ${succeeded.length}` +
+    (failed.length ? ` | Échecs : ${failed.length}` : '')
+  );
+  if (_imgApiCallCount > total) {
+    console.warn(`[BATCH WARNING] ${_imgApiCallCount - total} appel(s) Image en excès — retries détectés`);
+  }
+
+  if (runImages.length > 0) {
     const btn = document.getElementById('btn-download-zip');
-    btn.textContent = succeeded.length === 1 ? "↓ Télécharger l'image" : '↓ Télécharger le ZIP';
+    btn.textContent = runImages.length === 1 ? "↓ Télécharger l'image" : '↓ Télécharger le ZIP';
     btn.style.display = 'inline-flex';
   }
 
