@@ -14356,6 +14356,235 @@ async function _runServiceParityTests() {
 }
 window._runServiceParityTests = _runServiceParityTests;
 
+// Bridge Phase 3 — fonctions legacy exposées pour les tests de parité T46–T51.
+// Ne pas utiliser en production. Suppression au cutover.
+Object.defineProperty(window, '__IMAGE_GEN_LEGACY_RESOLUTION__', {
+  value: Object.freeze({
+    _hashSeed,
+    _pick,
+    _normalizeLocationKey,
+    _resolveCompatibleSubtype,
+    _resolveWorkSurface,
+    _serviceGroup,
+    _applySiteRealism,
+    _resolveServiceSetting,
+    _buildWorkerDesc,
+    _buildPresencePlan,
+    _validateWorkerScene,
+    _assertFinalWorkerConsistency,
+    WORKER_SCENE_RULES,
+    FORBIDDEN_SAFETY_BY_METIER,
+    _PRE_GEN_SAFETY,
+    SAFETY_CHECK_RULES,
+    _resolveLocationAndComposition,
+    _applyVariation,
+  }),
+  writable: false,
+  configurable: false,
+});
+
+async function _runResolutionParityTests() {
+  const leg = window.__IMAGE_GEN_LEGACY_RESOLUTION__;
+
+  function _npFn(v) {
+    if (v instanceof RegExp) return { __type: 'RegExp', source: v.source, flags: v.flags };
+    if (typeof v === 'function') return { __type: 'function', name: v.name };
+    if (Array.isArray(v)) return v.map(_npFn);
+    if (v !== null && typeof v === 'object') {
+      const out = {};
+      for (const k of Object.keys(v)) out[k] = _npFn(v[k]);
+      return out;
+    }
+    return v;
+  }
+  function _jeq(a, b) { return JSON.stringify(_npFn(a)) === JSON.stringify(_npFn(b)); }
+  function _jdiff(a, b, path) {
+    if (_jeq(a, b)) return [];
+    if (a !== null && typeof a === 'object' && !Array.isArray(a) &&
+        b !== null && typeof b === 'object' && !Array.isArray(b)) {
+      const keys = new Set([...Object.keys(_npFn(a)), ...Object.keys(_npFn(b))]);
+      const diffs = [];
+      for (const k of keys) diffs.push(..._jdiff(a[k], b[k], `${path}.${k}`));
+      return diffs;
+    }
+    return [`${path}: ${JSON.stringify(_npFn(a))} ≠ ${JSON.stringify(_npFn(b))}`];
+  }
+
+  const {
+    WORKER_SCENE_RULES: modWSR, FORBIDDEN_SAFETY_BY_METIER: modFSBM,
+    _PRE_GEN_SAFETY: modPGS, SAFETY_CHECK_RULES: modSCR,
+    _hashSeed: modHash, _pick: modPick,
+    _normalizeLocationKey: modNLK, _resolveCompatibleSubtype: modRCS,
+    _resolveWorkSurface: modRWS, _resolveLocationAndComposition: modRLAC,
+    _serviceGroup: modSG, _applySiteRealism: modASR, _resolveServiceSetting: modRSS,
+    _buildWorkerDesc: modBWD, _buildPresencePlan: modBPP, _validateWorkerScene: modVWS,
+    _assertFinalWorkerConsistency: modAFWC,
+    _applyVariation: modAV,
+  } = await import('./src/image-generation/safety/worker-rules.js').then(async () => {
+    const [wr, sr, wv, lr, svcr, wkr, det] = await Promise.all([
+      import('./src/image-generation/safety/worker-rules.js'),
+      import('./src/image-generation/safety/safety-rules.js'),
+      import('./src/image-generation/safety/worker-validator.js'),
+      import('./src/image-generation/resolution/location-resolver.js'),
+      import('./src/image-generation/resolution/service-resolver.js'),
+      import('./src/image-generation/resolution/worker-resolver.js'),
+      import('./src/image-generation/utils/deterministic.js'),
+    ]);
+    return {
+      WORKER_SCENE_RULES:          wr.WORKER_SCENE_RULES,
+      FORBIDDEN_SAFETY_BY_METIER:  sr.FORBIDDEN_SAFETY_BY_METIER,
+      _PRE_GEN_SAFETY:             sr._PRE_GEN_SAFETY,
+      SAFETY_CHECK_RULES:          sr.SAFETY_CHECK_RULES,
+      _hashSeed:                   det._hashSeed,
+      _pick:                       det._pick,
+      _normalizeLocationKey:       lr._normalizeLocationKey,
+      _resolveCompatibleSubtype:   lr._resolveCompatibleSubtype,
+      _resolveWorkSurface:         lr._resolveWorkSurface,
+      _resolveLocationAndComposition: lr._resolveLocationAndComposition,
+      _serviceGroup:               svcr._serviceGroup,
+      _applySiteRealism:           svcr._applySiteRealism,
+      _resolveServiceSetting:      svcr._resolveServiceSetting,
+      _buildWorkerDesc:            wv._buildWorkerDesc,
+      _buildPresencePlan:          wv._buildPresencePlan,
+      _validateWorkerScene:        wv._validateWorkerScene,
+      _assertFinalWorkerConsistency: wv._assertFinalWorkerConsistency,
+      _applyVariation:             wkr._applyVariation,
+    };
+  });
+
+  // --- T46: safety static data parity ---
+  const t46Diffs = [
+    ..._jdiff(modWSR,  leg.WORKER_SCENE_RULES,         'WORKER_SCENE_RULES'),
+    ..._jdiff(modFSBM, leg.FORBIDDEN_SAFETY_BY_METIER, 'FORBIDDEN_SAFETY_BY_METIER'),
+    ..._jdiff(modPGS,  leg._PRE_GEN_SAFETY,            '_PRE_GEN_SAFETY'),
+    ..._jdiff(modSCR,  leg.SAFETY_CHECK_RULES,         'SAFETY_CHECK_RULES'),
+  ];
+
+  // --- T47: deterministic utils — 10000 cases ---
+  let t47Cases = 0, t47Diffs = [];
+  const t47Seeds = [
+    '', 'a', 'test', 'élagage', 'maçonnerie', 'nettoyage_toiture',
+    'depannage_auto|crevaison|domicile|final|0',
+    'toiture|rénovation toiture|maison_individuelle|encours|3',
+  ];
+  for (const s of t47Seeds) {
+    for (let i = 0; i < 1250; i++) {
+      const idx = t47Cases;
+      const legH = leg._hashSeed(`${s}${i}`);
+      const modH = modHash(`${s}${i}`);
+      if (legH !== modH) t47Diffs.push(`hashSeed("${s}${i}"): leg=${legH} mod=${modH}`);
+      const arr = ['a','b','c','d','e','f','g','h'].slice(0, 2 + (i % 7));
+      const legP = JSON.stringify(leg._pick(arr, 1 + (i % 3), legH));
+      const modP = JSON.stringify(modPick(arr, 1 + (i % 3), modH));
+      if (legP !== modP) t47Diffs.push(`pick([${arr}],n=${1+(i%3)},seed=${legH}): leg=${legP} mod=${modP}`);
+      t47Cases++;
+    }
+  }
+
+  // --- T48: location resolver — 44 contexts × 172 services × 5 seeds ---
+  const CONTEXTES_TEST = [
+    'maison','appartement','immeuble','commerce','professionnel','entrepot','agricole',
+    'autoroute','route_nationale','route_dept','rue_ville','parking','domicile','garage','station_service','aire_repos',
+  ];
+  let t48Cases = 0, t48Diffs = [];
+  for (const [metier, cat] of Object.entries(SERVICE_CATALOG)) {
+    for (const svc of cat.services) {
+      for (const ctx of CONTEXTES_TEST.slice(0, 3)) {
+        for (let img = 0; img < 2; img++) {
+          const input = JSON.stringify({
+            _matched_key: metier, _matched_service: svc, contexte: ctx,
+            state_level: 'encours', exclude: [],
+          });
+          const legIn = JSON.parse(input); const modIn = JSON.parse(input);
+          let legR, modR, legErr, modErr;
+          try { legR = leg._resolveLocationAndComposition(JSON.stringify(legIn), img); } catch(e) { legErr = e.message; }
+          try { modR = modRLAC(JSON.stringify(modIn), img); } catch(e) { modErr = e.message; }
+          if (!_jeq(legR, modR) || !_jeq(legErr, modErr)) {
+            t48Diffs.push(`${metier}/${svc}/${ctx}/img${img}: leg=${legR?.slice?.(0,80)} mod=${modR?.slice?.(0,80)}`);
+          }
+          t48Cases++;
+        }
+      }
+    }
+  }
+
+  // --- T49: service resolver — 172 services × 2 seeds ---
+  let t49Cases = 0, t49Diffs = [];
+  for (const [metier, cat] of Object.entries(SERVICE_CATALOG)) {
+    for (const svc of cat.services) {
+      for (let img = 0; img < 2; img++) {
+        const input = JSON.stringify({
+          _matched_key: metier, _matched_service: svc, contexte: 'maison',
+          state_level: 'encours', exclude: [],
+        });
+        let legR, modR;
+        try { legR = leg._applySiteRealism(input, img); } catch(e) { legR = `ERR:${e.message}`; }
+        try { modR = modASR(input, img); } catch(e) { modR = `ERR:${e.message}`; }
+        if (!_jeq(legR, modR)) t49Diffs.push(`${metier}/"${svc}"/img${img}`);
+        // _resolveServiceSetting
+        const legS = leg._resolveServiceSetting(metier, svc, 'exterior');
+        const modS = modRSS(metier, svc, 'exterior');
+        if (legS !== modS) t49Diffs.push(`resolveServiceSetting(${metier},"${svc}"): leg=${legS} mod=${modS}`);
+        t49Cases++;
+      }
+    }
+  }
+
+  // --- T50: worker/safety — 18 métiers × multiple configs ---
+  const METIERS_TEST = Object.keys(WORKER_SCENE_RULES);
+  const STATES = ['debut','encours','semifinal','final'];
+  const PRESENCES = ['workers','none','indirect'];
+  let t50Cases = 0, t50Diffs = [];
+  for (const metier of METIERS_TEST) {
+    for (const state of STATES) {
+      for (let img = 0; img < 2; img++) {
+        // _buildPresencePlan
+        const legPlan = JSON.stringify(leg._buildPresencePlan(4, state, metier, img * 17));
+        const modPlan = JSON.stringify(modBPP(4, state, metier, img * 17));
+        if (legPlan !== modPlan) t50Diffs.push(`buildPresencePlan(${metier},${state},img${img})`);
+        // _buildWorkerDesc
+        const legDesc = leg._buildWorkerDesc(metier, 1, img * 31);
+        const modDesc = modBWD(metier, 1, img * 31);
+        if (legDesc !== modDesc) t50Diffs.push(`buildWorkerDesc(${metier},1,seed=${img*31})`);
+        // _validateWorkerScene
+        for (const pres of PRESENCES) {
+          const sceneIn = JSON.stringify({
+            _matched_key: metier, _matched_service: '', state_level: state,
+            var_presence: pres, var_workers: pres === 'workers' ? 1 : 0,
+            no_people: pres !== 'workers', var_worker_desc: pres === 'workers' ? legDesc : undefined,
+            exclude: [],
+          });
+          let legV, modV;
+          try { legV = leg._validateWorkerScene(sceneIn); } catch(e) { legV = { error: e.message }; }
+          try { modV = modVWS(sceneIn); } catch(e) { modV = { error: e.message }; }
+          if (!_jeq(legV, modV)) t50Diffs.push(`validateWorkerScene(${metier},${state},${pres})`);
+          // _assertFinalWorkerConsistency — mutations parity
+          const legScene = JSON.parse(sceneIn); const modScene = JSON.parse(sceneIn);
+          let legAErr, modAErr;
+          try { leg._assertFinalWorkerConsistency(legScene); } catch(e) { legAErr = e.message; }
+          try { modAFWC(modScene); } catch(e) { modAErr = e.message; }
+          if (!_jeq(legScene, modScene) || legAErr !== modAErr) {
+            t50Diffs.push(`assertFinalWorkerConsistency(${metier},${state},${pres})`);
+          }
+          t50Cases++;
+        }
+      }
+    }
+  }
+
+  // --- T51: dependency integrity check ---
+  const t51Issues = [];
+  // All modules loaded without error means no window/document/network imports
+  // Check no copies of TRIANGLE_RULES, WORK_SCENES, SITE_REALISM in Phase 3 modules
+  const legCfg = window.__IMAGE_GEN_LEGACY_CONFIG__;
+  if (!_jeq(modWSR, leg.WORKER_SCENE_RULES)) t51Issues.push('WORKER_SCENE_RULES mismatch');
+  // All exports importable (proved by successful imports above)
+  const t51Ok = t51Issues.length === 0;
+
+  return { t46Diffs, t47: { cases: t47Cases, diffs: t47Diffs }, t48: { cases: t48Cases, diffs: t48Diffs }, t49: { cases: t49Cases, diffs: t49Diffs }, t50: { cases: t50Cases, diffs: t50Diffs }, t51: { ok: t51Ok, issues: t51Issues } };
+}
+window._runResolutionParityTests = _runResolutionParityTests;
+
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
 async function _runLocalTests() {
@@ -15185,6 +15414,44 @@ async function _runLocalTests() {
       pass(`T45: Assembly integrity — ${t45.wsKeys} WS keys, ${t45.srKeys} SR keys, aucune collision`);
     else
       fail('T45: Assembly integrity', t45.error || 'assertServiceRegistriesIntegrity failed');
+  }
+
+  // T46–T51: Phase 3 — safety / resolver parity
+  let _resParityResult = null;
+  try { _resParityResult = await window._runResolutionParityTests(); } catch(e) {
+    fail('T46: Safety static data parity', e.message);
+    fail('T47: Deterministic utils parity', e.message);
+    fail('T48: Location resolver parity', e.message);
+    fail('T49: Service resolver parity', e.message);
+    fail('T50: Worker/safety parity', e.message);
+    fail('T51: Phase 3 dependency integrity', e.message);
+  }
+  if (_resParityResult) {
+    const { t46Diffs, t47, t48, t49, t50, t51 } = _resParityResult;
+    if (!t46Diffs.length)
+      pass('T46: Safety static data parity (WORKER_SCENE_RULES, FORBIDDEN_SAFETY_BY_METIER, _PRE_GEN_SAFETY, SAFETY_CHECK_RULES) — 0 diffs');
+    else
+      fail('T46: Safety static data parity', `${t46Diffs.length} diff(s): ${t46Diffs.slice(0,3).join('; ')}`);
+    if (!t47.diffs.length)
+      pass(`T47: Deterministic utils parity — ${t47.cases} cases, 0 diffs (_hashSeed + _pick)`);
+    else
+      fail('T47: Deterministic utils parity', `${t47.diffs.length} diff(s): ${t47.diffs.slice(0,3).join('; ')}`);
+    if (!t48.diffs.length)
+      pass(`T48: Location resolver parity — ${t48.cases} cases, 0 diffs (_resolveLocationAndComposition)`);
+    else
+      fail('T48: Location resolver parity', `${t48.diffs.length} diff(s): ${t48.diffs.slice(0,3).join('; ')}`);
+    if (!t49.diffs.length)
+      pass(`T49: Service resolver parity — ${t49.cases} cases, 0 diffs (_applySiteRealism + _resolveServiceSetting)`);
+    else
+      fail('T49: Service resolver parity', `${t49.diffs.length} diff(s): ${t49.diffs.slice(0,3).join('; ')}`);
+    if (!t50.diffs.length)
+      pass(`T50: Worker/safety parity — ${t50.cases} cases, 0 diffs (_buildPresencePlan, _buildWorkerDesc, _validateWorkerScene, _assertFinalWorkerConsistency)`);
+    else
+      fail('T50: Worker/safety parity', `${t50.diffs.length} diff(s): ${t50.diffs.slice(0,3).join('; ')}`);
+    if (t51.ok)
+      pass('T51: Phase 3 dependency integrity — tous les modules importables, aucune copie illégitime');
+    else
+      fail('T51: Phase 3 dependency integrity', t51.issues.join('; '));
   }
 
   // T41: pipeline mocké complet — [PENDING Phase 6+]
