@@ -10901,7 +10901,581 @@ function _applySiteRealism(jsonStr, imageIndex) {
 }
 
 // ─── Worker Scene Rules ──────────────────────────────────────────────────────
-// Définit par métier les actions, postures, accès, sécurité, interdits et présence indirecte.
+// ─── Location Rules ──────────────────────────────────────────────────────────
+// Single source of truth for all location types: subtypes, must_have, may_have,
+// forbidden elements, safety overrides, compatible métier keys.
+// Used by _resolveLocationAndComposition to pick a specific subtype and inject
+// constraints into the scene JSON before prompt construction.
+
+const LOCATION_RULES = {
+  parking: {
+    subtypes: [
+      'open-air car park with marked spaces and lampposts',
+      'underground car park — concrete pillars, low ceiling, fluorescent lighting',
+      'shopping centre car park with cart return bays in background',
+      'residential car park with apartment building facade behind',
+      'station or airport car park with directional signage',
+      'company car park with controlled entry barrier',
+    ],
+    must_have: ['marked parking bays or painted bay lines on the ground', 'asphalt or concrete surface'],
+    may_have: ['barrier gate', 'parking metre or ticket machine', 'lampposts', 'directional signage', 'building facade matching the subtype'],
+    forbidden: ['village square or market place', 'residential street kerbside without bay markings', 'motorway hard shoulder', 'countryside without road markings', 'petrol station forecourt'],
+    safety_overrides: { triangle: 'forbidden_if_safely_parked' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  station_service: {
+    subtypes: [
+      'rural petrol station beside a main road',
+      'peri-urban fuel station near a retail park',
+      'hypermarket fuel station at a large retail site',
+      'motorway service station forecourt',
+    ],
+    must_have: ['fuel pump dispensers visible', 'forecourt canopy overhead', 'asphalt forecourt surface'],
+    may_have: ['small shop or cashier kiosk', 'road or retail zone visible in background', 'air and water station', 'directional road signs'],
+    forbidden: ['legible brand names or logos in large text', 'residential houses directly alongside the forecourt', 'rural fields with no road infrastructure'],
+    safety_overrides: { triangle: 'forbidden_if_safely_parked' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  garage_atelier: {
+    subtypes: ['garage_client', 'atelier_depannage', 'depot_vehicules', 'cour_professionnelle'],
+    must_have: ['concrete or tiled workshop floor', 'sectional or roller-shutter door — open or partially open'],
+    may_have: ['vehicle lift hoist', 'workbench with tools', 'oil stains on floor', 'tyre rack', 'vehicles in service bays', 'professional van or tow truck outside'],
+    forbidden: ['emergency warning triangle', 'motorway hard shoulder markings', 'public road lane markings'],
+    safety_overrides: { triangle: 'forbidden' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  rue_centre_ville: {
+    subtypes: [
+      'narrow urban street with terraced buildings on both sides',
+      'wide urban boulevard with a planted median',
+      'paved urban square with surrounding buildings',
+      'mixed residential and commercial urban street',
+    ],
+    must_have: ['pavement and kerbstone visible', 'urban building facades on at least one side'],
+    may_have: ['parking metres', 'shop windows at ground level', 'street furniture', 'slow-moving or parked vehicles'],
+    forbidden: ['motorway infrastructure', 'open countryside fields', 'heavy industrial warehouse zone'],
+    safety_overrides: { triangle: 'required_if_blocking' },
+    compatible_jobs: ['depannage_auto', 'vitrier', 'ravalement', 'nettoyage'],
+  },
+  route_departementale: {
+    subtypes: [
+      'narrow rural departmental road with hedgerows and ditches',
+      'country road through open farmland with a grassed verge',
+      'departmental road passing through a small village outskirts',
+    ],
+    must_have: ['single lane in each direction', 'road verge or grassy shoulder visible', 'rural or semi-rural environment'],
+    may_have: ['hedgerows', 'fields or pasture', 'forest edge', 'scattered rural houses', 'kilometre marker post'],
+    forbidden: ['motorway infrastructure', 'multiple traffic lanes', 'motorway overhead gantry signs', 'central reservation barrier'],
+    safety_overrides: { triangle: 'required_if_on_road' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  route_nationale: {
+    subtypes: [
+      'peri-urban national road with retail zone or commercial strip in background',
+      'inter-urban national road between two towns — moderate traffic',
+      'national road entering a town with speed reduction signage',
+    ],
+    must_have: ['at least one lane in each direction', 'road lane markings visible'],
+    may_have: ['central reservation or hatched median', 'roundabout visible in background', 'commercial signage at distance', 'slip road or turn lane'],
+    forbidden: ['motorway-style crash barriers along the full length', 'purely rural single-track road', 'village centre square or market'],
+    safety_overrides: { triangle: 'required_if_on_road' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  autoroute: {
+    subtypes: [
+      'three-lane motorway with hard shoulder and Armco barrier',
+      'two-lane motorway with hard shoulder and central reservation',
+      'motorway junction area with slip roads',
+    ],
+    must_have: ['hard shoulder clearly visible', 'crash barrier or Armco on at least one side', 'multiple traffic lanes'],
+    may_have: ['overhead gantry signs', 'motorway service or exit sign', 'heavy goods vehicles in far lanes', 'distance marker posts'],
+    forbidden: ['residential houses directly at the roadside', 'village or town infrastructure alongside the carriageway', 'single-track country road', 'pedestrian crossing on the carriageway'],
+    safety_overrides: { triangle: 'required_if_safe' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  aire_repos: {
+    subtypes: [
+      'motorway rest area with picnic tables and sanitary block',
+      'motorway service area with fuel station and shop',
+      'roadside lay-by with picnic benches and waste bins',
+    ],
+    must_have: ['marked parking spaces for private vehicles', 'dedicated internal access lanes — separate from the motorway carriageway', 'visible rest area infrastructure — picnic tables or sanitary block or fuel pumps'],
+    may_have: ['landscaped grass areas', 'directional signage', 'HGV parking zone', 'waste bins', 'tourist information board'],
+    forbidden: ['village square', 'residential street or kerbside', 'town centre or historic buildings', 'municipal building fronting a road presented as the rest area'],
+    safety_overrides: { triangle: 'forbidden_if_safely_parked' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  domicile: {
+    subtypes: [
+      'residential driveway with gate and house facade in the background',
+      'enclosed private courtyard — gravel or paving, low wall or fence visible',
+      'private garage forecourt with roller-shutter door',
+      'private property entrance with letterbox and garden hedge',
+    ],
+    must_have: ['private property element clearly visible — gate, wall, garage door, or house facade'],
+    may_have: ['private driveway', 'hedges or low wall', 'letterbox', 'privately parked car', 'garden edge'],
+    forbidden: ['road lane markings', 'public pavement kerb indicating public road', 'carriageway with traffic', 'emergency warning triangle', 'yellow road lines', 'road verge in place of private garden'],
+    safety_overrides: { triangle: 'forbidden' },
+    compatible_jobs: ['depannage_auto'],
+  },
+  maison_individuelle: {
+    subtypes: [
+      'modern detached house with tiled roof and small front garden',
+      'older individual house with rendered facade',
+      'semi-detached house in a suburban street',
+      'rural farmhouse with outbuildings',
+    ],
+    must_have: ['house building clearly visible — facade or roof or exterior'],
+    may_have: ['garden', 'driveway', 'garage', 'fence or hedge', 'regional architectural style'],
+    forbidden: ['motorway infrastructure', 'heavy industrial zone', 'underground setting'],
+    safety_overrides: {},
+    compatible_jobs: ['toiture', 'ravalement', 'nettoyage_toiture', 'nettoyage_gouttieres', 'etancheite', 'peinture', 'maçonnerie', 'vitrier', 'paysagiste'],
+  },
+  appartement: {
+    subtypes: ['living room', 'kitchen', 'bedroom', 'bathroom or wet room', 'hallway or entrance', 'open-plan living space'],
+    must_have: ['interior residential room — walls, ceiling, and floor of an apartment'],
+    may_have: ['window showing outside view — sky trees facades or balcony are normal and allowed', 'apartment furniture', 'storage'],
+    forbidden: ['exterior road as primary setting', 'building rooftop as setting', 'garage or workshop as setting'],
+    safety_overrides: {},
+    compatible_jobs: ['peinture', 'carrelage', 'vitrier', 'nettoyage', 'débarras'],
+  },
+  immeuble: {
+    subtypes: ['immeuble_facade', 'immeuble_toit_terrasse', 'immeuble_toiture_inclinee', 'immeuble_parties_communes', 'immeuble_cour'],
+    must_have: ['multi-storey collective residential building — repeated windows and multiple floors clearly visible'],
+    may_have: ['balconies', 'communal courtyard', 'collective car park', 'urban street alongside the building'],
+    forbidden: ['isolated rural farmhouse', 'industrial warehouse', 'single-storey detached pavilion'],
+    safety_overrides: {},
+    compatible_jobs: ['toiture', 'etancheite', 'ravalement', 'nettoyage_toiture', 'nettoyage_gouttieres', 'vitrier', 'nettoyage'],
+  },
+  commerce: {
+    subtypes: ['retail shop with street frontage', 'restaurant or café with terrace', 'small independent pharmacy generic', 'hair or beauty salon', 'small service shop'],
+    must_have: ['commercial premises — shop window or sales counter visible'],
+    may_have: ['street frontage', 'storage area', 'commercial signage without dominant legible text'],
+    forbidden: ['large identifiable brand signage with fully legible brand name text', 'purely residential room'],
+    safety_overrides: {},
+    compatible_jobs: ['vitrier', 'ravalement', 'nettoyage', 'peinture', 'carrelage'],
+  },
+  local_professionnel: {
+    subtypes: ['professional office space', 'medical or legal practice', 'small agency or design studio', 'light workshop or atelier'],
+    must_have: ['professional interior or exterior — neutral functional decor or professional facade'],
+    may_have: ['reception desk', 'professional work offices', 'corridor', 'discreet facade signage', 'small car park'],
+    forbidden: ['heavy industrial machinery', 'overtly residential furniture', 'large-scale warehouse'],
+    safety_overrides: {},
+    compatible_jobs: ['peinture', 'carrelage', 'vitrier', 'nettoyage'],
+  },
+  entrepot: {
+    subtypes: ['industrial warehouse with racking and forklift access', 'logistics depot with loading bay and dock levellers', 'storage facility with large sectional doors', 'agricultural storage warehouse'],
+    must_have: ['large internal volume — high ceiling, concrete or metal structure visible'],
+    may_have: ['racking systems', 'pallets on the floor or on racks', 'forklift truck', 'loading dock', 'HGV yard'],
+    forbidden: ['pallets placed directly on a pitched roof slope', 'residential interior', 'retail shop front'],
+    safety_overrides: {},
+    compatible_jobs: ['toiture', 'etancheite', 'nettoyage', 'débarras'],
+  },
+  batiment_agricole: {
+    subtypes: ['metal-frame agricultural barn — bac acier cladding', 'traditional stone or timber barn', 'livestock building', 'grain or hay storage building'],
+    must_have: ['agricultural building structure — large roof and rural setting'],
+    may_have: ['farm machinery or tractor', 'bales of hay or straw', 'agricultural land in background', 'silo visible', 'wide access gates'],
+    forbidden: ['urban street furniture', 'residential house facade', 'industrial loading bay'],
+    safety_overrides: {},
+    compatible_jobs: ['toiture', 'etancheite', 'nettoyage', 'maçonnerie'],
+  },
+  jardin_prive: {
+    subtypes: ['suburban residential garden with lawn and planted beds', 'mature garden with established trees', 'garden with vegetable plot and garden shed'],
+    must_have: ['private garden — lawn, planted beds, or terracing visible'],
+    may_have: ['trees', 'hedges', 'garden shed', 'fences or walls', 'garden furniture at a distance'],
+    forbidden: ['public park or municipal green space', 'motorway verge', 'industrial site'],
+    safety_overrides: {},
+    compatible_jobs: ['élagage', 'abattage', 'paysagiste'],
+  },
+  chantier_urbain: {
+    subtypes: ['urban street construction with site fencing and hoarding', 'pavement or utilities trench in a town', 'building renovation site with scaffold and hoarding'],
+    must_have: ['visible construction fencing or hoarding', 'urban context — streets or buildings immediately nearby'],
+    may_have: ['safety fencing', 'skip or spoil container', 'construction vehicle', 'scaffolding'],
+    forbidden: ['rural fields with no nearby buildings or streets', 'motorway-only infrastructure with no urban element'],
+    safety_overrides: {},
+    compatible_jobs: ['terrassement', 'maçonnerie', 'ravalement', 'nettoyage'],
+  },
+};
+
+// ─── Triangle Rules ───────────────────────────────────────────────────────────
+// Per location-type rule for warning triangle placement.
+// Values: 'required_if_on_road' | 'required_if_safe' | 'required_if_blocking'
+//       | 'forbidden' | 'forbidden_if_safely_parked'
+
+const TRIANGLE_RULES = {
+  autoroute:            { default: 'required_if_safe',            note: 'Hard shoulder breakdown — triangle visible if safe to deploy. Complement with hazard lights and high-vis vest.' },
+  route_nationale:      { default: 'required_if_on_road',         note: 'Triangle placed at credible safety distance behind the vehicle.' },
+  route_departementale: { default: 'required_if_on_road',         note: 'Triangle placed at credible safety distance behind the vehicle.' },
+  rue_centre_ville:     { default: 'required_if_blocking',        note: 'Triangle only if the vehicle is actively blocking a traffic lane.' },
+  parking:              { default: 'forbidden_if_safely_parked',  note: 'Triangle only if the vehicle is blocking an active internal lane.' },
+  station_service:      { default: 'forbidden_if_safely_parked',  note: 'Triangle only if blocking a forecourt lane.' },
+  aire_repos:           { default: 'forbidden_if_safely_parked',  note: 'No triangle for a safely parked vehicle — only if blocking an internal lane.' },
+  domicile:             { default: 'forbidden',                   note: 'Private property — no triangle.' },
+  garage_atelier:       { default: 'forbidden',                   note: 'Workshop — no triangle.' },
+};
+
+// ─── Photo Composition Library ────────────────────────────────────────────────
+// weight=0 means used only via per-métier override, not in the default draw.
+
+const PHOTO_COMPOSITIONS = {
+  close_detail:           { weight: 20, min_workers: 0, description: 'tight close-up on the specific work detail — tool in use, material, join, or repair point fills most of the frame, camera 20–50 cm from the subject' },
+  medium_intervention:    { weight: 30, min_workers: 0, description: 'medium shot showing the worker and immediate work area — activity readable, surroundings partially visible, 1–3 m from the main subject' },
+  wide_worksite:          { weight: 30, min_workers: 0, description: 'wide shot of the full worksite showing scale — building, vehicle, or garden entirely visible in context, 5–15 m back' },
+  contextual_overview:    { weight: 20, min_workers: 0, description: 'establishing shot — environment as important as the work, showing neighbourhood, road type, or property context, 10–30 m back' },
+  worker_action:          { weight:  0, min_workers: 1, description: 'worker caught in natural motion — tool engaged, body in movement, no eye contact with camera, 1–4 m from the worker' },
+  vehicle_arrival:        { weight:  0, min_workers: 0, description: 'professional service vehicle clearly visible — van, tow truck, or service vehicle parked near the work location, 5–20 m back' },
+  equipment_from_vehicle: { weight:  0, min_workers: 0, description: 'equipment being unloaded or laid out from the open service vehicle — tools visible, vehicle rear open, 2–6 m' },
+};
+
+// Per-métier composition weight distribution — must sum to 100.
+const _COMPOSITION_DIST = {
+  default: {
+    close_detail:        20,
+    medium_intervention: 30,
+    wide_worksite:       30,
+    contextual_overview: 20,
+  },
+  depannage_auto: {
+    close_detail:           10,
+    medium_intervention:    25,
+    wide_worksite:          30,
+    contextual_overview:    20,
+    vehicle_arrival:        10,
+    equipment_from_vehicle:  5,
+  },
+};
+
+// Mapping: CONTEXTE_BY_METIER values (per-métier) → LOCATION_RULES key
+const _CONTEXTE_TO_LOCATION = {
+  depannage_auto: {
+    autoroute:       'autoroute',
+    route_nationale: 'route_nationale',
+    route_dept:      'route_departementale',
+    rue_ville:       'rue_centre_ville',
+    parking:         'parking',
+    domicile:        'domicile',
+    garage:          'garage_atelier',
+    station_service: 'station_service',
+    aire_repos:      'aire_repos',
+  },
+};
+
+// Mapping: CONTEXTE_OPTIONS values (all other métiers) → LOCATION_RULES key
+const _CONTEXTE_OPTIONS_TO_LOCATION = {
+  maison:        'maison_individuelle',
+  appartement:   'appartement',
+  immeuble:      'immeuble',
+  commerce:      'commerce',
+  professionnel: 'local_professionnel',
+  entrepot:      'entrepot',
+  agricole:      'batiment_agricole',
+};
+
+// Aliases and normalized synonyms — covers any value not in the specific maps above.
+// Key: normalized string (lowercase, no accents, underscores). Value: LOCATION_RULES key.
+const LOCATION_ALIASES = {
+  // Outdoor / garden
+  jardin:              'jardin_prive',
+  jardin_prive:        'jardin_prive',
+  parc:                'jardin_prive',
+  espace_vert:         'jardin_prive',
+  // Worksite
+  chantier:            'chantier_urbain',
+  chantier_urbain:     'chantier_urbain',
+  voirie:              'chantier_urbain',
+  // Residential
+  maison:              'maison_individuelle',
+  maison_individuelle: 'maison_individuelle',
+  pavillon:            'maison_individuelle',
+  domicile:            'domicile',
+  appartement:         'appartement',
+  immeuble:            'immeuble',
+  copropriete:         'immeuble',
+  // Commercial / pro
+  commerce:            'commerce',
+  professionnel:       'local_professionnel',
+  local_pro:           'local_professionnel',
+  local_professionnel: 'local_professionnel',
+  // Industrial / agricultural
+  entrepot:            'entrepot',
+  hangar:              'batiment_agricole',
+  batiment_agricole:   'batiment_agricole',
+  agricole:            'batiment_agricole',
+  // Auto / road
+  parking:             'parking',
+  station_service:     'station_service',
+  aire_repos:          'aire_repos',
+  garage:              'garage_atelier',
+  garage_atelier:      'garage_atelier',
+  atelier:             'garage_atelier',
+  autoroute:           'autoroute',
+  route_nationale:     'route_nationale',
+  route_dept:          'route_departementale',
+  route_departementale: 'route_departementale',
+  rue_ville:           'rue_centre_ville',
+  rue_centre_ville:    'rue_centre_ville',
+};
+
+// Per-métier fallback when the context does not resolve through any mapping.
+// Keys are normalized (no accents, underscores). Used as last resort before null.
+const DEFAULT_LOCATION_BY_METIER = {
+  elagage:              'jardin_prive',
+  abattage:             'jardin_prive',
+  paysagiste:           'jardin_prive',
+  terrassement:         'chantier_urbain',
+  amenagement_exterieur:'chantier_urbain',
+  maconnerie:           'maison_individuelle',
+  toiture:              'maison_individuelle',
+  charpente:            'maison_individuelle',
+  etancheite:           'immeuble',
+};
+
+// Normalize a raw context/métier string to a lookup key (lowercase, no accents, underscores).
+function _normalizeLocationKey(raw) {
+  return String(raw || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+// ─── Subtype compatibility — which location subtypes are valid per service/métier ─────────────────
+// Keys are normalized keyword fragments checked against (normService + ' ' + normKey).
+// More specific keys must appear BEFORE shorter ones (object insertion order is preserved).
+// Values: arrays of subtypes that must exist in LOCATION_RULES[locationType].subtypes.
+
+const LOCATION_SUBTYPE_COMPATIBILITY = {
+  immeuble: {
+    // Flat-roof waterproofing — must never be immeuble_toiture_inclinee
+    toit_terrasse:          ['immeuble_toit_terrasse'],
+    toiture_terrasse:       ['immeuble_toit_terrasse'],
+    membrane:               ['immeuble_toit_terrasse'],
+    etancheite:             ['immeuble_toit_terrasse'],
+    // Pitched-roof coverage — must never be immeuble_toit_terrasse or parties_communes
+    tuile:                  ['immeuble_toiture_inclinee'],
+    ardoise:                ['immeuble_toiture_inclinee'],
+    couverture:             ['immeuble_toiture_inclinee'],
+    faitage:                ['immeuble_toiture_inclinee'],
+    nettoyage_gouttieres:   ['immeuble_toiture_inclinee'],
+    gouttiere:              ['immeuble_toiture_inclinee'],
+    // Generic roof — both pitched and flat acceptable
+    nettoyage_toiture:      ['immeuble_toiture_inclinee', 'immeuble_toit_terrasse'],
+    toiture:                ['immeuble_toiture_inclinee', 'immeuble_toit_terrasse'],
+    // Façade
+    ravalement:             ['immeuble_facade'],
+    facade:                 ['immeuble_facade'],
+    // Glazing — facade or common areas
+    vitrier:                ['immeuble_facade', 'immeuble_parties_communes'],
+    vitre:                  ['immeuble_facade', 'immeuble_parties_communes'],
+    fenetre:                ['immeuble_facade', 'immeuble_parties_communes'],
+    // Interior / common areas
+    peinture:               ['immeuble_parties_communes'],
+    carrelage:              ['immeuble_parties_communes'],
+    nettoyage:              ['immeuble_parties_communes', 'immeuble_cour', 'immeuble_facade'],
+  },
+  chantier_urbain: {
+    // Excavation / trenching — NOT scaffold/facade renovation
+    fondation:              ['urban street construction with site fencing and hoarding'],
+    tranchee:               ['pavement or utilities trench in a town'],
+    reseau:                 ['pavement or utilities trench in a town'],
+    terrassement:           ['urban street construction with site fencing and hoarding', 'pavement or utilities trench in a town'],
+    // Structural / masonry
+    maconnerie:             ['building renovation site with scaffold and hoarding', 'urban street construction with site fencing and hoarding'],
+    // Façade-focused
+    ravalement:             ['building renovation site with scaffold and hoarding'],
+  },
+  jardin_prive: {
+    // Tree work — prefer mature garden when service is abattage
+    abattage:               ['mature garden with established trees'],
+    elagage:                ['suburban residential garden with lawn and planted beds', 'mature garden with established trees'],
+    haie:                   ['suburban residential garden with lawn and planted beds', 'garden with vegetable plot and garden shed'],
+    taille:                 ['suburban residential garden with lawn and planted beds', 'mature garden with established trees'],
+    // Ground work
+    tonte:                  ['suburban residential garden with lawn and planted beds'],
+    gazon:                  ['suburban residential garden with lawn and planted beds'],
+    paysagiste:             ['suburban residential garden with lawn and planted beds', 'garden with vegetable plot and garden shed'],
+  },
+};
+
+// ─── Work surface — resolved from subtype + service keywords ─────────────────────────────────────
+// Maps each location subtype to its default visual surface description for the rewrite prompt.
+const WORK_SURFACE_BY_SUBTYPE = {
+  // immeuble
+  immeuble_toit_terrasse:    'flat concrete or bitumen roof deck — parapet upstands and surface drainage visible',
+  immeuble_toiture_inclinee: 'pitched tiled or slate roof slope — ridge line and fixing battens visible',
+  immeuble_facade:           'multi-storey building facade — rendered or stone surface with weathering marks',
+  immeuble_parties_communes: 'communal stairwell or corridor — walls, ceiling, and landing floor visible',
+  immeuble_cour:             'communal courtyard — paving stones with surrounding building facades',
+  // chantier_urbain
+  'urban street construction with site fencing and hoarding': 'open excavation zone — raw soil, aggregate mounds, and site hoardings',
+  'pavement or utilities trench in a town':                   'utility trench in pavement — pipes or conduits at the base, backfill area',
+  'building renovation site with scaffold and hoarding':      'scaffold-clad facade or roof-level work platform on a renovation site',
+  // jardin_prive
+  'suburban residential garden with lawn and planted beds':   'garden surface — lawn, planted borders, and garden hedges',
+  'mature garden with established trees':                     'established tree canopy — large trunk base with branches requiring work',
+  'garden with vegetable plot and garden shed':               'garden ground — soil, vegetable beds, and established shrubs',
+  // maison_individuelle
+  'modern detached house with tiled roof and small front garden': 'modern clay or concrete tile roof pitch',
+  'older individual house with rendered facade':              'rendered house facade or pitched roof surface',
+  'semi-detached house in a suburban street':                 'suburban house roof or facade surface',
+  'rural farmhouse with outbuildings':                        'farmhouse roof — stone, slate, or fibre-cement cladding',
+  // appartement
+  'living room':              'living room — walls and ceiling being treated',
+  'kitchen':                  'kitchen — wall tiles or surfaces in progress',
+  'bedroom':                  'bedroom interior — walls, ceiling, or floor surface',
+  'bathroom or wet room':     'bathroom — tiled walls and floor, shower or bath area',
+  'hallway or entrance':      'hallway walls and ceiling',
+  'open-plan living space':   'large open-plan interior — expanse of wall and ceiling surface',
+  // entrepot
+  'industrial warehouse with racking and forklift access':    'warehouse interior — high ceiling, concrete floor, metal racking',
+  'logistics depot with loading bay and dock levellers':      'loading bay zone — dock leveller and HGV access',
+  'storage facility with large sectional doors':              'large-volume interior — concrete or metal walls and ceiling',
+  'agricultural storage warehouse':                           'agricultural building interior — earth or concrete floor',
+  // batiment_agricole
+  'metal-frame agricultural barn — bac acier cladding':       'metal barn — bac acier cladding or roof panels',
+  'traditional stone or timber barn':                         'stone or timber barn structure — walls and roof elements',
+  'livestock building':                                       'livestock building floor and wall surfaces',
+  'grain or hay storage building':                            'grain storage interior — bins or floor area',
+  // commerce
+  'retail shop with street frontage':                         'shop interior or storefront — glass façade and display window visible',
+  'restaurant or café with terrace':                          'café or restaurant interior or terrace surface',
+  'small independent pharmacy generic':                       'shop interior — counter, shelving, and service area',
+  'hair or beauty salon':                                     'salon interior — treatment stations and mirrors',
+  'small service shop':                                       'shop or workshop interior — service counter or workbench',
+  // local_professionnel
+  'professional office space':                                'office interior — desks, walls, and ceiling being treated',
+  'medical or legal practice':                                'professional interior — neutral walls and floor surface',
+  'small agency or design studio':                            'studio or office interior — open workspace',
+  'light workshop or atelier':                                'workshop interior — benches, tools, and wall surfaces',
+};
+
+// Service keyword overrides — checked first (normalize service, longest-match wins).
+// If the normalized _matched_service contains the key, this surface description is used.
+const WORK_SURFACE_SERVICE_OVERRIDES = {
+  membrane:           'flat roof deck — bitumen or EPDM membrane being stripped or re-applied in sheets',
+  etancheite:         'waterproofing surface — concrete or composite deck with upstands and drainage outlets',
+  toit_terrasse:      'toit-terrasse — flat concrete deck, existing membrane partially removed',
+  terrassement:       'excavated ground — raw soil, trench walls, spoil mounds, and earthmoving tracks',
+  fondation:          'foundation pit — reinforced concrete footings or formwork being positioned',
+  tranchee:           'open trench — cut through pavement, utility pipes at the base, sandy backfill',
+  ravalement:         'building facade surface — render or stone being stripped, cleaned, or re-coated',
+  elagage:            'tree canopy — branches being cut, chainsaw, cut sections accumulating below',
+  abattage:           'felled or falling tree — stump base, sectioned logs, and wood chippings on ground',
+  gouttiere:          'roof gutter line — debris and moss being cleared from the channel',
+  vitrier:            'glazing frame — old pane removed, new glass unit being manoeuvred into position',
+  carrelage:          'floor or wall substrate — adhesive bed drying or tiles being positioned',
+  peinture:           'interior surface — fresh paint layer, roller marks, masking tape at edges',
+  nettoyage:          'surface being high-pressure washed or scrubbed — dark staining being removed',
+  vitre:              'glazing frame — old glass pane removed, new glass unit being positioned into the frame',
+  vitrine:            'storefront glazing — shopfront glass panel or display-window unit being replaced or sealed',
+  debarras:           'room or space being cleared — bulky items and debris stacked for removal',
+  // depannage_auto — service-level surface (same regardless of road location)
+  crevaison:          'deflated tyre against the tarmac — nail or screw visible in the tread, sidewall collapsed against the rim',
+  demarrage:          'vehicle engine bay open — battery terminals exposed, jump cable clamps connected',
+  batterie:           'vehicle engine bay open — battery exposed, charger or jump leads in place',
+  panne:              'vehicle bonnet raised — engine visible, diagnostic tool or torch nearby',
+  remorquage:         'vehicle being loaded onto a flatbed tow truck — rear wheels on the loading ramp',
+};
+
+// ─── Resolve a compatible location subtype based on service + métier ─────────────────────────────
+function _resolveCompatibleSubtype({ locationType, normKey, normService, seed }) {
+  const allSubtypes = LOCATION_RULES[locationType]?.subtypes || [];
+  if (!allSubtypes.length) return null;
+
+  const compat = LOCATION_SUBTYPE_COMPATIBILITY[locationType];
+  if (!compat) return _pick(allSubtypes, 1, seed)[0] || null;
+
+  // Search longest key first (object insertion order is already specificity-ordered)
+  const combined = normService + ' ' + normKey;
+  let pool = null;
+  for (const k of Object.keys(compat)) {
+    if (combined.includes(k)) { pool = compat[k]; break; }
+  }
+  if (!pool) pool = allSubtypes; // no match → unrestricted
+
+  const valid = pool.filter(s => allSubtypes.includes(s));
+  return _pick(valid.length ? valid : allSubtypes, 1, seed)[0] || null;
+}
+
+// ─── Resolve work_surface from subtype + service ─────────────────────────────────────────────────
+function _resolveWorkSurface(subtype, normService) {
+  // Service keyword overrides take priority
+  for (const k of Object.keys(WORK_SURFACE_SERVICE_OVERRIDES)) {
+    if (normService.includes(k)) return WORK_SURFACE_SERVICE_OVERRIDES[k];
+  }
+  // Subtype-specific default, then fallback to the subtype string itself
+  return WORK_SURFACE_BY_SUBTYPE[subtype] || (subtype ? String(subtype) : null);
+}
+
+// ─── Validate location subtype compatibility with métier/service ──────────────────────────────────
+// Runs after _validateResolvedScene. Detects and patches subtype contradictions.
+// Returns { ok, issues, fixedStr }.
+
+function _validateLocationServiceCompatibility(jsonStr) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return { ok: true, issues: [], fixedStr: jsonStr }; }
+
+  const issues  = [];
+  const patched = Object.assign({}, obj);
+  const locType  = patched.location_type;
+  const locSub   = patched.location_subtype;
+  if (!locType || !LOCATION_RULES[locType]) return { ok: true, issues: [], fixedStr: jsonStr };
+
+  const normKey     = _normalizeLocationKey(patched._matched_key    || '');
+  const normService = _normalizeLocationKey(patched._matched_service || '');
+  const allSubtypes = LOCATION_RULES[locType].subtypes || [];
+
+  // LSC1 — subtype not in the location's declared list
+  if (locSub && !allSubtypes.includes(locSub)) {
+    issues.push(`LSC1: "${locSub}" not in LOCATION_RULES.${locType}.subtypes — re-resolving`);
+    patched.location_subtype = _resolveCompatibleSubtype({
+      locationType: locType, normKey, normService,
+      seed: _hashSeed(`${normKey}|${normService}|fix`),
+    });
+  }
+
+  const combined = normService + ' ' + normKey;
+
+  // LSC2 — toiture/couverture + immeuble_parties_communes
+  if ((combined.includes('toiture') || combined.includes('couverture')) && locSub === 'immeuble_parties_communes') {
+    issues.push('LSC2: toiture/couverture cannot use immeuble_parties_communes — correcting to immeuble_toiture_inclinee');
+    patched.location_subtype = 'immeuble_toiture_inclinee';
+  }
+
+  // LSC3 — étanchéité membrane/toit-terrasse + immeuble_toiture_inclinee
+  if ((combined.includes('terrasse') || combined.includes('membrane')) && locSub === 'immeuble_toiture_inclinee') {
+    issues.push('LSC3: étanchéité toit-terrasse/membrane contradicts immeuble_toiture_inclinee — correcting');
+    patched.location_subtype = 'immeuble_toit_terrasse';
+  }
+
+  // LSC4 — terrassement + scaffold/renovation subtype
+  if (combined.includes('terrassement') && locSub === 'building renovation site with scaffold and hoarding') {
+    issues.push('LSC4: terrassement incompatible with scaffold renovation — correcting');
+    patched.location_subtype = allSubtypes.find(s => s.includes('trench') || s.includes('construction')) || allSubtypes[0];
+  }
+
+  // LSC5 — ravalement + immeuble but subtype is not immeuble_facade
+  if (combined.includes('ravalement') && locType === 'immeuble' && locSub && locSub !== 'immeuble_facade') {
+    issues.push(`LSC5: ravalement requires immeuble_facade — was "${locSub}"`);
+    patched.location_subtype = 'immeuble_facade';
+  }
+
+  // Recompute work_surface after potential subtype correction
+  const finalSub = patched.location_subtype;
+  if (finalSub) {
+    patched.work_surface = _resolveWorkSurface(finalSub, normService);
+  }
+
+  return {
+    ok:       issues.length === 0,
+    issues,
+    fixedStr: JSON.stringify(patched),
+  };
+}
+
+// ─── Définit par métier les actions, postures, accès, sécurité, interdits et présence indirecte.
 // Utilisé par _buildWorkerDesc pour générer une description cohérente et par
 // _validateWorkerScene pour garantir la sécurité et l'exclusion des éléments interdits.
 const WORKER_SCENE_RULES = {
@@ -11072,6 +11646,7 @@ const WORKER_SCENE_RULES = {
     ],
   },
   'élagage': {
+    min_workers_when_visible: 2,
     max_workers: 2,
     actions: [
       'sawing a branch with a chainsaw while suspended in the tree canopy by climbing ropes',
@@ -11102,6 +11677,7 @@ const WORKER_SCENE_RULES = {
     ],
   },
   abattage: {
+    min_workers_when_visible: 2,
     max_workers: 2,
     actions: [
       'making the notch cut at the base of the trunk with a large chainsaw',
@@ -11200,6 +11776,7 @@ const WORKER_SCENE_RULES = {
     ],
   },
   vitrier: {
+    min_workers_when_visible: 2,
     max_workers: 2,
     actions: [
       'carrying a large glass pane using suction cup handles in pairs',
@@ -11225,6 +11802,7 @@ const WORKER_SCENE_RULES = {
     ],
   },
   'débarras': {
+    min_workers_when_visible: 2,
     max_workers: 2,
     actions: [
       'carrying a heavy item of furniture through the front door in a two-person carry',
@@ -11250,6 +11828,7 @@ const WORKER_SCENE_RULES = {
     ],
   },
   terrassement: {
+    min_workers_when_visible: 2,
     max_workers: 2,
     actions: [
       'operating the mini-excavator bucket to dig the trench or cut',
@@ -11275,6 +11854,7 @@ const WORKER_SCENE_RULES = {
     ],
   },
   paysagiste: {
+    min_workers_when_visible: 2,
     max_workers: 2,
     actions: [
       'planting a shrub in the prepared bed and backfilling around the root ball',
@@ -11651,6 +12231,189 @@ function _validateQuality(obj) {
   return                          { ok: false,  issues,        fixedObj: null };
 }
 
+// ─── Location + Composition Resolution ────────────────────────────────────────
+// Enriches the scene JSON with: location_type, location_subtype, location_must_have,
+// triangle_rule, composition, composition_desc, and professional_vehicle_presence
+// (depannage_auto only). Also extends obj.exclude with location_forbidden items and
+// triangle exclusions when triangle is forbidden.
+
+function _resolveLocationAndComposition(jsonStr, imageIndex) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return jsonStr; }
+
+  const key  = obj._matched_key || '';
+  const ctx  = obj.contexte || '';
+
+  // 1. Location type — 5-step resolution chain (first match wins)
+  const normCtx  = _normalizeLocationKey(ctx);
+  const normKey  = _normalizeLocationKey(key);
+  const locType  = _CONTEXTE_TO_LOCATION[key]?.[ctx]          // a. specific métier map
+                || _CONTEXTE_OPTIONS_TO_LOCATION[ctx]          // b. generic CONTEXTE_OPTIONS
+                || LOCATION_ALIASES[normCtx]                   // c. alias / synonym
+                || (LOCATION_RULES[normCtx] ? normCtx : null)  // d. direct LOCATION_RULES match
+                || DEFAULT_LOCATION_BY_METIER[normKey]         // e. per-métier fallback
+                || null;
+  if (!locType || !LOCATION_RULES[locType]) {
+    console.warn(`[LOCATION_UNRESOLVED] métier=${key} contexte=${ctx}`);
+  }
+  const locRules = locType ? LOCATION_RULES[locType] : null;
+  obj.location_type = locType || null;
+
+  if (locRules) {
+    const stSeed     = _hashSeed(`${key}|${ctx}|subtype${imageIndex}`);
+    const normKey    = _normalizeLocationKey(key);
+    const normSvc    = _normalizeLocationKey(obj._matched_service || '');
+
+    // Subtype — compatibility-aware selection (service + métier drive the eligible list)
+    obj.location_subtype = _resolveCompatibleSubtype({
+      locationType: locType, normKey, normService: normSvc, seed: stSeed,
+    });
+
+    // Work surface — derived from subtype + service
+    if (obj.location_subtype) {
+      obj.work_surface = _resolveWorkSurface(obj.location_subtype, normSvc);
+    }
+
+    // Pick 1-2 core must_have elements (not all — avoid prompt overload)
+    const coreSeed = _hashSeed(`${key}|${ctx}|core${imageIndex}`);
+    const coreN    = locRules.must_have.length > 1 ? (1 + (coreSeed % 2)) : 1;
+    obj.location_must_have = _pick(locRules.must_have, coreN, coreSeed);
+
+    // Pick 1-3 optional supporting details from may_have
+    if (locRules.may_have?.length) {
+      const suppSeed = _hashSeed(`${key}|${ctx}|supp${imageIndex}`);
+      const suppN    = Math.min(3, locRules.may_have.length, 1 + (suppSeed % 3));
+      obj.location_supporting = _pick(locRules.may_have, suppN, suppSeed);
+    }
+
+    if (locRules.forbidden?.length) {
+      obj.exclude = [...new Set([...(obj.exclude || []), ...locRules.forbidden])];
+    }
+  }
+
+  // 2. Triangle rule — forbidden locations get explicit triangle exclusions
+  const triRules = TRIANGLE_RULES[locType] || null;
+  obj.triangle_rule = triRules ? triRules.default : null;
+  if (triRules?.default === 'forbidden') {
+    obj.exclude = [...new Set([...(obj.exclude || []), 'warning triangle', 'safety triangle', 'emergency warning triangle'])];
+  }
+
+  // 3. Composition — weighted draw per métier
+  const compDist = _COMPOSITION_DIST[key] || _COMPOSITION_DIST.default;
+  const compRoll = _hashSeed(`${key}|${ctx}|comp${imageIndex}`) % 100;
+  let cumulative = 0;
+  obj.composition = 'medium_intervention';
+  for (const comp in compDist) {
+    cumulative += compDist[comp];
+    if (compRoll < cumulative) { obj.composition = comp; break; }
+  }
+  const compDef = PHOTO_COMPOSITIONS[obj.composition];
+  if (compDef) obj.composition_desc = compDef.description;
+
+  // 4. Professional vehicle (depannage_auto only) — linked to composition
+  if (key === 'depannage_auto') {
+    const pvSeed = _hashSeed(`${key}|${ctx}|pvehicle${imageIndex}`);
+    const pvRoll = pvSeed % 100;
+    const comp   = obj.composition;
+    let pvPresence;
+    if (comp === 'vehicle_arrival') {
+      pvPresence = 'clearly_visible';                                    // forced
+    } else if (comp === 'equipment_from_vehicle') {
+      pvPresence = pvRoll < 70 ? 'clearly_visible' : 'partially_visible'; // at least partial
+    } else if (comp === 'close_detail') {
+      pvPresence = pvRoll < 85 ? 'absent' : 'partially_visible';         // usually absent
+    } else {
+      pvPresence = pvRoll < 40 ? 'clearly_visible'
+                 : pvRoll < 65 ? 'partially_visible'
+                 : 'absent';
+    }
+    obj.professional_vehicle_presence = pvPresence;
+  }
+
+  return JSON.stringify(obj);
+}
+
+// ─── Scene Contradiction Validator ────────────────────────────────────────────
+// Runs after _resolveLocationAndComposition + _applyVariation. Detects and
+// patches contradictions before any API call. Returns { ok, issues, fixedStr }.
+
+function _validateResolvedScene(jsonStr) {
+  let obj;
+  try { obj = JSON.parse(jsonStr); } catch { return { ok: true, issues: [], fixedStr: jsonStr }; }
+
+  const issues  = [];
+  const patched = Object.assign({}, obj);
+  patched.exclude = [...(obj.exclude || [])];
+
+  // C1: synchronise no_people FROM var_workers — var_workers is the source of truth
+  if ((patched.var_workers || 0) > 0 && patched.no_people === true) {
+    issues.push('C1: var_workers>0 overrides no_people=true — setting no_people=false');
+    patched.no_people = false;
+  }
+
+  // C2: domicile context — ensure all triangle exclusions present
+  if (patched.location_type === 'domicile' || patched.contexte === 'domicile') {
+    const triTerms = ['warning triangle', 'safety triangle', 'emergency warning triangle', 'reflective warning triangle'];
+    if (!triTerms.every(t => patched.exclude.includes(t))) {
+      issues.push('C2: domicile — adding triangle exclusions');
+      patched.exclude = [...new Set([...patched.exclude, ...triTerms])];
+    }
+  }
+
+  // C3: garage_atelier — no triangle
+  if (patched.location_type === 'garage_atelier') {
+    const triTerms = ['warning triangle', 'emergency warning triangle'];
+    if (!triTerms.every(t => patched.exclude.includes(t))) {
+      issues.push('C3: garage_atelier — adding triangle exclusions');
+      patched.exclude = [...new Set([...patched.exclude, ...triTerms])];
+    }
+  }
+
+  // C4: aire_repos safely parked — no triangle
+  if (patched.location_type === 'aire_repos' && patched.triangle_rule === 'forbidden_if_safely_parked') {
+    const triTerms = ['warning triangle', 'emergency warning triangle'];
+    if (!triTerms.every(t => patched.exclude.includes(t))) {
+      issues.push('C4: aire_repos safely parked — adding triangle exclusions');
+      patched.exclude = [...new Set([...patched.exclude, ...triTerms])];
+    }
+  }
+
+  // C5: Worker count below min_workers_when_visible — only for human-facing compositions
+  // close_detail can legitimately show 0 or 1 worker; never force min for it
+  if (patched.var_presence === 'workers' && (patched.var_workers || 0) > 0 && patched.composition !== 'close_detail') {
+    const wRules = WORKER_SCENE_RULES[patched._matched_key];
+    const minW   = wRules?.min_workers_when_visible || 1;
+    if ((patched.var_workers || 0) < minW) {
+      issues.push(`C5: ${patched._matched_key} requires min ${minW} workers for composition=${patched.composition || 'default'} — was ${patched.var_workers}`);
+      patched.var_workers = minW;
+      patched.no_people   = false;
+    }
+  }
+
+  // C6: toiture — pallet detected in site_tools
+  if (patched._matched_key === 'toiture') {
+    const toolsStr = JSON.stringify(patched.site_tools || []);
+    if (/\bpallet\b/i.test(toolsStr)) {
+      issues.push('C6: toiture — pallet in site_tools, adding exclusions');
+      patched.exclude = [...new Set([...patched.exclude, 'full industrial pallet on pitched roof', 'pallet on pitched roof slope'])];
+    }
+  }
+
+  // C7: entrepôt — pallets on roof surface (relevant for toiture/etancheite + entrepôt)
+  if (patched.location_type === 'entrepot' && (patched._matched_key === 'toiture' || patched._matched_key === 'etancheite')) {
+    patched.exclude = [...new Set([...patched.exclude, 'pallets placed on the roof surface'])];
+  }
+
+  // C8: appartement setting must be interior
+  if (patched.location_type === 'appartement' && patched.setting !== 'interior') {
+    issues.push('C8: appartement location — forcing setting to interior');
+    patched.setting = 'interior';
+  }
+
+  if (!issues.length) return { ok: true, issues: [], fixedStr: jsonStr };
+  return                  { ok: false, issues, fixedStr: JSON.stringify(patched) };
+}
+
 // Per-métier pre-generation safety constraint — first line of defense before the image API call.
 const _PRE_GEN_SAFETY = {
   toiture:           'Roof materials must be in small quantities only. Never show a full industrial pallet, heavy crate, or large load on the roof slope or battens. A few tiles or a small hand-portable stack on a secured material bracket is the maximum.',
@@ -11924,13 +12687,15 @@ You receive a structured JSON scene description and convert it into a precise im
 
 PRIORITY ORDER (most important first):
 1. PHOTO TYPE — establish from photo_goal, in positive language only. Example: "Ordinary work-progress snapshot taken on a cheap Android smartphone."
-2. CAMERA COMPOSITION — use camera_position and framing to describe the scene spatially: where each element sits, what % of the frame it occupies. The construction work must fill work_pct% of the image.
+2. CAMERA COMPOSITION — if composition_desc is present, use it to set the shot distance and framing intent first; then use camera_position and framing to describe the scene spatially: where each element sits, what % of the frame it occupies. The construction work must fill work_pct% of the image.
 3. SCENE CONTENT — work_type, state, key elements visible.
 4. PHOTO DEFECTS — include exactly the defects listed in photo_defects, nothing extra.
-5. CONTEXT — architecture style, light/weather condition.
+5. CONTEXT — architecture style, light/weather condition. If location_subtype is present, use it to describe the specific location precisely. Every element in location_must_have must appear visible in the scene. Elements in location_supporting may appear naturally in the background or mid-ground if space allows. If work_surface is present, the camera must be positioned so that this surface fills or anchors the primary focal plane of the image — it is the physical substrate of the intervention, not background decoration.
+6. SAFETY TRIANGLE — include a warning triangle only when triangle_rule is "required_if_on_road", "required_if_safe", or "required_if_blocking". Never show a warning triangle when triangle_rule is "forbidden" or "forbidden_if_safely_parked".
+7. PROFESSIONAL VEHICLE — for depannage/breakdown scenes: include the service van or tow truck if professional_vehicle_presence is "clearly_visible"; keep it at the very edge of the frame if "partially_visible"; omit it entirely if "absent" or if the field is not present.
 
 Rules:
-- Maximum 200 words
+- Maximum 220 words
 - Write every instruction positively. Replace "exclude X" with a spatial alternative if possible.
 - Apply no_people: true by placing the camera so no humans are visible in frame.
 - Output only the final English image prompt. No explanation, no JSON, no title.`;
@@ -12348,8 +13113,15 @@ async function _checkImageSafety(b64, matchedKey, apiKey) {
 async function _generateImageOnly(task, key, runId) {
   const { jsonScene, presencePlan, i, slug, _planBase } = task;
   const realistScene = _applySiteRealism(jsonScene, i);
-  const variedScene  = _applyVariation(realistScene, i, presencePlan[i]);
-  const workerResult = _validateWorkerScene(variedScene);
+  const variedScene    = _applyVariation(realistScene, i, presencePlan[i]);
+  const resolvedScene  = _resolveLocationAndComposition(variedScene, i);
+  const sceneValid     = _validateResolvedScene(resolvedScene);
+  if (sceneValid.issues?.length)
+    console.warn(`[SceneValidate] ${_planBase._matched_key} #${i}: ${sceneValid.issues.join(' | ')}`);
+  const locServiceValid = _validateLocationServiceCompatibility(sceneValid.fixedStr);
+  if (locServiceValid.issues?.length)
+    console.warn(`[LocServiceValid] ${_planBase._matched_key} #${i}: ${locServiceValid.issues.join(' | ')}`);
+  const workerResult = _validateWorkerScene(locServiceValid.fixedStr);
   if (workerResult.issues?.length)
     console.warn(`[WorkerScene] ${_planBase._matched_key} #${i}: ${workerResult.issues.join(' | ')}`);
 
@@ -12631,6 +13403,62 @@ async function _retryFailedImages() {
   _showGenerationSummary(tasks.length, succeeded.length, failed, key);
 }
 
+// ─── Debug dry-run (console: _debugResolvedScene({metier, travaux, contexte, etat, imageIndex})) ───
+
+async function _debugResolvedScene({ metier, travaux, contexte, etat, imageIndex = 0 } = {}) {
+  if (!metier || !travaux) { console.error('[DRY-RUN] metier and travaux are required'); return null; }
+  const row = { metier, travaux, contexte: contexte || 'maison', etat: etat || 'encours', nb: 1, ville: '', fiche: '', meteo: 'auto' };
+  let baseScene;
+  try { baseScene = buildDallePromptV2(row); } catch (e) { console.error('[DRY-RUN] buildDallePromptV2 failed:', e.message); return null; }
+
+  const realism    = _applySiteRealism(baseScene, imageIndex);
+  const varied     = _applyVariation(realism, imageIndex, null);
+  const resolved   = _resolveLocationAndComposition(varied, imageIndex);
+  const sceneVal    = _validateResolvedScene(resolved);
+  const locSvcVal   = _validateLocationServiceCompatibility(sceneVal.fixedStr);
+  const workerVal   = _validateWorkerScene(locSvcVal.fixedStr);
+  const qObj        = JSON.parse(workerVal.fixedStr);
+  const qCheck      = _validateQuality(qObj);
+  const finalStr    = (qCheck.fixedObj ? JSON.stringify(qCheck.fixedObj) : workerVal.fixedStr);
+  const s           = JSON.parse(finalStr);
+
+  console.group(`[DRY-RUN] ${metier} / ${travaux} / ctx=${contexte} / idx=${imageIndex}`);
+  console.log('location_type      :', s.location_type);
+  console.log('location_subtype   :', s.location_subtype);
+  console.log('work_surface       :', s.work_surface);
+  console.log('location_must_have :', JSON.stringify(s.location_must_have));
+  console.log('location_supporting:', JSON.stringify(s.location_supporting));
+  console.log('composition        :', s.composition, '—', s.composition_desc?.slice(0, 60));
+  console.log('prof_vehicle       :', s.professional_vehicle_presence);
+  console.log('triangle_rule      :', s.triangle_rule);
+  console.log('var_presence       :', s.var_presence, '| var_workers:', s.var_workers, '| no_people:', s.no_people);
+  console.log('safety_mode        :', s._worker_safety_mode);
+  console.log('exclude (first 5)  :', (s.exclude || []).slice(0, 5).join(' | '));
+  if (sceneVal.issues?.length)   console.warn('SceneValidate issues :', sceneVal.issues.join(' | '));
+  if (locSvcVal.issues?.length)  console.warn('LocService issues    :', locSvcVal.issues.join(' | '));
+  if (workerVal.issues?.length)  console.warn('WorkerScene issues   :', workerVal.issues.join(' | '));
+  console.groupEnd();
+
+  return {
+    location_type:    s.location_type,
+    location_subtype: s.location_subtype,
+    work_surface:     s.work_surface,
+    location_must_have:  s.location_must_have,
+    location_supporting: s.location_supporting,
+    composition:      s.composition,
+    composition_desc: s.composition_desc,
+    professional_vehicle_presence: s.professional_vehicle_presence,
+    triangle_rule:    s.triangle_rule,
+    var_presence:     s.var_presence,
+    var_workers:      s.var_workers,
+    no_people:        s.no_people,
+    safety_mode:      s._worker_safety_mode,
+    exclude:          s.exclude,
+    validate_issues:  [...(sceneVal.issues || []), ...(locSvcVal.issues || []), ...(workerVal.issues || [])],
+    scene_json:       finalStr,
+  };
+}
+
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
 async function _runLocalTests() {
@@ -12686,6 +13514,281 @@ async function _runLocalTests() {
     if (keys.length === 12 && !leaked.length) pass('T6: SAFETY_CHECK_RULES (12 entries, no default-safe leak)');
     else fail('T6: SAFETY_CHECK_RULES', `count=${keys.length} leaked=${JSON.stringify(leaked)}`);
   } catch (e) { fail('T6: SAFETY_CHECK_RULES', e.message); }
+
+  // T7: LOCATION_RULES — all 18 entries present
+  try {
+    const required = ['parking','station_service','garage_atelier','rue_centre_ville','route_departementale','route_nationale','autoroute','aire_repos','domicile','maison_individuelle','appartement','immeuble','commerce','local_professionnel','entrepot','batiment_agricole','jardin_prive','chantier_urbain'];
+    const missing  = required.filter(k => !LOCATION_RULES[k]);
+    if (!missing.length) pass('T7: LOCATION_RULES — all 18 entries present');
+    else fail('T7: LOCATION_RULES', `missing: ${JSON.stringify(missing)}`);
+  } catch (e) { fail('T7: LOCATION_RULES', e.message); }
+
+  // T8: TRIANGLE_RULES — domicile/garage_atelier → 'forbidden', autoroute → 'required_if_safe'
+  try {
+    const domTri  = TRIANGLE_RULES.domicile?.default;
+    const garTri  = TRIANGLE_RULES.garage_atelier?.default;
+    const autoTri = TRIANGLE_RULES.autoroute?.default;
+    const ok = domTri === 'forbidden' && garTri === 'forbidden' && autoTri === 'required_if_safe';
+    if (ok) pass('T8: TRIANGLE_RULES — domicile/garage forbidden, autoroute required_if_safe');
+    else fail('T8: TRIANGLE_RULES', `domicile=${domTri} garage=${garTri} autoroute=${autoTri}`);
+  } catch (e) { fail('T8: TRIANGLE_RULES', e.message); }
+
+  // T9: WORKER_SCENE_RULES — min_workers_when_visible ≥ 2 for élagage, abattage, vitrier, paysagiste, terrassement, débarras
+  try {
+    const targets = ['élagage','abattage','vitrier','paysagiste','terrassement','débarras'];
+    const bad     = targets.filter(k => (WORKER_SCENE_RULES[k]?.min_workers_when_visible || 0) < 2);
+    if (!bad.length) pass('T9: min_workers_when_visible ≥ 2 for 6 métiers');
+    else fail('T9: min_workers_when_visible', `missing or < 2: ${JSON.stringify(bad)}`);
+  } catch (e) { fail('T9: min_workers_when_visible', e.message); }
+
+  // T10: _resolveLocationAndComposition — crevaison + aire_repos → triangle_rule = 'forbidden_if_safely_parked'
+  try {
+    const scene   = JSON.stringify({ _matched_key: 'depannage_auto', contexte: 'aire_repos', exclude: [] });
+    const result  = JSON.parse(_resolveLocationAndComposition(scene, 0));
+    const ok = result.location_type === 'aire_repos' && result.triangle_rule === 'forbidden_if_safely_parked';
+    if (ok) pass('T10: crevaison + aire_repos → location=aire_repos, triangle=forbidden_if_safely_parked');
+    else fail('T10: aire_repos location', `location_type=${result.location_type} triangle_rule=${result.triangle_rule}`);
+  } catch (e) { fail('T10: aire_repos location', e.message); }
+
+  // T11: _validateResolvedScene C4 — aire_repos → triangle exclusions added
+  try {
+    const scene   = JSON.stringify({ _matched_key: 'depannage_auto', contexte: 'aire_repos', location_type: 'aire_repos', triangle_rule: 'forbidden_if_safely_parked', exclude: [] });
+    const result  = _validateResolvedScene(scene);
+    const obj     = JSON.parse(result.fixedStr);
+    const hasTriExcl = (obj.exclude || []).includes('warning triangle');
+    if (hasTriExcl) pass('T11: C4 aire_repos → triangle excluded by _validateResolvedScene');
+    else fail('T11: C4 aire_repos', `exclude=${JSON.stringify(obj.exclude)}`);
+  } catch (e) { fail('T11: C4 aire_repos', e.message); }
+
+  // T12: _resolveLocationAndComposition — batterie + domicile → location=domicile, triangle_rule=forbidden, triangle in exclude
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'depannage_auto', contexte: 'domicile', exclude: [] });
+    const result = JSON.parse(_resolveLocationAndComposition(scene, 0));
+    const locOk  = result.location_type === 'domicile';
+    const triOk  = result.triangle_rule === 'forbidden';
+    const exclOk = (result.exclude || []).includes('warning triangle');
+    if (locOk && triOk && exclOk) pass('T12: batterie + domicile → private property, triangle forbidden and excluded');
+    else fail('T12: domicile', `locType=${result.location_type} triRule=${result.triangle_rule} excludeHasTri=${exclOk}`);
+  } catch (e) { fail('T12: domicile', e.message); }
+
+  // T13: _validateResolvedScene C2 — domicile + empty exclude → triangle exclusions added
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'depannage_auto', contexte: 'domicile', location_type: 'domicile', triangle_rule: 'forbidden', exclude: [], var_presence: 'none', var_workers: 0, no_people: true });
+    const result = _validateResolvedScene(scene);
+    const obj    = JSON.parse(result.fixedStr);
+    const hasAll = ['warning triangle','reflective warning triangle'].every(t => (obj.exclude || []).includes(t));
+    if (hasAll) pass('T13: C2 domicile — triangle exclusions added by _validateResolvedScene');
+    else fail('T13: C2 domicile', `exclude=${JSON.stringify(obj.exclude)}`);
+  } catch (e) { fail('T13: C2 domicile', e.message); }
+
+  // T14: _resolveLocationAndComposition — route_departementale → triangle_rule = 'required_if_on_road'
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'depannage_auto', contexte: 'route_dept', exclude: [] });
+    const result = JSON.parse(_resolveLocationAndComposition(scene, 0));
+    const ok     = result.location_type === 'route_departementale' && result.triangle_rule === 'required_if_on_road';
+    if (ok) pass('T14: route_departementale → triangle required_if_on_road');
+    else fail('T14: route_departementale', `locType=${result.location_type} tri=${result.triangle_rule}`);
+  } catch (e) { fail('T14: route_departementale', e.message); }
+
+  // T15: _resolveLocationAndComposition — autoroute → characteristic motorway element in must_have + triangle required_if_safe
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'depannage_auto', contexte: 'autoroute', exclude: [] });
+    const result = JSON.parse(_resolveLocationAndComposition(scene, 0));
+    // Every must_have element must come from LOCATION_RULES.autoroute.must_have
+    const autoMustHave = LOCATION_RULES.autoroute.must_have;
+    const mustHaveValid = (result.location_must_have || []).length >= 1
+                       && (result.location_must_have || []).every(m => autoMustHave.includes(m));
+    // At least one selected element must contain an unmistakable motorway keyword
+    const MOTORWAY_KW   = ['hard shoulder', 'crash barrier', 'armco', 'traffic lane', 'motorway'];
+    const hasMotorvayKW = (result.location_must_have || []).some(m =>
+      MOTORWAY_KW.some(kw => m.toLowerCase().includes(kw))
+    );
+    const triOk = result.triangle_rule === 'required_if_safe';
+    const locOk = result.location_type === 'autoroute';
+    if (mustHaveValid && hasMotorvayKW && triOk && locOk) pass('T15: autoroute → motorway element in must_have, triangle required_if_safe');
+    else fail('T15: autoroute', `loc=${result.location_type} must_have=${JSON.stringify(result.location_must_have)} tri=${result.triangle_rule}`);
+  } catch (e) { fail('T15: autoroute', e.message); }
+
+  // T16: _validateResolvedScene C1 — var_workers=2 + no_people=true → no_people=false (workers are source of truth)
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'toiture', no_people: true, var_workers: 2, var_presence: 'workers', exclude: [] });
+    const result = _validateResolvedScene(scene);
+    const obj    = JSON.parse(result.fixedStr);
+    if (obj.no_people === false && obj.var_workers === 2 && !result.ok) pass('T16: C1 var_workers=2 + no_people=true → no_people=false (workers source of truth)');
+    else fail('T16: C1 direction', `no_people=${obj.no_people} var_workers=${obj.var_workers} ok=${result.ok}`);
+  } catch (e) { fail('T16: C1 direction', e.message); }
+
+  // T17: _validateResolvedScene C5 — élagage + var_workers=1 + medium_intervention → bumped to min 2
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'élagage', no_people: false, var_workers: 1, var_presence: 'workers', composition: 'medium_intervention', exclude: [] });
+    const result = _validateResolvedScene(scene);
+    const obj    = JSON.parse(result.fixedStr);
+    if (obj.var_workers === 2 && obj.no_people === false && !result.ok) pass('T17: C5 élagage var_workers=1 → bumped to 2, no_people=false');
+    else fail('T17: C5 élagage min workers', `var_workers=${obj.var_workers} no_people=${obj.no_people} ok=${result.ok}`);
+  } catch (e) { fail('T17: C5 élagage min workers', e.message); }
+
+  // T18: _validateResolvedScene C6 — toiture + pallet in site_tools → exclusion added
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'toiture', site_tools: ['pallet of tiles on pitch'], exclude: [], var_workers: 0, no_people: true });
+    const result = _validateResolvedScene(scene);
+    const obj    = JSON.parse(result.fixedStr);
+    const hasExcl = (obj.exclude || []).some(e => /pallet/i.test(e));
+    if (hasExcl && !result.ok) pass('T18: C6 toiture pallet → pallet exclusion added');
+    else fail('T18: C6 toiture pallet', `exclude=${JSON.stringify(obj.exclude)} ok=${result.ok}`);
+  } catch (e) { fail('T18: C6 toiture pallet', e.message); }
+
+  // T19: _validateResolvedScene C8 — appartement location forces setting to interior
+  try {
+    const scene  = JSON.stringify({ _matched_key: 'peinture', location_type: 'appartement', setting: 'exterior', exclude: [], var_workers: 0, no_people: true });
+    const result = _validateResolvedScene(scene);
+    const obj    = JSON.parse(result.fixedStr);
+    if (obj.setting === 'interior' && !result.ok) pass('T19: C8 appartement → setting forced to interior');
+    else fail('T19: C8 appartement setting', `setting=${obj.setting} ok=${result.ok}`);
+  } catch (e) { fail('T19: C8 appartement setting', e.message); }
+
+  // T20: LOCATION_RULES entrepôt — pallets on pitched roof in forbidden
+  try {
+    const entForbidden = LOCATION_RULES.entrepot?.forbidden || [];
+    const hasRule = entForbidden.some(f => /pallet.*roof|roof.*pallet/i.test(f));
+    if (hasRule) pass('T20: LOCATION_RULES entrepôt — pallet-on-roof in forbidden list');
+    else fail('T20: entrepôt forbidden', JSON.stringify(entForbidden));
+  } catch (e) { fail('T20: entrepôt forbidden', e.message); }
+
+  // T21: LOCATION_RULES appartement — window-with-sky explicitly allowed (not in forbidden)
+  try {
+    const aptForbidden = LOCATION_RULES.appartement?.forbidden || [];
+    const wronglyForbids = aptForbidden.some(f => /sky|window|ciel|fenêtre/i.test(f));
+    if (!wronglyForbids) pass('T21: LOCATION_RULES appartement — sky/window not forbidden (interior window OK)');
+    else fail('T21: appartement window', `wrongly forbids window/sky: ${JSON.stringify(aptForbidden)}`);
+  } catch (e) { fail('T21: appartement window', e.message); }
+
+  // T22: _COMPOSITION_DIST depannage_auto — includes vehicle_arrival and sums to 100
+  try {
+    const dist  = _COMPOSITION_DIST.depannage_auto;
+    const total = Object.values(dist).reduce((a, b) => a + b, 0);
+    const hasVA = 'vehicle_arrival' in dist && dist.vehicle_arrival > 0;
+    if (total === 100 && hasVA) pass('T22: _COMPOSITION_DIST depannage_auto — vehicle_arrival present, total=100');
+    else fail('T22: _COMPOSITION_DIST depannage_auto', `total=${total} vehicle_arrival=${dist.vehicle_arrival}`);
+  } catch (e) { fail('T22: _COMPOSITION_DIST', e.message); }
+
+  // T25: Exhaustive coverage — all WORK_SCENES métiers × all UI contexts × 10 seeds
+  try {
+    const allMetiers = Object.keys(WORK_SCENES);
+    const testMatrix = [];
+    for (const metier of allMetiers) {
+      const ws       = WORK_SCENES[metier];
+      const reprSvc  = ws.service_keywords?.[0]?.phrase || ws.intro || metier;
+      const services = metier === 'depannage_auto'
+        ? ['crevaison pneu crevé', 'batterie démarrage', 'panne moteur']
+        : [reprSvc];
+      const contexts = CONTEXTE_BY_METIER[metier] || CONTEXTE_OPTIONS;
+      for (const svc of services) {
+        for (const ctx of contexts) {
+          testMatrix.push({ metier, service: svc, ctx: ctx.value || String(ctx) });
+        }
+      }
+    }
+
+    const failures = [];
+    let totalScenes = 0;
+
+    for (const { metier, service, ctx } of testMatrix) {
+      for (let seed = 0; seed < 10; seed++) {
+        totalScenes++;
+        const baseScene = JSON.stringify({
+          _matched_key: metier, _matched_service: service,
+          contexte: ctx, exclude: [], var_presence: 'none', var_workers: 0, no_people: true,
+        });
+        let s, locSvcR;
+        try {
+          const resolved  = _resolveLocationAndComposition(baseScene, seed);
+          const sceneValR = _validateResolvedScene(resolved);
+          locSvcR         = _validateLocationServiceCompatibility(sceneValR.fixedStr);
+          s               = JSON.parse(locSvcR.fixedStr);
+        } catch(e) {
+          failures.push(`${metier}/${ctx}/s${seed}: exception — ${e.message}`);
+          continue;
+        }
+        const pfx = `${metier}/${ctx}/s${seed}`;
+        if (!s.location_type || !LOCATION_RULES[s.location_type])
+          failures.push(`${pfx}: loc=${s.location_type || 'null'}`);
+        else {
+          if (!s.location_subtype)
+            failures.push(`${pfx}: subtype=null`);
+          if (!s.work_surface)
+            failures.push(`${pfx}: work_surface=null`);
+          if (!s.composition)
+            failures.push(`${pfx}: composition=null`);
+          // no_people / var_workers consistency (C1 invariant)
+          if (s.no_people === false && (s.var_workers || 0) === 0)
+            failures.push(`${pfx}: no_people=false but var_workers=0`);
+          // Triangle excluded when rule is 'forbidden'
+          if (s.triangle_rule === 'forbidden') {
+            if (!(s.exclude || []).some(e => /triangle/i.test(e)))
+              failures.push(`${pfx}: triangle_rule=forbidden but no triangle in exclude[]`);
+          }
+        }
+      }
+    }
+
+    if (failures.length === 0)
+      pass(`T25: ${testMatrix.length} combinations × 10 seeds = ${totalScenes} scenes, 0 error`);
+    else
+      fail('T25: exhaustive coverage', `${failures.length} failures (first 10):\n    ` + failures.slice(0, 10).join('\n    '));
+  } catch(e) { fail('T25: exhaustive coverage', e.message); }
+
+  // T24: location_subtype is compatible with métier/service — tested across 5 seeds per case
+  try {
+    const t24Cases = [
+      { metier:'toiture',      travaux:'réfection toiture',            contexte:'immeuble',  forbid: ['immeuble_parties_communes','immeuble_cour','immeuble_facade'] },
+      { metier:'étanchéité',   travaux:'membrane toit terrasse',       contexte:'immeuble',  require: ['immeuble_toit_terrasse'], forbid: ['immeuble_toiture_inclinee'] },
+      { metier:'terrassement', travaux:'fondations maison',            contexte:'chantier',  forbid: ['building renovation site with scaffold and hoarding'] },
+      { metier:'ravalement',   travaux:'ravalement facade enduit',     contexte:'immeuble',  require: ['immeuble_facade'] },
+      { metier:'peinture',     travaux:'peinture intérieure parties communes', contexte:'immeuble', require: ['immeuble_parties_communes'] },
+      { metier:'élagage',      travaux:'élagage grands arbres',        contexte:'jardin',    require: ['suburban residential garden with lawn and planted beds','mature garden with established trees'] },
+      { metier:'abattage',     travaux:'abattage arbre',               contexte:'jardin',    require: ['mature garden with established trees'] },
+    ];
+    const t24Failures = [];
+    for (const tc of t24Cases) {
+      for (let idx = 0; idx < 5; idx++) {
+        const scene  = JSON.stringify({ _matched_key: tc.metier, _matched_service: tc.travaux, contexte: tc.contexte, exclude: [] });
+        const result = JSON.parse(_resolveLocationAndComposition(scene, idx));
+        // Run LSC validator too
+        const lscR   = _validateLocationServiceCompatibility(JSON.stringify(result));
+        const sub    = JSON.parse(lscR.fixedStr).location_subtype;
+        if (tc.forbid  && tc.forbid.includes(sub))
+          t24Failures.push(`${tc.metier}/"${tc.travaux}"/idx=${idx} → FORBIDDEN subtype "${sub}"`);
+        if (tc.require && !tc.require.includes(sub))
+          t24Failures.push(`${tc.metier}/"${tc.travaux}"/idx=${idx} → expected [${tc.require.join('|')}] got "${sub}"`);
+      }
+    }
+    if (t24Failures.length === 0) pass(`T24: all ${t24Cases.length} service/subtype cases pass across 5 seeds`);
+    else fail('T24: subtype compatibility', '\n    ' + t24Failures.join('\n    '));
+  } catch (e) { fail('T24: subtype compatibility', e.message); }
+
+  // T23: All UI contexts (CONTEXTE_BY_METIER + CONTEXTE_OPTIONS) resolve to a valid LOCATION_RULES entry
+  try {
+    const allContexts = [
+      // Per-métier specific contexts
+      ...Object.entries(CONTEXTE_BY_METIER).flatMap(([metier, ctxs]) =>
+        ctxs.map(c => ({ metier, ctx: c.value }))
+      ),
+      // Generic CONTEXTE_OPTIONS × a representative sample of non-depannage métiers
+      ...['toiture', 'élagage', 'paysagiste', 'terrassement', 'peinture'].flatMap(metier =>
+        CONTEXTE_OPTIONS.map(c => ({ metier, ctx: c.value }))
+      ),
+    ];
+    const failures = [];
+    for (const { metier, ctx } of allContexts) {
+      const scene  = JSON.stringify({ _matched_key: metier, contexte: ctx, exclude: [] });
+      const result = JSON.parse(_resolveLocationAndComposition(scene, 0));
+      if (!result.location_type || !LOCATION_RULES[result.location_type]) {
+        failures.push(`${metier}/${ctx} → ${result.location_type || 'null'}`);
+      }
+    }
+    if (failures.length === 0) pass(`T23: all ${allContexts.length} UI contexts resolve to a valid LOCATION_RULES entry`);
+    else fail('T23: unresolved locations', failures.join(', '));
+  } catch (e) { fail('T23: global context resolution', e.message); }
 
   console.log('[TEST] Done.');
 }
