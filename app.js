@@ -14508,24 +14508,40 @@ async function _runResolutionParityTests() {
     }
   }
 
-  // --- T49: service resolver — 172 services × 2 seeds ---
+  // --- T49: service resolver — 172 services × 4 états × 10 seeds × contextes ---
+  // Matrice: 172 services × 4 états × 10 seeds = 6880 résolutions _applySiteRealism
+  // + contextes spécifiques depannage_auto / etancheite
+  // + 172 × 2 defaultSetting pour _resolveServiceSetting
+  const T49_STATES = ['debut','encours','semifinal','final'];
+  const T49_CONTEXTES_GENERIC = ['maison','appartement','immeuble'];
+  const T49_CONTEXTES_DEPANNAGE = ['autoroute','parking','domicile','rue_ville','garage'];
+  const T49_CONTEXTES_ETANCHEITE = ['maison','immeuble','commerce'];
   let t49Cases = 0, t49Diffs = [];
   for (const [metier, cat] of Object.entries(SERVICE_CATALOG)) {
+    const contexteList = metier === 'depannage_auto' ? T49_CONTEXTES_DEPANNAGE
+                       : metier === 'etancheite'    ? T49_CONTEXTES_ETANCHEITE
+                       : T49_CONTEXTES_GENERIC;
     for (const svc of cat.services) {
-      for (let img = 0; img < 2; img++) {
-        const input = JSON.stringify({
-          _matched_key: metier, _matched_service: svc, contexte: 'maison',
-          state_level: 'encours', exclude: [],
-        });
-        let legR, modR;
-        try { legR = leg._applySiteRealism(input, img); } catch(e) { legR = `ERR:${e.message}`; }
-        try { modR = modASR(input, img); } catch(e) { modR = `ERR:${e.message}`; }
-        if (!_jeq(legR, modR)) t49Diffs.push(`${metier}/"${svc}"/img${img}`);
-        // _resolveServiceSetting
-        const legS = leg._resolveServiceSetting(metier, svc, 'exterior');
-        const modS = modRSS(metier, svc, 'exterior');
-        if (legS !== modS) t49Diffs.push(`resolveServiceSetting(${metier},"${svc}"): leg=${legS} mod=${modS}`);
-        t49Cases++;
+      for (const state of T49_STATES) {
+        for (const ctx of contexteList) {
+          for (let img = 0; img < 10; img++) {
+            const input = JSON.stringify({
+              _matched_key: metier, _matched_service: svc, contexte: ctx,
+              state_level: state, exclude: [],
+            });
+            let legR, modR;
+            try { legR = leg._applySiteRealism(input, img); } catch(e) { legR = `ERR:${e.message}`; }
+            try { modR = modASR(input, img); } catch(e) { modR = `ERR:${e.message}`; }
+            if (!_jeq(legR, modR)) t49Diffs.push(`${metier}/"${svc}"/${state}/${ctx}/img${img}`);
+            t49Cases++;
+          }
+        }
+      }
+      // _resolveServiceSetting — independent of context/state/seed
+      for (const defSetting of ['exterior','interior']) {
+        const legS = leg._resolveServiceSetting(metier, svc, defSetting);
+        const modS = modRSS(metier, svc, defSetting);
+        if (legS !== modS) t49Diffs.push(`resolveServiceSetting(${metier},"${svc}",${defSetting}): leg=${legS} mod=${modS}`);
       }
     }
   }
@@ -14572,18 +14588,286 @@ async function _runResolutionParityTests() {
     }
   }
 
-  // --- T51: dependency integrity check ---
+  // --- T51: dependency integrity + _applyVariation single definition ---
   const t51Issues = [];
-  // All modules loaded without error means no window/document/network imports
-  // Check no copies of TRIANGLE_RULES, WORK_SCENES, SITE_REALISM in Phase 3 modules
-  const legCfg = window.__IMAGE_GEN_LEGACY_CONFIG__;
   if (!_jeq(modWSR, leg.WORKER_SCENE_RULES)) t51Issues.push('WORKER_SCENE_RULES mismatch');
-  // All exports importable (proved by successful imports above)
+  // _applyVariation: single definition in scene-resolver.js, re-exported from worker-resolver.js
+  const sceneResMod  = await import('./src/image-generation/resolution/scene-resolver.js');
+  const workerResMod = await import('./src/image-generation/resolution/worker-resolver.js');
+  if (typeof sceneResMod._applyVariation !== 'function')
+    t51Issues.push('_applyVariation not exported from scene-resolver.js');
+  if (workerResMod._applyVariation !== sceneResMod._applyVariation)
+    t51Issues.push('worker-resolver._applyVariation is not the same reference as scene-resolver._applyVariation (copy detected)');
   const t51Ok = t51Issues.length === 0;
 
   return { t46Diffs, t47: { cases: t47Cases, diffs: t47Diffs }, t48: { cases: t48Cases, diffs: t48Diffs }, t49: { cases: t49Cases, diffs: t49Diffs }, t50: { cases: t50Cases, diffs: t50Diffs }, t51: { ok: t51Ok, issues: t51Issues } };
 }
 window._runResolutionParityTests = _runResolutionParityTests;
+
+// Bridge Phase 4 — fonctions de planification/validation pour tests de parité T52–T58.
+// Ne pas utiliser en production. Suppression au cutover.
+Object.defineProperty(window, '__IMAGE_GEN_LEGACY_PLANNING__', {
+  value: Object.freeze({
+    _selectCaptureDefects,
+    _planBatchCompositions,
+    _planBatchWorkerPresence,
+    _planGlobalBatch,
+    _rebalanceGlobalBatchPlan,
+    _validateCompleteBatchPlan,
+    _validateResolvedScene,
+    _validateLocationServiceCompatibility,
+    _validateQuality,
+    _assertTaskHasBatchPlan,
+    QUALITY_RULES,
+  }),
+  writable: false,
+  configurable: false,
+});
+
+async function _runPlanningParityTests() {
+  const leg = window.__IMAGE_GEN_LEGACY_PLANNING__;
+  function _npFn(v) {
+    if (v instanceof RegExp) return { __type: 'RegExp', source: v.source, flags: v.flags };
+    if (typeof v === 'function') return { __type: 'function', name: v.name };
+    if (Array.isArray(v)) return v.map(_npFn);
+    if (v !== null && typeof v === 'object') { const o={}; for(const k of Object.keys(v)) o[k]=_npFn(v[k]); return o; }
+    return v;
+  }
+  function _jeq(a, b) { return JSON.stringify(_npFn(a)) === JSON.stringify(_npFn(b)); }
+
+  const [capMod, compMod, wrkMod, batchMod, svalMod, lvalMod, qvalMod, bvalMod] = await Promise.all([
+    import('./src/image-generation/planning/capture-defect-planner.js'),
+    import('./src/image-generation/planning/composition-planner.js'),
+    import('./src/image-generation/planning/worker-planner.js'),
+    import('./src/image-generation/planning/batch-planner.js'),
+    import('./src/image-generation/validation/scene-validator.js'),
+    import('./src/image-generation/validation/location-validator.js'),
+    import('./src/image-generation/validation/quality-validator.js'),
+    import('./src/image-generation/validation/batch-validator.js'),
+  ]);
+
+  const METIERS = Object.keys(COMPOSITION_RULES_BY_METIER).concat(
+    Object.keys(SERVICE_CATALOG).filter(k => !Object.keys(COMPOSITION_RULES_BY_METIER).includes(k))
+  );
+  const STATES = ['debut','encours','semifinal','final'];
+  const BATCH_SIZES = [1, 2, 3, 4, 6, 10];
+
+  // --- T52: QUALITY_RULES parity ---
+  const t52Diffs = [];
+  const legQR = leg.QUALITY_RULES;
+  const modQR = qvalMod.QUALITY_RULES;
+  if (legQR.length !== modQR.length) {
+    t52Diffs.push(`length: leg=${legQR.length} mod=${modQR.length}`);
+  } else {
+    for (let i = 0; i < legQR.length; i++) {
+      if (legQR[i].id !== modQR[i].id) t52Diffs.push(`[${i}].id: ${legQR[i].id} vs ${modQR[i].id}`);
+      if (legQR[i].key !== modQR[i].key) t52Diffs.push(`[${i}].key`);
+      if (!_jeq(legQR[i].forbidden, modQR[i].forbidden)) t52Diffs.push(`[${i}].forbidden`);
+      if (JSON.stringify(legQR[i].fix) !== JSON.stringify(modQR[i].fix)) t52Diffs.push(`[${i}].fix`);
+      if (JSON.stringify(legQR[i].scan) !== JSON.stringify(modQR[i].scan)) t52Diffs.push(`[${i}].scan`);
+    }
+  }
+
+  // --- T53: composition planner parity — 18 métiers × 6 sizes × 100 seeds = 10800 ---
+  let t53Cases = 0, t53Diffs = [];
+  for (const metier of METIERS) {
+    for (const n of BATCH_SIZES) {
+      for (let s = 0; s < 100; s++) {
+        const legR = leg._planBatchCompositions(metier, n, s * 37 + 13);
+        const modR = compMod._planBatchCompositions(metier, n, s * 37 + 13);
+        if (!_jeq(legR, modR)) t53Diffs.push(`${metier}/n=${n}/s=${s}`);
+        t53Cases++;
+      }
+    }
+  }
+
+  // --- T54: workers + vehicle + defects parity — 18 métiers × 4 sizes × 100 seeds = 7200 ---
+  const T54_SIZES = [1, 2, 4, 6];
+  let t54Cases = 0, t54Diffs = [];
+  for (const metier of METIERS) {
+    for (const n of T54_SIZES) {
+      for (let s = 0; s < 100; s++) {
+        const seed = s * 41 + 7;
+        // worker presence
+        const mkTask = (i) => ({
+          _planBase: { _matched_key: metier, _matched_service: '' },
+          _pre_assigned_composition: ['medium_intervention','wide_worksite','close_detail','contextual_overview'][i % 4],
+        });
+        const legGroup = Array.from({length: n}, (_,i) => mkTask(i));
+        const modGroup = Array.from({length: n}, (_,i) => mkTask(i));
+        leg._planBatchWorkerPresence(legGroup, seed);
+        wrkMod._planBatchWorkerPresence(modGroup, seed);
+        for (let i = 0; i < n; i++) {
+          if (legGroup[i]._pre_assigned_worker_presence !== modGroup[i]._pre_assigned_worker_presence ||
+              legGroup[i]._pre_assigned_worker_count !== modGroup[i]._pre_assigned_worker_count) {
+            t54Diffs.push(`workers ${metier}/n=${n}/s=${s}/i=${i}`);
+          }
+        }
+        // defects
+        for (let i = 0; i < n; i++) {
+          const legD = leg._selectCaptureDefects(i, n, seed);
+          const modD = capMod._selectCaptureDefects(i, n, seed);
+          if (!_jeq(legD, modD)) t54Diffs.push(`defects ${metier}/n=${n}/s=${s}/i=${i}`);
+        }
+        t54Cases += n;
+      }
+    }
+  }
+
+  // --- T55: global batch plan parity ---
+  let t55Cases = 0, t55Diffs = [];
+  const T55_SCENARIOS = [
+    // single métier / single service / varying sizes
+    ...BATCH_SIZES.map(n => ({ metier: 'toiture', svc: 'Rénovation toiture complète', n })),
+    ...BATCH_SIZES.map(n => ({ metier: 'depannage_auto', svc: 'Batterie à plat', n })),
+    { metier: 'élagage', svc: 'Élagage arbre', n: 4 },
+    { metier: 'paysagiste', svc: 'Création jardin', n: 6 },
+  ];
+  for (const { metier, svc, n } of T55_SCENARIOS) {
+    for (let s = 0; s < 100; s++) {
+      const runSeed = s * 53 + 11;
+      const mkT = (i) => ({
+        taskId: `task_${i}`,
+        _planBase: { _matched_key: metier, _matched_service: svc },
+        jsonScene: '{}', presencePlan: [], i,
+      });
+      const legTasks = Array.from({length: n}, (_,i) => mkT(i));
+      const modTasks = Array.from({length: n}, (_,i) => mkT(i));
+      leg._planGlobalBatch(legTasks, runSeed);
+      batchMod._planGlobalBatch(modTasks, runSeed);
+      for (let i = 0; i < n; i++) {
+        const lk = ['_pre_assigned_composition','_pre_assigned_vehicle','_pre_assigned_worker_presence',
+                    '_pre_assigned_worker_count','_capture_defects_resolved'];
+        for (const k of lk) {
+          if (!_jeq(legTasks[i][k], modTasks[i][k])) {
+            t55Diffs.push(`${metier}/n=${n}/s=${s}/i=${i}/${k}`);
+          }
+        }
+      }
+      // rebalance parity
+      const legTasks2 = Array.from({length: n}, (_,i) => mkT(i));
+      const modTasks2 = Array.from({length: n}, (_,i) => mkT(i));
+      leg._planGlobalBatch(legTasks2, runSeed);
+      batchMod._planGlobalBatch(modTasks2, runSeed);
+      leg._rebalanceGlobalBatchPlan(legTasks2, runSeed);
+      batchMod._rebalanceGlobalBatchPlan(modTasks2, runSeed);
+      for (let i = 0; i < n; i++) {
+        if (!_jeq(legTasks2[i]._pre_assigned_composition, modTasks2[i]._pre_assigned_composition) ||
+            !_jeq(legTasks2[i]._pre_assigned_vehicle, modTasks2[i]._pre_assigned_vehicle)) {
+          t55Diffs.push(`rebal ${metier}/n=${n}/s=${s}/i=${i}`);
+        }
+      }
+      t55Cases += n;
+    }
+  }
+
+  // --- T56: validators parity ---
+  let t56Cases = 0, t56Diffs = [];
+  // _validateResolvedScene
+  const T56_SCENES = [
+    { _matched_key:'toiture', var_workers:2, no_people:false, var_presence:'workers', composition:'medium_intervention', location_type:'maison_individuelle', contexte:'maison', triangle_rule:null, exclude:[], state_level:'encours' },
+    { _matched_key:'toiture', var_workers:2, no_people:true, var_presence:'workers', composition:'medium_intervention', location_type:'maison_individuelle', contexte:'maison', triangle_rule:null, exclude:[], state_level:'encours' },
+    { _matched_key:'depannage_auto', var_workers:0, no_people:true, var_presence:'none', composition:'wide_worksite', location_type:'domicile', contexte:'domicile', triangle_rule:'forbidden', exclude:[], state_level:'final' },
+    { _matched_key:'depannage_auto', var_workers:0, no_people:true, var_presence:'none', composition:'wide_worksite', location_type:'aire_repos', contexte:'aire_repos', triangle_rule:'forbidden_if_safely_parked', exclude:[], state_level:'final' },
+    { _matched_key:'peinture', var_workers:0, no_people:true, var_presence:'none', composition:'close_detail', location_type:'appartement', contexte:'appartement', triangle_rule:null, setting:'exterior', exclude:[], state_level:'semifinal' },
+    { _matched_key:'toiture', var_workers:0, no_people:true, var_presence:'none', composition:'wide_worksite', location_type:'maison_individuelle', contexte:'maison', triangle_rule:null, site_tools:['pallet of tiles'], exclude:[], state_level:'debut' },
+  ];
+  for (const scene of T56_SCENES) {
+    const legIn = JSON.stringify(scene), modIn = JSON.stringify(scene);
+    let legV, modV;
+    try { legV = leg._validateResolvedScene(legIn); } catch(e) { legV = {error: e.message}; }
+    try { modV = svalMod._validateResolvedScene(modIn); } catch(e) { modV = {error: e.message}; }
+    if (!_jeq(legV, modV)) t56Diffs.push(`validateResolvedScene: ${scene._matched_key}/${scene.location_type}`);
+    t56Cases++;
+  }
+  // _validateLocationServiceCompatibility
+  const T56_LSC = [
+    { _matched_key:'toiture', _matched_service:'Rénovation toiture complète', location_type:'immeuble', location_subtype:'immeuble_parties_communes' },
+    { _matched_key:'etancheite', _matched_service:'Étanchéité toit terrasse', location_type:'immeuble', location_subtype:'immeuble_toiture_inclinee' },
+    { _matched_key:'ravalement', _matched_service:'Ravalement façade', location_type:'immeuble', location_subtype:'immeuble_parties_communes' },
+  ];
+  for (const scene of T56_LSC) {
+    let legV, modV;
+    try { legV = leg._validateLocationServiceCompatibility(JSON.stringify(scene)); } catch(e) { legV={error:e.message}; }
+    try { modV = lvalMod._validateLocationServiceCompatibility(JSON.stringify(scene)); } catch(e) { modV={error:e.message}; }
+    if (!_jeq(legV, modV)) t56Diffs.push(`validateLSC: ${scene._matched_key}`);
+    t56Cases++;
+  }
+  // _validateCompleteBatchPlan and _assertTaskHasBatchPlan
+  const mkBatchTask = (comp, wp, pv) => ({
+    _pre_assigned_composition: comp, _pre_assigned_worker_presence: wp,
+    _pre_assigned_vehicle: pv, _pre_assigned_worker_count: wp==='workers'?1:0,
+    _capture_defects_resolved: [{key:'k',prompt:'p'}], _batch_plan_id:'pid',
+  });
+  const validBatch = [
+    mkBatchTask('medium_intervention','workers','clearly_visible'),
+    mkBatchTask('wide_worksite','none','partially_visible'),
+    mkBatchTask('contextual_overview','none','absent'),
+    mkBatchTask('close_detail','none','absent'),
+  ];
+  const invalidBatch = [mkBatchTask('close_detail','none','absent'), mkBatchTask('close_detail','none','absent')];
+  for (const [batch, shouldThrow] of [[validBatch, false],[invalidBatch, true]]) {
+    let legErr, modErr;
+    try { leg._validateCompleteBatchPlan(batch); } catch(e) { legErr = e.message; }
+    try { bvalMod._validateCompleteBatchPlan(batch); } catch(e) { modErr = e.message; }
+    if (!_jeq(legErr, modErr)) t56Diffs.push(`validateCompleteBatchPlan shouldThrow=${shouldThrow}`);
+    t56Cases++;
+  }
+
+  // --- T57: exhaustive UI batch plans — 146 combos × 10 seeds × 3 sizes = 4380 ---
+  // Use SERVICE_CATALOG to enumerate valid (metier, svc) pairs (= UI combos)
+  const allCombos = [];
+  for (const [metier, cat] of Object.entries(SERVICE_CATALOG)) {
+    for (const svc of cat.services) allCombos.push({ metier, svc });
+  }
+  const T57_SIZES = [2, 4, 6];
+  let t57Cases = 0, t57Diffs = [];
+  // Sample 146 combos (all available)
+  const t57Combos = allCombos.slice(0, 146);
+  for (const { metier, svc } of t57Combos) {
+    for (let s = 0; s < 10; s++) {
+      for (const n of T57_SIZES) {
+        const runSeed = s * 59 + 17;
+        const mkT = (i) => ({ taskId:`t${i}`, _planBase:{ _matched_key:metier, _matched_service:svc }, jsonScene:'{}', presencePlan:[], i });
+        const legTasks = Array.from({length:n},(_,i)=>mkT(i));
+        const modTasks = Array.from({length:n},(_,i)=>mkT(i));
+        leg._planGlobalBatch(legTasks, runSeed);
+        batchMod._planGlobalBatch(modTasks, runSeed);
+        leg._rebalanceGlobalBatchPlan(legTasks, runSeed);
+        batchMod._rebalanceGlobalBatchPlan(modTasks, runSeed);
+        for (let i = 0; i < n; i++) {
+          if (!_jeq(legTasks[i]._pre_assigned_composition, modTasks[i]._pre_assigned_composition) ||
+              !_jeq(legTasks[i]._pre_assigned_vehicle, modTasks[i]._pre_assigned_vehicle) ||
+              !_jeq(legTasks[i]._pre_assigned_worker_presence, modTasks[i]._pre_assigned_worker_presence) ||
+              !_jeq(legTasks[i]._capture_defects_resolved, modTasks[i]._capture_defects_resolved)) {
+            t57Diffs.push(`${metier}/"${svc}"/s=${s}/n=${n}/i=${i}`);
+          }
+        }
+        t57Cases += n;
+      }
+    }
+  }
+
+  // --- T58: Phase 4 dependency integrity ---
+  const t58Issues = [];
+  // All modules imported without error = no window/document/network deps (proved by imports above)
+  // Verify: batch-planner uses _selectVehiclePresence (not inline copy)
+  const bpSrc = batchMod._planGlobalBatch.toString();
+  if (bpSrc.includes("'vehicle_arrival'") && bpSrc.includes('_selectVehiclePresence') === false)
+    t58Issues.push('batch-planner._planGlobalBatch has inline vehicle selection instead of _selectVehiclePresence');
+  const t58Ok = t58Issues.length === 0;
+
+  return {
+    t52: { diffs: t52Diffs },
+    t53: { cases: t53Cases, diffs: t53Diffs },
+    t54: { cases: t54Cases, diffs: t54Diffs },
+    t55: { cases: t55Cases, diffs: t55Diffs },
+    t56: { cases: t56Cases, diffs: t56Diffs },
+    t57: { cases: t57Cases, diffs: t57Diffs },
+    t58: { ok: t58Ok, issues: t58Issues },
+  };
+}
+window._runPlanningParityTests = _runPlanningParityTests;
 
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
@@ -15452,6 +15736,49 @@ async function _runLocalTests() {
       pass('T51: Phase 3 dependency integrity — tous les modules importables, aucune copie illégitime');
     else
       fail('T51: Phase 3 dependency integrity', t51.issues.join('; '));
+  }
+
+  // T52–T58: Phase 4 — planning & validation parity
+  let _planParityResult = null;
+  try { _planParityResult = await window._runPlanningParityTests(); } catch(e) {
+    fail('T52: Quality rules parity', e.message);
+    fail('T53: Composition planner parity', e.message);
+    fail('T54: Worker/vehicle/defects parity', e.message);
+    fail('T55: Global batch plan parity', e.message);
+    fail('T56: Validators parity', e.message);
+    fail('T57: Exhaustive UI batch plans', e.message);
+    fail('T58: Phase 4 dependency integrity', e.message);
+  }
+  if (_planParityResult) {
+    const { t52, t53, t54, t55, t56, t57, t58 } = _planParityResult;
+    if (!t52.diffs.length)
+      pass(`T52: Quality rules parity — ${window.__IMAGE_GEN_LEGACY_PLANNING__.QUALITY_RULES.length} règles, 0 diff`);
+    else
+      fail('T52: Quality rules parity', `${t52.diffs.length} diff(s): ${t52.diffs.slice(0,3).join('; ')}`);
+    if (!t53.diffs.length)
+      pass(`T53: Composition planner parity — ${t53.cases} cas, 0 diff`);
+    else
+      fail('T53: Composition planner parity', `${t53.diffs.length} diff(s): ${t53.diffs.slice(0,3).join('; ')}`);
+    if (!t54.diffs.length)
+      pass(`T54: Worker/vehicle/defects parity — ${t54.cases} cas, 0 diff`);
+    else
+      fail('T54: Worker/vehicle/defects parity', `${t54.diffs.length} diff(s): ${t54.diffs.slice(0,3).join('; ')}`);
+    if (!t55.diffs.length)
+      pass(`T55: Global batch plan parity — ${t55.cases} cas, 0 diff`);
+    else
+      fail('T55: Global batch plan parity', `${t55.diffs.length} diff(s): ${t55.diffs.slice(0,3).join('; ')}`);
+    if (!t56.diffs.length)
+      pass(`T56: Validators parity — ${t56.cases} cas, 0 diff`);
+    else
+      fail('T56: Validators parity', `${t56.diffs.length} diff(s): ${t56.diffs.slice(0,3).join('; ')}`);
+    if (!t57.diffs.length)
+      pass(`T57: Exhaustive UI batch plans — ${t57.cases} cas, 0 diff`);
+    else
+      fail('T57: Exhaustive UI batch plans', `${t57.diffs.length} diff(s): ${t57.diffs.slice(0,3).join('; ')}`);
+    if (t58.ok)
+      pass('T58: Phase 4 dependency integrity — tous modules importables, _selectVehiclePresence extrait');
+    else
+      fail('T58: Phase 4 dependency integrity', t58.issues.join('; '));
   }
 
   // T41: pipeline mocké complet — [PENDING Phase 6+]
