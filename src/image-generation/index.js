@@ -14,6 +14,27 @@
  *   quand ce fichier s'exécute.
  */
 
+// ── Vérification des fonctions legacy avant exposition ───────────────────────
+// app.js s'exécute en script classique avant ce module (type="module" est
+// toujours différé). Si une fonction manque, le bridge lève une erreur visible
+// plutôt que d'exposer silencieusement `undefined` sur window.
+
+const _REQUIRED_LEGACY = [
+  'generateAllImages',
+  'addImgRow',
+  'downloadImagesZip',
+  '_retryFailedImages',
+  '_debugBatchPlan',
+  '_debugFinalPrompt',
+  '_runLocalTests',
+];
+
+for (const name of _REQUIRED_LEGACY) {
+  if (typeof window[name] !== 'function') {
+    throw new Error(`[IMAGE_MODULE_BRIDGE_MISSING] ${name}`);
+  }
+}
+
 // ── Fonctions publiques exposées sur window ──────────────────────────────────
 // Ces assignations sont redondantes en Phase 0 (les fonctions sont déjà
 // globales depuis app.js) mais constituent la surface d'API stable sur
@@ -28,4 +49,4 @@ window._debugFinalPrompt  = _debugFinalPrompt;
 window._runLocalTests     = _runLocalTests;
 
 // ── Marqueur de chargement ───────────────────────────────────────────────────
-console.info('[image-gen] index.js Phase 0 bridge chargé — toute la logique réside dans app.js');
+console.info('[IMAGE MODULE BRIDGE] Ready — 7 legacy functions verified');

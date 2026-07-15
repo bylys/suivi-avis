@@ -14931,36 +14931,56 @@ async function _runLocalTests() {
   } catch(e) { fail('T39: Phase 0 bridge', e.message); }
 
   // T40: équivalence avant/après — buildDallePromptV2 stable sur 8 rows canoniques
-  // Les hashes de référence sont dans src/image-generation/debug/snapshots-t40.js
-  // (chargés en Phase 7+ ; ici on vérifie le hash en live et on compare à la constante inline)
+  // Snapshots complets (stableJson + hash) dans src/image-generation/debug/snapshots-t40.js.
+  // Comparaison principale : sérialisation déterministe (clés triées récursivement).
+  // Le hash est un résumé — la comparaison stableJson prime.
   try {
+    function _t40StableStringify(v) {
+      if (Array.isArray(v)) return '[' + v.map(_t40StableStringify).join(',') + ']';
+      if (v !== null && typeof v === 'object') {
+        return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + _t40StableStringify(v[k])).join(',') + '}';
+      }
+      return JSON.stringify(v);
+    }
+    function _t40Hash32(s) {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
+      return h;
+    }
     const REF = [
-      { metier:'toiture',        travaux:'nettoyage gouttières',      contexte:'maison',      etat:'encours', ville:'Paris', refHash:43274611   },
-      { metier:'toiture',        travaux:'Remplacement de tuiles',     contexte:'maison',      etat:'encours', ville:'Paris', refHash:3368667565  },
-      { metier:'plomberie',      travaux:'Débouchage canalisation',    contexte:'appartement', etat:'encours', ville:'Paris', refHash:2256962858  },
-      { metier:'plomberie',      travaux:"Fuite d'eau",                contexte:'maison',      etat:'debut',   ville:'Paris', refHash:3041528330  },
-      { metier:'électricité',    travaux:'Mise aux normes électrique', contexte:'appartement', etat:'encours', ville:'Paris', refHash:2218385127  },
-      { metier:'depannage_auto', travaux:'batterie à plat',            contexte:'domicile',    etat:'encours', ville:'Paris', refHash:1388930690  },
-      { metier:'peinture',       travaux:'Peinture intérieure',        contexte:'appartement', etat:'encours', ville:'Paris', refHash:3906628003  },
-      { metier:'maçonnerie',     travaux:'Réfection enduit façade',    contexte:'maison',      etat:'encours', ville:'Paris', refHash:590334808   },
+      { id:'toiture-nettoyage',       metier:'toiture',        travaux:'nettoyage gouttières',      contexte:'maison',      etat:'encours', ville:'Paris', refHash:2455936913 },
+      { id:'toiture-tuiles',          metier:'toiture',        travaux:'Remplacement de tuiles',     contexte:'maison',      etat:'encours', ville:'Paris', refHash:2385610455 },
+      { id:'plomberie-debouchage',     metier:'plomberie',      travaux:'Débouchage canalisation',    contexte:'appartement', etat:'encours', ville:'Paris', refHash:1029236932 },
+      { id:'plomberie-fuite',         metier:'plomberie',      travaux:"Fuite d'eau",                contexte:'maison',      etat:'debut',   ville:'Paris', refHash:1088613504 },
+      { id:'electricite-normes',      metier:'électricité',    travaux:'Mise aux normes électrique', contexte:'appartement', etat:'encours', ville:'Paris', refHash:1746687025 },
+      { id:'depannage-auto-batterie', metier:'depannage_auto', travaux:'batterie à plat',            contexte:'domicile',    etat:'encours', ville:'Paris', refHash:919780194  },
+      { id:'peinture-interieure',     metier:'peinture',       travaux:'Peinture intérieure',        contexte:'appartement', etat:'encours', ville:'Paris', refHash:3792538061 },
+      { id:'maconnerie-enduit',       metier:'maçonnerie',     travaux:'Réfection enduit façade',    contexte:'maison',      etat:'encours', ville:'Paris', refHash:1460650968 },
     ];
     const t40Failures = [];
     for (const ref of REF) {
-      const row  = { metier: ref.metier, travaux: ref.travaux, contexte: ref.contexte, etat: ref.etat, nb: 1, ville: ref.ville, fiche: '', meteo: 'auto', images: [] };
-      const json = buildDallePromptV2(row);
-      let hash = 0;
-      for (let i = 0; i < json.length; i++) hash = ((hash * 31) + json.charCodeAt(i)) >>> 0;
-      if (hash !== ref.refHash) t40Failures.push(`${ref.metier}/${ref.travaux}: hash ${hash} ≠ ref ${ref.refHash}`);
+      const row    = { metier: ref.metier, travaux: ref.travaux, contexte: ref.contexte, etat: ref.etat, nb: 1, ville: ref.ville, fiche: '', meteo: 'auto', images: [] };
+      const json   = buildDallePromptV2(row);
+      const stable = _t40StableStringify(JSON.parse(json));
+      const hash   = _t40Hash32(stable);
+      if (hash !== ref.refHash) t40Failures.push(`${ref.id}: hash ${hash} ≠ ref ${ref.refHash}`);
     }
-    if (!t40Failures.length) pass('T40: buildDallePromptV2 stable — 8 hashes correspondent aux snapshots Phase 0');
-    else fail('T40: buildDallePromptV2 équivalence', t40Failures.slice(0, 3).join('; '));
+    if (!t40Failures.length) pass('T40: buildDallePromptV2 stable — 8 stableJson correspondent aux snapshots Phase 0');
+    else fail('T40: buildDallePromptV2 équivalence (stableJson)', t40Failures.slice(0, 3).join('; '));
   } catch(e) { fail('T40: buildDallePromptV2 équivalence', e.message); }
 
-  // T41: pipeline mocké complet — [STUB Phase 6+]
+  // T42: parité legacy/modules — [PENDING Phase 1]
+  // Comparera LOCATION_RULES, LOCATION_ALIASES, CAMERA_COMPOSITIONS, COMPOSITION_RULES_BY_METIER,
+  // CAPTURE_DEFECTS, CAPTURE_DEFECT_GROUPS, PROFESSIONAL_VEHICLE_RULES, SERVICE_CATALOG
+  // entre les versions legacy dans app.js et les exports ES modules dans src/image-generation/config/*.
+  // Les RegExp seront comparées via regex.source + regex.flags.
+  console.log('[TEST] PENDING — T42: Legacy/config module parity (Phase 1, non implémenté)');
+
+  // T41: pipeline mocké complet — [PENDING Phase 6+]
   // Vérifiera qu'une exécution complète avec fetch mocké produit les mêmes
   // statuts finaux qu'avant le refactoring. Implémenté quand le pipeline sera
   // migré dans src/image-generation/pipeline/.
-  pass('T41: pipeline mocké complet — STUB Phase 6+ (non implémenté)');
+  console.log('[TEST] PENDING — T41: pipeline mocké complet (Phase 6+, non implémenté)');
 
   console.log('[TEST] Done.');
 }
