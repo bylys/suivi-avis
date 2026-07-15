@@ -11145,6 +11145,269 @@ const _COMPOSITION_DIST = {
   },
 };
 
+// ─── Camera composition library (distance + frame constraints) ───────────────
+const CAMERA_COMPOSITIONS = {
+  close_detail: {
+    distance: 'approximately 1.5 to 2 metres',
+    subject_max_frame_percent: 55,
+    environment_min_frame_percent: 20,
+    forbidden: [
+      'extreme macro photography',
+      'one tool filling most of the frame',
+      'camera pressed directly against the work surface',
+      'scene with no readable surroundings',
+    ],
+  },
+  medium_intervention: {
+    distance: 'approximately 2.5 to 4 metres',
+    subject_max_frame_percent: 65,
+    environment_min_frame_percent: 25,
+    required: [
+      'the active work is readable',
+      'a substantial part of the worksite is visible',
+      'some surrounding context remains visible',
+    ],
+  },
+  wide_worksite: {
+    distance: 'approximately 5 to 8 metres',
+    subject_max_frame_percent: 50,
+    environment_min_frame_percent: 40,
+    required: [
+      'the overall worksite is visible',
+      'the building, vehicle, garden or room remains identifiable',
+      'workers and professional vehicle are visible when selected',
+    ],
+  },
+  contextual_overview: {
+    distance: 'approximately 6 to 12 metres',
+    subject_max_frame_percent: 40,
+    environment_min_frame_percent: 50,
+    required: [
+      'the work occupies only part of the frame',
+      'the location is immediately understandable',
+      'the photo feels casually documented rather than composed',
+    ],
+  },
+  worker_action: {
+    distance: 'approximately 1 to 4 metres',
+    subject_max_frame_percent: 65,
+    environment_min_frame_percent: 20,
+    required: [
+      'the worker is caught in natural motion',
+      'tool is engaged or body is in movement',
+      'no eye contact with camera',
+    ],
+  },
+  vehicle_arrival: {
+    distance: 'approximately 5 to 20 metres',
+    subject_max_frame_percent: 50,
+    environment_min_frame_percent: 35,
+    required: [
+      'professional service vehicle clearly visible',
+      'location context visible around the vehicle',
+    ],
+  },
+  equipment_from_vehicle: {
+    distance: 'approximately 2 to 6 metres',
+    subject_max_frame_percent: 55,
+    environment_min_frame_percent: 25,
+    required: [
+      'equipment being unloaded or laid out from open vehicle',
+      'tools visible, vehicle rear open',
+    ],
+  },
+};
+
+// ─── Per-métier composition rules ─────────────────────────────────────────────
+const COMPOSITION_RULES_BY_METIER = {
+  toiture: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite', 'contextual_overview'],
+    close_detail_max_ratio: 0.20,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: { placement: 'parked at street level near the building, never on the roof' },
+    forbidden_framing: ['tile filling most of the frame with no surroundings', 'single tool as hero shot', 'macro photo of slate or flashing with no wider context'],
+  },
+  etancheite: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.20,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['roll of membrane as hero shot', 'torch alone in frame'],
+  },
+  nettoyage_toiture: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.20,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['pressure lance as hero shot'],
+  },
+  nettoyage_gouttieres: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.25,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['macro photo of gutter channel alone'],
+  },
+  elagage: {
+    allowed_compositions: ['medium_intervention', 'wide_worksite', 'contextual_overview', 'worker_action'],
+    preferred_compositions: ['wide_worksite', 'medium_intervention'],
+    close_detail_max_ratio: 0.10,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['chainsaw as hero shot', 'rope detail alone', 'single branch detail with no surroundings'],
+  },
+  abattage: {
+    allowed_compositions: ['wide_worksite', 'contextual_overview', 'medium_intervention', 'worker_action'],
+    preferred_compositions: ['wide_worksite', 'contextual_overview'],
+    close_detail_max_ratio: 0.10,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['chain detail alone', 'stump alone filling frame', 'chainsaw filling frame'],
+  },
+  paysagiste: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.20,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['single plant filling frame as hero shot', 'tool arranged for display'],
+  },
+  peinture: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.20,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['roller alone filling most of the frame', 'paint tin as hero shot', 'series of only roller or brush close-ups'],
+  },
+  terrassement: {
+    allowed_compositions: ['wide_worksite', 'contextual_overview', 'medium_intervention'],
+    preferred_compositions: ['wide_worksite', 'contextual_overview'],
+    close_detail_max_ratio: 0.10,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['bucket alone filling frame', 'dirt pile alone with no site context', 'pipe detail with no trench context'],
+  },
+  maconnerie: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.20,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['mortar detail alone', 'single block as hero shot', 'trowel filling most of the frame'],
+  },
+  vitrier: {
+    allowed_compositions: ['medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.15,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['seal bead alone as hero shot', 'single suction cup filling frame'],
+  },
+  nettoyage: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.25,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 0,
+    vehicle_rules: {},
+    forbidden_framing: ['hose nozzle as hero shot', 'chemical bottle filling frame'],
+  },
+  ravalement: {
+    allowed_compositions: ['medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['wide_worksite', 'contextual_overview'],
+    close_detail_max_ratio: 0.15,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['rendering detail alone', 'surface texture macro with no building context'],
+  },
+  carrelage: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.20,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 0,
+    vehicle_rules: {},
+    forbidden_framing: ['grout lines filling entire frame', 'single tile spacer as hero shot'],
+  },
+  debarras: {
+    allowed_compositions: ['medium_intervention', 'wide_worksite', 'contextual_overview'],
+    preferred_compositions: ['wide_worksite', 'contextual_overview'],
+    close_detail_max_ratio: 0.15,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 0,
+    vehicle_rules: {},
+    forbidden_framing: ['single object filling frame as catalogue hero'],
+  },
+  depannage_auto: {
+    allowed_compositions: ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview', 'vehicle_arrival', 'equipment_from_vehicle', 'worker_action'],
+    preferred_compositions: ['medium_intervention', 'wide_worksite'],
+    close_detail_max_ratio: 0.10,
+    minimum_contextual_images_per_batch: 1,
+    minimum_worker_images_per_active_batch: 1,
+    vehicle_rules: {},
+    forbidden_framing: ['pressure gauge filling most of the frame', 'multimeter display as hero shot', 'battery clamp alone as hero shot', 'tyre tread macro with no car or context'],
+  },
+};
+
+// ─── Per-métier professional vehicle rules ────────────────────────────────────
+const PROFESSIONAL_VEHICLE_RULES = {
+  toiture:            { types: ['white utility van', 'pickup with roof rack'],            dist: { clearly_visible: 35, partially_visible: 25, absent: 40 } },
+  etancheite:         { types: ['flat-bed lorry with membrane rolls', 'utility van'],      dist: { clearly_visible: 30, partially_visible: 25, absent: 45 } },
+  nettoyage_toiture:  { types: ['utility van with pressure washer'],                       dist: { clearly_visible: 30, partially_visible: 25, absent: 45 } },
+  nettoyage_gouttieres:{ types: ['utility van with ladder rack'],                          dist: { clearly_visible: 25, partially_visible: 25, absent: 50 } },
+  elagage:            { types: ['arborist van', 'chipper truck', 'trailer with branches'], dist: { clearly_visible: 40, partially_visible: 30, absent: 30 } },
+  abattage:           { types: ['arborist van', 'log trailer', 'chipper truck'],           dist: { clearly_visible: 40, partially_visible: 30, absent: 30 } },
+  paysagiste:         { types: ['landscape van', 'trailer with mower'],                    dist: { clearly_visible: 35, partially_visible: 25, absent: 40 } },
+  peinture:           { types: ['painter decorator van'],                                  dist: { clearly_visible: 20, partially_visible: 25, absent: 55 } },
+  terrassement:       { types: ['mini-excavator on trailer', 'tipper lorry'],              dist: { clearly_visible: 50, partially_visible: 20, absent: 30 } },
+  maconnerie:         { types: ['builder utility van', 'pickup with material'],            dist: { clearly_visible: 30, partially_visible: 25, absent: 45 } },
+  vitrier:            { types: ['glazier van with A-frame glass rack'],                    dist: { clearly_visible: 35, partially_visible: 30, absent: 35 } },
+  nettoyage:          { types: ['cleaning company van'],                                   dist: { clearly_visible: 20, partially_visible: 20, absent: 60 } },
+  ravalement:         { types: ['scaffold lorry', 'builder utility van'],                  dist: { clearly_visible: 30, partially_visible: 25, absent: 45 } },
+  carrelage:          { types: ['tiler van', 'small utility van'],                         dist: { clearly_visible: 15, partially_visible: 20, absent: 65 } },
+  debarras:           { types: ['removal van', 'skip lorry', 'tipper van'],                dist: { clearly_visible: 40, partially_visible: 20, absent: 40 } },
+  depannage_auto:     { types: ['breakdown recovery van', 'flatbed tow truck'],            dist: { clearly_visible: 40, partially_visible: 25, absent: 35 } },
+};
+
+// ─── Smartphone capture defects library (weighted) ────────────────────────────
+const CAPTURE_DEFECTS = {
+  slight_motion_blur:   { weight: 15, prompt: 'very slight handheld motion blur affecting a minor edge, without hiding the work' },
+  soft_autofocus:       { weight: 18, prompt: 'ordinary smartphone autofocus with slightly soft secondary areas' },
+  small_lens_smudge:    { weight: 10, prompt: 'a faint small lens smudge or hazy patch close to one edge' },
+  finger_edge:          { weight:  5, prompt: 'a tiny out-of-focus fingertip intruding at one extreme corner, covering no work or safety detail' },
+  jpeg_compression:     { weight: 25, prompt: 'subtle JPEG compression and ordinary smartphone processing' },
+  sensor_noise:         { weight: 15, prompt: 'mild digital noise in darker or shadowed areas' },
+  slight_tilt:          { weight: 18, prompt: 'slightly tilted handheld framing' },
+  imperfect_crop:       { weight: 16, prompt: 'casual imperfect framing with one unimportant object partially cropped' },
+  minor_exposure_error: { weight: 10, prompt: 'slightly imperfect automatic exposure with a mildly bright sky or dark corner' },
+  light_dirt_speck:     { weight:  8, prompt: 'one tiny soft dirt speck near the outer edge of the image' },
+};
+
+// Same-family pairs are forbidden — prevents cumulating two similar-looking defects.
+const CAPTURE_DEFECT_GROUPS = {
+  optical_obstruction: ['small_lens_smudge', 'light_dirt_speck', 'finger_edge'],
+  focus_motion:        ['soft_autofocus', 'slight_motion_blur'],
+  framing:             ['slight_tilt', 'imperfect_crop'],
+  digital_processing:  ['jpeg_compression', 'sensor_noise', 'minor_exposure_error'],
+};
+
 // Mapping: CONTEXTE_BY_METIER values (per-métier) → LOCATION_RULES key
 const _CONTEXTE_TO_LOCATION = {
   depannage_auto: {
@@ -12298,39 +12561,377 @@ function _resolveLocationAndComposition(jsonStr, imageIndex) {
     obj.exclude = [...new Set([...(obj.exclude || []), 'warning triangle', 'safety triangle', 'emergency warning triangle'])];
   }
 
-  // 3. Composition — weighted draw per métier
-  const compDist = _COMPOSITION_DIST[key] || _COMPOSITION_DIST.default;
-  const compRoll = _hashSeed(`${key}|${ctx}|comp${imageIndex}`) % 100;
-  let cumulative = 0;
-  obj.composition = 'medium_intervention';
-  for (const comp in compDist) {
-    cumulative += compDist[comp];
-    if (compRoll < cumulative) { obj.composition = comp; break; }
+  // 3. Composition — batch-pre-assigned or weighted draw per métier
+  if (obj._pre_assigned_composition && PHOTO_COMPOSITIONS[obj._pre_assigned_composition]) {
+    obj.composition = obj._pre_assigned_composition;
+  } else {
+    const compDist = _COMPOSITION_DIST[key] || _COMPOSITION_DIST.default;
+    const compRoll = _hashSeed(`${key}|${ctx}|comp${imageIndex}`) % 100;
+    let cumulative = 0;
+    obj.composition = 'medium_intervention';
+    for (const comp in compDist) {
+      cumulative += compDist[comp];
+      if (compRoll < cumulative) { obj.composition = comp; break; }
+    }
   }
   const compDef = PHOTO_COMPOSITIONS[obj.composition];
   if (compDef) obj.composition_desc = compDef.description;
+  // Camera distance from CAMERA_COMPOSITIONS
+  const camCompDef = CAMERA_COMPOSITIONS[obj.composition];
+  if (camCompDef) obj.camera_distance = camCompDef.distance;
 
-  // 4. Professional vehicle (depannage_auto only) — linked to composition
-  if (key === 'depannage_auto') {
-    const pvSeed = _hashSeed(`${key}|${ctx}|pvehicle${imageIndex}`);
-    const pvRoll = pvSeed % 100;
-    const comp   = obj.composition;
+  // 4. Professional vehicle — generalized for all métiers, linked to composition
+  {
+    const pvSeed   = _hashSeed(`${key}|${ctx}|pvehicle${imageIndex}`);
+    const pvRoll   = pvSeed % 100;
+    const comp     = obj.composition;
+    const pvRules  = PROFESSIONAL_VEHICLE_RULES[key] || {};
+    const d        = pvRules.dist || { clearly_visible: 35, partially_visible: 25, absent: 40 };
     let pvPresence;
-    if (comp === 'vehicle_arrival') {
-      pvPresence = 'clearly_visible';                                    // forced
+    if (obj._pre_assigned_vehicle) {
+      pvPresence = obj._pre_assigned_vehicle;
+    } else if (comp === 'vehicle_arrival') {
+      pvPresence = 'clearly_visible';
     } else if (comp === 'equipment_from_vehicle') {
-      pvPresence = pvRoll < 70 ? 'clearly_visible' : 'partially_visible'; // at least partial
+      pvPresence = pvRoll < 70 ? 'clearly_visible' : 'partially_visible';
     } else if (comp === 'close_detail') {
-      pvPresence = pvRoll < 85 ? 'absent' : 'partially_visible';         // usually absent
+      pvPresence = pvRoll < 85 ? 'absent' : 'partially_visible';
     } else {
-      pvPresence = pvRoll < 40 ? 'clearly_visible'
-                 : pvRoll < 65 ? 'partially_visible'
+      pvPresence = pvRoll < d.clearly_visible                           ? 'clearly_visible'
+                 : pvRoll < (d.clearly_visible + d.partially_visible)  ? 'partially_visible'
                  : 'absent';
     }
     obj.professional_vehicle_presence = pvPresence;
   }
 
   return JSON.stringify(obj);
+}
+
+// ─── Capture defect selector ─────────────────────────────────────────────────
+// Returns 1 or 2 defect objects, varied across batch positions, never the same defect twice per image.
+function _selectCaptureDefects(batchIndex, batchTotal, seed) {
+  const keys   = Object.keys(CAPTURE_DEFECTS);
+  const countS = _hashSeed(`defects|count|${seed}|${batchIndex}`);
+  const count  = (countS % 4 === 0) ? 1 : 2;
+
+  // Build defect → family lookup once
+  const defectFamily = {};
+  for (const [fam, members] of Object.entries(CAPTURE_DEFECT_GROUPS)) {
+    for (const m of members) defectFamily[m] = fam;
+  }
+
+  const picked = [];
+  const used   = new Set();
+
+  for (let p = 0; p < count; p++) {
+    // Exclude already-used keys AND all keys in the same family as any already-picked defect
+    const usedFamilies = new Set(picked.map(k => defectFamily[k]).filter(Boolean));
+    const available = keys.filter(k => !used.has(k) && !usedFamilies.has(defectFamily[k]));
+    // Safety fallback: if all remaining keys share a family with picked, allow any unused
+    const pool    = available.length ? available : keys.filter(k => !used.has(k));
+    const weights = pool.map(k => CAPTURE_DEFECTS[k].weight);
+    const totalW  = weights.reduce((a, b) => a + b, 0);
+    const roll    = _hashSeed(`defects|pick${p}|${seed}|${batchIndex}`) % totalW;
+    let cum = 0, chosen = pool[0];
+    for (let i = 0; i < pool.length; i++) {
+      cum += weights[i];
+      if (roll < cum) { chosen = pool[i]; break; }
+    }
+    picked.push(chosen);
+    used.add(chosen);
+  }
+  return picked.map(k => ({ key: k, prompt: CAPTURE_DEFECTS[k].prompt }));
+}
+
+// ─── Batch composition planner ───────────────────────────────────────────────
+// Assigns ordered compositions for a group of n images sharing a métier.
+// Guarantees: close_detail quota, no consecutive duplicates, min 1 contextual/wide per batch ≥ 2.
+function _planBatchCompositions(metier, n, seed) {
+  const rules       = COMPOSITION_RULES_BY_METIER[metier] || {};
+  const preferred   = rules.preferred_compositions || ['medium_intervention', 'wide_worksite'];
+  const allowed     = rules.allowed_compositions   || Object.keys(PHOTO_COMPOSITIONS);
+  const maxCloseR   = rules.close_detail_max_ratio ?? 0.20;
+  const maxClose    = Math.max(1, Math.floor(n * maxCloseR));
+  const minCtx      = rules.minimum_contextual_images_per_batch ?? 1;
+
+  const result = [];
+  let closeCount = 0;
+
+  for (let i = 0; i < n; i++) {
+    // Force contextual_overview for the last slot if quota not yet met
+    const needCtx = minCtx > 0 && i === n - 1 && !result.includes('contextual_overview') && allowed.includes('contextual_overview');
+    if (needCtx) { result.push('contextual_overview'); continue; }
+
+    let pool = [...preferred].filter(c => allowed.includes(c));
+    if (!pool.length) pool = [...allowed];
+
+    // Enforce close_detail quota
+    if (closeCount >= maxClose) pool = pool.filter(c => c !== 'close_detail');
+
+    // Avoid repeating the immediately previous composition
+    const last = result[result.length - 1];
+    if (pool.length > 1) pool = pool.filter(c => c !== last);
+    if (!pool.length) pool = allowed.filter(c => c !== last && (closeCount < maxClose || c !== 'close_detail'));
+    if (!pool.length) pool = allowed;
+
+    const comp = pool[_hashSeed(`batchcomp|${metier}|${seed}|${i}`) % pool.length];
+    result.push(comp);
+    if (comp === 'close_detail') closeCount++;
+  }
+  return result;
+}
+
+// ─── Global batch planner ─────────────────────────────────────────────────────
+// Groups tasks by métier+service, assigns composition/vehicle/defects/worker plan to each.
+// Mutates task objects in place; returns the same tasks array.
+function _planGlobalBatch(tasks, runSeed) {
+  const groups = {};
+  for (const t of tasks) {
+    const mk = `${t._planBase._matched_key || ''}|${t._planBase._matched_service || ''}`;
+    if (!groups[mk]) groups[mk] = [];
+    groups[mk].push(t);
+  }
+
+  for (const groupKey of Object.keys(groups)) {
+    const group  = groups[groupKey];
+    const metier = group[0]._planBase._matched_key || '';
+    const n      = group.length;
+    const gSeed  = _hashSeed(`${groupKey}|${runSeed}`);
+    const comps  = _planBatchCompositions(metier, n, gSeed);
+    const pvR    = PROFESSIONAL_VEHICLE_RULES[metier] || {};
+    const d      = pvR.dist || { clearly_visible: 35, partially_visible: 25, absent: 40 };
+
+    for (let gi = 0; gi < n; gi++) {
+      const task = group[gi];
+      const comp = comps[gi];
+      const pvS  = _hashSeed(`pv|${groupKey}|${gSeed}|${gi}`) % 100;
+      let pv;
+      if      (comp === 'vehicle_arrival')        pv = 'clearly_visible';
+      else if (comp === 'equipment_from_vehicle') pv = pvS < 70 ? 'clearly_visible' : 'partially_visible';
+      else if (comp === 'close_detail')           pv = pvS < 85 ? 'absent' : 'partially_visible';
+      else pv = pvS < d.clearly_visible                        ? 'clearly_visible'
+              : pvS < (d.clearly_visible + d.partially_visible)? 'partially_visible'
+              : 'absent';
+
+      task._pre_assigned_composition   = comp;
+      task._pre_assigned_vehicle       = pv;
+      task._capture_defects_resolved   = _selectCaptureDefects(gi, n, _hashSeed(`defect|${groupKey}|${gSeed}|${gi}`));
+      task._batch_plan_id              = `plan_${groupKey}_${gSeed}_${gi}`;
+      task._batch_run_seed             = String(runSeed);
+    }
+    // Worker presence at batch level
+    _planBatchWorkerPresence(group, gSeed);
+  }
+  return tasks;
+}
+
+// ─── Global batch rebalancer ──────────────────────────────────────────────────
+// After per-group planning, ensures the FULL batch meets global composition quotas:
+// max 1 close_detail, min 1 medium_intervention + wide_worksite + contextual_overview,
+// min 1 worker scene, min 1 vehicle visible or partial. Mutates tasks in place.
+function _rebalanceGlobalBatchPlan(tasks, runSeed) {
+  if (!tasks.length) return tasks;
+
+  const REQUIRED_COMPS = ['medium_intervention', 'wide_worksite', 'contextual_overview'];
+
+  // Live counts — rebuilt as we swap
+  const counts = {};
+  for (const t of tasks) counts[t._pre_assigned_composition] = (counts[t._pre_assigned_composition] || 0) + 1;
+
+  // 1. Cap close_detail at 1
+  if ((counts.close_detail || 0) > 1) {
+    let excess = counts.close_detail - 1;
+    for (const t of tasks) {
+      if (!excess) break;
+      if (t._pre_assigned_composition !== 'close_detail') continue;
+      const metier  = t._planBase?._matched_key || '';
+      const allowed = (COMPOSITION_RULES_BY_METIER[metier] || {}).allowed_compositions || Object.keys(CAMERA_COMPOSITIONS);
+      if (!allowed.includes('medium_intervention')) continue;
+      counts.close_detail--;
+      counts.medium_intervention = (counts.medium_intervention || 0) + 1;
+      t._pre_assigned_composition = 'medium_intervention';
+      excess--;
+    }
+  }
+
+  // 2. Ensure each required composition appears at least once
+  for (const needed of REQUIRED_COMPS) {
+    if ((counts[needed] || 0) >= 1) continue;
+    // Candidates: current comp is over-represented AND métier allows `needed`
+    const candidates = tasks
+      .filter(t => {
+        if (t._pre_assigned_composition === needed) return false;
+        const metier  = t._planBase?._matched_key || '';
+        const allowed = (COMPOSITION_RULES_BY_METIER[metier] || {}).allowed_compositions || Object.keys(CAMERA_COMPOSITIONS);
+        if (!allowed.includes(needed)) return false;
+        const cur = t._pre_assigned_composition;
+        // Don't deplete the only occurrence of another required type
+        if (REQUIRED_COMPS.includes(cur) && (counts[cur] || 0) <= 1) return false;
+        return true;
+      })
+      .sort((a, b) => (counts[b._pre_assigned_composition] || 0) - (counts[a._pre_assigned_composition] || 0));
+
+    if (!candidates.length) continue;
+
+    const topCount = counts[candidates[0]._pre_assigned_composition] || 0;
+    const top      = candidates.filter(t => (counts[t._pre_assigned_composition] || 0) === topCount);
+    const chosen   = top[_hashSeed(`rebal|${needed}|${runSeed}`) % top.length];
+
+    counts[chosen._pre_assigned_composition]--;
+    chosen._pre_assigned_composition = needed;
+    counts[needed] = (counts[needed] || 0) + 1;
+  }
+
+  // 3. Ensure at least 1 vehicle visible or partial
+  if (!tasks.some(t => t._pre_assigned_vehicle !== 'absent')) {
+    const pref = ['wide_worksite', 'medium_intervention', 'vehicle_arrival', 'equipment_from_vehicle'];
+    const pvC  = tasks
+      .filter(t => t._pre_assigned_composition !== 'close_detail')
+      .sort((a, b) => {
+        const ia = pref.indexOf(a._pre_assigned_composition);
+        const ib = pref.indexOf(b._pre_assigned_composition);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+    if (pvC.length) pvC[_hashSeed(`rebal|vehicle|${runSeed}`) % pvC.length]._pre_assigned_vehicle = 'partially_visible';
+  }
+
+  return tasks;
+}
+
+// ─── Global batch plan validator ──────────────────────────────────────────────
+// Throws [INVALID_BATCH_PLAN] if global quotas are not satisfied after rebalancing.
+function _validateCompleteBatchPlan(tasks) {
+  const comps    = tasks.map(t => t._pre_assigned_composition);
+  const failures = [];
+  if (comps.filter(c => c === 'close_detail').length > 1) failures.push('close_detail > 1');
+  if (!comps.includes('medium_intervention'))             failures.push('no medium_intervention');
+  if (!comps.includes('wide_worksite'))                   failures.push('no wide_worksite');
+  if (!comps.includes('contextual_overview'))             failures.push('no contextual_overview');
+  if (!tasks.some(t => t._pre_assigned_worker_presence === 'workers')) failures.push('no worker scene');
+  if (!tasks.some(t => t._pre_assigned_vehicle !== 'absent'))          failures.push('no visible/partial vehicle');
+  if (failures.length) throw new Error(`[INVALID_BATCH_PLAN] ${failures.join('; ')}`);
+}
+
+// ─── Batch worker presence planner ───────────────────────────────────────────
+// Assigns _pre_assigned_worker_presence and _pre_assigned_worker_count per task in a same-métier group.
+// Guarantees minimum_worker_images_per_active_batch. Mutates group in place.
+function _planBatchWorkerPresence(group, seed) {
+  const metier  = group[0]?._planBase?._matched_key || '';
+  const rules   = COMPOSITION_RULES_BY_METIER[metier] || {};
+  const wRules  = WORKER_SCENE_RULES?.[metier] || {};
+  const minWImg = rules.minimum_worker_images_per_active_batch ?? 1;
+  const minW    = wRules.min_workers_when_visible || 1;
+  const n       = group.length;
+  let workerImages = 0;
+
+  for (let i = 0; i < n; i++) {
+    const task = group[i];
+    const comp = task._pre_assigned_composition || 'medium_intervention';
+    const roll = _hashSeed(`worker|${metier}|${seed}|${i}`) % 100;
+    let pres;
+    if      (comp === 'close_detail')        pres = roll < 30 ? 'workers' : (roll < 60 ? 'indirect' : 'none');
+    else if (comp === 'contextual_overview') pres = roll < 40 ? 'workers' : (roll < 70 ? 'none' : 'indirect');
+    else                                     pres = roll < 50 ? 'workers' : (roll < 90 ? 'none' : 'indirect');
+    task._pre_assigned_worker_presence = pres;
+    task._pre_assigned_worker_count    = pres === 'workers' ? minW : 0;
+    if (pres === 'workers') workerImages++;
+  }
+
+  // Enforce minimum — promote non-workers images to workers (prefer non-close-detail)
+  for (let pass = 0; pass < 2 && workerImages < minWImg; pass++) {
+    for (let i = 0; i < n && workerImages < minWImg; i++) {
+      const comp = group[i]._pre_assigned_composition || '';
+      if (group[i]._pre_assigned_worker_presence !== 'workers' && (pass > 0 || comp !== 'close_detail')) {
+        group[i]._pre_assigned_worker_presence = 'workers';
+        group[i]._pre_assigned_worker_count    = minW;
+        workerImages++;
+      }
+    }
+  }
+}
+
+// Per-métier actual safety violations (not presence constraints — those go in WORKER PRESENCE).
+const FORBIDDEN_SAFETY_BY_METIER = {
+  toiture:        ['No roofer working without a safety harness and lanyard', 'No worker balanced on tiles with no edge anchor'],
+  elagage:        ['No arborist in a tree without a visible climbing harness'],
+  abattage:       ['No person standing in the fall zone of a tree being felled'],
+  terrassement:   ['No person standing in an open trench without visible shoring or sloping'],
+  depannage_auto: ['No person working under a raised vehicle without visible axle stands'],
+  maconnerie:     ['No worker on an elevated platform without visible edge protection or guardrail'],
+  peinture:       ['No worker on a ladder with both hands occupied above shoulder height and no foot restraint'],
+  ravalement:     ['No worker on scaffolding without visible guardrails on the open side'],
+};
+
+// ─── Locked final constraint layer ───────────────────────────────────────────
+// Appended to the GPT-rewritten prompt AFTER the rewriter — cannot be softened by GPT.
+// Section order: WORKER PRESENCE → CAMERA COMPOSITION → CAPTURE DEFECTS →
+//   DOCUMENTARY STYLE → BRANDING → REQUIRED SAFETY → FORBIDDEN SAFETY VIOLATIONS
+function _appendLockedFinalConstraints(prompt, scene) {
+  const compKey   = scene.composition || 'medium_intervention';
+  const camDef    = CAMERA_COMPOSITIONS[compKey] || CAMERA_COMPOSITIONS.medium_intervention;
+  const defects   = scene._capture_defects_resolved || [];
+  const metier    = scene._matched_key || '';
+
+  const defectsBlock = defects.length > 0
+    ? defects.map(d => `- ${d.prompt}`).join('\n')
+    : '- subtle JPEG compression and ordinary smartphone processing\n- slightly tilted handheld framing';
+
+  const metierRules = COMPOSITION_RULES_BY_METIER[metier] || {};
+  const forbiddenFr = (metierRules.forbidden_framing || []).map(f => `No ${f}.`).join('\n');
+
+  // WORKER PRESENCE — human presence constraint (separate from safety rules)
+  const sceneWorkers  = scene.var_workers || 0;
+  const scenePresence = scene.var_presence || 'none';
+  const hasWorkers    = sceneWorkers > 0 || scenePresence === 'workers';
+  const workerBlock   = hasWorkers
+    ? `${sceneWorkers > 1 ? sceneWorkers + ' workers' : 'One worker'} must be actively working and clearly visible in the frame.`
+    : 'No workers or people visible in this specific image. Frame the scene to show work evidence, tools, or surroundings — no human figures.';
+
+  // REQUIRED SAFETY (PPE when workers are visible)
+  const requiredSafety = [];
+  if (scene._worker_safety_mode && hasWorkers) requiredSafety.push(scene._worker_safety_mode);
+
+  // FORBIDDEN SAFETY VIOLATIONS — real safety rules only, NOT presence constraints
+  const forbiddenSafety = [];
+  const triRule = scene.triangle_rule;
+  if (triRule === 'forbidden' || triRule === 'forbidden_if_safely_parked')
+    forbiddenSafety.push('No warning triangle visible anywhere in the image.');
+  forbiddenSafety.push(...(FORBIDDEN_SAFETY_BY_METIER[metier] || []));
+
+  return `${prompt}
+
+NON-NEGOTIABLE FINAL CAPTURE CONSTRAINTS — DO NOT REMOVE, WEAKEN, REINTERPRET OR CONTRADICT:
+
+WORKER PRESENCE:
+${workerBlock}
+
+CAMERA COMPOSITION: ${compKey}
+Distance from subject: ${camDef.distance}.
+The main work detail must not fill more than ${camDef.subject_max_frame_percent}% of the frame.
+The location and surrounding context must remain visible (minimum ${camDef.environment_min_frame_percent}% of frame).
+${(camDef.required || []).map(r => `- ${r}`).join('\n')}
+${(camDef.forbidden || []).map(f => `Not: ${f}.`).join('\n')}
+${forbiddenFr}
+
+SUBTLE CAPTURE IMPERFECTIONS:
+These imperfections must remain slight and naturally perceptible. They must never become the main subject, obscure the work, reduce safety readability, or make the image look intentionally damaged.
+Optical defects (finger, smudge, dirt) must remain at the extreme edge of the frame and must never cover the work, a worker's face or body, safety equipment, the professional vehicle, or any technically important area.
+${defectsBlock}
+
+DOCUMENTARY STYLE:
+Ordinary handheld smartphone documentation photograph. Casual business-owner or worker photo.
+Not a commercial photograph. Not product photography. Not catalogue photography. Not architectural visualization. Not CGI.
+No perfect symmetry. No perfect tool arrangement. No exaggerated sharpness. No cinematic depth of field.
+No tools neatly lined up for the camera. No equipment arranged in a semicircle. No perfectly centred machine or tool.
+No spotless equipment unless the service logically requires new equipment. No studio-like sharpness.
+Equipment must show reasonable signs of use: light dust, marks, unrolled hose, open case, crumpled tarpaulin.
+
+BRANDING:
+No readable brand names. No readable vehicle manufacturer logos as a focal point. No fake company branding.
+No generated licence plate text intended to be readable. No prominent text on tools, gauges, vehicles or clothing.
+Generic unbranded professional equipment. Any unavoidable text must be tiny, incidental and unreadable.
+${requiredSafety.length > 0 ? '\nREQUIRED SAFETY ELEMENTS:\n' + requiredSafety.map(s => `- ${s}`).join('\n') : ''}
+${forbiddenSafety.length > 0 ? '\nFORBIDDEN SAFETY VIOLATIONS:\n' + forbiddenSafety.join('\n') : ''}`.trim();
 }
 
 // ─── Scene Contradiction Validator ────────────────────────────────────────────
@@ -13108,13 +13709,58 @@ async function _checkImageSafety(b64, matchedKey, apiKey) {
   } catch (e) { return { safe: null, checkFailed: true, reason: e.message }; }
 }
 
+// ─── Batch plan assertion ──────────────────────────────────────────────────────
+// Throws if any required batch-plan field is missing on a task.
+// Call at the top of _generateImageOnly to catch integration misses early.
+// ─── Final worker / no_people consistency guard ───────────────────────────────
+// Called on the final scene object just before _appendLockedFinalConstraints.
+// Throws [WORKER_PROMPT_CONTRADICTION] if var_workers > 0 but no_people = true.
+// Normalises no_people to match the resolved worker state.
+function _assertFinalWorkerConsistency(scene) {
+  const sceneWorkers  = scene.var_workers || 0;
+  const scenePresence = scene.var_presence || 'none';
+  const hasWorkers    = sceneWorkers > 0 || scenePresence === 'workers';
+
+  if (hasWorkers && scene.no_people === true) {
+    throw new Error(
+      `[WORKER_PROMPT_CONTRADICTION] var_workers=${sceneWorkers} var_presence=${scenePresence} but no_people=true`
+    );
+  }
+
+  if (hasWorkers)  scene.no_people = false;
+  if (!hasWorkers) scene.no_people = true;
+}
+
+function _assertTaskHasBatchPlan(task) {
+  const required = [
+    '_pre_assigned_composition',
+    '_pre_assigned_worker_presence',
+    '_pre_assigned_worker_count',
+    '_capture_defects_resolved',
+    '_batch_plan_id',
+  ];
+  const missing = required.filter(k => task[k] === undefined || task[k] === null);
+  if (missing.length)
+    throw new Error(`[INCOMPLETE_BATCH_PLAN] taskId=${task.taskId} missing=${missing.join(',')}`);
+}
+
 // ─── Image-only generation (NO safety check — handled separately in processTask) ─
 
 async function _generateImageOnly(task, key, runId) {
   const { jsonScene, presencePlan, i, slug, _planBase } = task;
   const realistScene = _applySiteRealism(jsonScene, i);
   const variedScene    = _applyVariation(realistScene, i, presencePlan[i]);
-  const resolvedScene  = _resolveLocationAndComposition(variedScene, i);
+  // Verify batch plan exists, then inject pre-assigned fields into scene
+  _assertTaskHasBatchPlan(task);
+  let _sceneForResolve = variedScene;
+  try {
+    const _so = JSON.parse(_sceneForResolve);
+    _so._pre_assigned_composition = task._pre_assigned_composition;
+    _so._pre_assigned_vehicle     = task._pre_assigned_vehicle;
+    _so._capture_defects_resolved = task._capture_defects_resolved;
+    _sceneForResolve = JSON.stringify(_so);
+  } catch {}
+  const resolvedScene  = _resolveLocationAndComposition(_sceneForResolve, i);
   const sceneValid     = _validateResolvedScene(resolvedScene);
   if (sceneValid.issues?.length)
     console.warn(`[SceneValidate] ${_planBase._matched_key} #${i}: ${sceneValid.issues.join(' | ')}`);
@@ -13138,9 +13784,13 @@ async function _generateImageOnly(task, key, runId) {
     console.warn(`[QualityGate] fallback — ${_qObj._matched_key}: ${_qCheck.issues.join(' | ')}`);
   }
 
-  const prompt = _USE_PROMPT_BUILDER
+  const _gptPrompt = _USE_PROMPT_BUILDER
     ? PromptBuilder.build(finalScene)
     : await _rewritePromptWithGPT(finalScene, key);
+  // _capture_defects_resolved guaranteed by _assertTaskHasBatchPlan — append locked constraints after GPT
+  const _finalSceneObj = JSON.parse(finalScene);
+  _assertFinalWorkerConsistency(_finalSceneObj);
+  const prompt = _appendLockedFinalConstraints(_gptPrompt, _finalSceneObj);
 
   const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
   _imgApiCallCount++;
@@ -13459,6 +14109,67 @@ async function _debugResolvedScene({ metier, travaux, contexte, etat, imageIndex
   };
 }
 
+// ─── Debug: batch plan dry-run ────────────────────────────────────────────────
+// Usage: _debugBatchPlan([{_planBase:{_matched_key:'toiture',_matched_service:'nettoyage gouttières'}}, ...], seed)
+function _debugBatchPlan(tasks, runSeed) {
+  const seed    = runSeed ?? 42;
+  const planned = _planGlobalBatch(tasks.map(t => Object.assign({}, t)), seed);
+  _rebalanceGlobalBatchPlan(planned, seed);
+  _validateCompleteBatchPlan(planned);
+  console.group('[BATCH PLAN]');
+  for (const t of planned) {
+    const comp = t._pre_assigned_composition || '—';
+    console.log({
+      taskId:                    t.taskId ?? '—',
+      metier:                    t._planBase?._matched_key,
+      service:                   t._planBase?._matched_service,
+      camera_composition:        comp,
+      camera_distance:           CAMERA_COMPOSITIONS[comp]?.distance ?? '—',
+      worker_presence:           t._pre_assigned_worker_presence,
+      worker_count:              t._pre_assigned_worker_count,
+      professional_vehicle:      t._pre_assigned_vehicle,
+      capture_defects:           (t._capture_defects_resolved || []).map(d => d.key),
+      batch_plan_id:             t._batch_plan_id,
+    });
+  }
+  console.groupEnd();
+  return planned;
+}
+
+// ─── Debug: full final prompt dry-run (mock GPT rewriter) ────────────────────
+// Usage: await _debugFinalPrompt({metier:'toiture', travaux:'nettoyage gouttières', contexte:'maison'})
+async function _debugFinalPrompt({ metier, travaux, contexte, etat, imageIndex = 0 } = {}) {
+  if (!metier || !travaux) { console.error('[FINAL PROMPT DEBUG] metier and travaux are required'); return null; }
+  const row = { metier, travaux, contexte: contexte || 'maison', etat: etat || 'encours', nb: 1, ville: '', fiche: '', meteo: 'auto' };
+  let baseScene;
+  try { baseScene = buildDallePromptV2(row); } catch (e) { console.error('[FINAL PROMPT DEBUG] buildDallePromptV2 failed:', e.message); return null; }
+
+  const realism   = _applySiteRealism(baseScene, imageIndex);
+  const varied    = _applyVariation(realism, imageIndex, null);
+  const resolved  = _resolveLocationAndComposition(varied, imageIndex);
+  const sceneVal  = _validateResolvedScene(resolved);
+  const locSvcVal = _validateLocationServiceCompatibility(sceneVal.fixedStr);
+  const workerVal = _validateWorkerScene(locSvcVal.fixedStr);
+  const qObj      = JSON.parse(workerVal.fixedStr);
+  const qCheck    = _validateQuality(qObj);
+  const finalStr  = qCheck.fixedObj ? JSON.stringify(qCheck.fixedObj) : workerVal.fixedStr;
+  const sceneObj  = JSON.parse(finalStr);
+
+  sceneObj._capture_defects_resolved = _selectCaptureDefects(imageIndex, 1, _hashSeed(`${metier}${travaux}${imageIndex}`));
+  const mockGPTOut = `[MOCK REWRITER — ${sceneObj.work_type || metier} — ${sceneObj.location_type} — ${sceneObj.composition}]`;
+  const lockedPrompt = _appendLockedFinalConstraints(mockGPTOut, sceneObj);
+
+  console.group(`[FINAL PROMPT DEBUG] ${metier} / ${travaux} / ctx=${contexte || 'maison'} / idx=${imageIndex}`);
+  console.log('composition      :', sceneObj.composition);
+  console.log('camera_distance  :', sceneObj.camera_distance);
+  console.log('capture_defects  :', sceneObj._capture_defects_resolved.map(d => d.key).join(', '));
+  console.log('vehicle_presence :', sceneObj.professional_vehicle_presence);
+  console.log('--- LOCKED FINAL PROMPT ---');
+  console.log(lockedPrompt);
+  console.groupEnd();
+  return { sceneObj, mockGPTOut, lockedPrompt };
+}
+
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
 async function _runLocalTests() {
@@ -13671,6 +14382,324 @@ async function _runLocalTests() {
     else fail('T22: _COMPOSITION_DIST depannage_auto', `total=${total} vehicle_arrival=${dist.vehicle_arrival}`);
   } catch (e) { fail('T22: _COMPOSITION_DIST', e.message); }
 
+  // T31: integration — 4 tasks (2×crevaison + 2×batterie) planned with complete fields
+  try {
+    const fakeRows = [
+      { metier: 'depannage_auto', travaux: 'crevaison pneu crevé', contexte: 'aire_repos', etat: 'encours', nb: 2, ville: '', fiche: '', meteo: 'auto' },
+      { metier: 'depannage_auto', travaux: 'batterie à plat',      contexte: 'domicile',   etat: 'encours', nb: 2, ville: '', fiche: '', meteo: 'auto' },
+    ];
+    const t31Tasks = [];
+    for (const row of fakeRows) {
+      row.images = row.images || [];
+      const base = buildDallePromptV2(row);
+      const pb   = JSON.parse(base);
+      const pp   = _buildPresencePlan(2, pb.state_level, pb._matched_key, _hashSeed(`${pb._matched_key}plan`));
+      for (let i = 0; i < 2; i++)
+        t31Tasks.push({ taskId: `t31-${t31Tasks.length}`, row, i, nb: 2, jsonScene: base, presencePlan: pp, slug: 'test', _planBase: pb, status: 'pending', imageAttempt: 0, result: null, error: null });
+    }
+    _planGlobalBatch(t31Tasks, 'T31-seed');
+
+    const required = ['_pre_assigned_composition', '_pre_assigned_worker_presence', '_pre_assigned_worker_count', '_capture_defects_resolved', '_batch_plan_id'];
+    const t31Failures = [];
+
+    for (const t of t31Tasks) {
+      for (const f of required) {
+        if (t[f] === undefined || t[f] === null)
+          t31Failures.push(`${t.taskId}: missing ${f}`);
+      }
+      const dl = (t._capture_defects_resolved || []).length;
+      if (dl < 1 || dl > 2) t31Failures.push(`${t.taskId}: ${dl} defects`);
+    }
+
+    const comps = t31Tasks.map(t => t._pre_assigned_composition);
+    const closeN = comps.filter(c => c === 'close_detail').length;
+    if (closeN > 1) t31Failures.push(`${closeN} close_detail in batch of 4 (max 1)`);
+    if (comps.filter(c => c !== 'close_detail').length < 3) t31Failures.push('fewer than 3 non-close compositions');
+
+    const wCount = t31Tasks.filter(t => t._pre_assigned_worker_presence === 'workers').length;
+    if (wCount < 1) t31Failures.push('no worker images in batch of 4');
+
+    const hasVehicle = t31Tasks.some(t => t._pre_assigned_vehicle !== 'absent');
+    if (!hasVehicle) t31Failures.push('no visible/partial vehicle in batch of 4');
+
+    const creavPair = t31Tasks.filter(t => (t._planBase._matched_service || '').includes('crevaison'));
+    if (creavPair.length === 2 && creavPair[0]._pre_assigned_composition === creavPair[1]._pre_assigned_composition)
+      t31Failures.push(`crevaison pair: identical compositions (${creavPair[0]._pre_assigned_composition})`);
+
+    if (!t31Failures.length)
+      pass('T31: integration — 4 tasks planned, all fields present, quota and variety OK');
+    else
+      fail('T31: integration batch planning', t31Failures.slice(0, 5).join('; '));
+  } catch(e) { fail('T31: integration batch planning', e.message); }
+
+  // T32: retry preserves batch plan — same fields before and after imageAttempt reset
+  try {
+    const row32 = { metier: 'toiture', travaux: 'nettoyage gouttières', contexte: 'maison', etat: 'encours', nb: 1, ville: '', fiche: '', meteo: 'auto', images: [] };
+    const base32 = buildDallePromptV2(row32);
+    const pb32   = JSON.parse(base32);
+    const pp32   = _buildPresencePlan(1, pb32.state_level, pb32._matched_key, 42);
+    const task32 = { taskId: 't32', row: row32, i: 0, nb: 1, jsonScene: base32, presencePlan: pp32, slug: 'test', _planBase: pb32, status: 'pending', imageAttempt: 0, result: null, error: null };
+    _planGlobalBatch([task32], 'T32-seed');
+
+    const snap32 = {
+      comp:    task32._pre_assigned_composition,
+      vehicle: task32._pre_assigned_vehicle,
+      workers: task32._pre_assigned_worker_presence,
+      wCount:  task32._pre_assigned_worker_count,
+      defects: JSON.stringify(task32._capture_defects_resolved),
+      planId:  task32._batch_plan_id,
+    };
+
+    // Simulate retry reset (exactly what _retryFailedImages does)
+    task32.status = 'pending'; task32.imageAttempt = 0; task32.error = null; task32.result = null;
+
+    const t32Failures = [];
+    if (task32._pre_assigned_composition   !== snap32.comp)    t32Failures.push('composition changed on retry');
+    if (task32._pre_assigned_vehicle       !== snap32.vehicle)  t32Failures.push('vehicle changed on retry');
+    if (task32._pre_assigned_worker_presence !== snap32.workers) t32Failures.push('workers changed on retry');
+    if (task32._pre_assigned_worker_count  !== snap32.wCount)   t32Failures.push('workerCount changed on retry');
+    if (JSON.stringify(task32._capture_defects_resolved) !== snap32.defects) t32Failures.push('defects changed on retry');
+    if (task32._batch_plan_id !== snap32.planId) t32Failures.push('batch_plan_id changed on retry');
+
+    if (!t32Failures.length)
+      pass('T32: retry preserves batch plan — composition, workers, defects, plan_id unchanged');
+    else
+      fail('T32: retry preserves batch plan', t32Failures.join('; '));
+  } catch(e) { fail('T32: retry preserves batch plan', e.message); }
+
+  // T33: manual retry (_retryFailedImages-style reset) preserves batch plan
+  try {
+    const fakeRows33 = [
+      { metier: 'depannage_auto', travaux: 'crevaison', contexte: 'aire_repos', etat: 'encours', nb: 1, ville: '', fiche: '', meteo: 'auto', images: [] },
+      { metier: 'depannage_auto', travaux: 'batterie',  contexte: 'domicile',   etat: 'encours', nb: 1, ville: '', fiche: '', meteo: 'auto', images: [] },
+    ];
+    const tasks33 = fakeRows33.map((row, ri) => {
+      const base = buildDallePromptV2(row);
+      const pb   = JSON.parse(base);
+      const pp   = _buildPresencePlan(1, pb.state_level, pb._matched_key, 42);
+      return { taskId: `t33-${ri}`, row, i: 0, nb: 1, jsonScene: base, presencePlan: pp, slug: 'test', _planBase: pb, status: 'pending', imageAttempt: 0, result: null, error: null };
+    });
+    _planGlobalBatch(tasks33, 'T33-seed');
+
+    const snap33 = tasks33.map(t => ({
+      planId:  t._batch_plan_id,
+      comp:    t._pre_assigned_composition,
+      defects: JSON.stringify(t._capture_defects_resolved),
+    }));
+
+    // Simulate task[1] failing → _retryFailedImages reset
+    tasks33[1].status = IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED;
+    tasks33[1].error  = 'simulated';
+    const failed33 = tasks33.filter(t => _TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
+    failed33.forEach(t => { t.status = IMAGE_TASK_STATUS.PENDING; t.imageAttempt = 0; t.error = null; t.result = null; });
+
+    const t33Failures = [];
+    for (let i = 0; i < tasks33.length; i++) {
+      if (tasks33[i]._batch_plan_id !== snap33[i].planId) t33Failures.push(`task ${i}: plan_id changed`);
+      if (tasks33[i]._pre_assigned_composition !== snap33[i].comp) t33Failures.push(`task ${i}: composition changed`);
+      if (JSON.stringify(tasks33[i]._capture_defects_resolved) !== snap33[i].defects) t33Failures.push(`task ${i}: defects changed`);
+    }
+
+    if (!t33Failures.length)
+      pass('T33: manual retry preserves batch plan — plan_id, composition, defects unchanged');
+    else
+      fail('T33: manual retry preserves batch plan', t33Failures.join('; '));
+  } catch(e) { fail('T33: manual retry preserves batch plan', e.message); }
+
+  // T34: _assertTaskHasBatchPlan — throws for unplanned task, silent for planned task
+  try {
+    const row34 = { metier: 'peinture', travaux: 'peinture intérieure', contexte: 'maison', etat: 'encours', nb: 1, ville: '', fiche: '', meteo: 'auto', images: [] };
+    const base34 = buildDallePromptV2(row34);
+    const pb34   = JSON.parse(base34);
+    const pp34   = _buildPresencePlan(1, pb34.state_level, pb34._matched_key, 42);
+    const task34 = { taskId: 't34', row: row34, i: 0, nb: 1, jsonScene: base34, presencePlan: pp34, slug: 'test', _planBase: pb34, status: 'pending', imageAttempt: 0, result: null, error: null };
+
+    let threwUnplanned = false;
+    try { _assertTaskHasBatchPlan(task34); } catch(e) { threwUnplanned = e.message.includes('INCOMPLETE_BATCH_PLAN'); }
+
+    _planGlobalBatch([task34], 'T34-seed');
+    let threwAfterPlan = false;
+    try { _assertTaskHasBatchPlan(task34); } catch(e) { threwAfterPlan = true; }
+
+    const t34Failures = [];
+    if (!threwUnplanned)  t34Failures.push('_assertTaskHasBatchPlan did not throw for unplanned task');
+    if (threwAfterPlan)   t34Failures.push('_assertTaskHasBatchPlan threw for correctly planned task');
+
+    if (!t34Failures.length)
+      pass('T34: _assertTaskHasBatchPlan — throws for unplanned, silent for planned');
+    else
+      fail('T34: _assertTaskHasBatchPlan', t34Failures.join('; '));
+  } catch(e) { fail('T34: _assertTaskHasBatchPlan', e.message); }
+
+  // T26: _planGlobalBatch — close_detail quotas, variety, no same composition for n=2
+  try {
+    const t26Failures = [];
+    const t26Cases = [
+      { metier: 'toiture',        sizes: [2, 3, 4, 6, 10] },
+      { metier: 'elagage',        sizes: [2, 4] },
+      { metier: 'depannage_auto', sizes: [2, 4] },
+      { metier: 'peinture',       sizes: [3, 6] },
+      { metier: 'terrassement',   sizes: [4, 10] },
+    ];
+    for (const { metier, sizes } of t26Cases) {
+      for (const n of sizes) {
+        const fakeTasks = Array.from({ length: n }, (_, i) => ({
+          taskId: i, _planBase: { _matched_key: metier, _matched_service: `${metier}_svc` },
+        }));
+        const planned = _planGlobalBatch(fakeTasks, 42);
+        const comps   = planned.map(t => t._pre_assigned_composition);
+        const rules   = COMPOSITION_RULES_BY_METIER[metier] || {};
+        const maxR    = rules.close_detail_max_ratio ?? 0.20;
+        const maxC    = Math.max(1, Math.floor(n * maxR));
+        const closeN  = comps.filter(c => c === 'close_detail').length;
+        const allowed = rules.allowed_compositions || Object.keys(PHOTO_COMPOSITIONS);
+
+        if (closeN > maxC)
+          t26Failures.push(`${metier}/n=${n}: ${closeN} close_detail > max ${maxC}`);
+        if (n === 2 && comps[0] === comps[1])
+          t26Failures.push(`${metier}/n=2: identical compositions (${comps[0]})`);
+        if (n >= 4 && !comps.some(c => c === 'contextual_overview' || c === 'wide_worksite'))
+          t26Failures.push(`${metier}/n=${n}: no contextual_overview or wide_worksite`);
+        for (const c of comps) {
+          if (!allowed.includes(c))
+            t26Failures.push(`${metier}/n=${n}: '${c}' not in allowed_compositions`);
+        }
+        // Capture defects must be 1-2 per task
+        for (let i = 0; i < planned.length; i++) {
+          const dl = planned[i]._capture_defects_resolved?.length;
+          if (!dl || dl < 1 || dl > 2)
+            t26Failures.push(`${metier}/n=${n}/task${i}: ${dl} defects (expected 1-2)`);
+        }
+      }
+    }
+    if (!t26Failures.length) pass('T26: batch composition planner — all quota rules respected');
+    else fail('T26: batch composition planner', t26Failures.slice(0, 5).join('; '));
+  } catch(e) { fail('T26: batch composition planner', e.message); }
+
+  // T27: _planBatchWorkerPresence — min worker images respected, count consistency
+  try {
+    const t27Failures = [];
+    const t27Metiers  = ['toiture', 'elagage', 'abattage', 'paysagiste', 'terrassement', 'maconnerie', 'depannage_auto'];
+    for (const metier of t27Metiers) {
+      for (const n of [2, 4, 6]) {
+        const group = Array.from({ length: n }, (_, i) => ({
+          taskId: i,
+          _planBase: { _matched_key: metier },
+          _pre_assigned_composition: ['medium_intervention', 'wide_worksite', 'contextual_overview', 'close_detail'][i % 4],
+        }));
+        _planBatchWorkerPresence(group, 42);
+        const rules   = COMPOSITION_RULES_BY_METIER[metier] || {};
+        const minWImg = rules.minimum_worker_images_per_active_batch ?? 1;
+        const wCount  = group.filter(t => t._pre_assigned_worker_presence === 'workers').length;
+        if (wCount < minWImg)
+          t27Failures.push(`${metier}/n=${n}: ${wCount} worker images < min ${minWImg}`);
+        for (const t of group) {
+          if (t._pre_assigned_worker_presence === 'workers' && (t._pre_assigned_worker_count || 0) === 0)
+            t27Failures.push(`${metier}: workerPresence=workers but workerCount=0`);
+          if (t._pre_assigned_worker_presence !== 'workers' && (t._pre_assigned_worker_count || 0) > 0)
+            t27Failures.push(`${metier}: workerPresence=${t._pre_assigned_worker_presence} but workerCount=${t._pre_assigned_worker_count}`);
+        }
+      }
+    }
+    if (!t27Failures.length) pass('T27: batch worker presence — all minima respected and count consistent');
+    else fail('T27: batch worker presence', t27Failures.slice(0, 5).join('; '));
+  } catch(e) { fail('T27: batch worker presence', e.message); }
+
+  // T28: _selectCaptureDefects — always 1-2 defects, finger_edge rare, across 10 000 scenes
+  try {
+    let zeroN = 0, overN = 0, fingerN = 0, total = 0;
+    for (let i = 0; i < 10000; i++) {
+      const d = _selectCaptureDefects(i % 6, 6, _hashSeed(`T28|${i}`));
+      total++;
+      if (d.length === 0) zeroN++;
+      if (d.length > 2)   overN++;
+      if (d.some(x => x.key === 'finger_edge')) fingerN++;
+    }
+    const fPct = (fingerN / total * 100).toFixed(1);
+    const t28Failures = [];
+    if (zeroN > 0)               t28Failures.push(`${zeroN} scenes with 0 defects`);
+    if (overN > 0)               t28Failures.push(`${overN} scenes with >2 defects`);
+    if (fingerN > total * 0.15)  t28Failures.push(`finger_edge too frequent: ${fPct}%`);
+    if (!t28Failures.length)
+      pass(`T28: capture defects — 0 empty, 0 overflow, finger_edge=${fPct}% (rare), n=${total}`);
+    else fail('T28: capture defects', t28Failures.join('; '));
+  } catch(e) { fail('T28: capture defects', e.message); }
+
+  // T29: _appendLockedFinalConstraints — output contains all required sections
+  try {
+    const mockScene = {
+      _matched_key: 'toiture', composition: 'wide_worksite', location_type: 'maison_individuelle',
+      triangle_rule: null, no_people: false, var_presence: 'workers', var_workers: 2,
+      _worker_safety_mode: 'safety harness with lanyard clipped to a ridge anchor',
+      _capture_defects_resolved: [
+        { key: 'slight_tilt',      prompt: 'slightly tilted handheld framing' },
+        { key: 'jpeg_compression', prompt: 'subtle JPEG compression and ordinary smartphone processing' },
+      ],
+    };
+    const r = _appendLockedFinalConstraints('Base prompt text.', mockScene);
+    const t29Failures = [];
+    if (!r.includes('NON-NEGOTIABLE'))                t29Failures.push('missing NON-NEGOTIABLE header');
+    if (!r.includes('WORKER PRESENCE'))               t29Failures.push('missing WORKER PRESENCE block');
+    if (!/workers must be actively working/i.test(r)) t29Failures.push('WORKER PRESENCE does not mention worker (scene has var_workers=2)');
+    if (!r.includes('wide_worksite'))                 t29Failures.push('missing composition key');
+    if (!r.includes('5 to 8 metres'))                 t29Failures.push('missing camera distance');
+    if (!r.includes('slightly tilted') && !r.includes('JPEG compression'))
+      t29Failures.push('missing capture defects');
+    if (!r.includes('DOCUMENTARY STYLE'))             t29Failures.push('missing documentary style block');
+    if (!r.includes('No readable brand'))             t29Failures.push('missing branding rules');
+    if (!r.includes('safety harness'))                t29Failures.push('missing required safety element');
+    if (!t29Failures.length) pass('T29: _appendLockedFinalConstraints — all required sections present');
+    else fail('T29: locked final layer', t29Failures.join('; '));
+  } catch(e) { fail('T29: locked final layer', e.message); }
+
+  // T30: Extended exhaustive — batch-level checks for all métiers × batch sizes 2 and 4
+  try {
+    const allMetiers = Object.keys(WORK_SCENES);
+    let failCount = 0, batchesTested = 0;
+    const t30Samples = [];
+    for (const metier of allMetiers) {
+      const ws   = WORK_SCENES[metier];
+      const svcs = metier === 'depannage_auto'
+        ? ['crevaison pneu', 'batterie démarrage', 'panne moteur']
+        : [ws.service_keywords?.[0]?.phrase || ws.intro || metier];
+      for (const svc of svcs) {
+        for (const batchSize of [2, 4]) {
+          batchesTested++;
+          const fake = Array.from({ length: batchSize }, (_, i) => ({
+            taskId: i, _planBase: { _matched_key: metier, _matched_service: svc },
+          }));
+          const planned = _planGlobalBatch(fake, 77);
+          const comps   = planned.map(t => t._pre_assigned_composition);
+          const rules   = COMPOSITION_RULES_BY_METIER[metier] || {};
+          const maxR    = rules.close_detail_max_ratio ?? 0.20;
+          const maxC    = Math.max(1, Math.floor(batchSize * maxR));
+          const closeN  = comps.filter(c => c === 'close_detail').length;
+          if (closeN > maxC) {
+            failCount++;
+            if (t30Samples.length < 5) t30Samples.push(`${metier}/n=${batchSize}: ${closeN} close > ${maxC}`);
+          }
+          const minWImg = rules.minimum_worker_images_per_active_batch ?? 1;
+          const wCount  = planned.filter(t => t._pre_assigned_worker_presence === 'workers').length;
+          if (wCount < minWImg) {
+            failCount++;
+            if (t30Samples.length < 5) t30Samples.push(`${metier}/n=${batchSize}: ${wCount} workers < min ${minWImg}`);
+          }
+          for (let i = 0; i < planned.length; i++) {
+            const dl = planned[i]._capture_defects_resolved?.length;
+            if (!dl || dl < 1 || dl > 2) {
+              failCount++;
+              if (t30Samples.length < 5) t30Samples.push(`${metier}/n=${batchSize}/i=${i}: defects=${dl}`);
+            }
+          }
+        }
+      }
+    }
+    if (!failCount)
+      pass(`T30: extended batch exhaustive — ${batchesTested} batches × 2 sizes, 0 failure`);
+    else
+      fail('T30: extended batch exhaustive', `${failCount} failures: ${t30Samples.join('; ')}`);
+  } catch(e) { fail('T30: extended batch exhaustive', e.message); }
+
   // T25: Exhaustive coverage — all WORK_SCENES métiers × all UI contexts × 10 seeds
   try {
     const allMetiers = Object.keys(WORK_SCENES);
@@ -13790,6 +14819,109 @@ async function _runLocalTests() {
     else fail('T23: unresolved locations', failures.join(', '));
   } catch (e) { fail('T23: global context resolution', e.message); }
 
+  // T35: _rebalanceGlobalBatchPlan — global quotas guaranteed on 4-task depannage_auto, 100 seeds
+  try {
+    const t35Failures = [];
+    const t35Proto = [
+      { taskId: 'crev-1', _planBase: { _matched_key: 'depannage_auto', _matched_service: 'crevaison pneu crevé' } },
+      { taskId: 'crev-2', _planBase: { _matched_key: 'depannage_auto', _matched_service: 'crevaison pneu crevé' } },
+      { taskId: 'batt-1', _planBase: { _matched_key: 'depannage_auto', _matched_service: 'batterie_a_plat' } },
+      { taskId: 'batt-2', _planBase: { _matched_key: 'depannage_auto', _matched_service: 'batterie_a_plat' } },
+    ];
+    for (let s = 0; s < 100 && t35Failures.length < 5; s++) {
+      const tasks = t35Proto.map(t => Object.assign({}, t));
+      const seed  = `T35-seed-${s}`;
+      _planGlobalBatch(tasks, seed);
+      _rebalanceGlobalBatchPlan(tasks, seed);
+      try { _validateCompleteBatchPlan(tasks); } catch(e) { t35Failures.push(`s=${s}: ${e.message}`); continue; }
+      const comps = tasks.map(t => t._pre_assigned_composition);
+      if (comps.filter(c => c === 'close_detail').length > 1) t35Failures.push(`s=${s}: close_detail>1`);
+      if (!comps.includes('medium_intervention'))             t35Failures.push(`s=${s}: no medium_intervention`);
+      if (!comps.includes('wide_worksite'))                   t35Failures.push(`s=${s}: no wide_worksite`);
+      if (!comps.includes('contextual_overview'))             t35Failures.push(`s=${s}: no contextual_overview`);
+      if (!tasks.some(t => t._pre_assigned_worker_presence === 'workers')) t35Failures.push(`s=${s}: no worker`);
+      if (!tasks.some(t => t._pre_assigned_vehicle !== 'absent'))          t35Failures.push(`s=${s}: no vehicle`);
+    }
+    if (!t35Failures.length) pass('T35: _rebalanceGlobalBatchPlan — global quotas guaranteed across 100 seeds (4-task depannage_auto)');
+    else                      fail('T35: global batch quotas', `${t35Failures.length} failures: ${t35Failures.slice(0,3).join('; ')}`);
+  } catch(e) { fail('T35: global batch quotas', e.message); }
+
+  // T36: _assertFinalWorkerConsistency — no contradiction between workers and no_people in final prompt
+  try {
+    const t36Failures = [];
+
+    // T36a: worker scene — no_people must become false, WORKER PRESENCE must mention worker, no person-ban outside that block
+    const scW = {
+      var_workers: 1, var_presence: 'workers', no_people: false,
+      composition: 'medium_intervention', _matched_key: 'depannage_auto',
+      triangle_rule: null, _worker_safety_mode: null,
+      _capture_defects_resolved: [{ key: 'jpeg_compression', prompt: 'subtle JPEG compression' }],
+    };
+    _assertFinalWorkerConsistency(scW);
+    if (scW.no_people !== false) t36Failures.push('T36a: no_people should be false for worker scene');
+    const pW = _appendLockedFinalConstraints('[mock]', scW);
+    if (!/One worker must be actively working/i.test(pW)) t36Failures.push('T36a: WORKER PRESENCE does not mention worker');
+    if (/No workers or people visible/i.test(pW))         t36Failures.push('T36a: no-people instruction leaked into worker scene');
+
+    // T36b: no-worker scene — no_people must become true, person-ban in WORKER PRESENCE, NOT in FORBIDDEN SAFETY
+    const scN = {
+      var_workers: 0, var_presence: 'none', no_people: true,
+      composition: 'wide_worksite', _matched_key: 'depannage_auto',
+      triangle_rule: null, _worker_safety_mode: null,
+      _capture_defects_resolved: [{ key: 'jpeg_compression', prompt: 'subtle JPEG compression' }],
+    };
+    _assertFinalWorkerConsistency(scN);
+    if (scN.no_people !== true) t36Failures.push('T36b: no_people should be true for no-worker scene');
+    const pN = _appendLockedFinalConstraints('[mock]', scN);
+    if (!/No workers or people visible/i.test(pN)) t36Failures.push('T36b: no-people instruction missing from WORKER PRESENCE');
+    const afterForbidden = pN.split('FORBIDDEN SAFETY VIOLATIONS')[1] || '';
+    // Check for the presence-ban phrasing specifically — not safety rules that mention "person" incidentally
+    if (/no workers or people visible/i.test(afterForbidden) || /no (person|human figure) visible in (this|the) (specific )?image/i.test(afterForbidden))
+      t36Failures.push('T36b: presence-ban phrasing is inside FORBIDDEN SAFETY VIOLATIONS (must be in WORKER PRESENCE)');
+
+    // T36c: contradiction — var_workers>0 + no_people=true must throw
+    let threwC = false;
+    try {
+      _assertFinalWorkerConsistency({
+        var_workers: 1, var_presence: 'workers', no_people: true,
+        composition: 'medium_intervention', _matched_key: 'depannage_auto',
+        triangle_rule: null, _capture_defects_resolved: [],
+      });
+    } catch(e) { threwC = e.message.includes('WORKER_PROMPT_CONTRADICTION'); }
+    if (!threwC) t36Failures.push('T36c: should throw WORKER_PROMPT_CONTRADICTION for var_workers=1+no_people=true');
+
+    if (!t36Failures.length) pass('T36: _assertFinalWorkerConsistency — worker/no_people consistency enforced');
+    else                      fail('T36: worker/no_people consistency', t36Failures.join('; '));
+  } catch(e) { fail('T36: worker/no_people consistency', e.message); }
+
+  // T37: cross-family defect compatibility — 10 000 scenes, no same-family pair, finger_edge rare
+  try {
+    const t37Failures = [];
+    const TOTAL = 10000;
+    let fingerN = 0;
+    const defectFamily = {};
+    for (const [fam, members] of Object.entries(CAPTURE_DEFECT_GROUPS))
+      for (const m of members) defectFamily[m] = fam;
+
+    for (let i = 0; i < TOTAL && t37Failures.length < 5; i++) {
+      const d = _selectCaptureDefects(i % 6, 6, _hashSeed(`T37|${i}`));
+      if (!d.length)  { t37Failures.push(`i=${i}: empty`); continue; }
+      if (d.length > 2) { t37Failures.push(`i=${i}: ${d.length} defects`); continue; }
+      if (d.length === 2) {
+        const [fa, fb] = d.map(x => defectFamily[x.key]);
+        if (fa && fb && fa === fb)
+          t37Failures.push(`i=${i}: same family (${fa}): ${d[0].key} + ${d[1].key}`);
+      }
+      if (d.some(x => x.key === 'finger_edge')) fingerN++;
+    }
+    const fPct = (fingerN / TOTAL * 100).toFixed(1);
+    if (fingerN > TOTAL * 0.15) t37Failures.push(`finger_edge too frequent: ${fPct}%`);
+    if (!t37Failures.length)
+      pass(`T37: cross-family defect compatibility — 0 same-family pairs, finger_edge=${fPct}% (rare), n=${TOTAL}`);
+    else
+      fail('T37: cross-family defect compatibility', `${t37Failures.length} failures: ${t37Failures.slice(0,3).join('; ')}`);
+  } catch(e) { fail('T37: cross-family defect compatibility', e.message); }
+
   console.log('[TEST] Done.');
 }
 
@@ -13871,6 +15003,22 @@ async function _generateAllImagesImpl(runId) {
     alert('Aucune image à générer — vérifie que chaque ligne a un type de travaux valide et un métier reconnu.');
     return;
   }
+
+  // ── Batch planning — assigns composition/workers/vehicle/defects BEFORE any API call ────────
+  const _batchRunSeed = `${runId}:${Date.now()}`;
+  _planGlobalBatch(tasks, _batchRunSeed);
+  _rebalanceGlobalBatchPlan(tasks, _batchRunSeed);
+  _validateCompleteBatchPlan(tasks);
+  console.log('[BATCH PLAN]', tasks.map(t => ({
+    taskId:      t.taskId,
+    metier:      t._planBase._matched_key,
+    service:     t._planBase._matched_service,
+    composition: t._pre_assigned_composition,
+    vehicle:     t._pre_assigned_vehicle,
+    workers:     t._pre_assigned_worker_presence,
+    workerCount: t._pre_assigned_worker_count,
+    defects:     (t._capture_defects_resolved || []).map(d => d.key),
+  })));
 
   // ── Phase 2: progress bar ─────────────────────────────────────────────────
   const progressWrap = document.getElementById('img-progress-wrap');
