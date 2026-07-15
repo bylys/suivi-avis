@@ -14869,6 +14869,365 @@ async function _runPlanningParityTests() {
 }
 window._runPlanningParityTests = _runPlanningParityTests;
 
+// Bridge Phase 5 — fonctions de prompt pour tests de parité T59–T66.
+// Ne pas utiliser en production. Suppression au cutover.
+Object.defineProperty(window, '__IMAGE_GEN_LEGACY_PROMPT__', {
+  value: Object.freeze({
+    buildDallePromptV2,
+    _getWorkDetail,
+    _getCityContext,
+    PromptBuilder,
+    PHOTO_STYLE_RULES,
+    _IMG_REWRITE_SYSTEM,
+    _USE_PROMPT_BUILDER,
+    INTERIOR_SCENE_BASE,
+    _rewritePromptWithGPT,
+    _appendLockedFinalConstraints,
+    _validateScene,
+    _validateSceneStrict,
+    getLastMatch: () => Object.assign({}, _lastMatch),
+  }),
+  writable: false, configurable: false, enumerable: false,
+});
+
+async function _runPromptParityTests() {
+  const leg = window.__IMAGE_GEN_LEGACY_PROMPT__;
+
+  const [sbMod, pbMod, prMod, lcMod] = await Promise.all([
+    import('./src/image-generation/prompt/scene-builder.js'),
+    import('./src/image-generation/prompt/prompt-builder.js'),
+    import('./src/image-generation/prompt/prompt-rewriter.js'),
+    import('./src/image-generation/prompt/locked-constraints.js'),
+  ]);
+
+  function _jeq(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+
+  // ─── T59: constants parity ────────────────────────────────────────────────
+  const t59Diffs = [];
+  if (leg._IMG_REWRITE_SYSTEM !== prMod._IMG_REWRITE_SYSTEM)
+    t59Diffs.push('_IMG_REWRITE_SYSTEM mismatch');
+  if (leg._USE_PROMPT_BUILDER !== pbMod._USE_PROMPT_BUILDER)
+    t59Diffs.push('_USE_PROMPT_BUILDER mismatch');
+  if (!_jeq(leg.INTERIOR_SCENE_BASE, sbMod.INTERIOR_SCENE_BASE))
+    t59Diffs.push('INTERIOR_SCENE_BASE mismatch');
+  if (!_jeq(leg.PHOTO_STYLE_RULES, pbMod.PHOTO_STYLE_RULES))
+    t59Diffs.push('PHOTO_STYLE_RULES mismatch');
+
+  // ─── T60: buildDallePromptV2 parity ──────────────────────────────────────
+  // 146 combos × 4 états × 4 (ville × meteo) = 2336 JSON cases + lastMatch parity
+  const ETATS = ['debut', 'encours', 'semifinal', 'final'];
+  const VILLES_METEOS = [
+    { ville: 'Paris',   meteo: 'auto'   },
+    { ville: 'Lyon',    meteo: 'soleil' },
+    { ville: 'Rennes',  meteo: 'nuageux'},
+    { ville: '',        meteo: 'auto'   },
+  ];
+  const t60Combos = [];
+  for (const [metier, cat] of Object.entries(SERVICE_CATALOG)) {
+    for (const svc of cat.services) t60Combos.push({ metier, svc });
+  }
+  let t60Cases = 0, t60JSONDiffs = [], t60LMDiffs = [];
+  for (const { metier, svc } of t60Combos) {
+    const ctx = CONTEXTE_BY_METIER[metier] ? (CONTEXTE_BY_METIER[metier][0]?.value || 'maison') : 'maison';
+    for (const etat of ETATS) {
+      for (const { ville, meteo } of VILLES_METEOS) {
+        const row = { metier, travaux: svc, ville, etat, meteo, contexte: ctx, nb: 1, fiche: '', images: [] };
+        const legResult = leg.buildDallePromptV2(row);
+        const legLM     = leg.getLastMatch();
+        const modLM     = {};
+        const modResult = sbMod.buildDallePromptV2(row, { lastMatchState: modLM });
+        if (legResult !== modResult)
+          t60JSONDiffs.push(`${metier}/"${svc}"/${etat}/${ville||'_'}/${meteo}`);
+        if (!_jeq(legLM, modLM))
+          t60LMDiffs.push(`lm:${metier}/"${svc}"/${etat}`);
+        t60Cases++;
+      }
+    }
+  }
+
+  // ─── T61: PromptBuilder parity ────────────────────────────────────────────
+  // Build scene JSONs with legacy then compare PromptBuilder output character-by-character
+  // 146 combos × 2 états = 292 cases
+  let t61Cases = 0, t61Diffs = [];
+  for (const { metier, svc } of t60Combos.slice(0, 146)) {
+    for (const etat of ['encours', 'final']) {
+      const row = { metier, travaux: svc, ville: 'Paris', etat, meteo: 'auto', contexte: 'maison', nb: 1, fiche: '', images: [] };
+      const jsonScene = leg.buildDallePromptV2(row);
+      try {
+        const legPrompt = leg.PromptBuilder.build(jsonScene);
+        const modPrompt = pbMod.PromptBuilder.build(jsonScene);
+        if (legPrompt !== modPrompt)
+          t61Diffs.push(`${metier}/"${svc}"/${etat}`);
+      } catch(e) { t61Diffs.push(`err:${metier}/${etat}:${e.message}`); }
+      t61Cases++;
+    }
+  }
+
+  // ─── T62: _appendLockedFinalConstraints parity ───────────────────────────
+  // Constructed scene objects covering all field combinations
+  const COMPS     = Object.keys(CAMERA_COMPOSITIONS);
+  const PRESENCES = [
+    { var_presence: 'none',     var_workers: 0 },
+    { var_presence: 'workers',  var_workers: 1 },
+    { var_presence: 'workers',  var_workers: 2 },
+    { var_presence: 'indirect', var_workers: 0, var_indirect_presence: 'gloves and tools left on the surface' },
+  ];
+  const TRI_RULES = [null, 'forbidden', 'forbidden_if_safely_parked', 'required_if_on_road'];
+  const METIER_KEYS = Object.keys(COMPOSITION_RULES_BY_METIER);
+  let t62Cases = 0, t62Diffs = [];
+  for (const metier of METIER_KEYS) {
+    for (const comp of COMPS.slice(0, 4)) {
+      for (const pres of PRESENCES) {
+        for (const tri of [null, 'forbidden']) {
+          const defects = [{ key: 'jpeg', prompt: 'subtle JPEG compression artifacts' }];
+          const safety  = (FORBIDDEN_SAFETY_BY_METIER[metier] || []).length > 0 ? 'Wear hard hat at all times.' : null;
+          const scene   = Object.assign({
+            composition: comp,
+            _matched_key: metier,
+            _capture_defects_resolved: defects,
+            _worker_safety_mode: safety,
+            triangle_rule: tri,
+            no_people: pres.var_workers === 0,
+          }, pres);
+          const legPrompt = 'Test prompt for scene.';
+          const legResult = leg._appendLockedFinalConstraints(legPrompt, scene);
+          const modResult = lcMod._appendLockedFinalConstraints(legPrompt, scene);
+          if (legResult !== modResult)
+            t62Diffs.push(`${metier}/${comp}/${pres.var_presence}/tri=${tri}`);
+          t62Cases++;
+        }
+      }
+    }
+  }
+
+  // ─── T63: buildPromptRewriteRequest + rewritePromptWithGPT mock ──────────
+  // Verify request structure and error handling without real network calls
+  const t63Issues = [];
+  let t63Cases = 0;
+
+  // 63a — request structure parity
+  const reqTest = prMod.buildPromptRewriteRequest({ prompt: 'test scene json', apiKey: 'sk-test' });
+  if (reqTest.url !== 'https://api.openai.com/v1/chat/completions')
+    t63Issues.push('url mismatch');
+  if (reqTest.headers?.['Authorization'] !== 'Bearer sk-test')
+    t63Issues.push('Authorization header mismatch');
+  if (reqTest.headers?.['Content-Type'] !== 'application/json')
+    t63Issues.push('Content-Type header mismatch');
+  const bodyParsed = JSON.parse(reqTest.body);
+  if (bodyParsed.model !== 'gpt-4.1')              t63Issues.push('model mismatch');
+  if (bodyParsed.max_tokens !== 350)               t63Issues.push('max_tokens mismatch');
+  if (bodyParsed.temperature !== 0.75)             t63Issues.push('temperature mismatch');
+  if (bodyParsed.messages?.[0]?.role !== 'system') t63Issues.push('system role mismatch');
+  if (bodyParsed.messages?.[0]?.content !== prMod._IMG_REWRITE_SYSTEM) t63Issues.push('system prompt mismatch');
+  if (bodyParsed.messages?.[1]?.role !== 'user')   t63Issues.push('user role mismatch');
+  if (bodyParsed.messages?.[1]?.content !== 'test scene json') t63Issues.push('user content mismatch');
+  t63Cases++;
+
+  // 63b — mock response scenarios
+  const _mkResp = (ok, status, data) => ({
+    ok, status,
+    text: async () => (data !== null ? JSON.stringify(data) : ''),
+  });
+  const _mockRead = async (r) => {
+    const raw = await r.text(); let data = null;
+    try { if (raw) data = JSON.parse(raw); } catch {}
+    return { ok: r.ok, status: r.status, raw, data };
+  };
+
+  // scenario 1: 200 OK valid
+  try {
+    const resp200 = _mkResp(true, 200, { choices: [{ message: { content: '  prompt result  ' } }] });
+    const result = await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => resp200, readResponse: _mockRead });
+    if (result !== 'prompt result') t63Issues.push('200 OK: wrong result');
+  } catch(e) { t63Issues.push('200 OK threw: ' + e.message); }
+  t63Cases++;
+
+  // scenario 2: HTTP 400 error
+  try {
+    const resp400 = _mkResp(false, 400, { error: { message: 'Bad request' } });
+    await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => resp400, readResponse: _mockRead });
+    t63Issues.push('HTTP 400: should have thrown');
+  } catch(e) {
+    if (!e.message.includes('Scene planner error')) t63Issues.push('HTTP 400: wrong error message: ' + e.message);
+  }
+  t63Cases++;
+
+  // scenario 3: HTTP 429 rate limit
+  try {
+    const resp429 = _mkResp(false, 429, { error: { message: 'Rate limit exceeded' } });
+    await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => resp429, readResponse: _mockRead });
+    t63Issues.push('HTTP 429: should have thrown');
+  } catch(e) {
+    if (!e.message.includes('Scene planner error')) t63Issues.push('HTTP 429: wrong error message');
+  }
+  t63Cases++;
+
+  // scenario 4: HTTP 500 with empty body
+  try {
+    const resp500 = _mkResp(false, 500, null);
+    await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => resp500, readResponse: _mockRead });
+    t63Issues.push('HTTP 500: should have thrown');
+  } catch(e) {
+    if (!e.message.includes('Scene planner error')) t63Issues.push('HTTP 500: wrong error message');
+  }
+  t63Cases++;
+
+  // scenario 5: network error
+  try {
+    await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => { throw new Error('Network error'); }, readResponse: _mockRead });
+    t63Issues.push('network error: should have thrown');
+  } catch(e) {
+    if (!e.message.includes('Network error')) t63Issues.push('network error: wrong message: ' + e.message);
+  }
+  t63Cases++;
+
+  // ─── T64: full shadow prompt pipeline parity ──────────────────────────────
+  // Chain: buildDallePromptV2 → _applySiteRealism → _applyVariation
+  //        → _resolveLocationAndComposition → _validateResolvedScene
+  //        → PromptBuilder.build → _appendLockedFinalConstraints
+  // Compare complete output between legacy and module functions.
+  const [srvcMod, sceneMod, locMod, svalMod, wrkMod, capMod, batchMod] = await Promise.all([
+    import('./src/image-generation/resolution/service-resolver.js'),
+    import('./src/image-generation/resolution/scene-resolver.js'),
+    import('./src/image-generation/resolution/location-resolver.js'),
+    import('./src/image-generation/validation/scene-validator.js'),
+    import('./src/image-generation/planning/worker-planner.js'),
+    import('./src/image-generation/planning/capture-defect-planner.js'),
+    import('./src/image-generation/planning/batch-planner.js'),
+  ]);
+  const T64_ROWS = [
+    { metier: 'toiture',       travaux: 'Remplacement de tuiles',     ville: 'Paris',     etat: 'encours',   meteo: 'auto',   contexte: 'maison' },
+    { metier: 'depannage_auto',travaux: 'Batterie à plat',            ville: 'Lyon',      etat: 'debut',     meteo: 'soleil', contexte: 'domicile' },
+    { metier: 'peinture',      travaux: 'Peinture chambre',           ville: 'Bordeaux',  etat: 'semifinal', meteo: 'auto',   contexte: 'appartement' },
+    { metier: 'etancheite',    travaux: 'Étanchéité toit terrasse',   ville: 'Marseille', etat: 'final',     meteo: 'soleil', contexte: 'immeuble' },
+    { metier: 'élagage',       travaux: 'Élagage arbre',              ville: 'Nantes',    etat: 'encours',   meteo: 'nuageux',contexte: 'maison' },
+    { metier: 'maçonnerie',    travaux: 'Réfection enduit façade',    ville: 'Bordeaux',  etat: 'encours',   meteo: 'auto',   contexte: 'maison' },
+    { metier: 'carrelage',     travaux: 'Carrelage salle de bain',    ville: 'Paris',     etat: 'encours',   meteo: 'auto',   contexte: 'appartement' },
+    { metier: 'débarras',      travaux: 'Débarras cave',              ville: 'Rennes',    etat: 'debut',     meteo: 'auto',   contexte: 'maison' },
+    { metier: 'nettoyage_toiture', travaux: 'Démoussage toiture',    ville: 'Caen',      etat: 'encours',   meteo: 'nuageux',contexte: 'maison' },
+    { metier: 'paysagiste',    travaux: 'Création jardin',            ville: 'Toulouse',  etat: 'debut',     meteo: 'soleil', contexte: 'maison' },
+  ];
+  let t64Cases = 0, t64Diffs = [];
+  for (const baseRow of T64_ROWS) {
+    for (const etat of ETATS) {
+      const row = Object.assign({}, baseRow, { etat, nb: 3, fiche: '', images: [] });
+      const seed = 42;
+      // Build tasks for batch planning
+      const mkT = (i) => ({ taskId: `t${i}`, _planBase: { _matched_key: row.metier, _matched_service: row.travaux }, jsonScene: '{}', presencePlan: [], i });
+      const legTasks = [mkT(0), mkT(1), mkT(2)];
+      const modTasks = [mkT(0), mkT(1), mkT(2)];
+      _planGlobalBatch(legTasks, seed);
+      batchMod._planGlobalBatch(modTasks, seed);
+
+      for (let imgIdx = 0; imgIdx < 3; imgIdx++) {
+        // Legacy pipeline
+        let legScene = buildDallePromptV2(row);
+        legScene = _applySiteRealism(legScene, imgIdx, {});
+        legScene = _applyVariation(legScene, imgIdx, legTasks[imgIdx]._pre_assigned_worker_presence);
+        legScene = _resolveLocationAndComposition(legScene, imgIdx);
+        const legObj = JSON.parse((_validateResolvedScene(legScene)).fixedStr);
+        legObj._pre_assigned_composition  = legTasks[imgIdx]._pre_assigned_composition;
+        legObj._capture_defects_resolved  = legTasks[imgIdx]._capture_defects_resolved;
+        legObj._pre_assigned_vehicle      = legTasks[imgIdx]._pre_assigned_vehicle;
+        legObj.composition                = legTasks[imgIdx]._pre_assigned_composition || legObj.composition;
+        const legPrompt = PromptBuilder.build(JSON.stringify(legObj));
+        const legFinal  = _appendLockedFinalConstraints(legPrompt, legObj);
+
+        // Module pipeline
+        const modLM = {};
+        let modScene = sbMod.buildDallePromptV2(row, { lastMatchState: modLM });
+        modScene = srvcMod._applySiteRealism(modScene, imgIdx, {});
+        modScene = sceneMod._applyVariation(modScene, imgIdx, modTasks[imgIdx]._pre_assigned_worker_presence);
+        modScene = locMod._resolveLocationAndComposition(modScene, imgIdx);
+        const modObj = JSON.parse((svalMod._validateResolvedScene(modScene)).fixedStr);
+        modObj._pre_assigned_composition  = modTasks[imgIdx]._pre_assigned_composition;
+        modObj._capture_defects_resolved  = modTasks[imgIdx]._capture_defects_resolved;
+        modObj._pre_assigned_vehicle      = modTasks[imgIdx]._pre_assigned_vehicle;
+        modObj.composition                = modTasks[imgIdx]._pre_assigned_composition || modObj.composition;
+        const modPrompt = pbMod.PromptBuilder.build(JSON.stringify(modObj));
+        const modFinal  = lcMod._appendLockedFinalConstraints(modPrompt, modObj);
+
+        if (legFinal !== modFinal)
+          t64Diffs.push(`${row.metier}/${etat}/img${imgIdx}: prompt mismatch`);
+        t64Cases++;
+      }
+    }
+  }
+
+  // ─── T65: T40 canonical snapshots — module matches legacy ─────────────────
+  // Same 8 rows as T40; verify module buildDallePromptV2 produces the same hash
+  function _t65StableStringify(v) {
+    if (Array.isArray(v)) return '[' + v.map(_t65StableStringify).join(',') + ']';
+    if (v !== null && typeof v === 'object') {
+      return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + _t65StableStringify(v[k])).join(',') + '}';
+    }
+    return JSON.stringify(v);
+  }
+  function _t65Hash32(s) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
+    return h;
+  }
+  const T65_REF = [
+    { id:'toiture-nettoyage',       metier:'toiture',        travaux:'nettoyage gouttières',      contexte:'maison',      etat:'encours', ville:'Paris', refHash:2455936913 },
+    { id:'toiture-tuiles',          metier:'toiture',        travaux:'Remplacement de tuiles',     contexte:'maison',      etat:'encours', ville:'Paris', refHash:2385610455 },
+    { id:'plomberie-debouchage',     metier:'plomberie',      travaux:'Débouchage canalisation',    contexte:'appartement', etat:'encours', ville:'Paris', refHash:1029236932 },
+    { id:'plomberie-fuite',         metier:'plomberie',      travaux:"Fuite d'eau",                contexte:'maison',      etat:'debut',   ville:'Paris', refHash:1088613504 },
+    { id:'electricite-normes',      metier:'électricité',    travaux:'Mise aux normes électrique', contexte:'appartement', etat:'encours', ville:'Paris', refHash:1746687025 },
+    { id:'depannage-auto-batterie', metier:'depannage_auto', travaux:'batterie à plat',            contexte:'domicile',    etat:'encours', ville:'Paris', refHash:919780194  },
+    { id:'peinture-interieure',     metier:'peinture',       travaux:'Peinture intérieure',        contexte:'appartement', etat:'encours', ville:'Paris', refHash:3792538061 },
+    { id:'maconnerie-enduit',       metier:'maçonnerie',     travaux:'Réfection enduit façade',    contexte:'maison',      etat:'encours', ville:'Paris', refHash:1460650968 },
+  ];
+  let t65Diffs = [];
+  for (const ref of T65_REF) {
+    const row  = { metier: ref.metier, travaux: ref.travaux, contexte: ref.contexte, etat: ref.etat, nb: 1, ville: ref.ville, fiche: '', meteo: 'auto', images: [] };
+    const json = sbMod.buildDallePromptV2(row);
+    const hash = _t65Hash32(_t65StableStringify(JSON.parse(json)));
+    if (hash !== ref.refHash) t65Diffs.push(`${ref.id}: hash ${hash} ≠ ref ${ref.refHash}`);
+  }
+
+  // ─── T66: Phase 5 dependency integrity ───────────────────────────────────
+  const t66Issues = [];
+  // All 4 modules must be importable (already done above — no error = pass)
+  // Check exports exist
+  if (typeof sbMod.buildDallePromptV2 !== 'function')  t66Issues.push('scene-builder: buildDallePromptV2 not exported');
+  if (typeof sbMod._getWorkDetail !== 'function')       t66Issues.push('scene-builder: _getWorkDetail not exported');
+  if (typeof sbMod._getCityContext !== 'function')      t66Issues.push('scene-builder: _getCityContext not exported');
+  if (typeof sbMod.INTERIOR_SCENE_BASE !== 'object')    t66Issues.push('scene-builder: INTERIOR_SCENE_BASE not exported');
+  if (typeof sbMod._validateScene !== 'function')       t66Issues.push('scene-builder: _validateScene not exported');
+  if (typeof sbMod._validateSceneStrict !== 'function') t66Issues.push('scene-builder: _validateSceneStrict not exported');
+  if (typeof pbMod.PromptBuilder !== 'object')          t66Issues.push('prompt-builder: PromptBuilder not exported');
+  if (typeof pbMod.PHOTO_STYLE_RULES !== 'object')      t66Issues.push('prompt-builder: PHOTO_STYLE_RULES not exported');
+  if (pbMod._USE_PROMPT_BUILDER !== false)              t66Issues.push('prompt-builder: _USE_PROMPT_BUILDER should be false');
+  if (typeof prMod._IMG_REWRITE_SYSTEM !== 'string')    t66Issues.push('prompt-rewriter: _IMG_REWRITE_SYSTEM not a string');
+  if (typeof prMod.buildPromptRewriteRequest !== 'function') t66Issues.push('prompt-rewriter: buildPromptRewriteRequest not exported');
+  if (typeof prMod.rewritePromptWithGPT !== 'function') t66Issues.push('prompt-rewriter: rewritePromptWithGPT not exported');
+  if (typeof lcMod._appendLockedFinalConstraints !== 'function') t66Issues.push('locked-constraints: _appendLockedFinalConstraints not exported');
+  // No global _lastMatch in module scope (no window access by scene-builder)
+  if (typeof sbMod._lastMatch !== 'undefined')          t66Issues.push('scene-builder: _lastMatch leaked to module scope');
+  // buildDallePromptV2 must accept second arg without throwing
+  try {
+    sbMod.buildDallePromptV2({ metier: 'toiture', travaux: 'tuiles', ville: 'Paris', etat: 'encours', meteo: 'auto', contexte: 'maison' }, {});
+  } catch(e) { t66Issues.push('buildDallePromptV2 threw with empty opts: ' + e.message); }
+
+  return {
+    t59: { diffs: t59Diffs },
+    t60: { cases: t60Cases, jsonDiffs: t60JSONDiffs, lmDiffs: t60LMDiffs },
+    t61: { cases: t61Cases, diffs: t61Diffs },
+    t62: { cases: t62Cases, diffs: t62Diffs },
+    t63: { cases: t63Cases, issues: t63Issues },
+    t64: { cases: t64Cases, diffs: t64Diffs },
+    t65: { diffs: t65Diffs },
+    t66: { ok: t66Issues.length === 0, issues: t66Issues },
+  };
+}
+window._runPromptParityTests = _runPromptParityTests;
+
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
 async function _runLocalTests() {
@@ -15779,6 +16138,54 @@ async function _runLocalTests() {
       pass('T58: Phase 4 dependency integrity — tous modules importables, _selectVehiclePresence extrait');
     else
       fail('T58: Phase 4 dependency integrity', t58.issues.join('; '));
+  }
+
+  // T59–T66: Phase 5 — prompt modules parity
+  let _promptParityResult = null;
+  try { _promptParityResult = await window._runPromptParityTests(); } catch(e) {
+    fail('T59: Prompt constants parity', e.message);
+    fail('T60: buildDallePromptV2 parity', e.message);
+    fail('T61: PromptBuilder parity', e.message);
+    fail('T62: Locked constraints parity', e.message);
+    fail('T63: Prompt rewrite mock', e.message);
+    fail('T64: Full shadow pipeline parity', e.message);
+    fail('T65: T40 canonical snapshots (module)', e.message);
+    fail('T66: Phase 5 dependency integrity', e.message);
+  }
+  if (_promptParityResult) {
+    const { t59, t60, t61, t62, t63, t64, t65, t66 } = _promptParityResult;
+    if (!t59.diffs.length)
+      pass('T59: Prompt constants parity — _IMG_REWRITE_SYSTEM, INTERIOR_SCENE_BASE, _USE_PROMPT_BUILDER, PHOTO_STYLE_RULES — 0 diff');
+    else
+      fail('T59: Prompt constants parity', t59.diffs.join('; '));
+    if (!t60.jsonDiffs.length && !t60.lmDiffs.length)
+      pass(`T60: buildDallePromptV2 parity — ${t60.cases} cas, 0 diff JSON, 0 diff _lastMatch`);
+    else
+      fail('T60: buildDallePromptV2 parity', `JSON diffs: ${t60.jsonDiffs.length} (${t60.jsonDiffs[0]||''}), LM diffs: ${t60.lmDiffs.length}`);
+    if (!t61.diffs.length)
+      pass(`T61: PromptBuilder parity — ${t61.cases} cas, 0 diff`);
+    else
+      fail('T61: PromptBuilder parity', `${t61.diffs.length} diff(s): ${t61.diffs.slice(0,3).join('; ')}`);
+    if (!t62.diffs.length)
+      pass(`T62: Locked constraints parity — ${t62.cases} cas, 0 diff`);
+    else
+      fail('T62: Locked constraints parity', `${t62.diffs.length} diff(s): ${t62.diffs.slice(0,3).join('; ')}`);
+    if (!t63.issues.length)
+      pass(`T63: Prompt rewrite mock — ${t63.cases} scénarios, 0 issue`);
+    else
+      fail('T63: Prompt rewrite mock', t63.issues.join('; '));
+    if (!t64.diffs.length)
+      pass(`T64: Full shadow pipeline parity — ${t64.cases} pipelines, 0 diff`);
+    else
+      fail('T64: Full shadow pipeline parity', `${t64.diffs.length} diff(s): ${t64.diffs.slice(0,3).join('; ')}`);
+    if (!t65.diffs.length)
+      pass('T65: T40 canonical snapshots (module) — 8 cas, 0 diff');
+    else
+      fail('T65: T40 canonical snapshots (module)', t65.diffs.join('; '));
+    if (t66.ok)
+      pass('T66: Phase 5 dependency integrity — tous modules importables, aucune copie illégitime');
+    else
+      fail('T66: Phase 5 dependency integrity', t66.issues.join('; '));
   }
 
   // T41: pipeline mocké complet — [PENDING Phase 6+]
