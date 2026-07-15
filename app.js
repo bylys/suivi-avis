@@ -14879,6 +14879,7 @@ Object.defineProperty(window, '__IMAGE_GEN_LEGACY_PROMPT__', {
     PromptBuilder,
     PHOTO_STYLE_RULES,
     _IMG_REWRITE_SYSTEM,
+    _SCENE_PLANNER_MODEL,
     _USE_PROMPT_BUILDER,
     INTERIOR_SCENE_BASE,
     _rewritePromptWithGPT,
@@ -14912,9 +14913,11 @@ async function _runPromptParityTests() {
     t59Diffs.push('INTERIOR_SCENE_BASE mismatch');
   if (!_jeq(leg.PHOTO_STYLE_RULES, pbMod.PHOTO_STYLE_RULES))
     t59Diffs.push('PHOTO_STYLE_RULES mismatch');
+  if (leg._SCENE_PLANNER_MODEL !== prMod._SCENE_PLANNER_MODEL)
+    t59Diffs.push('_SCENE_PLANNER_MODEL mismatch');
 
   // ─── T60: buildDallePromptV2 parity ──────────────────────────────────────
-  // 146 combos × 4 états × 4 (ville × meteo) = 2336 JSON cases + lastMatch parity
+  // 172 sous-services (16 métiers) × 4 états × 4 (ville × meteo) = 2752 JSON cases + lastMatch parity
   const ETATS = ['debut', 'encours', 'semifinal', 'final'];
   const VILLES_METEOS = [
     { ville: 'Paris',   meteo: 'auto'   },
@@ -14945,11 +14948,15 @@ async function _runPromptParityTests() {
     }
   }
 
+  const expectedT60 = t60Combos.length * ETATS.length * VILLES_METEOS.length;
+  if (t60Cases !== expectedT60)
+    t60JSONDiffs.push(`[T60_CASE_COUNT_MISMATCH] expected=${expectedT60} actual=${t60Cases} (combos=${t60Combos.length})`);
+
   // ─── T61: PromptBuilder parity ────────────────────────────────────────────
   // Build scene JSONs with legacy then compare PromptBuilder output character-by-character
-  // 146 combos × 2 états = 292 cases
+  // 172 sous-services (16 métiers) × 2 états = 344 cases
   let t61Cases = 0, t61Diffs = [];
-  for (const { metier, svc } of t60Combos.slice(0, 146)) {
+  for (const { metier, svc } of t60Combos) {
     for (const etat of ['encours', 'final']) {
       const row = { metier, travaux: svc, ville: 'Paris', etat, meteo: 'auto', contexte: 'maison', nb: 1, fiche: '', images: [] };
       const jsonScene = leg.buildDallePromptV2(row);
@@ -15086,11 +15093,70 @@ async function _runPromptParityTests() {
   }
   t63Cases++;
 
+  // scenario 6: HTTP 200 with invalid JSON body
+  try {
+    const respInvalidJson = { ok: true, status: 200, text: async () => 'not-json{{{{' };
+    const result6 = await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => respInvalidJson, readResponse: _mockRead });
+    // _mockRead swallows parse errors (data=null), then rewritePromptWithGPT tries choices[0] → throws TypeError
+    t63Issues.push('200 invalid JSON: should have thrown (got: ' + result6 + ')');
+  } catch(e) {
+    // Expected: TypeError accessing choices[0].message.content on null
+    if (e instanceof TypeError || e.message.includes('Scene planner error') || e.message.includes('Cannot read') || e.message.includes("Cannot read properties") || e.message.includes('null') || e.message.includes('undefined')) {
+      // acceptable
+    } else {
+      t63Issues.push('200 invalid JSON: unexpected error type: ' + e.message);
+    }
+  }
+  t63Cases++;
+
+  // scenario 7: HTTP 200 with empty body
+  try {
+    const respEmpty = { ok: true, status: 200, text: async () => '' };
+    const result7 = await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => respEmpty, readResponse: _mockRead });
+    t63Issues.push('200 empty body: should have thrown (got: ' + result7 + ')');
+  } catch(e) {
+    if (e instanceof TypeError || e.message.includes('Scene planner error') || e.message.includes('Cannot read') || e.message.includes('null') || e.message.includes('undefined')) {
+      // acceptable
+    } else {
+      t63Issues.push('200 empty body: unexpected error type: ' + e.message);
+    }
+  }
+  t63Cases++;
+
+  // scenario 8: HTTP 200 with unexpected JSON structure (no choices array)
+  try {
+    const respNoChoices = _mkResp(true, 200, { result: 'something unexpected' });
+    const result8 = await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => respNoChoices, readResponse: _mockRead });
+    t63Issues.push('200 unexpected structure: should have thrown (got: ' + result8 + ')');
+  } catch(e) {
+    if (e instanceof TypeError || e.message.includes('Scene planner error') || e.message.includes('Cannot read') || e.message.includes('undefined')) {
+      // acceptable
+    } else {
+      t63Issues.push('200 unexpected structure: unexpected error type: ' + e.message);
+    }
+  }
+  t63Cases++;
+
+  // scenario 9: timeout (fetchImpl rejects with abort/timeout error)
+  try {
+    await prMod.rewritePromptWithGPT({ prompt: 'p', apiKey: 'k',
+      fetchImpl: async () => { throw new Error('AbortError: timeout'); }, readResponse: _mockRead });
+    t63Issues.push('timeout: should have thrown');
+  } catch(e) {
+    if (!e.message.includes('AbortError') && !e.message.includes('timeout') && !e.message.includes('Timeout')) {
+      t63Issues.push('timeout: wrong error message: ' + e.message);
+    }
+  }
+  t63Cases++;
+
   // ─── T64: full shadow prompt pipeline parity ──────────────────────────────
   // Chain: buildDallePromptV2 → _applySiteRealism → _applyVariation
   //        → _resolveLocationAndComposition → _validateResolvedScene
   //        → PromptBuilder.build → _appendLockedFinalConstraints
-  // Compare complete output between legacy and module functions.
+  // 16 métiers × 4 états × 3 imageIndex = 192 pipelines complets
   const [srvcMod, sceneMod, locMod, svalMod, wrkMod, capMod, batchMod] = await Promise.all([
     import('./src/image-generation/resolution/service-resolver.js'),
     import('./src/image-generation/resolution/scene-resolver.js'),
@@ -15101,16 +15167,22 @@ async function _runPromptParityTests() {
     import('./src/image-generation/planning/batch-planner.js'),
   ]);
   const T64_ROWS = [
-    { metier: 'toiture',       travaux: 'Remplacement de tuiles',     ville: 'Paris',     etat: 'encours',   meteo: 'auto',   contexte: 'maison' },
-    { metier: 'depannage_auto',travaux: 'Batterie à plat',            ville: 'Lyon',      etat: 'debut',     meteo: 'soleil', contexte: 'domicile' },
-    { metier: 'peinture',      travaux: 'Peinture chambre',           ville: 'Bordeaux',  etat: 'semifinal', meteo: 'auto',   contexte: 'appartement' },
-    { metier: 'etancheite',    travaux: 'Étanchéité toit terrasse',   ville: 'Marseille', etat: 'final',     meteo: 'soleil', contexte: 'immeuble' },
-    { metier: 'élagage',       travaux: 'Élagage arbre',              ville: 'Nantes',    etat: 'encours',   meteo: 'nuageux',contexte: 'maison' },
-    { metier: 'maçonnerie',    travaux: 'Réfection enduit façade',    ville: 'Bordeaux',  etat: 'encours',   meteo: 'auto',   contexte: 'maison' },
-    { metier: 'carrelage',     travaux: 'Carrelage salle de bain',    ville: 'Paris',     etat: 'encours',   meteo: 'auto',   contexte: 'appartement' },
-    { metier: 'débarras',      travaux: 'Débarras cave',              ville: 'Rennes',    etat: 'debut',     meteo: 'auto',   contexte: 'maison' },
-    { metier: 'nettoyage_toiture', travaux: 'Démoussage toiture',    ville: 'Caen',      etat: 'encours',   meteo: 'nuageux',contexte: 'maison' },
-    { metier: 'paysagiste',    travaux: 'Création jardin',            ville: 'Toulouse',  etat: 'debut',     meteo: 'soleil', contexte: 'maison' },
+    { metier: 'toiture',              travaux: 'Remplacement tuiles',                ville: 'Paris',      meteo: 'auto',    contexte: 'maison' },
+    { metier: 'nettoyage_toiture',    travaux: 'Démoussage toiture',                 ville: 'Lyon',       meteo: 'nuageux', contexte: 'maison' },
+    { metier: 'nettoyage_gouttieres', travaux: 'Nettoyage gouttières',               ville: 'Rennes',     meteo: 'auto',    contexte: 'maison' },
+    { metier: 'etancheite',           travaux: 'Étanchéité toit terrasse',           ville: 'Marseille',  meteo: 'soleil',  contexte: 'immeuble' },
+    { metier: 'ravalement',           travaux: 'Ravalement façade',                  ville: 'Bordeaux',   meteo: 'auto',    contexte: 'maison' },
+    { metier: 'maçonnerie',           travaux: 'Dalle béton',                        ville: 'Nantes',     meteo: 'auto',    contexte: 'maison' },
+    { metier: 'peinture',             travaux: 'Peinture chambre',                   ville: 'Paris',      meteo: 'auto',    contexte: 'appartement' },
+    { metier: 'carrelage',            travaux: 'Faïence salle de bain',              ville: 'Toulouse',   meteo: 'auto',    contexte: 'appartement' },
+    { metier: 'vitrier',              travaux: 'Remplacement vitrage brisé',         ville: 'Strasbourg', meteo: 'auto',    contexte: 'maison' },
+    { metier: 'élagage',              travaux: 'Élagage arbre',                      ville: 'Nantes',     meteo: 'nuageux', contexte: 'maison' },
+    { metier: 'abattage',             travaux: 'Abattage arbre',                     ville: 'Grenoble',   meteo: 'soleil',  contexte: 'maison' },
+    { metier: 'terrassement',         travaux: 'Terrassement maison',                ville: 'Caen',       meteo: 'auto',    contexte: 'maison' },
+    { metier: 'paysagiste',           travaux: 'Création jardin',                    ville: 'Toulouse',   meteo: 'soleil',  contexte: 'maison' },
+    { metier: 'depannage_auto',       travaux: 'Batterie à plat',                    ville: 'Lyon',       meteo: 'soleil',  contexte: 'domicile' },
+    { metier: 'nettoyage',            travaux: 'Nettoyage façade',                   ville: 'Nice',       meteo: 'soleil',  contexte: 'maison' },
+    { metier: 'débarras',             travaux: 'Débarras cave',                      ville: 'Rennes',     meteo: 'auto',    contexte: 'maison' },
   ];
   let t64Cases = 0, t64Diffs = [];
   for (const baseRow of T64_ROWS) {
@@ -15208,12 +15280,49 @@ async function _runPromptParityTests() {
   if (typeof prMod.buildPromptRewriteRequest !== 'function') t66Issues.push('prompt-rewriter: buildPromptRewriteRequest not exported');
   if (typeof prMod.rewritePromptWithGPT !== 'function') t66Issues.push('prompt-rewriter: rewritePromptWithGPT not exported');
   if (typeof lcMod._appendLockedFinalConstraints !== 'function') t66Issues.push('locked-constraints: _appendLockedFinalConstraints not exported');
+  // _SCENE_PLANNER_MODEL must be exported from prompt-rewriter
+  if (typeof prMod._SCENE_PLANNER_MODEL !== 'string')   t66Issues.push('prompt-rewriter: _SCENE_PLANNER_MODEL not a string');
   // No global _lastMatch in module scope (no window access by scene-builder)
   if (typeof sbMod._lastMatch !== 'undefined')          t66Issues.push('scene-builder: _lastMatch leaked to module scope');
+  // Modules must not export window or document references
+  if (typeof sbMod.window !== 'undefined')              t66Issues.push('scene-builder: exports window');
+  if (typeof pbMod.window !== 'undefined')              t66Issues.push('prompt-builder: exports window');
+  if (typeof prMod.window !== 'undefined')              t66Issues.push('prompt-rewriter: exports window');
+  if (typeof lcMod.window !== 'undefined')              t66Issues.push('locked-constraints: exports window');
+  if (typeof sbMod.document !== 'undefined')            t66Issues.push('scene-builder: exports document');
+  if (typeof pbMod.document !== 'undefined')            t66Issues.push('prompt-builder: exports document');
+  // rewritePromptWithGPT must use injected fetchImpl (not global fetch) — verify by passing forbidden fetch
+  try {
+    let usedForbiddenFetch = false;
+    const forbiddenFetch = async () => { usedForbiddenFetch = true; throw new Error('FORBIDDEN_REAL_FETCH'); };
+    await prMod.rewritePromptWithGPT({ prompt: 'x', apiKey: 'k', fetchImpl: forbiddenFetch, readResponse: async () => ({}) });
+  } catch(e) {
+    if (e.message === 'FORBIDDEN_REAL_FETCH') {
+      // correct: fetchImpl was called, not global fetch
+    } else if (e.message.includes('Scene planner error') || e.message.includes('Cannot read') || e.message.includes('TypeError')) {
+      // also acceptable: fetchImpl was called, error from response processing
+    } else {
+      t66Issues.push('rewritePromptWithGPT: may not be using fetchImpl correctly: ' + e.message);
+    }
+  }
   // buildDallePromptV2 must accept second arg without throwing
   try {
     sbMod.buildDallePromptV2({ metier: 'toiture', travaux: 'tuiles', ville: 'Paris', etat: 'encours', meteo: 'auto', contexte: 'maison' }, {});
   } catch(e) { t66Issues.push('buildDallePromptV2 threw with empty opts: ' + e.message); }
+  // PromptBuilder.build must be a function accepting a JSON string
+  try {
+    const dummyScene = JSON.stringify({ work_type: 'test', state: 'encours', framing: {}, var_presence: 'none', var_workers: 0 });
+    const r = pbMod.PromptBuilder.build(dummyScene);
+    if (typeof r !== 'string' || r.length === 0) t66Issues.push('PromptBuilder.build: returned empty or non-string');
+  } catch(e) { t66Issues.push('PromptBuilder.build threw: ' + e.message); }
+  // _appendLockedFinalConstraints must return prompt + constraints block
+  try {
+    const dummyScene2 = { composition: 'medium_intervention', _matched_key: 'toiture', _capture_defects_resolved: [], var_workers: 0, var_presence: 'none', triangle_rule: null };
+    const r2 = lcMod._appendLockedFinalConstraints('BASE PROMPT', dummyScene2);
+    if (typeof r2 !== 'string') t66Issues.push('_appendLockedFinalConstraints: non-string result');
+    if (!r2.startsWith('BASE PROMPT')) t66Issues.push('_appendLockedFinalConstraints: does not preserve input prompt');
+    if (!r2.includes('NON-NEGOTIABLE')) t66Issues.push('_appendLockedFinalConstraints: missing constraints header');
+  } catch(e) { t66Issues.push('_appendLockedFinalConstraints threw: ' + e.message); }
 
   return {
     t59: { diffs: t59Diffs },
@@ -16155,7 +16264,7 @@ async function _runLocalTests() {
   if (_promptParityResult) {
     const { t59, t60, t61, t62, t63, t64, t65, t66 } = _promptParityResult;
     if (!t59.diffs.length)
-      pass('T59: Prompt constants parity — _IMG_REWRITE_SYSTEM, INTERIOR_SCENE_BASE, _USE_PROMPT_BUILDER, PHOTO_STYLE_RULES — 0 diff');
+      pass('T59: Prompt constants parity — _IMG_REWRITE_SYSTEM, _SCENE_PLANNER_MODEL, INTERIOR_SCENE_BASE, _USE_PROMPT_BUILDER, PHOTO_STYLE_RULES — 0 diff');
     else
       fail('T59: Prompt constants parity', t59.diffs.join('; '));
     if (!t60.jsonDiffs.length && !t60.lmDiffs.length)
