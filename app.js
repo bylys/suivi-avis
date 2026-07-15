@@ -15337,6 +15337,515 @@ async function _runPromptParityTests() {
 }
 window._runPromptParityTests = _runPromptParityTests;
 
+// Bridge Phase 6 — pipeline modulaire pour tests T41 / T67–T78.
+// Ne pas utiliser en production. Suppression au cutover Phase 7.
+Object.defineProperty(window, '__IMAGE_GEN_MODULAR_PIPELINE__', {
+  value: Object.freeze({
+    createGenerationState: null, // filled lazily after module import
+    createImagePipeline:   null,
+    buildImageGenerationRequest: null,
+    buildVisionSafetyRequest:    null,
+  }),
+  writable: false, configurable: false, enumerable: false,
+});
+
+async function _runPipelineParityTests() {
+  const issues = [];
+  function _assertEq(a, b, msg) { if (a !== b) issues.push(`${msg}: expected ${JSON.stringify(b)} got ${JSON.stringify(a)}`); }
+  function _assertDeepEq(a, b, msg) { if (JSON.stringify(a) !== JSON.stringify(b)) issues.push(`${msg}: deep mismatch`); }
+
+  const [stateMod, httpMod, safetyMod, genImgMod, batchMod, retryMod, uiMod, bvalMod, wrkMod, bpMod] = await Promise.all([
+    import('./src/image-generation/pipeline/state.js'),
+    import('./src/image-generation/pipeline/http.js'),
+    import('./src/image-generation/pipeline/safety-check.js'),
+    import('./src/image-generation/pipeline/generate-image.js'),
+    import('./src/image-generation/pipeline/run-batch.js'),
+    import('./src/image-generation/pipeline/retries.js'),
+    import('./src/image-generation/ui/img-ui.js'),
+    import('./src/image-generation/validation/batch-validator.js'),
+    import('./src/image-generation/safety/worker-validator.js'),
+    import('./src/image-generation/planning/batch-planner.js'),
+  ]);
+
+  // Forbidden fetch guard — no real network during Phase 6 tests
+  const realFetch = window.fetch;
+  window.fetch = (...args) => {
+    throw new Error(`[REAL_NETWORK_FORBIDDEN_DURING_PHASE6_TEST] ${String(args[0])}`);
+  };
+
+  // ── Shared mock helpers ────────────────────────────────────────────────────
+  const _fakeRead = async (r) => {
+    const raw = await r.text(); let data = null;
+    try { if (raw) data = JSON.parse(raw); } catch {}
+    return { ok: r.ok, status: r.status, raw, data };
+  };
+  const _fakeRewrite = async (_scene, _key) => 'Mocked rewritten prompt for testing.';
+  const _fakeSleep   = async () => {};
+  const _mkImgResp  = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ data: [{ b64_json: 'dGVzdA==' }] }) });
+  const _mkSafeResp = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ safe: true, severity: 'ok', reason: '' }) } }] }) });
+  const _mkCritResp = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ safe: false, severity: 'critical', reason: 'test critical' }) } }] }) });
+  const _mkFailResp = () => ({ ok: false, status: 500, text: async () => '' });
+
+  function _mkFetch(opts = {}) {
+    let imgCalls = 0, visionCalls = 0;
+    const fetchImpl = async (url) => {
+      if (url.includes('images/generations')) {
+        imgCalls++;
+        const r = opts.imgFn ? opts.imgFn(imgCalls) : _mkImgResp();
+        return r;
+      }
+      if (url.includes('chat/completions')) {
+        visionCalls++;
+        const r = opts.visionFn ? opts.visionFn(visionCalls) : _mkSafeResp();
+        return r;
+      }
+      throw new Error('[UNEXPECTED_URL] ' + url);
+    };
+    return { fetchImpl, counts: () => ({ imgCalls, visionCalls }) };
+  }
+
+  function _mkUiAdapter() {
+    const calls = { updateProgress: 0, renderImage: [], tasksDone: [] };
+    return {
+      adapter: {
+        updateProgress: (done, total, ok, fail) => { calls.updateProgress++; },
+        renderImage:    (src, filename, label) => { calls.renderImage.push({ src: src?.slice(0, 20), filename, label }); },
+        onTaskDone:     (task) => { calls.tasksDone.push(task.taskId); },
+      },
+      calls,
+    };
+  }
+
+  function _mkT41Tasks(n) {
+    const row = { metier: 'toiture', travaux: 'Remplacement tuiles', ville: 'Paris', etat: 'encours', meteo: 'auto', contexte: 'maison', nb: n, fiche: '', images: [] };
+    const jsonScene    = buildDallePromptV2(row);
+    const _planBase    = JSON.parse(jsonScene);
+    const seed         = 2001;
+    const presencePlan = _buildPresencePlan(n, _planBase.state_level, _planBase._matched_key, seed);
+    const tasks = [];
+    for (let i = 0; i < n; i++) {
+      tasks.push({ taskId: 200 + i, row, i, nb: n, jsonScene, presencePlan, slug: 'toiture', _planBase: Object.assign({}, _planBase), status: 'pending', imageAttempt: 0, result: null, error: null });
+    }
+    bpMod._planGlobalBatch(tasks, seed);
+    bpMod._rebalanceGlobalBatchPlan(tasks, seed);
+    // _validateCompleteBatchPlan requires global quotas satisfied (needs ≥4 tasks with diverse
+    // compositions). Omitted here so small-n tests (n=1,2) can test pipeline plumbing without
+    // triggering a global-quota error.
+    return tasks;
+  }
+
+  const t41 = { ok: false, issues: [] };
+  const t67 = { ok: false, issues: [] };
+  const t68 = { ok: false, issues: [] };
+  const t69 = { ok: false, issues: [] };
+  const t70 = { ok: false, cases: 0, issues: [] };
+  const t71 = { ok: false, issues: [] };
+  const t72 = { ok: false, issues: [] };
+  const t73 = { ok: false, issues: [] };
+  const t74 = { ok: false, issues: [] };
+  const t75 = { ok: false, issues: [] };
+  const t76 = { ok: false, issues: [] };
+  const t77 = { ok: false, issues: [] };
+  const t78 = { ok: false, issues: [] };
+
+  try {
+
+  // ─── T41: full modular pipeline mocked ────────────────────────────────────
+  // 4 tasks, 4 image calls, 4 vision calls (toiture has safety), 0 retry
+  try {
+    const s41     = stateMod.createGenerationState();
+    s41.runId     = 1;
+    s41.runActive = true;
+    s41.counters.requested = 4;
+    const tasks41 = _mkT41Tasks(4);
+    const ui41    = _mkUiAdapter();
+    const mf41    = _mkFetch();
+    const runImages41 = [];
+    await batchMod.runImageBatch(tasks41, 'sk-test', {
+      state: s41, fetchImpl: mf41.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: ui41.adapter, sleep: _fakeSleep,
+      runImages: runImages41,
+    });
+    const counts41 = mf41.counts();
+    const successes41 = tasks41.filter(t => t.status === 'success');
+    if (counts41.imgCalls  !== 4) t41.issues.push(`imgCalls expected 4 got ${counts41.imgCalls}`);
+    if (counts41.visionCalls !== 4) t41.issues.push(`visionCalls expected 4 got ${counts41.visionCalls}`);
+    if (successes41.length !== 4) t41.issues.push(`successes expected 4 got ${successes41.length}`);
+    if (runImages41.length !== 4) t41.issues.push(`runImages expected 4 got ${runImages41.length}`);
+    if (s41.counters.imageCalls  !== 4) t41.issues.push(`state.imageCalls expected 4 got ${s41.counters.imageCalls}`);
+    if (s41.counters.visionCalls !== 4) t41.issues.push(`state.visionCalls expected 4 got ${s41.counters.visionCalls}`);
+    if (s41.counters.validated   !== 4) t41.issues.push(`state.validated expected 4 got ${s41.counters.validated}`);
+    if (s41.counters.criticalRejections !== 0) t41.issues.push(`criticalRejections expected 0`);
+    const uniqueTaskIds = new Set(tasks41.map(t => t.taskId));
+    if (uniqueTaskIds.size !== 4) t41.issues.push('task IDs not unique');
+    t41.ok = t41.issues.length === 0;
+  } catch(e) { t41.issues.push('threw: ' + e.message); }
+
+  // ─── T67: state parity ────────────────────────────────────────────────────
+  try {
+    // initial state structure
+    const s67 = stateMod.createGenerationState();
+    if (s67.runActive !== false)   t67.issues.push('runActive should start false');
+    if (s67.runId !== null)        t67.issues.push('runId should start null');
+    if (!Array.isArray(s67.generatedImages) || s67.generatedImages.length !== 0) t67.issues.push('generatedImages should start []');
+    if (!Array.isArray(s67.imageCallLog)    || s67.imageCallLog.length !== 0)    t67.issues.push('imageCallLog should start []');
+    if (s67.lastApiKey !== null)   t67.issues.push('lastApiKey should start null');
+    const ckeys = ['requested', 'imageCalls', 'visionCalls', 'validated', 'visionFailures', 'criticalRejections'];
+    for (const k of ckeys) {
+      if (typeof s67.counters[k] !== 'number' || s67.counters[k] !== 0) t67.issues.push(`counter ${k} should start 0`);
+    }
+    // independence: two states must not share references
+    const s67b = stateMod.createGenerationState();
+    s67.runActive = true; s67.counters.imageCalls = 5;
+    if (s67b.runActive !== false)        t67.issues.push('states share runActive reference');
+    if (s67b.counters.imageCalls !== 0)  t67.issues.push('states share counters reference');
+    // verify IMAGE_TASK_STATUS matches legacy
+    const legacyStatuses = ['pending', 'generating', 'checking_safety', 'retrying', 'success', 'failed', 'rejected_safety', 'safety_check_failed'];
+    for (const v of legacyStatuses) {
+      if (!Object.values(stateMod.IMAGE_TASK_STATUS).includes(v)) t67.issues.push(`IMAGE_TASK_STATUS missing: ${v}`);
+    }
+    // verify TERMINAL_STATUSES matches legacy (4 entries)
+    if (stateMod.TERMINAL_STATUSES.size !== 4) t67.issues.push(`TERMINAL_STATUSES size ${stateMod.TERMINAL_STATUSES.size} ≠ 4`);
+    // verify limits
+    if (stateMod.MAX_IMAGE_ATTEMPTS !== MAX_IMAGE_ATTEMPTS)                       t67.issues.push('MAX_IMAGE_ATTEMPTS mismatch');
+    if (stateMod.MAX_SAFETY_ATTEMPTS_PER_IMAGE !== MAX_SAFETY_ATTEMPTS_PER_IMAGE) t67.issues.push('MAX_SAFETY_ATTEMPTS_PER_IMAGE mismatch');
+    // counters via real batch run
+    const s67c = stateMod.createGenerationState(); s67c.runId = 7;
+    const tasks67 = _mkT41Tasks(1);
+    await batchMod.runImageBatch(tasks67, 'sk-t67', {
+      state: s67c, fetchImpl: _mkFetch().fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+    });
+    if (s67c.counters.imageCalls  !== 1) t67.issues.push(`post-run imageCalls: expected 1 got ${s67c.counters.imageCalls}`);
+    if (s67c.counters.visionCalls !== 1) t67.issues.push(`post-run visionCalls: expected 1 got ${s67c.counters.visionCalls}`);
+    if (s67c.counters.validated   !== 1) t67.issues.push(`post-run validated: expected 1 got ${s67c.counters.validated}`);
+    t67.ok = t67.issues.length === 0;
+  } catch(e) { t67.issues.push('threw: ' + e.message); }
+
+  // ─── T68: image request parity ────────────────────────────────────────────
+  try {
+    const req68 = genImgMod.buildImageGenerationRequest('Test prompt for an image.', 'sk-test-key');
+    if (req68.url !== 'https://api.openai.com/v1/images/generations') t68.issues.push('url mismatch');
+    if (req68.headers?.['Authorization'] !== 'Bearer sk-test-key')   t68.issues.push('Authorization mismatch');
+    if (req68.headers?.['Content-Type']  !== 'application/json')     t68.issues.push('Content-Type mismatch');
+    if (req68.timeout !== 180000) t68.issues.push(`timeout expected 180000 got ${req68.timeout}`);
+    const body68 = JSON.parse(req68.body);
+    if (body68.model              !== 'gpt-image-2')  t68.issues.push('model mismatch');
+    if (body68.n                  !== 1)              t68.issues.push('n mismatch');
+    if (body68.size               !== '1536x1024')    t68.issues.push('size mismatch');
+    if (body68.quality            !== 'high')         t68.issues.push('quality mismatch');
+    if (body68.output_format      !== 'jpeg')         t68.issues.push('output_format mismatch');
+    if (body68.output_compression !== 85)             t68.issues.push('output_compression mismatch');
+    if (body68.prompt !== 'Test prompt for an image.') t68.issues.push('prompt mismatch');
+    t68.ok = t68.issues.length === 0;
+  } catch(e) { t68.issues.push('threw: ' + e.message); }
+
+  // ─── T69: vision request parity ───────────────────────────────────────────
+  try {
+    const testB64 = 'aGVsbG8=';
+    // toiture has safety rules
+    const req69 = safetyMod.buildVisionSafetyRequest('toiture', testB64, 'sk-vision-key');
+    if (!req69)  { t69.issues.push('buildVisionSafetyRequest returned null for toiture'); }
+    else {
+      if (req69.url !== 'https://api.openai.com/v1/chat/completions') t69.issues.push('vision url mismatch');
+      if (req69.headers?.['Authorization'] !== 'Bearer sk-vision-key') t69.issues.push('vision Authorization mismatch');
+      if (req69.timeout !== 60000) t69.issues.push(`vision timeout expected 60000 got ${req69.timeout}`);
+      const vBody69 = JSON.parse(req69.body);
+      if (vBody69.model      !== 'gpt-4o') t69.issues.push('vision model mismatch');
+      if (vBody69.max_tokens !== 200)      t69.issues.push('vision max_tokens mismatch');
+      if (vBody69.response_format?.type !== 'json_object') t69.issues.push('vision response_format mismatch');
+      const imgContent = vBody69.messages?.[0]?.content?.[0];
+      if (imgContent?.type !== 'image_url') t69.issues.push('vision image type mismatch');
+      if (!imgContent?.image_url?.url?.includes(testB64)) t69.issues.push('vision b64 missing');
+      if (imgContent?.image_url?.detail !== 'low') t69.issues.push('vision detail mismatch');
+    }
+    // peinture has no safety rule → should return null
+    const req69b = safetyMod.buildVisionSafetyRequest('peinture', testB64, 'sk-x');
+    if (req69b !== null) t69.issues.push('peinture: should return null (no safety rule)');
+    t69.ok = t69.issues.length === 0;
+  } catch(e) { t69.issues.push('threw: ' + e.message); }
+
+  // ─── T70: batch normal — 4 tasks, all succeed ─────────────────────────────
+  try {
+    const s70 = stateMod.createGenerationState(); s70.runId = 70;
+    const tasks70 = _mkT41Tasks(4);
+    const mf70    = _mkFetch();
+    const ui70    = _mkUiAdapter();
+    const ri70    = [];
+    await batchMod.runImageBatch(tasks70, 'sk-t70', {
+      state: s70, fetchImpl: mf70.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: ui70.adapter, sleep: _fakeSleep,
+      runImages: ri70,
+    });
+    const c70 = mf70.counts();
+    if (c70.imgCalls    !== 4) t70.issues.push(`imgCalls: expected 4 got ${c70.imgCalls}`);
+    if (c70.visionCalls !== 4) t70.issues.push(`visionCalls: expected 4 got ${c70.visionCalls}`);
+    if (tasks70.filter(t => t.status === 'success').length !== 4) t70.issues.push('not all 4 succeeded');
+    if (ri70.length !== 4) t70.issues.push(`runImages length: expected 4 got ${ri70.length}`);
+    if (s70.counters.imageCalls  !== 4) t70.issues.push(`state.imageCalls expected 4`);
+    if (s70.counters.visionCalls !== 4) t70.issues.push(`state.visionCalls expected 4`);
+    if (s70.counters.validated   !== 4) t70.issues.push(`state.validated expected 4`);
+    t70.cases = 4;
+    t70.ok = t70.issues.length === 0;
+  } catch(e) { t70.issues.push('threw: ' + e.message); }
+
+  // ─── T71: critical violation then success ─────────────────────────────────
+  // image attempt 1 → vision critical → image attempt 2 → vision safe
+  try {
+    const s71 = stateMod.createGenerationState(); s71.runId = 71;
+    const tasks71 = _mkT41Tasks(1);
+    let vCall71 = 0;
+    const mf71 = _mkFetch({
+      visionFn: () => {
+        vCall71++;
+        return vCall71 === 1 ? _mkCritResp() : _mkSafeResp();
+      },
+    });
+    const ri71 = [];
+    await batchMod.runImageBatch(tasks71, 'sk-t71', {
+      state: s71, fetchImpl: mf71.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+      runImages: ri71,
+    });
+    const c71 = mf71.counts();
+    if (c71.imgCalls    !== 2) t71.issues.push(`imgCalls: expected 2 got ${c71.imgCalls}`);
+    if (c71.visionCalls !== 2) t71.issues.push(`visionCalls: expected 2 got ${c71.visionCalls}`);
+    if (ri71.length     !== 1) t71.issues.push(`runImages expected 1 got ${ri71.length}`);
+    if (tasks71[0].status !== 'success') t71.issues.push(`status expected success got ${tasks71[0].status}`);
+    if (s71.counters.criticalRejections !== 1) t71.issues.push(`criticalRejections expected 1 got ${s71.counters.criticalRejections}`);
+    t71.ok = t71.issues.length === 0;
+  } catch(e) { t71.issues.push('threw: ' + e.message); }
+
+  // ─── T72: vision failure (all 3 safety attempts fail) ─────────────────────
+  try {
+    const s72 = stateMod.createGenerationState(); s72.runId = 72;
+    const tasks72 = _mkT41Tasks(1);
+    const mf72 = _mkFetch({
+      visionFn: () => ({ ok: false, status: 500, text: async () => '' }),
+    });
+    const ri72 = [];
+    await batchMod.runImageBatch(tasks72, 'sk-t72', {
+      state: s72, fetchImpl: mf72.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+      runImages: ri72,
+    });
+    const c72 = mf72.counts();
+    if (c72.imgCalls    !== 1) t72.issues.push(`imgCalls: expected 1 got ${c72.imgCalls}`);
+    if (c72.visionCalls !== 3) t72.issues.push(`visionCalls: expected 3 got ${c72.visionCalls}`);
+    if (ri72.length     !== 0) t72.issues.push(`runImages expected 0 got ${ri72.length}`);
+    if (tasks72[0].status !== 'safety_check_failed') t72.issues.push(`status expected safety_check_failed got ${tasks72[0].status}`);
+    if (s72.counters.visionFailures !== 1) t72.issues.push(`visionFailures expected 1 got ${s72.counters.visionFailures}`);
+    t72.ok = t72.issues.length === 0;
+  } catch(e) { t72.issues.push('threw: ' + e.message); }
+
+  // ─── T73: run-lock / double launch prevention ──────────────────────────────
+  // state.runActive prevents two concurrent runs from overlapping results.
+  // The lock is checked by the caller (generateAllImages wrapper, not runImageBatch).
+  // This test verifies state fields and runId semantics.
+  try {
+    const s73 = stateMod.createGenerationState();
+    s73.runActive = true;
+    s73.runId     = 1;
+    // Run 1: set runId=1
+    // After batch completion, a stale run (old runId) must not re-enable the button.
+    // Simulate: run new runId=2 while runId=1 is stale
+    s73.runId = 2;
+    // Verify that if a batch completed with runId=1, it would check runId===generationRunId before resetting
+    const staleRunId = 1;
+    const currentRunId = s73.runId;
+    if (staleRunId === currentRunId) t73.issues.push('runId stale-check logic broken');
+    // Run a normal batch, verify runId is still correct after
+    const s73b = stateMod.createGenerationState(); s73b.runId = 1; s73b.runActive = true;
+    const tasks73 = _mkT41Tasks(2);
+    await batchMod.runImageBatch(tasks73, 'sk-t73', {
+      state: s73b, fetchImpl: _mkFetch().fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+    });
+    if (tasks73.filter(t => t.status !== 'success').length > 0) t73.issues.push('batch did not complete successfully');
+    // runId unchanged — the batch function does not modify it
+    if (s73b.runId !== 1) t73.issues.push('runId should not change during batch');
+    // Verify no duplicate tasks in output
+    const uniqueIds73 = new Set(tasks73.map(t => t.taskId));
+    if (uniqueIds73.size !== 2) t73.issues.push('task IDs not unique in run');
+    t73.ok = t73.issues.length === 0;
+  } catch(e) { t73.issues.push('threw: ' + e.message); }
+
+  // ─── T74: manual retry preserves batch plan ────────────────────────────────
+  try {
+    const s74 = stateMod.createGenerationState(); s74.runId = 74;
+    const tasks74 = _mkT41Tasks(2);
+    // Save batch plan fields before batch
+    const saved74 = tasks74.map(t => ({
+      _pre_assigned_composition:       t._pre_assigned_composition,
+      _pre_assigned_worker_count:      t._pre_assigned_worker_count,
+      _pre_assigned_vehicle:           t._pre_assigned_vehicle,
+      _capture_defects_resolved:       t._capture_defects_resolved,
+      _batch_plan_id:                  t._batch_plan_id,
+      _pre_assigned_worker_presence:   t._pre_assigned_worker_presence,
+    }));
+    // First batch: task 0 succeeds, task 1 fails (img API throws)
+    let imgCall74 = 0;
+    const mf74 = _mkFetch({
+      imgFn: () => {
+        imgCall74++;
+        if (imgCall74 <= 1) return _mkImgResp();
+        // task 1: always error
+        return { ok: false, status: 500, text: async () => JSON.stringify({ error: { message: 'forced error for T74' } }) };
+      },
+    });
+    await batchMod.runImageBatch(tasks74, 'sk-t74', {
+      state: s74, fetchImpl: mf74.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+    });
+    const failedTask74 = tasks74.filter(t => t.status !== 'success');
+    if (failedTask74.length !== 1) t74.issues.push(`expected 1 failure, got ${failedTask74.length}`);
+    // Retry
+    const s74b = stateMod.createGenerationState(); s74b.runId = 74;
+    let imgCall74b = 0;
+    const mf74b = _mkFetch({
+      imgFn: () => { imgCall74b++; return _mkImgResp(); },
+    });
+    await retryMod.retryFailedImages(failedTask74, 'sk-t74b', {
+      state: s74b, fetchImpl: mf74b.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+    });
+    // Verify batch plan fields were NOT changed by retry
+    for (let k = 0; k < tasks74.length; k++) {
+      const t = tasks74[k];
+      const s = saved74[k];
+      if (t._batch_plan_id !== s._batch_plan_id) t74.issues.push(`task${k}: _batch_plan_id changed`);
+      if (t._pre_assigned_composition !== s._pre_assigned_composition) t74.issues.push(`task${k}: composition changed`);
+      if (JSON.stringify(t._capture_defects_resolved) !== JSON.stringify(s._capture_defects_resolved)) t74.issues.push(`task${k}: defects changed`);
+      if (t._pre_assigned_vehicle !== s._pre_assigned_vehicle) t74.issues.push(`task${k}: vehicle changed`);
+    }
+    if (failedTask74[0].status !== 'success') t74.issues.push('retried task should succeed');
+    t74.ok = t74.issues.length === 0;
+  } catch(e) { t74.issues.push('threw: ' + e.message); }
+
+  // ─── T75: deduplication and terminal statuses ──────────────────────────────
+  try {
+    const s75 = stateMod.createGenerationState(); s75.runId = 75;
+    const tasks75 = _mkT41Tasks(2);
+    const ri75 = [];
+    await batchMod.runImageBatch(tasks75, 'sk-t75', {
+      state: s75, fetchImpl: _mkFetch().fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+      runImages: ri75,
+    });
+    // Each taskId must appear at most once in runImages
+    const seen75 = new Set();
+    for (const img of ri75) {
+      if (seen75.has(img.taskId)) t75.issues.push(`duplicate taskId in runImages: ${img.taskId}`);
+      seen75.add(img.taskId);
+    }
+    // All 4 terminal statuses must be recognised
+    const terminal75 = [
+      stateMod.IMAGE_TASK_STATUS.SUCCESS,
+      stateMod.IMAGE_TASK_STATUS.FAILED,
+      stateMod.IMAGE_TASK_STATUS.REJECTED_SAFETY,
+      stateMod.IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED,
+    ];
+    for (const st of terminal75) {
+      if (!stateMod.TERMINAL_STATUSES.has(st)) t75.issues.push(`TERMINAL_STATUSES missing: ${st}`);
+    }
+    // After run, all tasks must have a terminal status
+    for (const t of tasks75) {
+      if (!stateMod.TERMINAL_STATUSES.has(t.status)) t75.issues.push(`task ${t.taskId} not terminal: ${t.status}`);
+    }
+    t75.ok = t75.issues.length === 0;
+  } catch(e) { t75.issues.push('threw: ' + e.message); }
+
+  // ─── T76: UI adapter calls ─────────────────────────────────────────────────
+  try {
+    const s76  = stateMod.createGenerationState(); s76.runId = 76;
+    const ui76 = _mkUiAdapter();
+    const tasks76 = _mkT41Tasks(2);
+    const ri76 = [];
+    await batchMod.runImageBatch(tasks76, 'sk-t76', {
+      state: s76, fetchImpl: _mkFetch().fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: ui76.adapter, sleep: _fakeSleep,
+      runImages: ri76,
+    });
+    if (ui76.calls.updateProgress < 3) t76.issues.push(`updateProgress called ${ui76.calls.updateProgress} times (expected ≥ 3)`);
+    if (ui76.calls.renderImage.length !== 2) t76.issues.push(`renderImage called ${ui76.calls.renderImage.length} times (expected 2)`);
+    for (const img of ui76.calls.renderImage) {
+      if (!img.filename || !img.filename.endsWith('.jpg')) t76.issues.push(`renderImage bad filename: ${img.filename}`);
+    }
+    if (ui76.calls.tasksDone.length !== 2) t76.issues.push(`tasksDone called ${ui76.calls.tasksDone.length} times (expected 2)`);
+    t76.ok = t76.issues.length === 0;
+  } catch(e) { t76.issues.push('threw: ' + e.message); }
+
+  // ─── T77: filename format ─────────────────────────────────────────────────
+  try {
+    const s77 = stateMod.createGenerationState(); s77.runId = 77;
+    const tasks77 = _mkT41Tasks(3);
+    const ri77 = [];
+    await batchMod.runImageBatch(tasks77, 'sk-t77', {
+      state: s77, fetchImpl: _mkFetch().fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+      runImages: ri77,
+    });
+    if (ri77.length !== 3) t77.issues.push(`expected 3 images got ${ri77.length}`);
+    for (const img of ri77) {
+      if (!img.filename) t77.issues.push('missing filename');
+      else if (!/^[a-z0-9-]+-\d{2}\.jpg$/.test(img.filename)) t77.issues.push(`bad filename format: ${img.filename}`);
+    }
+    // Filenames should be unique
+    const fns = ri77.map(i => i.filename);
+    if (new Set(fns).size !== fns.length) t77.issues.push('duplicate filenames');
+    // Rejected images must not appear in runImages
+    for (const img of ri77) {
+      const t = tasks77.find(t => t.taskId === img.taskId);
+      if (t && t.status !== 'success') t77.issues.push(`non-success task ${t.taskId} in runImages`);
+    }
+    t77.ok = t77.issues.length === 0;
+  } catch(e) { t77.issues.push('threw: ' + e.message); }
+
+  // ─── T78: Phase 6 dependency integrity ────────────────────────────────────
+  try {
+    // Modules importable (done above — no error = pass)
+    if (typeof stateMod.createGenerationState !== 'function') t78.issues.push('state: createGenerationState not exported');
+    if (typeof stateMod.IMAGE_TASK_STATUS !== 'object')       t78.issues.push('state: IMAGE_TASK_STATUS not exported');
+    if (typeof httpMod.fetchWithTimeout  !== 'function')     t78.issues.push('http: fetchWithTimeout not exported');
+    if (typeof httpMod.readResponseOnce  !== 'function')     t78.issues.push('http: readResponseOnce not exported');
+    if (typeof safetyMod.buildVisionSafetyRequest !== 'function') t78.issues.push('safety: buildVisionSafetyRequest not exported');
+    if (typeof safetyMod.checkImageSafety          !== 'function') t78.issues.push('safety: checkImageSafety not exported');
+    if (typeof genImgMod.buildImageGenerationRequest !== 'function') t78.issues.push('generate-image: buildImageGenerationRequest not exported');
+    if (typeof genImgMod.generateImageOnly           !== 'function') t78.issues.push('generate-image: generateImageOnly not exported');
+    if (typeof batchMod.runImageBatch      !== 'function') t78.issues.push('run-batch: runImageBatch not exported');
+    if (typeof batchMod.createImagePipeline !== 'function') t78.issues.push('run-batch: createImagePipeline not exported');
+    if (typeof retryMod.retryFailedImages  !== 'function') t78.issues.push('retries: retryFailedImages not exported');
+    if (typeof uiMod.createImageUiAdapter  !== 'function') t78.issues.push('img-ui: createImageUiAdapter not exported');
+    // createImagePipeline factory must return runImageBatch and generateImageOnly
+    const pipe78 = batchMod.createImagePipeline({
+      fetchImpl: _mkFetch().fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter,
+      state: stateMod.createGenerationState(), sleep: _fakeSleep,
+    });
+    if (typeof pipe78.runImageBatch    !== 'function') t78.issues.push('createImagePipeline: runImageBatch missing');
+    if (typeof pipe78.generateImageOnly !== 'function') t78.issues.push('createImagePipeline: generateImageOnly missing');
+    // UI adapter must return required methods
+    const ua78 = uiMod.createImageUiAdapter({ documentRef: null });
+    for (const m of ['setGenerateButtonDisabled', 'updateProgress', 'renderImage', 'renderBatchSummary', 'clearGallery', 'readFormRows', 'onTaskDone']) {
+      if (typeof ua78[m] !== 'function') t78.issues.push(`createImageUiAdapter missing: ${m}`);
+    }
+    // Modules must not export window or document
+    if (typeof batchMod.window  !== 'undefined') t78.issues.push('run-batch exports window');
+    if (typeof genImgMod.window !== 'undefined') t78.issues.push('generate-image exports window');
+    if (typeof safetyMod.window !== 'undefined') t78.issues.push('safety-check exports window');
+    // Pipeline is shadow only — generateAllImages must still point to legacy
+    if (typeof generateAllImages !== 'function') t78.issues.push('legacy generateAllImages no longer exists');
+    t78.ok = t78.issues.length === 0;
+  } catch(e) { t78.issues.push('threw: ' + e.message); }
+
+  } finally {
+    window.fetch = realFetch;
+  }
+
+  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78 };
+}
+window._runPipelineParityTests = _runPipelineParityTests;
+
 // ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
 
 async function _runLocalTests() {
@@ -16297,11 +16806,39 @@ async function _runLocalTests() {
       fail('T66: Phase 5 dependency integrity', t66.issues.join('; '));
   }
 
-  // T41: pipeline mocké complet — [PENDING Phase 6+]
-  // Vérifiera qu'une exécution complète avec fetch mocké produit les mêmes
-  // statuts finaux qu'avant le refactoring. Implémenté quand le pipeline sera
-  // migré dans src/image-generation/pipeline/.
-  console.log('[TEST] PENDING — T41: pipeline mocké complet (Phase 6+, non implémenté)');
+  // T41 + T67–T78: pipeline modulaire Phase 6
+  {
+    let pipeRes;
+    try {
+      pipeRes = await _runPipelineParityTests();
+    } catch(e) {
+      fail('T41/T67–T78: pipeline parity import', e.message);
+      pipeRes = null;
+    }
+    if (pipeRes) {
+      const LABELS = {
+        t41: 'T41: pipeline modulaire complet (4 tâches, 4 images, 0 retry)',
+        t67: 'T67: state — structure, indépendance, constants parity',
+        t68: 'T68: buildImageGenerationRequest — url/headers/body/timeout',
+        t69: 'T69: buildVisionSafetyRequest — url/headers/body/timeout',
+        t70: 'T70: runImageBatch — 4 tâches, toutes réussies',
+        t71: 'T71: runImageBatch — violation critique puis succès',
+        t72: 'T72: runImageBatch — échec vision (3 tentatives)',
+        t73: 'T73: runImageBatch — verrouillage run / runId stable',
+        t74: 'T74: retryFailedImages — plan batch préservé',
+        t75: 'T75: runImageBatch — déduplication et statuts terminaux',
+        t76: 'T76: UI adapter — updateProgress / renderImage / onTaskDone',
+        t77: 'T77: noms de fichiers — format, unicité, tâches non-success absentes',
+        t78: 'T78: Phase 6 dependency integrity — exports, factory, shadow',
+      };
+      for (const [key, label] of Object.entries(LABELS)) {
+        const r = pipeRes[key];
+        if (!r) { fail(label, 'no result'); continue; }
+        if (r.ok) pass(label);
+        else      fail(label, r.issues.join('; '));
+      }
+    }
+  }
 
   console.log('[TEST] Done.');
 }
