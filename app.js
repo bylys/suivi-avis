@@ -3150,7 +3150,7 @@ const CONTEXTE_BY_METIER = {
     { value: 'route_dept',      label: 'Route départementale',  desc: 'parked on the side of a rural departmental road, fields in background' },
     { value: 'rue_ville',       label: 'Rue en ville',          desc: 'parked on an urban street in a town or city' },
     { value: 'parking',         label: 'Parking',               desc: 'in a car park or parking area' },
-    { value: 'domicile',        label: 'Domicile',              desc: 'parked in a residential driveway or on a quiet street outside a house' },
+    { value: 'domicile',        label: 'Domicile',              desc: 'parked on private residential property — driveway, garage forecourt, or enclosed courtyard. A gate, wall, or house facade must be visible in the background. No road markings, no public pavement, no carriageway in the scene.' },
     { value: 'garage',          label: 'Garage / Atelier',      desc: 'inside or in front of a garage or vehicle workshop' },
     { value: 'station_service', label: 'Station-service',       desc: 'in a petrol station forecourt' },
     { value: 'aire_repos',      label: 'Aire de repos',         desc: 'in a motorway rest area or lay-by' },
@@ -8802,7 +8802,7 @@ const SITE_REALISM = {
             background: 'flat tyre leaning against the car body, road or parking surface beyond',
           },
           scene_debris:  'wheel nuts grouped on the ground beside the removed tyre, gravel disturbed around the jack base',
-          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open'],
+          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open', 'compressor or pressure gauge placed beside tyre with no active repair', 'equipment arranged for a photo'],
           tools: [
             'hydraulic jack raised under the vehicle sill',
             'lug wrench on the ground beside the spare wheel',
@@ -8830,7 +8830,7 @@ const SITE_REALISM = {
             background: 'road surface and vehicle bodywork beyond',
           },
           scene_debris:  'small nail or screw on the ground near the tyre — the puncture cause just extracted',
-          scene_exclude: ['hydraulic jack', 'spare tyre', 'wheel removed from car', 'jump cables', 'door wedge', 'tow strap'],
+          scene_exclude: ['hydraulic jack', 'spare tyre', 'wheel removed from car', 'jump cables', 'door wedge', 'tow strap', 'equipment staged for a photo without plug reamer in tyre tread'],
           tools: [
             'plug reamer tool inserted in the tread puncture',
             'plug strip beside the tyre on the ground',
@@ -8856,7 +8856,7 @@ const SITE_REALISM = {
             background: 'flat tyre against the car door, road surface beyond',
           },
           scene_debris:  'wheel nuts arranged beside the spare, gravel around the jack foot',
-          scene_exclude: ['wheel already fitted', 'jump cables', 'battery booster', 'door wedge', 'tow strap'],
+          scene_exclude: ['wheel already fitted', 'jump cables', 'battery booster', 'door wedge', 'tow strap', 'compressor or pressure gauge beside tyre', 'equipment arranged for a photo'],
           tools: [
             'hydraulic jack under the sill, vehicle raised',
             'spare wheel on the ground beside the bare hub',
@@ -8874,7 +8874,7 @@ const SITE_REALISM = {
           ],
         },
         {
-          scene_note:    'flat tyre initial assessment — tyre flat on the road, nail or screw still visible in the tread, no repair started',
+          scene_note:    'flat tyre initial assessment — tyre visibly deflated against the road, nail or screw still in the tread. Main subject is the flat tyre profile, not any equipment. No compressor, inflator, or pressure gauge present. No repair tool deployed.',
           scene_camera:  'crouching close beside the flat tyre at road level, framing the deflated tyre profile and the puncture cause in the tread',
           scene_framing: {
             work_pct:   65,
@@ -8883,10 +8883,9 @@ const SITE_REALISM = {
             background: 'road surface extending away, kerbside or verge beyond',
           },
           scene_debris:  'small nail or screw visible in the tread — puncture cause not yet removed',
-          scene_exclude: ['hydraulic jack', 'spare tyre', 'lug wrench', 'jump cables', 'tow strap', 'door wedge'],
+          scene_exclude: ['hydraulic jack', 'spare tyre', 'lug wrench', 'jump cables', 'tow strap', 'door wedge', 'compressor or inflator near the flat tyre', 'pressure gauge as main visual subject', 'equipment staged for a photo'],
           tools: [
             'warning triangle placed on the road behind the vehicle',
-            'tyre pressure gauge on the ground near the flat tyre',
           ],
           protections: [
             'reflective safety vest on the car roof',
@@ -8908,7 +8907,7 @@ const SITE_REALISM = {
             background: 'road surface, verge or kerbside behind the vehicle',
           },
           scene_debris:  'small stone moved aside from the jack foot position, lug wrench on the ground nearby',
-          scene_exclude: ['vehicle raised off the ground', 'spare tyre fitted', 'jump cables', 'tow strap', 'door wedge'],
+          scene_exclude: ['vehicle raised off the ground', 'spare tyre fitted', 'jump cables', 'tow strap', 'door wedge', 'compressor or pressure gauge near the tyre', 'equipment arranged for a photo'],
           tools: [
             'hydraulic jack being slid under the sill jacking point',
             'lug wrench on the ground near the wheel — not yet in use',
@@ -8933,7 +8932,7 @@ const SITE_REALISM = {
             background: 'road surface, vehicle body panel, verge beyond',
           },
           scene_debris:  'wheel nut already removed resting on the road near the tyre',
-          scene_exclude: ['vehicle lifted off ground', 'wheel removed', 'spare tyre', 'jump cables', 'tow strap'],
+          scene_exclude: ['vehicle lifted off ground', 'wheel removed', 'spare tyre', 'jump cables', 'tow strap', 'compressor or pressure gauge near the tyre', 'equipment arranged for a photo'],
           tools: [
             'cross lug wrench engaged on a wheel nut',
             'hydraulic jack placed under the sill ready to pump',
@@ -8984,7 +8983,7 @@ const SITE_REALISM = {
             background: 'boot opening, car bodywork, road or outdoor surface',
           },
           scene_debris:  'foam insert or cardboard boot cover removed and leaning against the car bumper',
-          scene_exclude: ['wheel on the car', 'jack in use', 'jump cables', 'tow strap', 'door wedge'],
+          scene_exclude: ['wheel on the car', 'jack in use', 'jump cables', 'tow strap', 'door wedge', 'compressor or pressure gauge', 'equipment staged for a photo'],
           tools: [
             'spare wheel being lifted from the boot floor well',
             'wheel brace and jack kit beside the spare in the boot',
@@ -9008,7 +9007,7 @@ const SITE_REALISM = {
             background: 'road continuing beyond, verge or kerbside, open sky',
           },
           scene_debris:  'gravel or road dirt disturbed at the triangle position',
-          scene_exclude: ['jack in use', 'wheel removed', 'lug wrench on wheel', 'jump cables', 'tow strap'],
+          scene_exclude: ['jack in use', 'wheel removed', 'lug wrench on wheel', 'jump cables', 'tow strap', 'compressor or pressure gauge near the tyre', 'equipment arranged for a photo'],
           tools: [
             'warning triangle being placed on the road surface',
             'reflective safety vest on the car roof visible in the background',
@@ -9032,7 +9031,7 @@ const SITE_REALISM = {
             background: 'road or outdoor surface, vehicle rear and the road ahead',
           },
           scene_debris:  'lug wrench and jack being placed into the boot beside the old flat tyre',
-          scene_exclude: ['jack still under car', 'wheel gap at sill', 'jump cables', 'tow strap', 'door wedge'],
+          scene_exclude: ['jack still under car', 'wheel gap at sill', 'jump cables', 'tow strap', 'door wedge', 'compressor or pressure gauge near the tyre', 'equipment arranged for a photo'],
           tools: [
             'flat tyre being carried to the open boot',
             'lug wrench and jack being packed away beside it',
@@ -11662,7 +11661,7 @@ const _PRE_GEN_SAFETY = {
   abattage:          'The operator must stand beside the trunk, never in the fall zone in front of the notch. No chainsaw cutting overhead. No bystander on the far side of the trunk during felling.',
   terrassement:      'No person inside the open trench under the excavator bucket. No person between the rotating cab and the trench edge. Machine needs a visible ground spotter when near a structure.',
   'maçonnerie':      'No person on top of an incomplete wall above 1.5 m without scaffold. No block or heavy load overhead without mechanical lifting aid.',
-  depannage_auto:    'Breakdown must be off the carriageway. Visible warning triangle required. No cables crossing the roadway. No person between vehicle and traffic.',
+  depannage_auto:    'Breakdown must be off the carriageway. Visible warning triangle required. No cables crossing the roadway. No person between vehicle and traffic. For puncture scenes: never show a compressor or pressure gauge simply placed in front of a mounted tyre as the sole subject — every scene must show an active repair: wheel removed, jack raising the car, lug wrench engaged on a nut, plug reamer inserted in tread, or spare wheel being mounted.',
 };
 
 const PromptBuilder = {
