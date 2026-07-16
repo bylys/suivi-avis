@@ -15359,29 +15359,32 @@ async function _runPipelineParityTests() {
   function _assertEq(a, b, msg) { if (a !== b) issues.push(`${msg}: expected ${JSON.stringify(b)} got ${JSON.stringify(a)}`); }
   function _assertDeepEq(a, b, msg) { if (JSON.stringify(a) !== JSON.stringify(b)) issues.push(`${msg}: deep mismatch`); }
 
+  // Cache-busting param for module imports and source text fetches.
+  // Ensures the browser loads the current file from disk, not the module registry cache.
+  const _t81cb = `?t81=${Math.floor(performance.now())}`;
+
   const [stateMod, httpMod, safetyMod, genImgMod, batchMod, retryMod, uiMod, bvalMod, wrkMod, bpMod, reqMod] = await Promise.all([
-    import('./src/image-generation/pipeline/state.js'),
-    import('./src/image-generation/pipeline/http.js'),
-    import('./src/image-generation/pipeline/safety-check.js'),
-    import('./src/image-generation/pipeline/generate-image.js'),
-    import('./src/image-generation/pipeline/run-batch.js'),
-    import('./src/image-generation/pipeline/retries.js'),
-    import('./src/image-generation/ui/img-ui.js'),
-    import('./src/image-generation/validation/batch-validator.js'),
-    import('./src/image-generation/safety/worker-validator.js'),
-    import('./src/image-generation/planning/batch-planner.js'),
-    import('./src/image-generation/planning/batch-requirements.js'),
+    import(`./src/image-generation/pipeline/state.js${_t81cb}`),
+    import(`./src/image-generation/pipeline/http.js${_t81cb}`),
+    import(`./src/image-generation/pipeline/safety-check.js${_t81cb}`),
+    import(`./src/image-generation/pipeline/generate-image.js${_t81cb}`),
+    import(`./src/image-generation/pipeline/run-batch.js${_t81cb}`),
+    import(`./src/image-generation/pipeline/retries.js${_t81cb}`),
+    import(`./src/image-generation/ui/img-ui.js${_t81cb}`),
+    import(`./src/image-generation/validation/batch-validator.js${_t81cb}`),
+    import(`./src/image-generation/safety/worker-validator.js${_t81cb}`),
+    import(`./src/image-generation/planning/batch-planner.js${_t81cb}`),
+    import(`./src/image-generation/planning/batch-requirements.js${_t81cb}`),
   ]);
 
   // Forbidden fetch guard — no real network during Phase 6 tests
   const realFetch = window.fetch;
 
   // Fetch module sources for T81 structural checks (must happen before guard installation).
-  // Cache-busting param ensures the fetch bypasses browser HTTP cache.
-  const _t81cb = `?t81=${Math.floor(performance.now())}`;
-  const [_t81PlannerSrc, _t81ValidatorSrc] = await Promise.all([
+  const [_t81PlannerSrc, _t81ValidatorSrc, _t81ReqSrc] = await Promise.all([
     realFetch('./src/image-generation/planning/batch-planner.js' + _t81cb).then(r => r.text()),
     realFetch('./src/image-generation/validation/batch-validator.js' + _t81cb).then(r => r.text()),
+    realFetch('./src/image-generation/planning/batch-requirements.js' + _t81cb).then(r => r.text()),
   ]);
 
   window.fetch = (...args) => {
@@ -15478,6 +15481,8 @@ async function _runPipelineParityTests() {
   const t79 = { ok: false, cases: 0, invalidCount: 0, issues: [] };
   const t80 = { ok: false, issues: [] };
   const t81 = { ok: false, cases: 0, issues: [] };
+  const t82 = { ok: false, cases: 0, issues: [] };
+  const t83 = { ok: false, n1LegacyThrew: 0, n1ModuleAccepted: 0, n2LegacyThrew: 0, n2ModuleAccepted: 0, n3Divergence: 0, issues: [] };
   const t76 = { ok: false, issues: [] };
   const t77 = { ok: false, issues: [] };
   const t78 = { ok: false, issues: [] };
@@ -15971,20 +15976,49 @@ async function _runPipelineParityTests() {
     t80.ok = t80.issues.length === 0;
   } catch(e) { t80.issues.push('threw: ' + e.message); }
 
-  // ─── T81: source unique des quotas — planner et validator partagent getBatchPlanRequirements ───
-  // Structural : vérifie que les deux modules importent getBatchPlanRequirements.
-  // Functional : 16 métiers × [1,2,3,4,6,10] × 100 seeds = 9 600 cas.
-  //   Après plan + rebalance, _validateCompleteBatchPlan doit accepter le résultat.
-  //   Les requirements doivent être satisfaits par le plan (vehicle, worker, compositions).
+  // ─── T81: source unique des quotas — getBatchPlanPolicy partagée par planner + validator ────────
+  // Structural : vérifie import getBatchPlanPolicy dans les deux modules + export depuis requirements.
+  // Sentinel   : injecte une politique factice — prouve que planner ET validator appellent getPolicy.
+  // Functional : 16 métiers catalogue × [1,2,3,4,6,10] × 100 seeds = 9 600 cas.
   try {
     // ── Structural ──
-    if (!_t81PlannerSrc.includes('getBatchPlanRequirements'))
-      t81.issues.push('batch-planner.js does not import getBatchPlanRequirements');
-    if (!_t81ValidatorSrc.includes('getBatchPlanRequirements'))
-      t81.issues.push('batch-validator.js does not import getBatchPlanRequirements');
+    if (!_t81PlannerSrc.includes('getBatchPlanPolicy'))
+      t81.issues.push('batch-planner.js does not import getBatchPlanPolicy');
+    if (!_t81ValidatorSrc.includes('getBatchPlanPolicy'))
+      t81.issues.push('batch-validator.js does not import getBatchPlanPolicy');
+    if (!_t81ReqSrc.includes('getBatchPlanPolicy'))
+      t81.issues.push('batch-requirements.js does not export getBatchPlanPolicy');
+    if (typeof reqMod.getBatchPlanPolicy !== 'function')
+      t81.issues.push('reqMod.getBatchPlanPolicy is not a function');
 
-    // ── Functional ──
-    const T81_METIERS = [
+    // ── Sentinel injection ──
+    // Prouve que planner ET validator appellent la fonction injectée, pas une copie interne.
+    let t81SentinelCalls = 0;
+    const t81Sentinel = () => {
+      t81SentinelCalls++;
+      return {
+        plannerTargets: {
+          requiredCompositions: ['contextual_overview'],
+          maxClose: 1, minWorkerScenes: 0, minVehicleScenes: 0, requireDistinctCompositions: false,
+        },
+        validationRequirements: {
+          maxClose: 1, minMedium: 0, minWide: 0, minContextual: 1, minMediumOrWide: 0,
+          minNonClose: 0, requireDistinctCompositions: false, minWorkerScenes: 0, minVehicleScenes: 0,
+        },
+      };
+    };
+    const tasks81s = _mkRawBatchTasks('toiture', 'Remplacement tuiles', 'encours', 4, 999, 950);
+    const t81CallsBefore = t81SentinelCalls;
+    bpMod._rebalanceGlobalBatchPlan(tasks81s, 999, { getPolicy: t81Sentinel });
+    if (t81SentinelCalls === t81CallsBefore)
+      t81.issues.push('sentinel: _rebalanceGlobalBatchPlan did not call injected getPolicy');
+    const t81CallsAfterPlanner = t81SentinelCalls;
+    try { bvalMod._validateCompleteBatchPlan(tasks81s, { getPolicy: t81Sentinel }); } catch(_) {}
+    if (t81SentinelCalls === t81CallsAfterPlanner)
+      t81.issues.push('sentinel: _validateCompleteBatchPlan did not call injected getPolicy');
+
+    // ── Functional : 16 métiers catalogue ──
+    const T81_CATALOG = [
       { metier: 'toiture',            svc: 'Remplacement tuiles' },
       { metier: 'nettoyage_toiture',  svc: 'Démoussage toiture' },
       { metier: 'nettoyage_gouttieres', svc: 'Nettoyage gouttières' },
@@ -16003,44 +16037,25 @@ async function _runPipelineParityTests() {
       { metier: 'débarras',           svc: 'Débarras appartement' },
     ];
     const T81_SIZES = [1, 2, 3, 4, 6, 10];
-
-    for (const { metier, svc } of T81_METIERS) {
+    for (const { metier, svc } of T81_CATALOG) {
       for (const n of T81_SIZES) {
         for (let s = 0; s < 100; s++) {
           const seed = s * 13 + 3;
           let tasks;
-          try {
-            tasks = _mkRawBatchTasks(metier, svc, 'encours', n, seed, 900);
-          } catch(e) {
-            t81.issues.push(`${metier}/n=${n}/s=${s}: plan threw — ${e.message}`);
-            continue;
-          }
-
-          // Validate: planner output must satisfy validator
-          try {
-            bvalMod._validateCompleteBatchPlan(tasks);
-          } catch(e) {
-            t81.issues.push(`${metier}/n=${n}/s=${s}: planner/validator inconsistency — ${e.message}`);
-            t81.cases++;
-            continue;
-          }
-
-          // Cross-check: requirements must be satisfied by the plan
-          const req81 = reqMod.getBatchPlanRequirements(tasks);
+          try { tasks = _mkRawBatchTasks(metier, svc, 'encours', n, seed, 900); }
+          catch(e) { t81.issues.push(`${metier}/n=${n}/s=${s}: plan threw — ${e.message}`); continue; }
+          try { bvalMod._validateCompleteBatchPlan(tasks); }
+          catch(e) { t81.issues.push(`${metier}/n=${n}/s=${s}: planner/validator inconsistency — ${e.message}`); t81.cases++; continue; }
+          const req81 = reqMod.getBatchPlanPolicy(tasks).validationRequirements;
           const comps81 = tasks.map(t => t._pre_assigned_composition);
-
           if (comps81.filter(c => c === 'close_detail').length > req81.maxClose)
             t81.issues.push(`${metier}/n=${n}/s=${s}: close_detail > maxClose=${req81.maxClose}`);
-
           if (req81.minVehicleScenes > 0 && !tasks.some(t => t._pre_assigned_vehicle !== 'absent'))
             t81.issues.push(`${metier}/n=${n}/s=${s}: minVehicleScenes=${req81.minVehicleScenes} but all absent`);
-
           if (req81.minWorkerScenes > 0 && !tasks.some(t => t._pre_assigned_worker_presence === 'workers'))
             t81.issues.push(`${metier}/n=${n}/s=${s}: minWorkerScenes=${req81.minWorkerScenes} but none`);
-
           if (req81.requireDistinctCompositions && new Set(comps81).size < comps81.length)
             t81.issues.push(`${metier}/n=${n}/s=${s}: compositions not distinct`);
-
           t81.cases++;
         }
       }
@@ -16048,11 +16063,135 @@ async function _runPipelineParityTests() {
     t81.ok = t81.issues.length === 0;
   } catch(e) { t81.issues.push('threw: ' + e.message); }
 
+  // ─── T82: couverture complète 18 métiers (catalogue + registres) ──────────────────────────────
+  // 16 métiers catalogue via _mkRawBatchTasks + plomberie + électricité via construction directe.
+  // 18 métiers × [1,2,3,4,6,10] × 100 seeds = 10 800 cas.
+  // getBatchPlanPolicy doit être la source des requirements pour chaque cas (pas de quotas locaux).
+  try {
+    function _mkRegistryTasksT82(metier, n, seed, taskIdBase) {
+      const tasks = [];
+      for (let i = 0; i < n; i++) {
+        tasks.push({
+          taskId: taskIdBase + i, i, nb: n,
+          _planBase: { _matched_key: metier, _matched_service: '' },
+          jsonScene: '{}', presencePlan: [],
+          slug: metier, status: 'pending', imageAttempt: 0, result: null, error: null,
+          row: { metier, travaux: '', nb: n }
+        });
+      }
+      bpMod._planGlobalBatch(tasks, seed);
+      bpMod._rebalanceGlobalBatchPlan(tasks, seed);
+      return tasks;
+    }
+    const T82_CATALOG = [
+      { metier: 'toiture',            svc: 'Remplacement tuiles' },
+      { metier: 'nettoyage_toiture',  svc: 'Démoussage toiture' },
+      { metier: 'nettoyage_gouttieres', svc: 'Nettoyage gouttières' },
+      { metier: 'etancheite',         svc: 'Réparation fuite toiture' },
+      { metier: 'ravalement',         svc: 'Ravalement façade' },
+      { metier: 'maçonnerie',         svc: 'Mur parpaing' },
+      { metier: 'peinture',           svc: 'Peinture chambre' },
+      { metier: 'carrelage',          svc: 'Faïence salle de bain' },
+      { metier: 'vitrier',            svc: 'Remplacement vitrage brisé' },
+      { metier: 'élagage',            svc: 'Élagage arbre' },
+      { metier: 'abattage',           svc: 'Abattage arbre' },
+      { metier: 'terrassement',       svc: 'Terrassement maison' },
+      { metier: 'paysagiste',         svc: 'Création jardin' },
+      { metier: 'depannage_auto',     svc: 'Batterie à plat' },
+      { metier: 'nettoyage',          svc: 'Nettoyage façade' },
+      { metier: 'débarras',           svc: 'Débarras appartement' },
+    ];
+    const T82_REGISTRY = ['plomberie', 'électricité'];
+    const T82_SIZES = [1, 2, 3, 4, 6, 10];
+
+    // 16 catalog métiers
+    for (const { metier, svc } of T82_CATALOG) {
+      for (const n of T82_SIZES) {
+        for (let s = 0; s < 100; s++) {
+          const seed = s * 17 + 5;
+          let tasks;
+          try { tasks = _mkRawBatchTasks(metier, svc, 'encours', n, seed, 8000); }
+          catch(e) { t82.issues.push(`${metier}/n=${n}/s=${s}: plan threw — ${e.message}`); continue; }
+          try { bvalMod._validateCompleteBatchPlan(tasks); }
+          catch(e) { t82.issues.push(`${metier}/n=${n}/s=${s}: planner/validator inconsistency — ${e.message}`); t82.cases++; continue; }
+          const req82 = reqMod.getBatchPlanPolicy(tasks).validationRequirements;
+          const comps82 = tasks.map(t => t._pre_assigned_composition);
+          if (comps82.filter(c => c === 'close_detail').length > req82.maxClose)
+            t82.issues.push(`${metier}/n=${n}/s=${s}: close_detail > maxClose=${req82.maxClose}`);
+          t82.cases++;
+        }
+      }
+    }
+
+    // 2 registry métiers (construction directe — pas dans SERVICE_CATALOG)
+    for (const metier of T82_REGISTRY) {
+      for (const n of T82_SIZES) {
+        for (let s = 0; s < 100; s++) {
+          const seed = s * 17 + 5;
+          let tasks;
+          try { tasks = _mkRegistryTasksT82(metier, n, seed, 9000 + s * 20); }
+          catch(e) { t82.issues.push(`${metier}/n=${n}/s=${s}: plan threw — ${e.message}`); continue; }
+          try { bvalMod._validateCompleteBatchPlan(tasks); }
+          catch(e) { t82.issues.push(`${metier}/n=${n}/s=${s}: planner/validator inconsistency — ${e.message}`); t82.cases++; continue; }
+          const req82r = reqMod.getBatchPlanPolicy(tasks).validationRequirements;
+          const comps82r = tasks.map(t => t._pre_assigned_composition);
+          if (comps82r.filter(c => c === 'close_detail').length > req82r.maxClose)
+            t82.issues.push(`${metier}/n=${n}/s=${s}: close_detail > maxClose=${req82r.maxClose}`);
+          t82.cases++;
+        }
+      }
+    }
+    t82.ok = t82.issues.length === 0;
+  } catch(e) { t82.issues.push('threw: ' + e.message); }
+
+  // ─── T83: divergence documentée legacy/module pour petits batchs n=1,2,3 ────────────────────
+  // Legacy _validateCompleteBatchPlan (app.js) exige medium+wide+contextual+worker+vehicle pour tout n.
+  // Module _validateCompleteBatchPlan (batch-requirements.js) est size-aware et accepte n=1,2.
+  // Ce test documente la divergence intentionnelle — elle ne doit PAS être corrigée avant le cutover.
+  // 50 seeds chacun pour n=1,2,3 avec toiture.
+  try {
+    const T83_METIER = 'toiture'; const T83_SVC = 'Remplacement tuiles';
+    for (let s = 0; s < 50; s++) {
+      const seed = s * 11 + 7;
+      // n=1
+      const tasks1 = _mkRawBatchTasks(T83_METIER, T83_SVC, 'encours', 1, seed, 8800 + s);
+      let legacyThrew1 = false;
+      try { _validateCompleteBatchPlan(tasks1); } catch(_) { legacyThrew1 = true; t83.n1LegacyThrew++; }
+      try { bvalMod._validateCompleteBatchPlan(tasks1); t83.n1ModuleAccepted++; } catch(e) {
+        t83.issues.push(`n=1/s=${s}: module should accept but threw — ${e.message}`);
+      }
+      if (!legacyThrew1) t83.issues.push(`n=1/s=${s}: legacy should reject n=1 but did not throw`);
+      // n=2
+      const tasks2 = _mkRawBatchTasks(T83_METIER, T83_SVC, 'encours', 2, seed, 8900 + s);
+      let legacyThrew2 = false;
+      try { _validateCompleteBatchPlan(tasks2); } catch(_) { legacyThrew2 = true; t83.n2LegacyThrew++; }
+      try { bvalMod._validateCompleteBatchPlan(tasks2); t83.n2ModuleAccepted++; } catch(e) {
+        t83.issues.push(`n=2/s=${s}: module should accept but threw — ${e.message}`);
+      }
+      if (!legacyThrew2) t83.issues.push(`n=2/s=${s}: legacy should reject n=2 but did not throw`);
+      // n=3: divergence documentée — legacy peut rejeter ou accepter selon seed
+      const tasks3 = _mkRawBatchTasks(T83_METIER, T83_SVC, 'encours', 3, seed, 8950 + s);
+      let legacyThrew3 = false;
+      try { _validateCompleteBatchPlan(tasks3); } catch(_) { legacyThrew3 = true; }
+      try { bvalMod._validateCompleteBatchPlan(tasks3); } catch(e) {
+        t83.issues.push(`n=3/s=${s}: module rejected — ${e.message}`);
+      }
+      if (legacyThrew3) t83.n3Divergence++;
+    }
+    // Invariant: legacy doit TOUJOURS rejeter n=1 et n=2 (pas assez d'images pour satisfaire 4 contraintes)
+    if (t83.n1LegacyThrew !== 50) t83.issues.push(`n=1: legacy threw ${t83.n1LegacyThrew}/50 (expected 50)`);
+    if (t83.n1ModuleAccepted !== 50) t83.issues.push(`n=1: module accepted ${t83.n1ModuleAccepted}/50 (expected 50)`);
+    if (t83.n2LegacyThrew !== 50) t83.issues.push(`n=2: legacy threw ${t83.n2LegacyThrew}/50 (expected 50)`);
+    if (t83.n2ModuleAccepted !== 50) t83.issues.push(`n=2: module accepted ${t83.n2ModuleAccepted}/50 (expected 50)`);
+    // n=3: divergence documentée, pas une erreur — juste consignée dans t83.n3Divergence
+    t83.ok = t83.issues.length === 0;
+  } catch(e) { t83.issues.push('threw: ' + e.message); }
+
   } finally {
     window.fetch = realFetch;
   }
 
-  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81 };
+  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83 };
 }
 window._runPipelineParityTests = _runPipelineParityTests;
 
@@ -17022,7 +17161,7 @@ async function _runLocalTests() {
     try {
       pipeRes = await _runPipelineParityTests();
     } catch(e) {
-      fail('T41/T67–T81: pipeline parity import', e.message);
+      fail('T41/T67–T83: pipeline parity import', e.message);
       pipeRes = null;
     }
     if (pipeRes) {
@@ -17042,7 +17181,9 @@ async function _runLocalTests() {
         t78: 'T78: Phase 6 dependency integrity — exports, factory, shadow, legacy refs',
         t79: 'T79: small batch planning and validation — 2400 cas, 0 INVALID_BATCH_PLAN',
         t80: 'T80: modular small batches — pipeline complet n=1 et n=2',
-        t81: 'T81: shared batch requirements — planner et validator, 9600 cas, 16 métiers',
+        t81: 'T81: getBatchPlanPolicy source unique — sentinel injection + 9600 cas, 16 métiers',
+        t82: 'T82: couverture 18 métiers (catalogue + registres) — 10800 cas, 0 inconsistance',
+        t83: 'T83: divergence documentée legacy/module — n=1 legacy rejette (50/50), n=2 legacy rejette (50/50)',
       };
       for (const [key, label] of Object.entries(LABELS)) {
         const r = pipeRes[key];

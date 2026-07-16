@@ -1,7 +1,9 @@
 /**
- * planning/batch-planner.js — Phase 4 shadow copy (source active : app.js)
+ * planning/batch-planner.js — Phase 6 final (source active : app.js)
  * Orchestration globale du plan batch : composition, véhicule, défauts, workers.
- * Ne pas modifier avant le cutover validé.
+ *
+ * _rebalanceGlobalBatchPlan accepte un paramètre getPolicy injectable (défaut : getBatchPlanPolicy)
+ * qui fournit plannerTargets. Utilisé en prod sans argument ; les tests injectent une politique sentinelle.
  */
 
 import { _COMPOSITION_DIST, COMPOSITION_RULES_BY_METIER, CAMERA_COMPOSITIONS } from '../config/compositions.js';
@@ -11,7 +13,7 @@ import { _planBatchCompositions } from './composition-planner.js';
 import { _selectVehiclePresence } from './vehicle-planner.js';
 import { _selectCaptureDefects } from './capture-defect-planner.js';
 import { _planBatchWorkerPresence } from './worker-planner.js';
-import { getBatchPlanRequirements } from './batch-requirements.js';
+import { getBatchPlanPolicy } from './batch-requirements.js';
 
 // ─── Global batch planner ─────────────────────────────────────────────────────
 // Groups tasks by métier+service, assigns composition/vehicle/defects/worker plan to each.
@@ -50,21 +52,24 @@ function _planGlobalBatch(tasks, runSeed) {
 }
 
 // ─── Global batch rebalancer ──────────────────────────────────────────────────
-// After per-group planning, ensures the FULL batch meets global composition quotas:
-// max 1 close_detail, min 1 medium_intervention + wide_worksite + contextual_overview,
-// min 1 worker scene, min 1 vehicle visible or partial. Mutates tasks in place.
-function _rebalanceGlobalBatchPlan(tasks, runSeed) {
+// After per-group planning, ensures the FULL batch meets global composition quotas.
+// Uses getBatchPlanPolicy (injectable) as the single source for plannerTargets.
+// The third argument { getPolicy } is used by tests to inject a sentinel policy;
+// production callers omit it and get the default.
+function _rebalanceGlobalBatchPlan(tasks, runSeed, { getPolicy = getBatchPlanPolicy } = {}) {
   if (!tasks.length) return tasks;
 
-  const REQUIRED_COMPS = ['medium_intervention', 'wide_worksite', 'contextual_overview'];
+  // Steps 1–2: use plannerTargets from current task state (compositions pre-swap)
+  const { plannerTargets } = getPolicy(tasks);
+  const REQUIRED_COMPS = plannerTargets.requiredCompositions;
 
   // Live counts — rebuilt as we swap
   const counts = {};
   for (const t of tasks) counts[t._pre_assigned_composition] = (counts[t._pre_assigned_composition] || 0) + 1;
 
-  // 1. Cap close_detail at 1
-  if ((counts.close_detail || 0) > 1) {
-    let excess = counts.close_detail - 1;
+  // 1. Cap close_detail at plannerTargets.maxClose
+  if ((counts.close_detail || 0) > plannerTargets.maxClose) {
+    let excess = counts.close_detail - plannerTargets.maxClose;
     for (const t of tasks) {
       if (!excess) break;
       if (t._pre_assigned_composition !== 'close_detail') continue;
@@ -107,9 +112,9 @@ function _rebalanceGlobalBatchPlan(tasks, runSeed) {
   }
 
   // 3. Ensure at least minVehicleScenes vehicles visible or partial.
-  // Requirements are computed here (after steps 1–2) so vehicleEligible reflects final compositions.
-  const reqV = getBatchPlanRequirements(tasks);
-  if (reqV.minVehicleScenes > 0 && !tasks.some(t => t._pre_assigned_vehicle !== 'absent')) {
+  // Policy recomputed here (after steps 1–2) so vehicleEligible reflects final compositions.
+  const { plannerTargets: targetsV } = getPolicy(tasks);
+  if (targetsV.minVehicleScenes > 0 && !tasks.some(t => t._pre_assigned_vehicle !== 'absent')) {
     const pref = ['wide_worksite', 'medium_intervention', 'vehicle_arrival', 'equipment_from_vehicle'];
     const pvC  = tasks
       .filter(t => t._pre_assigned_composition !== 'close_detail')
