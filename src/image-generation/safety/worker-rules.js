@@ -1,0 +1,435 @@
+/**
+ * safety/worker-rules.js — Phase 3 shadow copy (source active : app.js)
+ * Règles statiques de présence et de sécurité des workers par métier.
+ * Ne pas modifier avant le cutover validé.
+ */
+
+const WORKER_SCENE_RULES = {
+  toiture: {
+    max_workers: 2,
+    actions: [
+      'laying replacement tiles on the exposed roof pitch',
+      'nailing battens along the rafter line',
+      'pointing ridge tiles with fresh mortar',
+      'fitting zinc flashing at the valley or eave',
+    ],
+    postures: [
+      'kneeling on the roof pitch beside a small tile stack on a secured material bracket, both hands on the work — back to camera',
+      'crouching at the ridge line with the trowel working the mortar bed — back to camera',
+      'leaning against the roof ladder hooked at the ridge, working the pitch below — in profile',
+    ],
+    access: ['roof ladder hooked over the ridge', 'scaffold platform at eave level', 'mobile elevated platform'],
+    safety_required: ['safety harness with lanyard clipped to a ridge anchor', 'roof ladder clearly hooked over the ridge'],
+    forbidden: [
+      'standing upright on steep pitch without visible safety line',
+      'feet hanging over the gutter edge',
+      'worker standing directly on the gutter',
+      'worker suspended or leaning above the gutter without platform',
+      'free-standing ladder propped against tiles without ridge hook',
+      'ladder used as a horizontal platform across the pitch',
+      'unsupported ladder lying across the roof',
+      'improvised plank platform balanced on tiles',
+      'rope without a visible certified anchor point',
+      'worker body floating or feet off the roof surface',
+    ],
+    scene_always_exclude: [
+      'full industrial pallet of tiles on pitched roof',
+      'unsecured tile pallet on slope',
+      'heavy crate resting directly on roof battens',
+      'loose stack of tiles near roof edge',
+      'materials positioned above doorway or pedestrian area',
+      'large heavy load balanced on roof pitch',
+    ],
+    site_material_rule: 'a small manually transportable stack of approximately 5–12 tiles placed on a secured roof material bracket or scaffold platform, well away from the roof edge — no industrial pallet on the pitch',
+    presence_indirect: [
+      'roof ladder hooked over the ridge — no one on it, small tile stack on a material bracket halfway up the pitch',
+      'safety line rigged across the pitch with the lanyard hanging free — no roofer visible',
+      'mortar bucket hoisted to the ridge level, pulley rope tied to the chimney — no worker on roof',
+    ],
+  },
+  nettoyage_toiture: {
+    max_workers: 1,
+    actions: [
+      'directing the pressure lance jet at the moss on the tile surface',
+      'brushing moss from the tile course with a stiff deck broom',
+      'applying hydrofuge spray with a knapsack pump sprayer',
+    ],
+    postures: [
+      'kneeling on the scaffold platform at eave height, lance aimed at the roof pitch — back to camera',
+      'standing on a mobile elevated platform beside the eave, directing the lance — in profile',
+      'walking slowly up the roof pitch beside the roof ladder, brush in hand — back to camera',
+    ],
+    access: ['scaffold platform at eave level', 'mobile elevated work platform', 'roof ladder for access only'],
+    safety_required: ['safety harness', 'waterproof jacket and trousers', 'non-slip work boots'],
+    forbidden: [
+      'standing unsupported on wet moss-covered tiles without harness',
+      'leaning over the gutter edge without guardrail',
+      'bare hands on wet chemical-treated tiles',
+    ],
+    presence_indirect: [
+      'pressure lance resting on the scaffold platform at eave level — tarpaulin below catching moss runoff, no operator',
+      'knapsack sprayer on the scaffold platform beside the eave — no one visible',
+      'moss removal debris collected on the tarpaulin below the roof edge — no worker on roof',
+    ],
+  },
+  nettoyage_gouttieres: {
+    max_workers: 1,
+    actions: [
+      'scooping compacted leaf debris from the gutter trough with a plastic gutter scoop',
+      'flushing the downpipe connection with a garden hose',
+      'resealing a leaking gutter joint with silicone sealant',
+    ],
+    postures: [
+      'at the top of an extending ladder, both hands inside the gutter trough — back to camera',
+      'on a scaffold platform level with the gutter, reaching along the trough — in profile',
+    ],
+    access: ['extending ladder with standoff bracket footed on level ground', 'scaffold platform at gutter height'],
+    safety_required: ['ladder footed securely with standoff bracket keeping it clear of the gutter', 'work gloves'],
+    forbidden: [
+      'ladder leaning directly against the gutter channel',
+      'person reaching far sideways off the ladder',
+      'standing on the top two rungs of the ladder',
+    ],
+    presence_indirect: [
+      'extending ladder footed against the house wall with standoff — gutter scoop resting in the trough at the top, no one climbing',
+      'bucket of leaf debris at the base of the ladder — no operator visible on the ladder',
+      'garden hose trailing from the downpipe outlet — no one holding the top end',
+    ],
+  },
+  etancheite: {
+    max_workers: 2,
+    actions: [
+      'rolling out an EPDM membrane across the flat roof surface',
+      'welding the membrane lap joint with a hot air gun',
+      'applying bitumen primer to the prepared deck with a mop roller',
+    ],
+    postures: [
+      'crouching on the flat roof surface, both hands pressing the membrane edge — back to camera',
+      'standing at the parapet inner face applying sealant at the upstand — in profile',
+      'kneeling at the lap joint, hot air gun in hand — back to camera',
+    ],
+    access: ['flat roof access via internal hatch or external scaffold stair'],
+    safety_required: ['safety harness clipped to a parapet anchor when working within 2 m of the edge', 'protective goggles when using hot air gun'],
+    forbidden: [
+      'person balanced on the parapet coping',
+      'open-flame torch near a loose membrane edge',
+      'membrane roll blocking the only roof access hatch',
+    ],
+    presence_indirect: [
+      'EPDM roll partially unrolled across the flat roof deck — no one on the roof',
+      'hot air gun resting on the parapet coping between welds — power cable trailing to hatch',
+      'adhesive drum open beside the unrolled membrane — mop roller resting across the drum top',
+    ],
+  },
+  ravalement: {
+    max_workers: 2,
+    actions: [
+      'applying render to the facade with a hawk and float',
+      'sanding the old render surface with a disc sander from the scaffold platform',
+      'spraying crépi texture onto the primed wall face',
+    ],
+    postures: [
+      'standing on a scaffold plank at wall mid-height, both hands on the float and hawk — back to camera',
+      'crouching at the base of the scaffold to refill the mortar hawk — in profile',
+      'standing at the upper scaffold lift, float arm extended to reach the top course — back to camera',
+    ],
+    access: ['tube-and-fitting scaffold fixed to the building facade', 'mobile scaffold tower', 'articulated boom lift'],
+    safety_required: ['scaffold guardrail and toe board in place at every lift above 2 m', 'safety helmet on platform above 2 m'],
+    forbidden: [
+      'person leaning out past the scaffold guardrail',
+      'unsupported plank bridging two scaffold frames without mid-rail',
+      'scaffold platform above 2 m without guardrail',
+    ],
+    presence_indirect: [
+      'hawk and float resting on the scaffold plank at mid-height — no operator visible',
+      'scaffold tower beside the wall, tools on the platform — empty, platform secured',
+      'mortar bucket hoisted on the scaffold gin wheel — rope tied, no worker on the platform',
+    ],
+  },
+  peinture: {
+    max_workers: 1,
+    actions: [
+      'rolling paint onto the wall surface with a roller and long extension pole',
+      'cutting in at the ceiling junction with a flat brush',
+      'applying a second coat over the primed wall with a medium roller',
+    ],
+    postures: [
+      'standing 1 m from the wall, arm extended with the roller on the extension pole — back to camera',
+      'on a low stepladder cutting in at the top wall edge with a flat brush — in profile',
+      'crouching at the skirting board to cut the base edge — back to camera',
+    ],
+    access: ['low stepladder for ceiling-height cutting in', 'no elevated access for standard wall height'],
+    safety_required: [],
+    forbidden: [
+      'person on a scaffolding tower inside the room',
+      'bare feet on the drop cloth near open paint tins',
+      'person hanging from the window frame to reach the exterior',
+    ],
+    presence_indirect: [
+      'roller resting in the tray on the drop cloth beside the freshly painted wall — no painter visible',
+      'paint tin open with brush balanced across the rim, drop cloth with fresh roller marks — no operator',
+      'masking tape along the ceiling junction, drop cloth covering the floor — painter absent',
+    ],
+  },
+  'élagage': {
+    min_workers_when_visible: 2,
+    max_workers: 2,
+    actions: [
+      'sawing a branch with a chainsaw while suspended in the tree canopy by climbing ropes',
+      'pulling a guide rope from the ground to direct a falling cut branch',
+      'operating an aerial platform at canopy height to reach a crown reduction cut',
+    ],
+    postures: [
+      'suspended in the tree canopy in a full-body climbing harness, chainsaw in both hands — back to camera',
+      'standing on the ground below the canopy, both hands on the guide rope — back to camera',
+      'in the basket of an aerial platform at canopy height, pruning saw extended — in profile',
+    ],
+    access: ['rope climbing technique with saddle and footlocks', 'aerial platform / cherry picker positioned beside the tree', 'stepladder for branches under 4 m'],
+    safety_required: ['full-body climbing harness with positioning lanyard clearly visible on the tree climber', 'arborist helmet with visor and ear defenders'],
+    forbidden: [
+      'person standing directly under a branch being cut',
+      'climber in the tree with no visible rope or harness',
+      'chainsaw held with one hand above shoulder height',
+      'person balancing on a branch without safety attachment',
+      'unstable ladder propped against the tree trunk with no foot brace',
+      'rope crossing through or around the climber body in an impossible configuration',
+      'climber with feet or legs dangling without support point',
+      'person positioned in the direct fall path of a branch mid-cut',
+    ],
+    presence_indirect: [
+      'climbing rope rigged through the tree crown with a throw bag on the ground — no climber visible',
+      'wood chipper running at the base of the tree, chip pile building — no operator in frame',
+      'guide rope attached to a cut branch running to the ground — no one holding it, slack on the ground',
+    ],
+  },
+  abattage: {
+    min_workers_when_visible: 2,
+    max_workers: 2,
+    actions: [
+      'making the notch cut at the base of the trunk with a large chainsaw',
+      'sectioning the felled trunk into lengths on the ground',
+      'operating a stump grinder positioned over the root flare',
+    ],
+    postures: [
+      'standing at the base of the trunk, chainsaw held in both hands at waist height — in profile',
+      'crouching over the felled trunk to make a cross-cut — back to camera',
+      'standing behind the stump grinder controls directing the cutter head — in profile',
+    ],
+    access: ['ground level — no elevated access required', 'stump grinder on tracks positioned over the stump'],
+    safety_required: ['chainsaw chaps clearly visible on the legs of the operator', 'arborist helmet with visor', 'non-slip chainsaw work boots'],
+    forbidden: [
+      'person standing in the planned fall zone in front of the notch cut',
+      "chainsaw cutting overhead above the operator's shoulder",
+      'person on the far side of the trunk from the operator during the felling cut',
+    ],
+    presence_indirect: [
+      'felled trunk sections laid on the ground, chainsaw resting across one — no operator visible',
+      'stump grinder parked over the stump, engine running, cab empty — chip pile spreading beside',
+      'sawdust pile and cut rounds at the stump base — tools visible, no worker in frame',
+    ],
+  },
+  'maçonnerie': {
+    max_workers: 2,
+    actions: [
+      'laying concrete blocks with a trowel and full mortar hawk',
+      'checking the freshly laid course with a long spirit level and string line',
+      'mixing a batch of mortar at the drum mixer beside the wall',
+    ],
+    postures: [
+      'standing at the wall top course, trowel in hand bedding the next block — back to camera',
+      'crouching beside the drum mixer to load mortar — in profile',
+      'kneeling to check the base course with the spirit level — back to camera',
+    ],
+    access: ['ground level for walls up to 2 m', 'scaffold platform for walls above 2 m'],
+    safety_required: ['safety boots', 'work gloves for block handling'],
+    forbidden: [
+      'person balanced on top of an unfinished wall course higher than 1.5 m without scaffold',
+      'single block being lifted overhead without mechanical aid',
+    ],
+    presence_indirect: [
+      'trowel resting across the mortar hawk on the wall top course — no mason visible',
+      'string line pulled taut along the block course at waist height — mortar hawk on the ground below',
+      'drum mixer running at the wall base — no operator in frame, mortar ready in bucket',
+    ],
+  },
+  nettoyage: {
+    max_workers: 1,
+    actions: [
+      'directing the pressure lance jet at the terrasse or facade surface',
+      'sweeping the cleaning water toward the drain with a water broom',
+      'applying cleaning product to the facade with a pump sprayer at arm height',
+    ],
+    postures: [
+      'standing 1–2 m from the surface, lance held at hip height — in profile',
+      'pushing the water broom away from the body toward the drain — back to camera',
+      'walking slowly along the wall applying product at shoulder height — back to camera',
+    ],
+    access: ['ground level for terrasse and base of facade', 'low scaffold platform for facade above 3 m'],
+    safety_required: ['waterproof work boots', 'protective goggles when using chemical products'],
+    forbidden: [
+      'operator pointing lance directly at their feet',
+      'unprotected electrical socket near the wet work area',
+      'lance aimed upward at angle greater than 45° from standing position without platform',
+    ],
+    presence_indirect: [
+      'pressure lance resting on the ground pointing at the base of the wall — dark wet cleaning line visible ahead of the lance tip',
+      'cleaning product drum open beside the pump unit — hose trailing to the lance on the ground, no operator',
+      'wet cleaning line across the terrasse surface marking work already done — no one visible',
+    ],
+  },
+  carrelage: {
+    max_workers: 1,
+    actions: [
+      'pressing a floor tile into the adhesive bed with a rubber mallet',
+      'spreading tile adhesive across the subfloor with a notched trowel',
+      'cutting a border tile to size at the tile cutter on the floor edge',
+    ],
+    postures: [
+      'kneeling on the untiled subfloor section, mallet raised to tap the tile level — back to camera',
+      'crouching over the tile cutter at the room perimeter — back to camera',
+      'sitting back on heels checking the tile level with a spirit level — in profile',
+    ],
+    access: ['floor level — no elevated access required'],
+    safety_required: ["knee pads visible on the tiler's knees", 'cut-resistant gloves near the tile cutter'],
+    forbidden: [
+      'person kneeling on freshly laid tiles before adhesive cure time',
+      'tile cutter left unguarded with blade exposed',
+    ],
+    presence_indirect: [
+      'rubber mallet resting on the freshly laid tile surface beside a tile spacer row — no tiler visible',
+      'notched trowel resting in the open adhesive bucket — tiles stacked beside it, no operator',
+      'tile spacers set in the joints across the floor — spirit level resting on the last row, no one in frame',
+    ],
+  },
+  vitrier: {
+    min_workers_when_visible: 2,
+    max_workers: 2,
+    actions: [
+      'carrying a large glass pane using suction cup handles in pairs',
+      'fitting a new double-glazed unit into the prepared window frame',
+      'applying glazing compound around the new pane edge with a glazing gun',
+    ],
+    postures: [
+      'standing upright, both hands on suction cup handles, glass pane vertical — in profile',
+      'crouching at the window sill to apply the glazing compound — back to camera',
+      'holding the pane steady against the frame from outside while a second person secures it — seen from indoors',
+    ],
+    access: ['ground level for ground-floor windows', 'low scaffold platform or extending ladder for upper-floor windows'],
+    safety_required: ['cut-resistant gloves on both hands when handling glass', 'suction cup handles on any pane over 1 m²'],
+    forbidden: [
+      'bare hands on large glass pane edges without gloves',
+      'glass pane balanced upright against the wall without support cradle',
+      'broken glass on the floor with no protective footwear visible',
+    ],
+    presence_indirect: [
+      'suction cup handles left leaning against the wall — glass pane in the opening, not yet sealed',
+      'glazing gun resting on the window sill beside the open pane — glazing compound partially applied',
+      'glass offcut wrapped in protective paper leaning against the wall beside the window',
+    ],
+  },
+  'débarras': {
+    min_workers_when_visible: 2,
+    max_workers: 2,
+    actions: [
+      'carrying a heavy item of furniture through the front door in a two-person carry',
+      'loading boxes onto a furniture trolley beside the van',
+      'wrapping a fragile item in protective blanket before loading',
+    ],
+    postures: [
+      'back to camera, carrying the front end of a wardrobe through the doorway',
+      'standing at the open van doors, stacking boxes in — seen from the side',
+      'crouching beside a dismantled item on the floor, wrapping with moving blanket — back to camera',
+    ],
+    access: ['ground-floor building entry', 'stair access for upper floors', 'furniture trolley on flat ground'],
+    safety_required: ['work gloves for heavy item handling', 'solid work footwear with toe cap'],
+    forbidden: [
+      'single person carrying a large wardrobe or sofa alone',
+      'item balanced on a stair handrail',
+      'van visibly overloaded above the roofline',
+    ],
+    presence_indirect: [
+      'furniture trolley loaded with stacked boxes at the building entrance — van rear doors open, no operator',
+      'van rear doors open with partial load visible — protective blankets draped over the furniture, no driver or mover in frame',
+      'hand truck propped against the wall beside a stack of boxes in the hallway — no operator',
+    ],
+  },
+  terrassement: {
+    min_workers_when_visible: 2,
+    max_workers: 2,
+    actions: [
+      'operating the mini-excavator bucket to dig the trench or cut',
+      'levelling the excavated surface with a long-handled rake from the edge',
+      'guiding the machine operator from the ground beside the trench with hand signals',
+    ],
+    postures: [
+      'seated in the cab of the mini-excavator, both hands on the controls — seen from the side',
+      'standing at the trench edge with a rake, back to the camera, supervising the cut',
+      'crouching to check the trench level with a measuring rod — in profile',
+    ],
+    access: ['ground-level site access', 'mini-excavator on rubber tracks for most surfaces'],
+    safety_required: ['high-visibility jacket on all ground workers within 5 m of the machine', 'safety helmet on site'],
+    forbidden: [
+      'person standing inside the trench directly under the excavator bucket',
+      'person between the rotating cab and the trench edge',
+      'machine operating with no ground spotter visible when near a structure',
+    ],
+    presence_indirect: [
+      'mini-excavator parked at the trench edge, engine running, cab empty — excavated spoil pile beside',
+      'excavated spoil pile with wheelbarrow beside the trench — no workers visible',
+      'warning tape stretched around the open trench perimeter — trench clearly fresh-cut, no one on site',
+    ],
+  },
+  paysagiste: {
+    min_workers_when_visible: 2,
+    max_workers: 2,
+    actions: [
+      'planting a shrub in the prepared bed and backfilling around the root ball',
+      'laying turf rolls across the prepared subgrade and tamping the edges',
+      'operating a walk-behind mower along the lawn edge',
+    ],
+    postures: [
+      'kneeling in the garden bed placing a plant in the hole — back to camera',
+      'crouching to press the turf edge firmly with both hands — back to camera',
+      'standing behind the walk-behind mower, both hands on the handles — in profile',
+    ],
+    access: ['ground level garden — no elevated access required'],
+    safety_required: ['sun protection / hat for outdoor summer work', 'hearing protection when using petrol machinery'],
+    forbidden: [
+      'mower operating on a slope visually steeper than 15°',
+      'person pruning a large tree from a domestic household stepladder',
+      'chainsaw used without visible leg protection',
+    ],
+    presence_indirect: [
+      'ride-on mower parked on the finished lawn area — freshly cut stripes visible, no operator',
+      'wheelbarrow of compost tipped beside a planting bed — tools resting against it, no gardener in frame',
+      'newly planted shrubs in the bed, watering can beside them — no one visible',
+    ],
+  },
+  depannage_auto: {
+    max_workers: 1,
+    actions: [
+      'connecting jump-start cables to the vehicle battery terminals under the open bonnet',
+      'jacking the vehicle and removing the flat tyre with a lug wrench',
+      'running a diagnostic tool connected to the OBD port — reading the display',
+    ],
+    postures: [
+      'crouching beside the open engine bay, both hands inside — back to camera',
+      'kneeling beside the jacked wheel arch with the lug wrench — in profile',
+      'standing at the open bonnet leaning slightly forward — back to camera',
+    ],
+    access: ['roadside or car park ground level'],
+    safety_required: ['warning triangle visible on the road behind the vehicle', 'high-visibility jacket'],
+    forbidden: [
+      'person lying under the vehicle without visible axle stands',
+      'sparks near an open fuel cap',
+      'person positioned between the vehicle and passing traffic without barrier',
+    ],
+    presence_indirect: [
+      'warning triangle placed on the road behind the vehicle, high-visibility jacket draped over the open door — no technician visible',
+      'diagnostic cable trailing from the open bonnet into the passenger footwell — tool display on the dashboard, no operator in frame',
+      'jack and lug wrench on the ground beside the jacked wheel arch — wheel removed, no technician visible',
+    ],
+  },
+};
+
+export { WORKER_SCENE_RULES };

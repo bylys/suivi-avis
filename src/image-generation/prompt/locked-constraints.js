@@ -1,0 +1,83 @@
+/**
+ * prompt/locked-constraints.js — Phase 5 shadow copy (source active : app.js)
+ * Ajout des contraintes finales verrouillées au prompt image réécrit.
+ * Entrée : prompt réécrit (string) + scène résolue (objet).
+ * Sortie : prompt final (string).
+ * Aucun réseau, aucun DOM, aucun window.
+ * Ne pas modifier avant le cutover validé.
+ */
+
+import { CAMERA_COMPOSITIONS, COMPOSITION_RULES_BY_METIER } from '../config/compositions.js';
+import { FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
+
+// ─── _appendLockedFinalConstraints ────────────────────────────────────────────
+// Verbatim copy — app.js lines 12869–12935
+function _appendLockedFinalConstraints(prompt, scene) {
+  const compKey   = scene.composition || 'medium_intervention';
+  const camDef    = CAMERA_COMPOSITIONS[compKey] || CAMERA_COMPOSITIONS.medium_intervention;
+  const defects   = scene._capture_defects_resolved || [];
+  const metier    = scene._matched_key || '';
+
+  const defectsBlock = defects.length > 0
+    ? defects.map(d => `- ${d.prompt}`).join('\n')
+    : '- subtle JPEG compression and ordinary smartphone processing\n- slightly tilted handheld framing';
+
+  const metierRules = COMPOSITION_RULES_BY_METIER[metier] || {};
+  const forbiddenFr = (metierRules.forbidden_framing || []).map(f => `No ${f}.`).join('\n');
+
+  // WORKER PRESENCE — human presence constraint (separate from safety rules)
+  const sceneWorkers  = scene.var_workers || 0;
+  const scenePresence = scene.var_presence || 'none';
+  const hasWorkers    = sceneWorkers > 0 || scenePresence === 'workers';
+  const workerBlock   = hasWorkers
+    ? `${sceneWorkers > 1 ? sceneWorkers + ' workers' : 'One worker'} must be actively working and clearly visible in the frame.`
+    : 'No workers or people visible in this specific image. Frame the scene to show work evidence, tools, or surroundings — no human figures.';
+
+  // REQUIRED SAFETY (PPE when workers are visible)
+  const requiredSafety = [];
+  if (scene._worker_safety_mode && hasWorkers) requiredSafety.push(scene._worker_safety_mode);
+
+  // FORBIDDEN SAFETY VIOLATIONS — real safety rules only, NOT presence constraints
+  const forbiddenSafety = [];
+  const triRule = scene.triangle_rule;
+  if (triRule === 'forbidden' || triRule === 'forbidden_if_safely_parked')
+    forbiddenSafety.push('No warning triangle visible anywhere in the image.');
+  forbiddenSafety.push(...(FORBIDDEN_SAFETY_BY_METIER[metier] || []));
+
+  return `${prompt}
+
+NON-NEGOTIABLE FINAL CAPTURE CONSTRAINTS — DO NOT REMOVE, WEAKEN, REINTERPRET OR CONTRADICT:
+
+WORKER PRESENCE:
+${workerBlock}
+
+CAMERA COMPOSITION: ${compKey}
+Distance from subject: ${camDef.distance}.
+The main work detail must not fill more than ${camDef.subject_max_frame_percent}% of the frame.
+The location and surrounding context must remain visible (minimum ${camDef.environment_min_frame_percent}% of frame).
+${(camDef.required || []).map(r => `- ${r}`).join('\n')}
+${(camDef.forbidden || []).map(f => `Not: ${f}.`).join('\n')}
+${forbiddenFr}
+
+SUBTLE CAPTURE IMPERFECTIONS:
+These imperfections must remain slight and naturally perceptible. They must never become the main subject, obscure the work, reduce safety readability, or make the image look intentionally damaged.
+Optical defects (finger, smudge, dirt) must remain at the extreme edge of the frame and must never cover the work, a worker's face or body, safety equipment, the professional vehicle, or any technically important area.
+${defectsBlock}
+
+DOCUMENTARY STYLE:
+Ordinary handheld smartphone documentation photograph. Casual business-owner or worker photo.
+Not a commercial photograph. Not product photography. Not catalogue photography. Not architectural visualization. Not CGI.
+No perfect symmetry. No perfect tool arrangement. No exaggerated sharpness. No cinematic depth of field.
+No tools neatly lined up for the camera. No equipment arranged in a semicircle. No perfectly centred machine or tool.
+No spotless equipment unless the service logically requires new equipment. No studio-like sharpness.
+Equipment must show reasonable signs of use: light dust, marks, unrolled hose, open case, crumpled tarpaulin.
+
+BRANDING:
+No readable brand names. No readable vehicle manufacturer logos as a focal point. No fake company branding.
+No generated licence plate text intended to be readable. No prominent text on tools, gauges, vehicles or clothing.
+Generic unbranded professional equipment. Any unavoidable text must be tiny, incidental and unreadable.
+${requiredSafety.length > 0 ? '\nREQUIRED SAFETY ELEMENTS:\n' + requiredSafety.map(s => `- ${s}`).join('\n') : ''}
+${forbiddenSafety.length > 0 ? '\nFORBIDDEN SAFETY VIOLATIONS:\n' + forbiddenSafety.join('\n') : ''}`.trim();
+}
+
+export { _appendLockedFinalConstraints };
