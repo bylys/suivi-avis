@@ -249,11 +249,14 @@ async function _modDownloadZip() {
 
 // ─── Public API — frozen object with direct function references ───────────────
 // T84 verifies identity: window.generateAllImages === window.__IMAGE_MODULAR_API__.generateAllImages
+// buildDallePromptV2: transitional 7B — used by _renderAnalyse in app.js; removed in 7C when
+//   renderImgPlanning moves to ui/img-ui.js with a direct import.
 const publicApi = Object.freeze({
-  generateAllImages: _modGenerateAll,
-  addImgRow:         _modAddRow,
-  downloadImagesZip: _modDownloadZip,
-  retryFailedImages: _modRetryFailed,
+  generateAllImages:  _modGenerateAll,
+  addImgRow:          _modAddRow,
+  downloadImagesZip:  _modDownloadZip,
+  retryFailedImages:  _modRetryFailed,
+  buildDallePromptV2: buildDallePromptV2,
 });
 
 Object.defineProperty(window, '__IMAGE_MODULAR_API__', {
