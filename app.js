@@ -16213,47 +16213,64 @@ async function _runPipelineParityTests() {
     t83.ok = t83.issues.length === 0;
   } catch(e) { t83.issues.push('threw: ' + e.message); }
 
-  // ─── T84: API publique modulaire — window.* est la version module ────────────
-  // Après 7A cutover, index.js a remplacé les fonctions legacy.
-  // Note : en JS classique (non-module), `generateAllImages` dans le scope app.js
-  // est identique à window.generateAllImages — comparaison d'identité impossible.
-  // On utilise à la place : window.__IMAGE_MODULAR_API__ + signature des fonctions.
+  // ─── T84: API publique modulaire — identité directe via __IMAGE_MODULAR_API__ ─
+  // Attend la résolution de window.__IMAGE_GEN_READY__ (dispatché par index.js).
+  // Compare par référence : window.fn === window.__IMAGE_MODULAR_API__.fn.
+  // Aucune inspection du source — résistant à la minification et au refactoring.
   try {
-    if (!window.__IMAGE_MODULAR_API__)
-      t84.issues.push('window.__IMAGE_MODULAR_API__ not set — index.js may not be loaded');
-    // Modular generateAllImages uses _modRunActive (not _generationRunActive)
-    if (typeof window.generateAllImages !== 'function')
-      t84.issues.push('window.generateAllImages is not a function');
-    else if (!window.generateAllImages.toString().includes('_modRunActive'))
-      t84.issues.push('window.generateAllImages does not contain _modRunActive — still the legacy version');
-    // Modular _retryFailedImages uses _modLastTasks (not window._lastFailedTasks)
-    if (typeof window._retryFailedImages !== 'function')
-      t84.issues.push('window._retryFailedImages is not a function');
-    else if (!window._retryFailedImages.toString().includes('_modLastTasks'))
-      t84.issues.push('window._retryFailedImages does not contain _modLastTasks — still the legacy version');
-    if (typeof window.addImgRow !== 'function')
-      t84.issues.push('window.addImgRow is not a function');
-    if (typeof window.downloadImagesZip !== 'function')
-      t84.issues.push('window.downloadImagesZip is not a function');
+    await window.__IMAGE_GEN_READY__;
+    const t84Api = window.__IMAGE_MODULAR_API__;
+    if (!t84Api || typeof t84Api !== 'object')
+      t84.issues.push('window.__IMAGE_MODULAR_API__ is not an object after readiness');
+    else {
+      const checks = [
+        ['generateAllImages',  'generateAllImages'],
+        ['addImgRow',          'addImgRow'],
+        ['downloadImagesZip',  'downloadImagesZip'],
+        ['_retryFailedImages', 'retryFailedImages'],
+      ];
+      for (const [winProp, apiProp] of checks) {
+        if (typeof t84Api[apiProp] !== 'function')
+          t84.issues.push(`__IMAGE_MODULAR_API__.${apiProp} is not a function`);
+        else if (window[winProp] !== t84Api[apiProp])
+          t84.issues.push(`window.${winProp} !== __IMAGE_MODULAR_API__.${apiProp}`);
+      }
+    }
     t84.ok = t84.issues.length === 0;
   } catch(e) { t84.issues.push('threw: ' + e.message); }
 
-  // ─── T85: onclick handlers — toutes les fonctions window sont appelables ────
-  // Les attributs onclick= dans index.html appellent ces noms globalement.
-  // ReferenceError si l'une manque sur window.
+  // ─── T85: readiness gate — stubs avant chargement, identité après ───────────
+  // 1. window.__IMAGE_GEN_READY__ doit être une Promise (script inline dans index.html).
+  // 2. Les stubs garantissent que les fonctions window.* sont toujours définies
+  //    (aucun ReferenceError possible même avant le chargement du module).
+  // 3. Après readiness : event detail === window.__IMAGE_MODULAR_API__.
+  // 4. Bridge accessible et fonctionnel post-readiness.
   try {
+    // Stubs ou fonctions réelles — jamais undefined
     const ONCLICK_FNS = ['generateAllImages', 'addImgRow', 'downloadImagesZip', '_retryFailedImages'];
     for (const name of ONCLICK_FNS) {
       if (typeof window[name] !== 'function')
-        t85.issues.push(`window.${name} n'est pas une function — onclick="${name}()" lèverait ReferenceError`);
+        t85.issues.push(`window.${name} n'est pas une fonction — onclick="${name}()" lèverait ReferenceError`);
     }
-    if (typeof window.__GMB_IMAGE_CONTEXT__ !== 'object' || !window.__GMB_IMAGE_CONTEXT__)
-      t85.issues.push('window.__GMB_IMAGE_CONTEXT__ bridge manquant');
+    // Readiness promise doit exister (prouve que le script inline a tourné avant le module)
+    if (!(window.__IMAGE_GEN_READY__ instanceof Promise))
+      t85.issues.push('window.__IMAGE_GEN_READY__ is not a Promise — inline readiness script missing');
+
+    // Post-readiness : event detail === __IMAGE_MODULAR_API__
+    const t85ReadyApi = await window.__IMAGE_GEN_READY__;
+    if (!t85ReadyApi || typeof t85ReadyApi !== 'object')
+      t85.issues.push('imagegen:ready event did not resolve to an object');
+    else if (t85ReadyApi !== window.__IMAGE_MODULAR_API__)
+      t85.issues.push('imagegen:ready detail !== window.__IMAGE_MODULAR_API__');
+
+    // Bridge accessible
+    const t85Bridge = window.__GMB_IMAGE_CONTEXT__;
+    if (!t85Bridge)
+      t85.issues.push('window.__GMB_IMAGE_CONTEXT__ bridge manquant post-readiness');
     else {
-      const b85 = window.__GMB_IMAGE_CONTEXT__;
-      if (typeof b85.getRows   !== 'function') t85.issues.push('bridge.getRows manquant');
-      if (typeof b85.addRow    !== 'function') t85.issues.push('bridge.addRow manquant');
-      if (typeof b85.removeRow !== 'function') t85.issues.push('bridge.removeRow manquant');
+      ['getRows', 'addRow', 'removeRow', 'refreshPlan'].forEach(m => {
+        if (typeof t85Bridge[m] !== 'function') t85.issues.push(`bridge.${m} manquant`);
+      });
     }
     t85.ok = t85.issues.length === 0;
   } catch(e) { t85.issues.push('threw: ' + e.message); }
@@ -17277,8 +17294,8 @@ async function _runLocalTests() {
         t81: 'T81: getBatchPlanPolicy source unique — sentinel injection + 9600 cas, 16 métiers',
         t82: 'T82: couverture 18 métiers (catalogue + registres) — 10800 cas, 0 inconsistance',
         t83: 'T83: divergence documentée legacy/module — n=1 legacy rejette (50/50), n=2 legacy rejette (50/50)',
-        t84: 'T84: API publique modulaire — window.* est la version module (7A cutover)',
-        t85: 'T85: onclick handlers — toutes les fonctions window sont appelables',
+        t84: 'T84: API publique modulaire — identité directe window.fn === __IMAGE_MODULAR_API__.fn',
+        t85: 'T85: readiness gate — stubs pré-module + identité post imagegen:ready + bridge',
         t86: 'T86: createImagePipeline — batch n=4 toiture, 4 images via factory publique',
       };
       for (const [key, label] of Object.entries(LABELS)) {
@@ -17290,7 +17307,7 @@ async function _runLocalTests() {
     }
   }
 
-  console.log('[TEST] Done.');
+  console.log('[TEST] Done. — 85 tests exécutés : T1–T37, T39–T86 (T38 : identifiant inutilisé).');
 }
 
 // ─── Main entry point ─────────────────────────────────────────────────────────

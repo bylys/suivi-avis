@@ -1,7 +1,12 @@
 /**
- * image-generation/index.js — Phase 7A
+ * image-generation/index.js — Phase 7A.1
  * Active modular public API — replaces legacy functions from app.js on window.
  * Bridge: window.__GMB_IMAGE_CONTEXT__ is the only authorized cross-domain dependency.
+ *
+ * Exposes:
+ *   window.__IMAGE_MODULAR_API__  — frozen object with direct function references
+ *   window.__IMAGE_GEN_READY__    — Promise (set by inline script in index.html)
+ *   window.generateAllImages / addImgRow / downloadImagesZip / _retryFailedImages
  */
 
 import { createGenerationState, IMAGE_TASK_STATUS, TERMINAL_STATUSES } from './pipeline/state.js';
@@ -17,11 +22,11 @@ import { _validateCompleteBatchPlan }                                   from './
 import { _hashSeed }                                                    from './utils/deterministic.js';
 
 // ─── Module-private state ─────────────────────────────────────────────────────
-let _modRunActive      = false;
-let _modRunId          = 0;
+let _modRunActive       = false;
+let _modRunId           = 0;
 let _modGeneratedImages = [];
-let _modLastTasks      = [];
-let _modLastApiKey     = '';
+let _modLastTasks       = [];
+let _modLastApiKey      = '';
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 const _slugify = str =>
@@ -34,13 +39,13 @@ const _rewriteImpl = (scene, apiKey) =>
 
 const _bridge = () => window.__GMB_IMAGE_CONTEXT__;
 
-// ─── addImgRow ────────────────────────────────────────────────────────────────
-function addImgRow() {
+// ─── _modAddRow ───────────────────────────────────────────────────────────────
+function _modAddRow() {
   _bridge().addRow();
 }
 
-// ─── generateAllImages ────────────────────────────────────────────────────────
-async function generateAllImages() {
+// ─── _modGenerateAll ──────────────────────────────────────────────────────────
+async function _modGenerateAll() {
   if (_modRunActive) { console.warn('[Batch] génération déjà en cours — ignoré'); return; }
 
   const bridge = _bridge();
@@ -54,7 +59,7 @@ async function generateAllImages() {
   _modRunId++;
   const runId = _modRunId;
 
-  const uiAdapter   = createImageUiAdapter();
+  const uiAdapter    = createImageUiAdapter();
   const progressWrap = document.getElementById('img-progress-wrap');
   const downloadBtn  = document.getElementById('btn-download-zip');
 
@@ -120,7 +125,7 @@ async function generateAllImages() {
   if (progressWrap) progressWrap.style.display = 'block';
 
   // ── Phase 3: concurrent generation ───────────────────────────────────────
-  const state   = createGenerationState();
+  const state    = createGenerationState();
   const pipeline = createImagePipeline({
     state, fetchImpl: fetchWithTimeout, readResponseImpl: readResponseOnce,
     rewritePromptImpl: _rewriteImpl, uiAdapter,
@@ -159,8 +164,8 @@ async function generateAllImages() {
   window._lastApiKey      = key;
 }
 
-// ─── _retryFailedImages ───────────────────────────────────────────────────────
-async function _retryFailedImagesModular() {
+// ─── _modRetryFailed ──────────────────────────────────────────────────────────
+async function _modRetryFailed() {
   if (_modRunActive) { console.warn('[Retry] génération déjà en cours'); return; }
   const key         = _modLastApiKey || document.getElementById('openai-key')?.value.trim();
   const failedTasks = _modLastTasks.filter(t => TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
@@ -168,16 +173,16 @@ async function _retryFailedImagesModular() {
 
   _modRunActive = true;
   _modRunId++;
-  const runId    = _modRunId;
-  const uiAdapter = createImageUiAdapter();
+  const runId     = _modRunId;
+  const uiAdapter  = createImageUiAdapter();
   const progressWrap = document.getElementById('img-progress-wrap');
 
   uiAdapter.setGenerateButtonDisabled(true);
   uiAdapter.clearSummary();
   if (progressWrap) progressWrap.style.display = 'block';
 
-  const state       = createGenerationState();
-  let retryImages   = [];
+  const state = createGenerationState();
+  let retryImages = [];
   try {
     retryImages = await retryFailedImages(failedTasks, key, {
       state, fetchImpl: fetchWithTimeout, readResponseImpl: readResponseOnce,
@@ -207,8 +212,8 @@ async function _retryFailedImagesModular() {
   window._lastApiKey      = key;
 }
 
-// ─── downloadImagesZip ────────────────────────────────────────────────────────
-async function downloadImagesZip() {
+// ─── _modDownloadZip ──────────────────────────────────────────────────────────
+async function _modDownloadZip() {
   const images = _modGeneratedImages;
   if (!images.length) return;
 
@@ -242,14 +247,29 @@ async function downloadImagesZip() {
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 
-// ─── Expose public API on window ──────────────────────────────────────────────
-// These replace the legacy functions from app.js.
-// window.__GMB_IMAGE_CONTEXT__ is the only cross-domain dependency.
-window.generateAllImages  = generateAllImages;
-window.addImgRow          = addImgRow;
-window.downloadImagesZip  = downloadImagesZip;
-window._retryFailedImages = _retryFailedImagesModular;
+// ─── Public API — frozen object with direct function references ───────────────
+// T84 verifies identity: window.generateAllImages === window.__IMAGE_MODULAR_API__.generateAllImages
+const publicApi = Object.freeze({
+  generateAllImages: _modGenerateAll,
+  addImgRow:         _modAddRow,
+  downloadImagesZip: _modDownloadZip,
+  retryFailedImages: _modRetryFailed,
+});
 
-window.__IMAGE_MODULAR_API__ = true;
+Object.defineProperty(window, '__IMAGE_MODULAR_API__', {
+  value:        publicApi,
+  writable:     false,
+  configurable: false,
+  enumerable:   false,
+});
 
-console.info('[IMAGE MODULE 7A] Modular API active — legacy pipeline replaced');
+// Assign window.* from publicApi — stubs set in index.html are replaced here.
+window.generateAllImages  = publicApi.generateAllImages;
+window.addImgRow          = publicApi.addImgRow;
+window.downloadImagesZip  = publicApi.downloadImagesZip;
+window._retryFailedImages = publicApi.retryFailedImages;
+
+// Signal readiness — resolves window.__IMAGE_GEN_READY__ (set in index.html inline script).
+window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
+
+console.info('[IMAGE MODULE 7A.1] Modular API active and ready');
