@@ -15354,7 +15354,7 @@ async function _runPipelineParityTests() {
   function _assertEq(a, b, msg) { if (a !== b) issues.push(`${msg}: expected ${JSON.stringify(b)} got ${JSON.stringify(a)}`); }
   function _assertDeepEq(a, b, msg) { if (JSON.stringify(a) !== JSON.stringify(b)) issues.push(`${msg}: deep mismatch`); }
 
-  const [stateMod, httpMod, safetyMod, genImgMod, batchMod, retryMod, uiMod, bvalMod, wrkMod, bpMod] = await Promise.all([
+  const [stateMod, httpMod, safetyMod, genImgMod, batchMod, retryMod, uiMod, bvalMod, wrkMod, bpMod, reqMod] = await Promise.all([
     import('./src/image-generation/pipeline/state.js'),
     import('./src/image-generation/pipeline/http.js'),
     import('./src/image-generation/pipeline/safety-check.js'),
@@ -15365,6 +15365,7 @@ async function _runPipelineParityTests() {
     import('./src/image-generation/validation/batch-validator.js'),
     import('./src/image-generation/safety/worker-validator.js'),
     import('./src/image-generation/planning/batch-planner.js'),
+    import('./src/image-generation/planning/batch-requirements.js'),
   ]);
 
   // Forbidden fetch guard — no real network during Phase 6 tests
@@ -15416,21 +15417,37 @@ async function _runPipelineParityTests() {
     };
   }
 
-  function _mkT41Tasks(n) {
-    const row = { metier: 'toiture', travaux: 'Remplacement tuiles', ville: 'Paris', etat: 'encours', meteo: 'auto', contexte: 'maison', nb: n, fiche: '', images: [] };
-    const jsonScene    = buildDallePromptV2(row);
-    const _planBase    = JSON.parse(jsonScene);
-    const seed         = 2001;
+  // ── Task factory helpers ───────────────────────────────────────────────────
+
+  // _mkRawBatchTasks: plan tasks for any métier/size WITHOUT calling the validator.
+  // Used by T79 which calls the validator itself to count failures separately.
+  function _mkRawBatchTasks(metier, svc, etat, n, seed, taskIdBase = 400) {
+    const row = { metier, travaux: svc, ville: 'Paris', etat: etat || 'encours', meteo: 'auto', contexte: 'maison', nb: n, fiche: '', images: [] };
+    const jsonScene = buildDallePromptV2(row);
+    const _planBase = JSON.parse(jsonScene);
     const presencePlan = _buildPresencePlan(n, _planBase.state_level, _planBase._matched_key, seed);
     const tasks = [];
     for (let i = 0; i < n; i++) {
-      tasks.push({ taskId: 200 + i, row, i, nb: n, jsonScene, presencePlan, slug: 'toiture', _planBase: Object.assign({}, _planBase), status: 'pending', imageAttempt: 0, result: null, error: null });
+      tasks.push({ taskId: taskIdBase + i, row, i, nb: n, jsonScene, presencePlan, slug: metier, _planBase: Object.assign({}, _planBase), status: 'pending', imageAttempt: 0, result: null, error: null });
     }
     bpMod._planGlobalBatch(tasks, seed);
     bpMod._rebalanceGlobalBatchPlan(tasks, seed);
-    // _validateCompleteBatchPlan requires global quotas satisfied (needs ≥4 tasks with diverse
-    // compositions). Omitted here so small-n tests (n=1,2) can test pipeline plumbing without
-    // triggering a global-quota error.
+    return tasks;
+  }
+
+  // _mkSmallBatchTasks: plan + validate. The updated validator is size-aware and passes for all n.
+  function _mkSmallBatchTasks(metier, svc, etat, n, seed, taskIdBase = 500) {
+    const tasks = _mkRawBatchTasks(metier, svc, etat, n, seed, taskIdBase);
+    bvalMod._validateCompleteBatchPlan(tasks);
+    return tasks;
+  }
+
+  // _mkT41Tasks: toiture helper used by T41 and T67–T78.
+  // Now uses the size-aware validator — passes for all n (1, 2, 3, 4).
+  function _mkT41Tasks(n) {
+    const seed = 2001;
+    const tasks = _mkRawBatchTasks('toiture', 'Remplacement tuiles', 'encours', n, seed, 200);
+    bvalMod._validateCompleteBatchPlan(tasks); // size-aware: passes for all n
     return tasks;
   }
 
@@ -15444,6 +15461,8 @@ async function _runPipelineParityTests() {
   const t73 = { ok: false, issues: [] };
   const t74 = { ok: false, issues: [] };
   const t75 = { ok: false, issues: [] };
+  const t79 = { ok: false, cases: 0, invalidCount: 0, issues: [] };
+  const t80 = { ok: false, issues: [] };
   const t76 = { ok: false, issues: [] };
   const t77 = { ok: false, issues: [] };
   const t78 = { ok: false, issues: [] };
@@ -15833,16 +15852,115 @@ async function _runPipelineParityTests() {
     if (typeof batchMod.window  !== 'undefined') t78.issues.push('run-batch exports window');
     if (typeof genImgMod.window !== 'undefined') t78.issues.push('generate-image exports window');
     if (typeof safetyMod.window !== 'undefined') t78.issues.push('safety-check exports window');
-    // Pipeline is shadow only — generateAllImages must still point to legacy
-    if (typeof generateAllImages !== 'function') t78.issues.push('legacy generateAllImages no longer exists');
+    // batch-requirements.js must export getBatchPlanRequirements
+    if (typeof reqMod.getBatchPlanRequirements !== 'function') t78.issues.push('batch-requirements: getBatchPlanRequirements not exported');
+    // Pipeline is shadow only — public functions must still be the legacy versions
+    if (typeof generateAllImages !== 'function')          t78.issues.push('legacy generateAllImages no longer exists');
+    else if (window.generateAllImages !== generateAllImages) t78.issues.push('generateAllImages is not the legacy function');
+    if (typeof _retryFailedImages !== 'function')         t78.issues.push('legacy _retryFailedImages no longer exists');
+    else if (window._retryFailedImages !== _retryFailedImages) t78.issues.push('_retryFailedImages is not the legacy function');
     t78.ok = t78.issues.length === 0;
   } catch(e) { t78.issues.push('threw: ' + e.message); }
+
+  // ─── T79: petits batches — plan + validate pour n=1,2,3,4 ────────────────
+  // 6 métiers × 4 tailles × 100 seeds = 2400 cas.
+  // Vérifie que _validateCompleteBatchPlan (size-aware) ne lève jamais INVALID_BATCH_PLAN.
+  try {
+    const T79_METIERS = [
+      { metier: 'toiture',       svc: 'Remplacement tuiles' },
+      { metier: 'peinture',      svc: 'Peinture chambre' },
+      { metier: 'élagage',       svc: 'Élagage arbre' },
+      { metier: 'depannage_auto',svc: 'Batterie à plat' },
+      { metier: 'carrelage',     svc: 'Faïence salle de bain' },
+      { metier: 'nettoyage',     svc: 'Nettoyage façade' },
+    ];
+    const T79_SIZES = [1, 2, 3, 4];
+    for (const { metier, svc } of T79_METIERS) {
+      for (const n of T79_SIZES) {
+        for (let s = 0; s < 100; s++) {
+          const seed = s * 7 + 13;
+          let tasks;
+          try {
+            tasks = _mkRawBatchTasks(metier, svc, 'encours', n, seed, 700);
+          } catch(e) {
+            t79.issues.push(`${metier}/n=${n}/s=${s}: plan threw — ${e.message}`);
+            continue;
+          }
+          // Validate — must not throw with size-aware validator
+          try {
+            bvalMod._validateCompleteBatchPlan(tasks);
+          } catch(e) {
+            t79.invalidCount++;
+            t79.issues.push(`${metier}/n=${n}/s=${s}: ${e.message}`);
+            continue;
+          }
+          // Per-task field checks
+          for (const t of tasks) {
+            if (!t._batch_plan_id)         t79.issues.push(`${metier}/n=${n}/s=${s}/task${t.i}: missing _batch_plan_id`);
+            if (!t._pre_assigned_composition) t79.issues.push(`${metier}/n=${n}/s=${s}/task${t.i}: missing composition`);
+            if (!['workers','indirect','none'].includes(t._pre_assigned_worker_presence))
+              t79.issues.push(`${metier}/n=${n}/s=${s}/task${t.i}: bad worker_presence=${t._pre_assigned_worker_presence}`);
+            if (!['clearly_visible','partially_visible','absent'].includes(t._pre_assigned_vehicle))
+              t79.issues.push(`${metier}/n=${n}/s=${s}/task${t.i}: bad vehicle=${t._pre_assigned_vehicle}`);
+            if (!Array.isArray(t._capture_defects_resolved) || !t._capture_defects_resolved.length)
+              t79.issues.push(`${metier}/n=${n}/s=${s}/task${t.i}: empty defects`);
+          }
+          // Verify getBatchPlanRequirements fields are coherent with the actual plan
+          const req79 = reqMod.getBatchPlanRequirements(tasks);
+          const comps79 = tasks.map(t => t._pre_assigned_composition);
+          if (comps79.filter(c => c === 'close_detail').length > req79.maxClose)
+            t79.issues.push(`${metier}/n=${n}/s=${s}: close_detail > maxClose=${req79.maxClose}`);
+          t79.cases++;
+        }
+      }
+    }
+    t79.ok = t79.issues.length === 0;
+  } catch(e) { t79.issues.push('threw: ' + e.message); }
+
+  // ─── T80: pipeline modulaire complet pour 1 et 2 images ──────────────────
+  // API Images et Vision mockées, validateur actif, aucun réseau réel.
+  try {
+    // T80a: batch de 1 tâche
+    const s80a    = stateMod.createGenerationState(); s80a.runId = 80;
+    const tasks80a = _mkSmallBatchTasks('toiture', 'Remplacement tuiles', 'encours', 1, 42, 600);
+    const mf80a   = _mkFetch();
+    const ri80a   = [];
+    await batchMod.runImageBatch(tasks80a, 'sk-t80a', {
+      state: s80a, fetchImpl: mf80a.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+      runImages: ri80a,
+    });
+    const c80a = mf80a.counts();
+    if (c80a.imgCalls   !== 1)  t80.issues.push(`n=1: imgCalls expected 1 got ${c80a.imgCalls}`);
+    if (c80a.visionCalls !== 1) t80.issues.push(`n=1: visionCalls expected 1 got ${c80a.visionCalls}`);
+    if (ri80a.length !== 1)     t80.issues.push(`n=1: runImages expected 1 got ${ri80a.length}`);
+    if (tasks80a[0].status !== 'success') t80.issues.push(`n=1: task status expected success got ${tasks80a[0].status}`);
+
+    // T80b: batch de 2 tâches
+    const s80b    = stateMod.createGenerationState(); s80b.runId = 80;
+    const tasks80b = _mkSmallBatchTasks('toiture', 'Remplacement tuiles', 'encours', 2, 42, 610);
+    const mf80b   = _mkFetch();
+    const ri80b   = [];
+    await batchMod.runImageBatch(tasks80b, 'sk-t80b', {
+      state: s80b, fetchImpl: mf80b.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep,
+      runImages: ri80b,
+    });
+    const c80b = mf80b.counts();
+    if (c80b.imgCalls   !== 2)  t80.issues.push(`n=2: imgCalls expected 2 got ${c80b.imgCalls}`);
+    if (c80b.visionCalls !== 2) t80.issues.push(`n=2: visionCalls expected 2 got ${c80b.visionCalls}`);
+    if (ri80b.length !== 2)     t80.issues.push(`n=2: runImages expected 2 got ${ri80b.length}`);
+    if (tasks80b.filter(t => t.status === 'success').length !== 2) t80.issues.push('n=2: not all 2 succeeded');
+    if (new Set(ri80b.map(i => i.taskId)).size !== 2) t80.issues.push('n=2: duplicate taskIds in runImages');
+    if (new Set(ri80b.map(i => i.filename)).size !== 2) t80.issues.push('n=2: duplicate filenames in runImages');
+    t80.ok = t80.issues.length === 0;
+  } catch(e) { t80.issues.push('threw: ' + e.message); }
 
   } finally {
     window.fetch = realFetch;
   }
 
-  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78 };
+  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80 };
 }
 window._runPipelineParityTests = _runPipelineParityTests;
 
@@ -16829,7 +16947,9 @@ async function _runLocalTests() {
         t75: 'T75: runImageBatch — déduplication et statuts terminaux',
         t76: 'T76: UI adapter — updateProgress / renderImage / onTaskDone',
         t77: 'T77: noms de fichiers — format, unicité, tâches non-success absentes',
-        t78: 'T78: Phase 6 dependency integrity — exports, factory, shadow',
+        t78: 'T78: Phase 6 dependency integrity — exports, factory, shadow, legacy refs',
+        t79: 'T79: small batch planning and validation — 2400 cas, 0 INVALID_BATCH_PLAN',
+        t80: 'T80: modular small batches — pipeline complet n=1 et n=2',
       };
       for (const [key, label] of Object.entries(LABELS)) {
         const r = pipeRes[key];
