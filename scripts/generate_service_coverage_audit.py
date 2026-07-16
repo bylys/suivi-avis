@@ -393,7 +393,19 @@ def main():
     json_data = {
         'generated_at':  generated_at,
         'git_commit':    git_commit,
-        'methodology':   'Python static analysis — parses service-catalog.js, services/*.js (WORK_SCENES + SITE_REALISM _for patterns). Does not execute JS runtime.',
+        'methodology': (
+            'Python static analysis of service-catalog.js and services/*.js. '
+            'Uses _extract_sr_block + brace-depth extraction for SITE_REALISM, '
+            'checks _for regex against normalize(service_label) with re.search(). '
+            'ROUTED_TO_SPECIFIC_SCENE requires an actual _for match (or _dispatch=service bucket). '
+            'Does not execute JS runtime — use window._runServiceCoverageAudit() for runtime verification.'
+        ),
+        'reference_counts': {
+            'note': 'Correct methodology, bb5fc76 (pre-fix) vs 167b631 (post-fix)',
+            'pre_fix':  {'ROUTED_TO_SPECIFIC_SCENE': 119, 'PARTIAL_CONTEXTE': 28, 'TOOLS_ONLY': 25, 'TOTAL': 172},
+            'post_fix': {'ROUTED_TO_SPECIFIC_SCENE': 122, 'PARTIAL_CONTEXTE': 25, 'TOOLS_ONLY': 25, 'TOTAL': 172},
+            'delta':    'Exactly 3 services changed: Élagage arbre, Élagage peuplier, peinture/Peinture façade',
+        },
         'limitations':   'Cannot simulate full runtime dispatch for _dispatch:service buckets. Etancheite nested scenarios approximated via outer _for patterns only.',
         'category_definitions': CATEGORY_DEFS,
         'summary':       summary,

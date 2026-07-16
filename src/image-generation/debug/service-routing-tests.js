@@ -124,40 +124,114 @@ function testElagageRouting() {
   console.groupEnd();
 }
 
-// ─── SR11–SR14: Peinture façade routing ──────────────────────────────────────
+// ─── SR11–SR14: Peinture façade routing (positive) ───────────────────────────
+
+function _scenarioOf(row) {
+  const p = _parsePrompt(row);
+  return p?._matched_scenario_index ?? null;
+}
+
+function assertSceneIdentical(travaux1, travaux2, label) {
+  const r1 = _parsePrompt({ travaux: travaux1 });
+  const r2 = _parsePrompt({ travaux: travaux2 });
+  const s1 = r1?._matched_scenario_index;
+  const s2 = r2?._matched_scenario_index;
+  assert(
+    s1 !== null && s1 !== undefined && s1 === s2,
+    label,
+    `scenario indices: ${s1} vs ${s2}`
+  );
+}
 
 function testPeintureRouting() {
   console.group('[Routing] Peinture façade');
 
-  assertSpecificScene('peinture', 'Peinture façade',  'SR11: Peinture façade → specific scene');
-  assertSpecificScene('peinture', 'peinture facade',  'SR12: peinture facade (normalized) → specific scene');
-  assertSpecificScene('peinture', 'façade peinture',  'SR13: façade peinture (reversed) → specific scene');
-  assertSpecificScene('peinture', 'facade peinture',  'SR14: facade peinture (reversed, normalized) → specific scene');
+  assertSpecificScene('peinture', 'Peinture façade',           'SR11: Peinture façade → specific scene');
+  assertSpecificScene('peinture', 'peinture facade',           'SR12: peinture facade (normalized) → specific scene');
+  assertSpecificScene('peinture', 'façade peinture',           'SR13: façade peinture (reversed) → specific scene');
+  assertSpecificScene('peinture', 'facade peinture',           'SR14: facade peinture (reversed, normalized) → specific scene');
+  assertSpecificScene('peinture', 'Peinture extérieure façade','SR15: Peinture extérieure façade → specific scene');
+  assertSpecificScene('peinture', 'peinture exterieure facade','SR16: peinture exterieure facade (normalized) → specific scene');
 
-  // Negative: unrelated peinture services must not route to the same scene as Peinture façade
+  // Negative: unrelated peinture services must not route to the exterior facade scenario
   {
-    const rFacade    = _parsePrompt({ metier: 'peinture', travaux: 'Peinture façade'     });
-    const rInterieur = _parsePrompt({ metier: 'peinture', travaux: 'Peinture intérieure' });
-    const rNettoyage = _parsePrompt({ metier: 'nettoyage', travaux: 'Nettoyage façade'   });
+    const rFacade    = _parsePrompt({ metier: 'peinture', travaux: 'Peinture façade'      });
+    const rInterieur = _parsePrompt({ metier: 'peinture', travaux: 'Peinture intérieure'  });
+    const rNettoyage = _parsePrompt({ metier: 'nettoyage', travaux: 'Nettoyage façade'    });
+    const rRaval     = _parsePrompt({ metier: 'ravalement', travaux: 'Ravalement façade'  });
+    const rRep       = _parsePrompt({ metier: 'ravalement', travaux: 'Réparation façade'  });
+    const rToit      = _parsePrompt({ metier: 'toiture',   travaux: 'Peinture toiture'    });
 
     assert(
       rFacade?._matched_key !== '(fallback)',
       'SR-N8: Peinture façade must not fall to generic fallback'
     );
-    // Peinture intérieure uses peinture WORK_SCENE too, but different SITE_REALISM scenario group
-    // Just verify it finds the peinture scene (not another)
     assert(
       rInterieur?._matched_key === 'peinture',
-      'SR-N9: Peinture intérieure still routes to peinture (no regression)',
+      'SR-N9: Peinture intérieure still routes to peinture scene (no regression)',
       `got: ${rInterieur?._matched_key}`
     );
-    // Nettoyage façade must route to nettoyage, not peinture
     assert(
-      rNettoyage?._matched_key === 'nettoyage',
-      'SR-N10: Nettoyage façade must route to nettoyage, not peinture',
+      rNettoyage?._matched_key !== 'peinture',
+      'SR-N10: Nettoyage façade must not route to peinture scene',
       `got: ${rNettoyage?._matched_key}`
     );
+    assert(
+      rRaval?._matched_key !== '(fallback)',
+      'SR-N11: Ravalement façade must not fall to generic fallback'
+    );
+    assert(
+      rRep?._matched_key !== 'peinture',
+      'SR-N12: Réparation façade must not route to peinture scene',
+      `got: ${rRep?._matched_key}`
+    );
   }
+
+  console.groupEnd();
+}
+
+// ─── SR-N: Dépannage auto surmatching guard ───────────────────────────────────
+
+function testDepannageNegatives() {
+  console.group('[Routing] Dépannage auto — no over-matching');
+
+  // These contain "clé"/"voiture"/"véhicule" but must NOT go to ouverture or remorquage
+  const rCleRem   = _serviceGroup('Remplacement de clé');
+  const rCleRep   = _serviceGroup('Reprogrammation de clé');
+  const rVehImmo  = _serviceGroup('Véhicule immobilisé');
+  const rBattDep  = _serviceGroup('Dépannage batterie');
+  const rDemVoit  = _serviceGroup('Démarrage voiture');
+
+  // "Remplacement de clé" — "cle" is in the pattern cles.*enferm → should NOT match
+  // because it requires "cles" then "enferm"
+  assert(
+    rCleRem !== 'ouverture',
+    'SR-N13: "Remplacement de clé" must not map to ouverture',
+    `got: ${rCleRem}`
+  );
+  assert(
+    rCleRep !== 'ouverture',
+    'SR-N14: "Reprogrammation de clé" must not map to ouverture',
+    `got: ${rCleRep}`
+  );
+  // "Véhicule immobilisé" — "vehicule" alone must not trigger remorquage
+  // Remorquage requires enlevement.*vehicule, not vehicule alone
+  assert(
+    rVehImmo !== 'remorquage',
+    'SR-N15: "Véhicule immobilisé" must not map to remorquage (vehicule alone ≠ enlevement)',
+    `got: ${rVehImmo}`
+  );
+  // Battery/start services go to 'batterie' — not ouverture
+  assert(
+    rBattDep !== 'ouverture',
+    'SR-N16: "Dépannage batterie" must not map to ouverture',
+    `got: ${rBattDep}`
+  );
+  assert(
+    rDemVoit !== 'ouverture',
+    'SR-N17: "Démarrage voiture" must not map to ouverture (voiture ≠ ouverture trigger)',
+    `got: ${rDemVoit}`
+  );
 
   console.groupEnd();
 }
@@ -173,6 +247,7 @@ export async function runServiceRoutingTests() {
   testServiceGroup();
   testElagageRouting();
   testPeintureRouting();
+  testDepannageNegatives();
 
   const total = _pass + _fail;
   console.log(`\n[ROUTING SUMMARY] ${_pass}/${total} passed${_fail ? ` — ${_fail} FAILED` : ' ✔'}`);

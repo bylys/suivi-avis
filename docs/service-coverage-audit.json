@@ -1,7 +1,23 @@
 {
   "generated_at": "2026-07-16",
-  "git_commit": "bb5fc76506b49f60789891efc841c664bceda72a",
-  "methodology": "Python static analysis — parses service-catalog.js, services/*.js (WORK_SCENES + SITE_REALISM _for patterns). Does not execute JS runtime.",
+  "git_commit": "167b63177837143c151eb1a63adffbf2a36c032f",
+  "methodology": "Python static analysis of service-catalog.js and services/*.js. Uses _extract_sr_block + brace-depth extraction for SITE_REALISM, checks _for regex against normalize(service_label) with re.search(). ROUTED_TO_SPECIFIC_SCENE requires an actual _for match (or _dispatch=service bucket). Does not execute JS runtime — use window._runServiceCoverageAudit() for runtime verification.",
+  "reference_counts": {
+    "note": "Correct methodology, bb5fc76 (pre-fix) vs 167b631 (post-fix)",
+    "pre_fix": {
+      "ROUTED_TO_SPECIFIC_SCENE": 119,
+      "PARTIAL_CONTEXTE": 28,
+      "TOOLS_ONLY": 25,
+      "TOTAL": 172
+    },
+    "post_fix": {
+      "ROUTED_TO_SPECIFIC_SCENE": 122,
+      "PARTIAL_CONTEXTE": 25,
+      "TOOLS_ONLY": 25,
+      "TOTAL": 172
+    },
+    "delta": "Exactly 3 services changed: Élagage arbre, Élagage peuplier, peinture/Peinture façade"
+  },
   "limitations": "Cannot simulate full runtime dispatch for _dispatch:service buckets. Etancheite nested scenarios approximated via outer _for patterns only.",
   "category_definitions": {
     "ROUTED_TO_SPECIFIC_SCENE": "Sub-service matches a targeted SITE_REALISM scenario via a _for regex pattern. Does NOT guarantee visual quality or completeness.",
@@ -861,7 +877,7 @@
       "service_label": "Élagage arbre",
       "normalized_service": "elagage arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: arbre|peuplier",
+      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
       "before_fix": "PARTIAL_CONTEXTE",
       "after_fix": "ROUTED_TO_SPECIFIC_SCENE"
     },
@@ -870,7 +886,7 @@
       "service_label": "Taille arbre haute tige",
       "normalized_service": "taille arbre haute tige",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron",
+      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
       "before_fix": null,
       "after_fix": null
     },
@@ -879,7 +895,7 @@
       "service_label": "Élagage peuplier",
       "normalized_service": "elagage peuplier",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: arbre|peuplier",
+      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
       "before_fix": "PARTIAL_CONTEXTE",
       "after_fix": "ROUTED_TO_SPECIFIC_SCENE"
     },
@@ -897,7 +913,7 @@
       "service_label": "Recépage arbre",
       "normalized_service": "recepage arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron",
+      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
       "before_fix": null,
       "after_fix": null
     },
@@ -906,7 +922,7 @@
       "service_label": "Couronnage arbre",
       "normalized_service": "couronnage arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron",
+      "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
       "before_fix": null,
       "after_fix": null
     },
