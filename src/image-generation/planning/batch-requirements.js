@@ -55,7 +55,9 @@ function getBatchPlanRequirements(tasks) {
   if (n === 1) {
     return {
       maxClose: 1, minMedium: 0, minWide: 0, minContextual: 0, minMediumOrWide: 0,
-      requireDistinctCompositions: false, minWorkerScenes: 0, minVehicleScenes: 0,
+      requireDistinctCompositions: false,
+      minWorkerScenes: 0,
+      minVehicleScenes: vehicleEligible ? 1 : 0,
     };
   }
 
@@ -64,7 +66,7 @@ function getBatchPlanRequirements(tasks) {
       maxClose: 1, minMedium: 0, minWide: 0, minContextual: 0, minMediumOrWide: 0,
       requireDistinctCompositions: true,
       minWorkerScenes: workerRequired ? 1 : 0,
-      minVehicleScenes: 0,
+      minVehicleScenes: vehicleEligible ? 1 : 0,
     };
   }
 
@@ -73,7 +75,7 @@ function getBatchPlanRequirements(tasks) {
       maxClose: 1, minMedium: 0, minWide: 0, minContextual: 1, minMediumOrWide: 1,
       requireDistinctCompositions: false,
       minWorkerScenes: workerRequired ? 1 : 0,
-      minVehicleScenes: 0,
+      minVehicleScenes: vehicleEligible ? 1 : 0,
     };
   }
 

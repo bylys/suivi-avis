@@ -11,6 +11,7 @@ import { _planBatchCompositions } from './composition-planner.js';
 import { _selectVehiclePresence } from './vehicle-planner.js';
 import { _selectCaptureDefects } from './capture-defect-planner.js';
 import { _planBatchWorkerPresence } from './worker-planner.js';
+import { getBatchPlanRequirements } from './batch-requirements.js';
 
 // ─── Global batch planner ─────────────────────────────────────────────────────
 // Groups tasks by métier+service, assigns composition/vehicle/defects/worker plan to each.
@@ -105,8 +106,10 @@ function _rebalanceGlobalBatchPlan(tasks, runSeed) {
     counts[needed] = (counts[needed] || 0) + 1;
   }
 
-  // 3. Ensure at least 1 vehicle visible or partial
-  if (!tasks.some(t => t._pre_assigned_vehicle !== 'absent')) {
+  // 3. Ensure at least minVehicleScenes vehicles visible or partial.
+  // Requirements are computed here (after steps 1–2) so vehicleEligible reflects final compositions.
+  const reqV = getBatchPlanRequirements(tasks);
+  if (reqV.minVehicleScenes > 0 && !tasks.some(t => t._pre_assigned_vehicle !== 'absent')) {
     const pref = ['wide_worksite', 'medium_intervention', 'vehicle_arrival', 'equipment_from_vehicle'];
     const pvC  = tasks
       .filter(t => t._pre_assigned_composition !== 'close_detail')

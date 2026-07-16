@@ -14805,7 +14805,12 @@ async function _runPlanningParityTests() {
     mkBatchTask('contextual_overview','none','absent'),
     mkBatchTask('close_detail','none','absent'),
   ];
-  const invalidBatch = [mkBatchTask('close_detail','none','absent'), mkBatchTask('close_detail','none','absent')];
+  // n=4 so legacy and shadow produce identical error messages (size-aware rules align for n≥4).
+  // n=2 was retired: shadow validator is intentionally more permissive for small batches.
+  const invalidBatch = [
+    mkBatchTask('close_detail','none','absent'), mkBatchTask('close_detail','none','absent'),
+    mkBatchTask('close_detail','none','absent'), mkBatchTask('close_detail','none','absent'),
+  ];
   for (const [batch, shouldThrow] of [[validBatch, false],[invalidBatch, true]]) {
     let legErr, modErr;
     try { leg._validateCompleteBatchPlan(batch); } catch(e) { legErr = e.message; }
@@ -15370,6 +15375,15 @@ async function _runPipelineParityTests() {
 
   // Forbidden fetch guard — no real network during Phase 6 tests
   const realFetch = window.fetch;
+
+  // Fetch module sources for T81 structural checks (must happen before guard installation).
+  // Cache-busting param ensures the fetch bypasses browser HTTP cache.
+  const _t81cb = `?t81=${Math.floor(performance.now())}`;
+  const [_t81PlannerSrc, _t81ValidatorSrc] = await Promise.all([
+    realFetch('./src/image-generation/planning/batch-planner.js' + _t81cb).then(r => r.text()),
+    realFetch('./src/image-generation/validation/batch-validator.js' + _t81cb).then(r => r.text()),
+  ]);
+
   window.fetch = (...args) => {
     throw new Error(`[REAL_NETWORK_FORBIDDEN_DURING_PHASE6_TEST] ${String(args[0])}`);
   };
@@ -15463,6 +15477,7 @@ async function _runPipelineParityTests() {
   const t75 = { ok: false, issues: [] };
   const t79 = { ok: false, cases: 0, invalidCount: 0, issues: [] };
   const t80 = { ok: false, issues: [] };
+  const t81 = { ok: false, cases: 0, issues: [] };
   const t76 = { ok: false, issues: [] };
   const t77 = { ok: false, issues: [] };
   const t78 = { ok: false, issues: [] };
@@ -15956,11 +15971,88 @@ async function _runPipelineParityTests() {
     t80.ok = t80.issues.length === 0;
   } catch(e) { t80.issues.push('threw: ' + e.message); }
 
+  // ─── T81: source unique des quotas — planner et validator partagent getBatchPlanRequirements ───
+  // Structural : vérifie que les deux modules importent getBatchPlanRequirements.
+  // Functional : 16 métiers × [1,2,3,4,6,10] × 100 seeds = 9 600 cas.
+  //   Après plan + rebalance, _validateCompleteBatchPlan doit accepter le résultat.
+  //   Les requirements doivent être satisfaits par le plan (vehicle, worker, compositions).
+  try {
+    // ── Structural ──
+    if (!_t81PlannerSrc.includes('getBatchPlanRequirements'))
+      t81.issues.push('batch-planner.js does not import getBatchPlanRequirements');
+    if (!_t81ValidatorSrc.includes('getBatchPlanRequirements'))
+      t81.issues.push('batch-validator.js does not import getBatchPlanRequirements');
+
+    // ── Functional ──
+    const T81_METIERS = [
+      { metier: 'toiture',            svc: 'Remplacement tuiles' },
+      { metier: 'nettoyage_toiture',  svc: 'Démoussage toiture' },
+      { metier: 'nettoyage_gouttieres', svc: 'Nettoyage gouttières' },
+      { metier: 'etancheite',         svc: 'Réparation fuite toiture' },
+      { metier: 'ravalement',         svc: 'Ravalement façade' },
+      { metier: 'maçonnerie',         svc: 'Mur parpaing' },
+      { metier: 'peinture',           svc: 'Peinture chambre' },
+      { metier: 'carrelage',          svc: 'Faïence salle de bain' },
+      { metier: 'vitrier',            svc: 'Remplacement vitrage brisé' },
+      { metier: 'élagage',            svc: 'Élagage arbre' },
+      { metier: 'abattage',           svc: 'Abattage arbre' },
+      { metier: 'terrassement',       svc: 'Terrassement maison' },
+      { metier: 'paysagiste',         svc: 'Création jardin' },
+      { metier: 'depannage_auto',     svc: 'Batterie à plat' },
+      { metier: 'nettoyage',          svc: 'Nettoyage façade' },
+      { metier: 'débarras',           svc: 'Débarras appartement' },
+    ];
+    const T81_SIZES = [1, 2, 3, 4, 6, 10];
+
+    for (const { metier, svc } of T81_METIERS) {
+      for (const n of T81_SIZES) {
+        for (let s = 0; s < 100; s++) {
+          const seed = s * 13 + 3;
+          let tasks;
+          try {
+            tasks = _mkRawBatchTasks(metier, svc, 'encours', n, seed, 900);
+          } catch(e) {
+            t81.issues.push(`${metier}/n=${n}/s=${s}: plan threw — ${e.message}`);
+            continue;
+          }
+
+          // Validate: planner output must satisfy validator
+          try {
+            bvalMod._validateCompleteBatchPlan(tasks);
+          } catch(e) {
+            t81.issues.push(`${metier}/n=${n}/s=${s}: planner/validator inconsistency — ${e.message}`);
+            t81.cases++;
+            continue;
+          }
+
+          // Cross-check: requirements must be satisfied by the plan
+          const req81 = reqMod.getBatchPlanRequirements(tasks);
+          const comps81 = tasks.map(t => t._pre_assigned_composition);
+
+          if (comps81.filter(c => c === 'close_detail').length > req81.maxClose)
+            t81.issues.push(`${metier}/n=${n}/s=${s}: close_detail > maxClose=${req81.maxClose}`);
+
+          if (req81.minVehicleScenes > 0 && !tasks.some(t => t._pre_assigned_vehicle !== 'absent'))
+            t81.issues.push(`${metier}/n=${n}/s=${s}: minVehicleScenes=${req81.minVehicleScenes} but all absent`);
+
+          if (req81.minWorkerScenes > 0 && !tasks.some(t => t._pre_assigned_worker_presence === 'workers'))
+            t81.issues.push(`${metier}/n=${n}/s=${s}: minWorkerScenes=${req81.minWorkerScenes} but none`);
+
+          if (req81.requireDistinctCompositions && new Set(comps81).size < comps81.length)
+            t81.issues.push(`${metier}/n=${n}/s=${s}: compositions not distinct`);
+
+          t81.cases++;
+        }
+      }
+    }
+    t81.ok = t81.issues.length === 0;
+  } catch(e) { t81.issues.push('threw: ' + e.message); }
+
   } finally {
     window.fetch = realFetch;
   }
 
-  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80 };
+  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81 };
 }
 window._runPipelineParityTests = _runPipelineParityTests;
 
@@ -16930,7 +17022,7 @@ async function _runLocalTests() {
     try {
       pipeRes = await _runPipelineParityTests();
     } catch(e) {
-      fail('T41/T67–T78: pipeline parity import', e.message);
+      fail('T41/T67–T81: pipeline parity import', e.message);
       pipeRes = null;
     }
     if (pipeRes) {
@@ -16950,6 +17042,7 @@ async function _runLocalTests() {
         t78: 'T78: Phase 6 dependency integrity — exports, factory, shadow, legacy refs',
         t79: 'T79: small batch planning and validation — 2400 cas, 0 INVALID_BATCH_PLAN',
         t80: 'T80: modular small batches — pipeline complet n=1 et n=2',
+        t81: 'T81: shared batch requirements — planner et validator, 9600 cas, 16 métiers',
       };
       for (const [key, label] of Object.entries(LABELS)) {
         const r = pipeRes[key];
