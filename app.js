@@ -3180,6 +3180,30 @@ const METEO_OPTIONS = [
 // _getWorkDetail() scores all entries and returns the highest-scoring match.
 let _lastMatch = { matched_category: null, matched_service: null, match_score: 0 };
 
+// ─── GMB Image Context Bridge ─────────────────────────────────────────────────
+// Single authorized cross-domain dependency between app.js GMB and src/image-generation/.
+// Exposes only what the image module genuinely needs from GMB.
+// Permanent interface: stays after legacy image code is removed in Phase 7B.
+window.__GMB_IMAGE_CONTEXT__ = Object.freeze({
+  // GMB service matching state — set by buildDallePromptV2, read by modular prompt builder
+  getLastMatch()    { return Object.assign({}, _lastMatch); },
+  setLastMatch(val) { _lastMatch = val; },
+
+  // Image planning rows — managed by addImgRow/removeImgRow, read by generateAllImages
+  getRows()          { return _imgRows; },
+  addRow()           {
+    const id = ++_imgCounter;
+    _imgRows.unshift({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
+    renderImgPlanning();
+  },
+  removeRow(id) {
+    _imgRows = _imgRows.filter(r => r.id !== id);
+    renderImgPlanning();
+    updateCostEstimate();
+  },
+  refreshPlan() { renderImgPlanning(); },
+});
+
 const WORK_SCENES = {
 
   élagage: {
@@ -15483,6 +15507,9 @@ async function _runPipelineParityTests() {
   const t81 = { ok: false, cases: 0, issues: [] };
   const t82 = { ok: false, cases: 0, issues: [] };
   const t83 = { ok: false, n1LegacyThrew: 0, n1ModuleAccepted: 0, n2LegacyThrew: 0, n2ModuleAccepted: 0, n3Divergence: 0, issues: [] };
+  const t84 = { ok: false, issues: [] };
+  const t85 = { ok: false, issues: [] };
+  const t86 = { ok: false, issues: [] };
   const t76 = { ok: false, issues: [] };
   const t77 = { ok: false, issues: [] };
   const t78 = { ok: false, issues: [] };
@@ -15874,11 +15901,10 @@ async function _runPipelineParityTests() {
     if (typeof safetyMod.window !== 'undefined') t78.issues.push('safety-check exports window');
     // batch-requirements.js must export getBatchPlanRequirements
     if (typeof reqMod.getBatchPlanRequirements !== 'function') t78.issues.push('batch-requirements: getBatchPlanRequirements not exported');
-    // Pipeline is shadow only — public functions must still be the legacy versions
-    if (typeof generateAllImages !== 'function')          t78.issues.push('legacy generateAllImages no longer exists');
-    else if (window.generateAllImages !== generateAllImages) t78.issues.push('generateAllImages is not the legacy function');
-    if (typeof _retryFailedImages !== 'function')         t78.issues.push('legacy _retryFailedImages no longer exists');
-    else if (window._retryFailedImages !== _retryFailedImages) t78.issues.push('_retryFailedImages is not the legacy function');
+    // Phase 7A cutover: legacy functions still exist in scope (7B removes them);
+    // window.* is now the modular version — verified by T84.
+    if (typeof generateAllImages !== 'function')   t78.issues.push('legacy generateAllImages no longer exists in scope');
+    if (typeof _retryFailedImages !== 'function')  t78.issues.push('legacy _retryFailedImages no longer exists in scope');
     t78.ok = t78.issues.length === 0;
   } catch(e) { t78.issues.push('threw: ' + e.message); }
 
@@ -16187,11 +16213,78 @@ async function _runPipelineParityTests() {
     t83.ok = t83.issues.length === 0;
   } catch(e) { t83.issues.push('threw: ' + e.message); }
 
+  // ─── T84: API publique modulaire — window.* est la version module ────────────
+  // Après 7A cutover, index.js a remplacé les fonctions legacy.
+  // Note : en JS classique (non-module), `generateAllImages` dans le scope app.js
+  // est identique à window.generateAllImages — comparaison d'identité impossible.
+  // On utilise à la place : window.__IMAGE_MODULAR_API__ + signature des fonctions.
+  try {
+    if (!window.__IMAGE_MODULAR_API__)
+      t84.issues.push('window.__IMAGE_MODULAR_API__ not set — index.js may not be loaded');
+    // Modular generateAllImages uses _modRunActive (not _generationRunActive)
+    if (typeof window.generateAllImages !== 'function')
+      t84.issues.push('window.generateAllImages is not a function');
+    else if (!window.generateAllImages.toString().includes('_modRunActive'))
+      t84.issues.push('window.generateAllImages does not contain _modRunActive — still the legacy version');
+    // Modular _retryFailedImages uses _modLastTasks (not window._lastFailedTasks)
+    if (typeof window._retryFailedImages !== 'function')
+      t84.issues.push('window._retryFailedImages is not a function');
+    else if (!window._retryFailedImages.toString().includes('_modLastTasks'))
+      t84.issues.push('window._retryFailedImages does not contain _modLastTasks — still the legacy version');
+    if (typeof window.addImgRow !== 'function')
+      t84.issues.push('window.addImgRow is not a function');
+    if (typeof window.downloadImagesZip !== 'function')
+      t84.issues.push('window.downloadImagesZip is not a function');
+    t84.ok = t84.issues.length === 0;
+  } catch(e) { t84.issues.push('threw: ' + e.message); }
+
+  // ─── T85: onclick handlers — toutes les fonctions window sont appelables ────
+  // Les attributs onclick= dans index.html appellent ces noms globalement.
+  // ReferenceError si l'une manque sur window.
+  try {
+    const ONCLICK_FNS = ['generateAllImages', 'addImgRow', 'downloadImagesZip', '_retryFailedImages'];
+    for (const name of ONCLICK_FNS) {
+      if (typeof window[name] !== 'function')
+        t85.issues.push(`window.${name} n'est pas une function — onclick="${name}()" lèverait ReferenceError`);
+    }
+    if (typeof window.__GMB_IMAGE_CONTEXT__ !== 'object' || !window.__GMB_IMAGE_CONTEXT__)
+      t85.issues.push('window.__GMB_IMAGE_CONTEXT__ bridge manquant');
+    else {
+      const b85 = window.__GMB_IMAGE_CONTEXT__;
+      if (typeof b85.getRows   !== 'function') t85.issues.push('bridge.getRows manquant');
+      if (typeof b85.addRow    !== 'function') t85.issues.push('bridge.addRow manquant');
+      if (typeof b85.removeRow !== 'function') t85.issues.push('bridge.removeRow manquant');
+    }
+    t85.ok = t85.issues.length === 0;
+  } catch(e) { t85.issues.push('threw: ' + e.message); }
+
+  // ─── T86: createImagePipeline — batch n=4 via factory publique ───────────────
+  // Vérifie que la factory createImagePipeline retourne un pipeline fonctionnel.
+  // Réseau mocké, validateur actif, aucun appel réel.
+  try {
+    const s86    = stateMod.createGenerationState(); s86.runId = 86;
+    const tasks86 = _mkSmallBatchTasks('toiture', 'Remplacement toiture', 'encours', 4, 86, 860);
+    const mf86   = _mkFetch();
+    const ri86   = [];
+    const pipe86  = batchMod.createImagePipeline({
+      state: s86, fetchImpl: mf86.fetchImpl, readResponseImpl: _fakeRead,
+      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter,
+      sleep: _fakeSleep,
+    });
+    await pipe86.runImageBatch(tasks86, 'sk-t86', ri86);
+    const c86 = mf86.counts();
+    if (c86.imgCalls !== 4) t86.issues.push(`imgCalls expected 4 got ${c86.imgCalls}`);
+    if (ri86.length !== 4)  t86.issues.push(`runImages expected 4 got ${ri86.length}`);
+    if (tasks86.filter(t => t.status === 'success').length !== 4)
+      t86.issues.push('not all 4 tasks succeeded');
+    t86.ok = t86.issues.length === 0;
+  } catch(e) { t86.issues.push('threw: ' + e.message); }
+
   } finally {
     window.fetch = realFetch;
   }
 
-  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83 };
+  return { t41, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85, t86 };
 }
 window._runPipelineParityTests = _runPipelineParityTests;
 
@@ -17161,7 +17254,7 @@ async function _runLocalTests() {
     try {
       pipeRes = await _runPipelineParityTests();
     } catch(e) {
-      fail('T41/T67–T83: pipeline parity import', e.message);
+      fail('T41/T67–T86: pipeline parity import', e.message);
       pipeRes = null;
     }
     if (pipeRes) {
@@ -17184,6 +17277,9 @@ async function _runLocalTests() {
         t81: 'T81: getBatchPlanPolicy source unique — sentinel injection + 9600 cas, 16 métiers',
         t82: 'T82: couverture 18 métiers (catalogue + registres) — 10800 cas, 0 inconsistance',
         t83: 'T83: divergence documentée legacy/module — n=1 legacy rejette (50/50), n=2 legacy rejette (50/50)',
+        t84: 'T84: API publique modulaire — window.* est la version module (7A cutover)',
+        t85: 'T85: onclick handlers — toutes les fonctions window sont appelables',
+        t86: 'T86: createImagePipeline — batch n=4 toiture, 4 images via factory publique',
       };
       for (const [key, label] of Object.entries(LABELS)) {
         const r = pipeRes[key];
