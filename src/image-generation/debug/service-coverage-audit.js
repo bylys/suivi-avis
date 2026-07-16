@@ -63,9 +63,22 @@ function classifyService(metierKey, serviceLabel) {
   }
 
   // Step 4: _dispatch: 'contexte' — étanchéité
+  // Scenarios are nested inside context keys (e.g. entry.maison.scenarios, entry.immeuble.scenarios).
+  // Gather all _for patterns across all context sub-objects and all their scenario arrays.
   if (entry._dispatch === 'contexte') {
-    const scenarios = entry.scenarios || [];
-    for (const scenario of scenarios) {
+    const allScenarios = [];
+    for (const [key, value] of Object.entries(entry)) {
+      if (key.startsWith('_')) continue;
+      if (value && Array.isArray(value.scenarios)) {
+        allScenarios.push(...value.scenarios);
+      } else if (Array.isArray(value)) {
+        allScenarios.push(...value);
+      }
+    }
+    // Also check top-level entry.scenarios (some entries may have it)
+    if (Array.isArray(entry.scenarios)) allScenarios.push(...entry.scenarios);
+
+    for (const scenario of allScenarios) {
       if (scenario._for) {
         const rx = new RegExp(scenario._for, 'i');
         if (rx.test(normalized)) {
@@ -79,7 +92,7 @@ function classifyService(metierKey, serviceLabel) {
         }
       }
     }
-    const hasFallback = scenarios.some(s => !s._for);
+    const hasFallback = allScenarios.some(s => !s._for);
     return {
       routing_coverage: 'PARTIAL_CONTEXTE',
       routing_detail:   `_dispatch=contexte, no _for match${hasFallback ? ', fallback applied' : ''}`,

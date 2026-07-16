@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-07-16",
-  "git_commit": "167b63177837143c151eb1a63adffbf2a36c032f",
+  "git_commit": "3598e0915907a8c534ebf7882f2bb74c8fa2382a",
   "methodology": "Python static analysis of service-catalog.js and services/*.js. Uses _extract_sr_block + brace-depth extraction for SITE_REALISM, checks _for regex against normalize(service_label) with re.search(). ROUTED_TO_SPECIFIC_SCENE requires an actual _for match (or _dispatch=service bucket). Does not execute JS runtime — use window._runServiceCoverageAudit() for runtime verification.",
   "reference_counts": {
     "note": "Correct methodology, bb5fc76 (pre-fix) vs 167b631 (post-fix)",
@@ -41,6 +41,8 @@
       "normalized_service": "renovation toiture complete",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert",
+      "matched_regex": "renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -50,6 +52,8 @@
       "normalized_service": "reparation toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit",
+      "matched_regex": "repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -59,6 +63,8 @@
       "normalized_service": "remplacement tuiles",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit",
+      "matched_regex": "repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -68,6 +74,8 @@
       "normalized_service": "remplacement ardoises",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit",
+      "matched_regex": "repar|rempla.*tuil|rempla.*ardois|tuile.*cass|ardoise.*cass|fuite.*toit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -77,6 +85,8 @@
       "normalized_service": "couverture neuve",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert",
+      "matched_regex": "renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -86,6 +96,8 @@
       "normalized_service": "refection toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert",
+      "matched_regex": "renov|refect|couvert.*neuve|toiture.*compl|remplac.*couvert",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -95,6 +107,8 @@
       "normalized_service": "charpente",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: charpente|ferme|fermette|structure.*toit|isolation.*comble|comble",
+      "matched_regex": "charpente|ferme|fermette|structure.*toit|isolation.*comble|comble",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -104,6 +118,8 @@
       "normalized_service": "isolation combles",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: charpente|ferme|fermette|structure.*toit|isolation.*comble|comble",
+      "matched_regex": "charpente|ferme|fermette|structure.*toit|isolation.*comble|comble",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -113,6 +129,8 @@
       "normalized_service": "faitage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: faitage|faite|faitier|faitiere",
+      "matched_regex": "faitage|faite|faitier|faitiere",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -122,6 +140,8 @@
       "normalized_service": "zinguerie",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: zinguerie|zinc|solin|larmier|noue.*zinc|bavette.*zinc",
+      "matched_regex": "zinguerie|zinc|solin|larmier|noue.*zinc|bavette.*zinc",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -131,6 +151,8 @@
       "normalized_service": "solins",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: zinguerie|zinc|solin|larmier|noue.*zinc|bavette.*zinc",
+      "matched_regex": "zinguerie|zinc|solin|larmier|noue.*zinc|bavette.*zinc",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -140,6 +162,8 @@
       "normalized_service": "demoussage toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: demoussa|mousse.*toit|nettoy.*mousse|brossage",
+      "matched_regex": "demoussa|mousse.*toit|nettoy.*mousse|brossage",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -149,6 +173,8 @@
       "normalized_service": "nettoyage toiture",
       "routing_coverage": "PARTIAL_CONTEXTE",
       "routing_detail": "no _for match, fallback scenario applied",
+      "matched_regex": null,
+      "fallback_used": true,
       "before_fix": null,
       "after_fix": null
     },
@@ -158,6 +184,8 @@
       "normalized_service": "traitement hydrofuge toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: hydrofuge|traitement|anti.mousse",
+      "matched_regex": "hydrofuge|traitement|anti.mousse",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -167,6 +195,8 @@
       "normalized_service": "nettoyage mousse toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: demoussa|mousse.*toit|nettoy.*mousse|brossage",
+      "matched_regex": "demoussa|mousse.*toit|nettoy.*mousse|brossage",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -176,6 +206,8 @@
       "normalized_service": "hydrofuge toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: hydrofuge|traitement|anti.mousse",
+      "matched_regex": "hydrofuge|traitement|anti.mousse",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -185,6 +217,8 @@
       "normalized_service": "traitement anti-mousse toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: demoussa|mousse.*toit|nettoy.*mousse|brossage",
+      "matched_regex": "demoussa|mousse.*toit|nettoy.*mousse|brossage",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -194,6 +228,8 @@
       "normalized_service": "nettoyage gouttieres",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: nettoy|entretien|curag|debris|feuill",
+      "matched_regex": "nettoy|entretien|curag|debris|feuill",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -203,6 +239,8 @@
       "normalized_service": "debouchage gouttieres",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: deboucha|bouchon|obstruct",
+      "matched_regex": "deboucha|bouchon|obstruct",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -212,6 +250,8 @@
       "normalized_service": "remplacement gouttieres",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: remplace|pose|install|neuf|nouveau",
+      "matched_regex": "remplace|pose|install|neuf|nouveau",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -221,6 +261,8 @@
       "normalized_service": "entretien gouttieres",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: nettoy|entretien|curag|debris|feuill",
+      "matched_regex": "nettoy|entretien|curag|debris|feuill",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -230,6 +272,8 @@
       "normalized_service": "pose gouttieres",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: remplace|pose|install|neuf|nouveau",
+      "matched_regex": "remplace|pose|install|neuf|nouveau",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -238,7 +282,9 @@
       "service_label": "Réparation fuite toiture",
       "normalized_service": "reparation fuite toiture",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -247,7 +293,9 @@
       "service_label": "Recherche de fuite",
       "normalized_service": "recherche de fuite",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -256,7 +304,9 @@
       "service_label": "Infiltration toiture",
       "normalized_service": "infiltration toiture",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -265,7 +315,9 @@
       "service_label": "Étanchéité toit terrasse",
       "normalized_service": "etancheite toit terrasse",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -274,7 +326,9 @@
       "service_label": "Étanchéité toiture plate",
       "normalized_service": "etancheite toiture plate",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -283,7 +337,9 @@
       "service_label": "Étanchéité balcon",
       "normalized_service": "etancheite balcon",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -292,7 +348,9 @@
       "service_label": "Étanchéité terrasse",
       "normalized_service": "etancheite terrasse",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -301,7 +359,9 @@
       "service_label": "Étanchéité EPDM",
       "normalized_service": "etancheite epdm",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -310,7 +370,9 @@
       "service_label": "Étanchéité PVC",
       "normalized_service": "etancheite pvc",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -319,7 +381,9 @@
       "service_label": "Étanchéité bitume",
       "normalized_service": "etancheite bitume",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -328,7 +392,9 @@
       "service_label": "Réfection d'étanchéité",
       "normalized_service": "refection d'etancheite",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -338,6 +404,8 @@
       "normalized_service": "reparation solin",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=contexte, matched _for: solin|cheminee|faitage",
+      "matched_regex": "solin|cheminee|faitage",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -347,6 +415,8 @@
       "normalized_service": "reparation velux",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=contexte, matched _for: velux|lucarne|fenetre.*toit|chassis.*toit",
+      "matched_regex": "velux|lucarne|fenetre.*toit|chassis.*toit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -356,6 +426,8 @@
       "normalized_service": "reparation noue",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=contexte, matched _for: noue|vallee|jonction.*pente",
+      "matched_regex": "noue|vallee|jonction.*pente",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -365,6 +437,8 @@
       "normalized_service": "reparation rive",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=contexte, matched _for: rive|gable|debord.*toit|arretier",
+      "matched_regex": "rive|gable|debord.*toit|arretier",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -374,6 +448,8 @@
       "normalized_service": "etancheite cheminee",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=contexte, matched _for: solin|cheminee|faitage",
+      "matched_regex": "solin|cheminee|faitage",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -382,7 +458,9 @@
       "service_label": "Étanchéité acrotère",
       "normalized_service": "etancheite acrotere",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "_dispatch=contexte, no _for match, fallback scenario applied",
+      "routing_detail": "_dispatch=contexte, no _for match, no fallback",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -392,6 +470,8 @@
       "normalized_service": "ravalement facade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -401,6 +481,8 @@
       "normalized_service": "renovation facade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -410,6 +492,8 @@
       "normalized_service": "crepi facade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -419,6 +503,8 @@
       "normalized_service": "ite (isolation par l'exterieur)",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -428,6 +514,8 @@
       "normalized_service": "enduit monocouche",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -437,6 +525,8 @@
       "normalized_service": "enduit hydraulique",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -446,6 +536,8 @@
       "normalized_service": "nettoyage facade",
       "routing_coverage": "PARTIAL_CONTEXTE",
       "routing_detail": "no _for match, fallback scenario applied",
+      "matched_regex": null,
+      "fallback_used": true,
       "before_fix": null,
       "after_fix": null
     },
@@ -455,6 +547,8 @@
       "normalized_service": "peinture facade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: peinture.*facade|peinture.*ext|peint.*facade",
+      "matched_regex": "peinture.*facade|peinture.*ext|peint.*facade",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -464,6 +558,8 @@
       "normalized_service": "traitement facade pierre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -473,6 +569,8 @@
       "normalized_service": "mur parpaing",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "matched_regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -482,6 +580,8 @@
       "normalized_service": "mur brique",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "matched_regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -491,6 +591,8 @@
       "normalized_service": "construction mur",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "matched_regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -500,6 +602,8 @@
       "normalized_service": "muret",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "matched_regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -509,6 +613,8 @@
       "normalized_service": "dalle beton",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "matched_regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -518,6 +624,8 @@
       "normalized_service": "terrasse beton",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "matched_regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -527,6 +635,8 @@
       "normalized_service": "coulage dalle",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "matched_regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -536,6 +646,8 @@
       "normalized_service": "fondation",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: fondation|semelle|ferraillage|ancrage|infrastructure",
+      "matched_regex": "fondation|semelle|ferraillage|ancrage|infrastructure",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -545,6 +657,8 @@
       "normalized_service": "semelle beton",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: fondation|semelle|ferraillage|ancrage|infrastructure",
+      "matched_regex": "fondation|semelle|ferraillage|ancrage|infrastructure",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -554,6 +668,8 @@
       "normalized_service": "ferraillage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: fondation|semelle|ferraillage|ancrage|infrastructure",
+      "matched_regex": "fondation|semelle|ferraillage|ancrage|infrastructure",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -563,6 +679,8 @@
       "normalized_service": "escalier beton",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -572,6 +690,8 @@
       "normalized_service": "seuil",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -581,6 +701,8 @@
       "normalized_service": "linteau",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -590,6 +712,8 @@
       "normalized_service": "ouverture dans mur",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -599,6 +723,8 @@
       "normalized_service": "percement mur",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -608,6 +734,8 @@
       "normalized_service": "reparation fissure",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "matched_regex": "fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -617,6 +745,8 @@
       "normalized_service": "rejointoiement",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "matched_regex": "fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -626,6 +756,8 @@
       "normalized_service": "rejointoiement pierre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "matched_regex": "fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -635,6 +767,8 @@
       "normalized_service": "peinture interieure",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -644,6 +778,8 @@
       "normalized_service": "peinture salon",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -653,6 +789,8 @@
       "normalized_service": "peinture chambre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -662,6 +800,8 @@
       "normalized_service": "peinture cuisine",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -671,6 +811,8 @@
       "normalized_service": "peinture couloir",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -680,6 +822,8 @@
       "normalized_service": "peinture plafond",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: plafond",
+      "matched_regex": "plafond",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -689,6 +833,8 @@
       "normalized_service": "papier peint",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -698,6 +844,8 @@
       "normalized_service": "peinture exterieure",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit",
+      "matched_regex": "exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -707,6 +855,8 @@
       "normalized_service": "peinture facade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit",
+      "matched_regex": "exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit",
+      "fallback_used": false,
       "before_fix": "PARTIAL_CONTEXTE",
       "after_fix": "ROUTED_TO_SPECIFIC_SCENE"
     },
@@ -716,6 +866,8 @@
       "normalized_service": "enduit decoratif",
       "routing_coverage": "PARTIAL_CONTEXTE",
       "routing_detail": "no _for match, fallback scenario applied",
+      "matched_regex": null,
+      "fallback_used": true,
       "before_fix": null,
       "after_fix": null
     },
@@ -725,6 +877,8 @@
       "normalized_service": "pose carrelage sol",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -734,6 +888,8 @@
       "normalized_service": "pose carrelage mural",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -743,6 +899,8 @@
       "normalized_service": "faience salle de bain",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -752,6 +910,8 @@
       "normalized_service": "faience cuisine",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -761,6 +921,8 @@
       "normalized_service": "carrelage terrasse exterieure",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -770,6 +932,8 @@
       "normalized_service": "dallage exterieur",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -779,6 +943,8 @@
       "normalized_service": "pose pierre naturelle",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -788,6 +954,8 @@
       "normalized_service": "refection joint",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -797,6 +965,8 @@
       "normalized_service": "refection carrelage",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -806,6 +976,8 @@
       "normalized_service": "remplacement vitrage brise",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -815,6 +987,8 @@
       "normalized_service": "remplacement double vitrage",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -824,6 +998,8 @@
       "normalized_service": "remplacement fenetre pvc",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -833,6 +1009,8 @@
       "normalized_service": "remplacement fenetre aluminium",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -842,6 +1020,8 @@
       "normalized_service": "reparation fenetre",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -851,6 +1031,8 @@
       "normalized_service": "remplacement porte vitree",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -860,6 +1042,8 @@
       "normalized_service": "vitrage securite feuillete",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -869,6 +1053,8 @@
       "normalized_service": "bris de glace urgence",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -878,6 +1064,8 @@
       "normalized_service": "elagage arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "matched_regex": "taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "fallback_used": false,
       "before_fix": "PARTIAL_CONTEXTE",
       "after_fix": "ROUTED_TO_SPECIFIC_SCENE"
     },
@@ -887,6 +1075,8 @@
       "normalized_service": "taille arbre haute tige",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "matched_regex": "taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -896,6 +1086,8 @@
       "normalized_service": "elagage peuplier",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "matched_regex": "taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "fallback_used": false,
       "before_fix": "PARTIAL_CONTEXTE",
       "after_fix": "ROUTED_TO_SPECIFIC_SCENE"
     },
@@ -905,6 +1097,8 @@
       "normalized_service": "elagage en hauteur",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: hauteur|haute.*tige|haut.*tige",
+      "matched_regex": "hauteur|haute.*tige|haut.*tige",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -914,6 +1108,8 @@
       "normalized_service": "recepage arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "matched_regex": "taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -923,6 +1119,8 @@
       "normalized_service": "couronnage arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "matched_regex": "taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -932,6 +1130,8 @@
       "normalized_service": "elagage arbres dangereux",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: danger|securite|risque",
+      "matched_regex": "danger|securite|risque",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -941,6 +1141,8 @@
       "normalized_service": "abattage arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: abattage.*arbre|abattage.*peup|abattage.*conif",
+      "matched_regex": "abattage.*arbre|abattage.*peup|abattage.*conif",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -950,6 +1152,8 @@
       "normalized_service": "abattage peuplier",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: abattage.*arbre|abattage.*peup|abattage.*conif",
+      "matched_regex": "abattage.*arbre|abattage.*peup|abattage.*conif",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -959,6 +1163,8 @@
       "normalized_service": "abattage grand arbre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: abattage.*arbre|abattage.*peup|abattage.*conif",
+      "matched_regex": "abattage.*arbre|abattage.*peup|abattage.*conif",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -968,6 +1174,8 @@
       "normalized_service": "abattage en zone difficile",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage",
+      "matched_regex": "zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -977,6 +1185,8 @@
       "normalized_service": "dessouchage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: dessouchage|souche",
+      "matched_regex": "dessouchage|souche",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -986,6 +1196,8 @@
       "normalized_service": "abattage conifere",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: abattage.*arbre|abattage.*peup|abattage.*conif",
+      "matched_regex": "abattage.*arbre|abattage.*peup|abattage.*conif",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -995,6 +1207,8 @@
       "normalized_service": "terrassement maison",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
+      "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1004,6 +1218,8 @@
       "normalized_service": "terrassement piscine",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
+      "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1013,6 +1229,8 @@
       "normalized_service": "terrassement terrain",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
+      "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1022,6 +1240,8 @@
       "normalized_service": "decaissement",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
+      "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1031,6 +1251,8 @@
       "normalized_service": "excavation",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
+      "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1040,6 +1262,8 @@
       "normalized_service": "fouilles",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
+      "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1049,6 +1273,8 @@
       "normalized_service": "tranchees",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr",
+      "matched_regex": "tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1057,7 +1283,9 @@
       "service_label": "Remblai",
       "normalized_service": "remblai",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1066,7 +1294,9 @@
       "service_label": "Empierrement",
       "normalized_service": "empierrement",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1075,7 +1305,9 @@
       "service_label": "Nivellement",
       "normalized_service": "nivellement",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1084,7 +1316,9 @@
       "service_label": "Préparation terrain",
       "normalized_service": "preparation terrain",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1094,6 +1328,8 @@
       "normalized_service": "creation allee",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee",
+      "matched_regex": "allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1103,6 +1339,8 @@
       "normalized_service": "creation chemin",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee",
+      "matched_regex": "allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1111,7 +1349,9 @@
       "service_label": "Plateforme",
       "normalized_service": "plateforme",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1121,6 +1361,8 @@
       "normalized_service": "vrd",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr",
+      "matched_regex": "tranchee|vrd|canalis|reseau|regard|drainage|assainiss|reseaux.*enterr",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1129,7 +1371,9 @@
       "service_label": "Évacuation des terres",
       "normalized_service": "evacuation des terres",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1139,6 +1383,8 @@
       "normalized_service": "creation jardin",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "matched_regex": "creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1148,6 +1394,8 @@
       "normalized_service": "amenagement exterieur",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "matched_regex": "bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1157,6 +1405,8 @@
       "normalized_service": "amenagement paysager",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "matched_regex": "bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1166,6 +1416,8 @@
       "normalized_service": "plantation",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "matched_regex": "creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1175,6 +1427,8 @@
       "normalized_service": "plantation de haies",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "matched_regex": "creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1184,6 +1438,8 @@
       "normalized_service": "plantation d'arbres",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "matched_regex": "creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1193,6 +1449,8 @@
       "normalized_service": "taille de haie",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie",
+      "matched_regex": "taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1202,6 +1460,8 @@
       "normalized_service": "taille d'arbustes",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "matched_regex": "creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1211,6 +1471,8 @@
       "normalized_service": "creation massif",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "matched_regex": "creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1220,6 +1482,8 @@
       "normalized_service": "pose de gazon",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
+      "matched_regex": "gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1229,6 +1493,8 @@
       "normalized_service": "gazon en rouleau",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
+      "matched_regex": "gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1238,6 +1504,8 @@
       "normalized_service": "semis de gazon",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
+      "matched_regex": "gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1246,7 +1514,9 @@
       "service_label": "Arrosage automatique",
       "normalized_service": "arrosage automatique",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1256,6 +1526,8 @@
       "normalized_service": "bordures",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "matched_regex": "bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1265,6 +1537,8 @@
       "normalized_service": "paillage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "matched_regex": "bordure|paillage|amenag|bache.*jardin|gravier.*jardin|bois.*jardin|allee.*jardin|chemin.*jardin",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1273,7 +1547,9 @@
       "service_label": "Entretien jardin",
       "normalized_service": "entretien jardin",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1283,6 +1559,8 @@
       "normalized_service": "desherbage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage",
+      "matched_regex": "desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1291,7 +1569,9 @@
       "service_label": "Petite maçonnerie paysagère",
       "normalized_service": "petite maconnerie paysagere",
       "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_detail": "no _for match, no fallback scenario",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1301,6 +1581,8 @@
       "normalized_service": "batterie a plat",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1310,6 +1592,8 @@
       "normalized_service": "demarrage batterie",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1319,6 +1603,8 @@
       "normalized_service": "boost batterie",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1328,6 +1614,8 @@
       "normalized_service": "remplacement batterie",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1337,6 +1625,8 @@
       "normalized_service": "crevaison",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1346,6 +1636,8 @@
       "normalized_service": "changement de roue",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1355,6 +1647,8 @@
       "normalized_service": "reparation pneu",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1364,6 +1658,8 @@
       "normalized_service": "remorquage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1373,6 +1669,8 @@
       "normalized_service": "assistance routiere",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1382,6 +1680,8 @@
       "normalized_service": "vehicule en panne",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1391,6 +1691,8 @@
       "normalized_service": "ouverture de vehicule",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1400,6 +1702,8 @@
       "normalized_service": "cles enfermees",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": "default_group",
       "after_fix": "ouverture_group"
     },
@@ -1409,6 +1713,8 @@
       "normalized_service": "deverrouillage voiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": "default_group",
       "after_fix": "ouverture_group"
     },
@@ -1418,6 +1724,8 @@
       "normalized_service": "erreur de carburant",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1427,6 +1735,8 @@
       "normalized_service": "panne moteur",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1436,6 +1746,8 @@
       "normalized_service": "panne electrique",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1445,6 +1757,8 @@
       "normalized_service": "enlevement vehicule",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "_dispatch=service (bucket always found)",
+      "matched_regex": "direct_mapping:_serviceGroup",
+      "fallback_used": false,
       "before_fix": "default_group",
       "after_fix": "remorquage_group"
     },
@@ -1454,6 +1768,8 @@
       "normalized_service": "nettoyage facade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade",
+      "matched_regex": "facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1463,6 +1779,8 @@
       "normalized_service": "nettoyage terrasse",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "matched_regex": "terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1472,6 +1790,8 @@
       "normalized_service": "nettoyage dallage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "matched_regex": "terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1481,6 +1801,8 @@
       "normalized_service": "nettoyage paves",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "matched_regex": "terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1490,6 +1812,8 @@
       "normalized_service": "nettoyage allee",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "matched_regex": "terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1499,6 +1823,8 @@
       "normalized_service": "traitement hydrofuge facade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade",
+      "matched_regex": "facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade",
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1508,6 +1834,8 @@
       "normalized_service": "nettoyage haute pression",
       "routing_coverage": "PARTIAL_CONTEXTE",
       "routing_detail": "no _for match, fallback scenario applied",
+      "matched_regex": null,
+      "fallback_used": true,
       "before_fix": null,
       "after_fix": null
     },
@@ -1517,6 +1845,8 @@
       "normalized_service": "debarras appartement",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1526,6 +1856,8 @@
       "normalized_service": "debarras maison",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1535,6 +1867,8 @@
       "normalized_service": "debarras cave",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1544,6 +1878,8 @@
       "normalized_service": "debarras grenier",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1553,6 +1889,8 @@
       "normalized_service": "vider maison succession",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1562,6 +1900,8 @@
       "normalized_service": "debarras apres deces",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1571,6 +1911,8 @@
       "normalized_service": "enlevement encombrants",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     },
@@ -1580,6 +1922,8 @@
       "normalized_service": "nettoyage encombrants",
       "routing_coverage": "TOOLS_ONLY",
       "routing_detail": "SITE_REALISM is flat (tools/protections/details only)",
+      "matched_regex": null,
+      "fallback_used": false,
       "before_fix": null,
       "after_fix": null
     }

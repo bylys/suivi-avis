@@ -1,6 +1,6 @@
 # Service Coverage Audit
 
-_Generated: 2026-07-16 — Commit: `167b63177837`_
+_Generated: 2026-07-16 — Commit: `3598e0915907`_
 
 
 ## Méthodologie
@@ -89,7 +89,9 @@ ROUTED_TO_SPECIFIC_SCENE: 6, PARTIAL_CONTEXTE: 1
 ### débarras (0/8 ROUTED)
 TOOLS_ONLY: 8
 
-## Corrections effectuées
+## Comportements corrigés (6 services)
+
+> Ces six services avaient un comportement de routage incorrect. Trois changeaient de groupe sans changer de catégorie de couverture ; trois changeaient à la fois de groupe et de catégorie.
 
 | Métier | Sous-service | Avant | Après |
 |--------|--------------|-------|-------|
@@ -99,6 +101,18 @@ TOOLS_ONLY: 8
 | depannage_auto | Clés enfermées | default_group | ouverture_group |
 | depannage_auto | Déverrouillage voiture | default_group | ouverture_group |
 | depannage_auto | Enlèvement véhicule | default_group | remorquage_group |
+
+## Changements de catégorie (3 services)
+
+> Seuls ces trois services font évoluer les totaux statistiques.
+
+| Métier | Sous-service | Ancienne catégorie | Nouvelle catégorie |
+|--------|--------------|--------------------|--------------------|
+| peinture | Peinture façade | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| élagage | Élagage arbre | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| élagage | Élagage peuplier | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+
+> Les trois corrections de dépannage auto (Clés enfermées, Déverrouillage voiture, Enlèvement véhicule) étaient déjà ROUTED_TO_SPECIFIC_SCENE — elles corrigent le bucket sélectionné, pas la catégorie.
 
 ## ROUTED_TO_SPECIFIC_SCENE (122 services)
 

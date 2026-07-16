@@ -181,6 +181,65 @@ def _extract_scene_blocks(sr_block):
         yield key, scene_text
 
 
+def _extract_array_block(text, key):
+    """
+    Extract the full content of `key: [...]` using bracket counting.
+    Returns the content between [ and ] (exclusive), or '' if not found.
+    Handles nested arrays/objects correctly.
+    """
+    m = re.search(r'\b' + re.escape(key) + r'\s*:\s*\[', text)
+    if not m:
+        return ''
+    start = m.end() - 1  # position of opening [
+    depth = 0
+    for i in range(start, len(text)):
+        if text[i] == '[':
+            depth += 1
+        elif text[i] == ']':
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:i]  # content between [ and ]
+    return text[start + 1:]
+
+
+def _has_fallback_scenario(scenarios_content):
+    """
+    Given the full content of a 'scenarios: [...]' array (without the outer brackets),
+    return True if any top-level scenario object has no '_for' key.
+    Uses brace counting to identify top-level scenario objects.
+    """
+    depth   = 0
+    i       = 0
+    n       = len(scenarios_content)
+    in_str  = False
+    str_ch  = None
+    obj_start = None
+
+    while i < n:
+        ch = scenarios_content[i]
+        # Simple string skip (single-quoted JS strings)
+        if not in_str and ch in ("'", '"'):
+            in_str = True
+            str_ch = ch
+        elif in_str and ch == str_ch and (i == 0 or scenarios_content[i-1] != '\\'):
+            in_str = False
+        elif not in_str:
+            if ch == '{':
+                if depth == 0:
+                    obj_start = i
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0 and obj_start is not None:
+                    obj_text = scenarios_content[obj_start:i+1]
+                    # Check if this object has a _for key
+                    if "_for" not in obj_text:
+                        return True
+                    obj_start = None
+        i += 1
+    return False
+
+
 def _analyze_scene_block(scene_text):
     """
     Analyse the raw text of a SITE_REALISM scene entry.
@@ -201,26 +260,15 @@ def _analyze_scene_block(scene_text):
         entry['flat'] = True
 
     if has_scenarios_array:
-        # Extract all _for patterns (could be in nested dispatch too)
+        # Extract all _for patterns
         for_patterns = re.findall(r"_for\s*:\s*'([^']+)'", scene_text)
         for pat in for_patterns:
             entry['scenarios'].append({'_for': pat})
 
-        # Detect fallback: a scenario-like object that has no _for key
-        # Heuristic: count opening '{ ' within scenarios blocks vs _for occurrences
-        # Simpler: look for a pattern that matches a scenario without _for
-        # A fallback scenario is one that opens with `{` but has no '_for' key before next `}`.
-        # We'll scan the scenarios array for this.
-        scenarios_m = re.search(r'\bscenarios\s*:\s*\[(.*?)\]', scene_text, re.DOTALL)
-        if scenarios_m:
-            scenarios_block = scenarios_m.group(1)
-            # Find each sub-object and check for _for
-            scen_re  = re.compile(r'\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}', re.DOTALL)
-            for sm in scen_re.finditer(scenarios_block):
-                inner = sm.group(1)
-                if '_for' not in inner:
-                    entry['has_fallback'] = True
-                    break
+        # Detect fallback using bracket-counting extraction (handles nested arrays correctly)
+        scenarios_content = _extract_array_block(scene_text, 'scenarios')
+        if scenarios_content:
+            entry['has_fallback'] = _has_fallback_scenario(scenarios_content)
 
     return entry
 
@@ -252,53 +300,50 @@ def parse_site_realism():
 
 def classify_service(metier_key, service_label, work_scene_keys, site_realism):
     """
-    Returns (category, detail_str)
+    Returns (category, detail_str, matched_regex, fallback_used)
+    matched_regex: the _for pattern string that matched, or 'direct_mapping:_serviceGroup', or None
+    fallback_used: True if only a fallback (no _for) scenario was applied
     """
     svc = normalize(service_label)
 
     # Step 1: Is the catalog metier key in WORK_SCENES?
     if metier_key not in work_scene_keys:
-        return 'GENERIC_FALLBACK', f'WORK_SCENES key "{metier_key}" not found'
+        return 'GENERIC_FALLBACK', f'WORK_SCENES key "{metier_key}" not found', None, False
 
     # Step 2: Find SITE_REALISM entry
     if metier_key not in site_realism:
-        return 'PARTIAL_CONTEXTE', 'No SITE_REALISM entry for this scene key'
+        return 'PARTIAL_CONTEXTE', 'No SITE_REALISM entry for this scene key', None, True
 
     entry = site_realism[metier_key]
 
     # Step 3: Handle _dispatch: 'service' (depannage_auto)
     if entry['dispatch'] == 'service':
-        # _serviceGroup always returns a valid bucket — treated as ROUTED_TO_SPECIFIC_SCENE
-        return 'ROUTED_TO_SPECIFIC_SCENE', '_dispatch=service (bucket always found)'
+        return 'ROUTED_TO_SPECIFIC_SCENE', '_dispatch=service (bucket always found)', 'direct_mapping:_serviceGroup', False
 
     # Step 4: Handle _dispatch: 'contexte' (etancheite)
     if entry['dispatch'] == 'contexte':
-        # Check if any inner _for patterns match
         for scen in entry['scenarios']:
             if scen.get('_for') and re.search(scen['_for'], svc, re.IGNORECASE):
-                return 'ROUTED_TO_SPECIFIC_SCENE', f'_dispatch=contexte, matched _for: {scen["_for"]}'
-        # Fallback scenario or not
-        if entry['has_fallback']:
-            return 'PARTIAL_CONTEXTE', '_dispatch=contexte, no _for match, fallback scenario applied'
-        return 'PARTIAL_CONTEXTE', '_dispatch=contexte, no _for match, no fallback'
+                return 'ROUTED_TO_SPECIFIC_SCENE', f'_dispatch=contexte, matched _for: {scen["_for"]}', scen['_for'], False
+        has_fallback = entry['has_fallback']
+        if has_fallback:
+            return 'PARTIAL_CONTEXTE', '_dispatch=contexte, no _for match, fallback scenario applied', None, True
+        return 'PARTIAL_CONTEXTE', '_dispatch=contexte, no _for match, no fallback', None, False
 
     # Step 5: Flat entry (tools/protections/details, no scenarios)
     if entry['flat'] and not entry['scenarios']:
-        return 'TOOLS_ONLY', 'SITE_REALISM is flat (tools/protections/details only)'
+        return 'TOOLS_ONLY', 'SITE_REALISM is flat (tools/protections/details only)', None, False
 
     # Step 6: Scenarios-based entry — check _for patterns
     if entry['scenarios']:
-        # Check targeted scenarios (_for present)
         for scen in entry['scenarios']:
             if scen.get('_for') and re.search(scen['_for'], svc, re.IGNORECASE):
-                return 'ROUTED_TO_SPECIFIC_SCENE', f'matched _for: {scen["_for"]}'
-        # No targeted match — check for fallback
+                return 'ROUTED_TO_SPECIFIC_SCENE', f'matched _for: {scen["_for"]}', scen['_for'], False
         if entry['has_fallback']:
-            return 'PARTIAL_CONTEXTE', 'no _for match, fallback scenario applied'
-        return 'PARTIAL_CONTEXTE', 'no _for match, no fallback scenario'
+            return 'PARTIAL_CONTEXTE', 'no _for match, fallback scenario applied', None, True
+        return 'PARTIAL_CONTEXTE', 'no _for match, no fallback scenario', None, False
 
-    # No scenarios and not flat
-    return 'PARTIAL_CONTEXTE', 'SITE_REALISM entry exists but has no scenarios or tools'
+    return 'PARTIAL_CONTEXTE', 'SITE_REALISM entry exists but has no scenarios or tools', None, False
 
 
 # ─── Integrity assertions ────────────────────────────────────────────────────
@@ -363,7 +408,8 @@ def main():
     services_list = []
     for metier_key, service_labels in catalog_raw.items():
         for label in service_labels:
-            category, detail = classify_service(metier_key, label, work_scene_keys, site_realism)
+            category, detail, matched_regex, fallback_used = classify_service(
+                metier_key, label, work_scene_keys, site_realism)
             key_pair = (metier_key, label)
             services_list.append({
                 'metier':              metier_key,
@@ -371,6 +417,8 @@ def main():
                 'normalized_service':  normalize(label),
                 'routing_coverage':    category,
                 'routing_detail':      detail,
+                'matched_regex':       matched_regex,
+                'fallback_used':       fallback_used,
                 'before_fix':          BEFORE_FIX.get(key_pair),
                 'after_fix':           AFTER_FIX.get(key_pair),
             })
@@ -466,15 +514,38 @@ def main():
         md_lines.append(f'{cats_str}')
         md_lines.append('')
 
-    # Changes table
+    # Changes — two distinct lists
     changed = [s for s in services_list if s.get('before_fix')]
     if changed:
-        md_lines.append('## Corrections effectuées')
+        # List 1: 6 corrected behaviours (routing + category changes)
+        md_lines.append('## Comportements corrigés (6 services)')
+        md_lines.append('')
+        md_lines.append('> Ces six services avaient un comportement de routage incorrect. '
+                         'Trois changeaient de groupe sans changer de catégorie de couverture ; '
+                         'trois changeaient à la fois de groupe et de catégorie.')
         md_lines.append('')
         md_lines.append('| Métier | Sous-service | Avant | Après |')
         md_lines.append('|--------|--------------|-------|-------|')
         for s in changed:
             md_lines.append(f'| {s["metier"]} | {s["service_label"]} | {s["before_fix"]} | {s["after_fix"] or s["routing_coverage"]} |')
+        md_lines.append('')
+
+        # List 2: 3 category changes (affect statistics)
+        cat_changed = [s for s in changed
+                       if s.get('before_fix') in ('PARTIAL_CONTEXTE', 'GENERIC_FALLBACK', 'TOOLS_ONLY', 'UNMATCHED')
+                       and s['routing_coverage'] != s.get('before_fix')]
+        md_lines.append('## Changements de catégorie (3 services)')
+        md_lines.append('')
+        md_lines.append('> Seuls ces trois services font évoluer les totaux statistiques.')
+        md_lines.append('')
+        md_lines.append('| Métier | Sous-service | Ancienne catégorie | Nouvelle catégorie |')
+        md_lines.append('|--------|--------------|--------------------|--------------------|')
+        for s in cat_changed:
+            md_lines.append(f'| {s["metier"]} | {s["service_label"]} | {s["before_fix"]} | {s["routing_coverage"]} |')
+        md_lines.append('')
+        md_lines.append('> Les trois corrections de dépannage auto (Clés enfermées, Déverrouillage voiture, '
+                         'Enlèvement véhicule) étaient déjà ROUTED_TO_SPECIFIC_SCENE — elles corrigent '
+                         'le bucket sélectionné, pas la catégorie.')
         md_lines.append('')
 
     # Full list by category
