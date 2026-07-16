@@ -13,7 +13,7 @@ import { createGenerationState, IMAGE_TASK_STATUS, TERMINAL_STATUSES } from './p
 import { fetchWithTimeout, readResponseOnce }                           from './pipeline/http.js';
 import { createImagePipeline }                                          from './pipeline/run-batch.js';
 import { retryFailedImages }                                            from './pipeline/retries.js';
-import { createImageUiAdapter }                                         from './ui/img-ui.js';
+import { createImageUiAdapter, renderAnalyse }                          from './ui/img-ui.js?v=22';
 import { buildDallePromptV2, _validateScene }                           from './prompt/scene-builder.js';
 import { rewritePromptWithGPT }                                         from './prompt/prompt-rewriter.js';
 import { _buildPresencePlan }                                           from './safety/worker-validator.js';
@@ -161,7 +161,6 @@ async function _modGenerateAll() {
 
   uiAdapter.renderBatchSummary(total, succeeded.length, failed, key);
   window._lastFailedTasks = failed.length ? failed : null;
-  window._lastApiKey      = key;
 }
 
 // ─── _modRetryFailed ──────────────────────────────────────────────────────────
@@ -209,7 +208,6 @@ async function _modRetryFailed() {
   const stillFailed = failedTasks.filter(t => TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
   uiAdapter.renderBatchSummary(failedTasks.length, retryImages.length, stillFailed, key);
   window._lastFailedTasks = stillFailed.length ? stillFailed : null;
-  window._lastApiKey      = key;
 }
 
 // ─── _modDownloadZip ──────────────────────────────────────────────────────────
@@ -247,32 +245,41 @@ async function _modDownloadZip() {
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
 }
 
-// ─── Public API — frozen object with direct function references ───────────────
-// T84 verifies identity: window.generateAllImages === window.__IMAGE_MODULAR_API__.generateAllImages
-// buildDallePromptV2: transitional 7B — used by _renderAnalyse in app.js; removed in 7C when
-//   renderImgPlanning moves to ui/img-ui.js with a direct import.
+// ─── Public API — frozen, 4 functions, resolved via window.__IMAGE_GEN_READY__ ─
 const publicApi = Object.freeze({
-  generateAllImages:  _modGenerateAll,
-  addImgRow:          _modAddRow,
-  downloadImagesZip:  _modDownloadZip,
-  retryFailedImages:  _modRetryFailed,
-  buildDallePromptV2: buildDallePromptV2,
+  generateAllImages: _modGenerateAll,
+  addImgRow:         _modAddRow,
+  downloadImagesZip: _modDownloadZip,
+  retryFailedImages: _modRetryFailed,
 });
 
-Object.defineProperty(window, '__IMAGE_MODULAR_API__', {
-  value:        publicApi,
-  writable:     false,
-  configurable: false,
-  enumerable:   false,
-});
-
-// Assign window.* from publicApi — stubs set in index.html are replaced here.
+// Replace index.html stubs with direct modular references.
 window.generateAllImages  = publicApi.generateAllImages;
 window.addImgRow          = publicApi.addImgRow;
 window.downloadImagesZip  = publicApi.downloadImagesZip;
 window._retryFailedImages = publicApi.retryFailedImages;
 
+// Render analysis delegate — called by app.js _renderImgCard via window._renderImgAnalyse.
+// Passes GMB context tables from the bridge so img-ui.js never reads window directly.
+window._renderImgAnalyse = (row) =>
+  renderAnalyse(row, window.__GMB_IMAGE_CONTEXT__?.getContextData?.() ?? {});
+
 // Signal readiness — resolves window.__IMAGE_GEN_READY__ (set in index.html inline script).
 window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 
-console.info('[IMAGE MODULE 7A.1] Modular API active and ready');
+// ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
+const _params = new URLSearchParams(window.location.search);
+if (_params.get('imageGenTests') === '1') {
+  const [runtimeTests, integrationTests] = await Promise.all([
+    import('./debug/runtime-tests.js'),
+    import('./debug/integration-tests.js'),
+  ]);
+  window._runImageGenerationTests = async () => {
+    const runtimeResult     = await runtimeTests.runRuntimeTests();
+    const integrationResult = await integrationTests.runIntegrationTests();
+    return { runtimeResult, integrationResult };
+  };
+  console.info('[IMAGE MODULE 7C] Debug harness ready — call window._runImageGenerationTests()');
+}
+
+console.info('[IMAGE MODULE 7C] Modular API active and ready');

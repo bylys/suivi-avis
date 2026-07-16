@@ -3184,13 +3184,15 @@ let _lastMatch = { matched_category: null, matched_service: null, match_score: 0
 // Exposes only what the image module genuinely needs from GMB.
 // Permanent interface: stays after legacy image code is removed in Phase 7B.
 window.__GMB_IMAGE_CONTEXT__ = Object.freeze({
-  // GMB service matching state — set by buildDallePromptV2, read by modular prompt builder
   getLastMatch()    { return Object.assign({}, _lastMatch); },
   setLastMatch(val) { _lastMatch = val; },
 
-  // Image planning rows — managed by addImgRow/removeImgRow, read by generateAllImages
-  getRows()          { return _imgRows; },
-  addRow()           {
+  // Context tables for img-ui.js renderAnalyse — read only
+  getContextData()  { return { CONTEXTE_BY_METIER, CONTEXTE_OPTIONS }; },
+
+  // Image planning rows — managed via bridge so the module never owns GMB state
+  getRows()   { return _imgRows; },
+  addRow() {
     const id = ++_imgCounter;
     _imgRows.unshift({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
     renderImgPlanning();
@@ -3200,6 +3202,7 @@ window.__GMB_IMAGE_CONTEXT__ = Object.freeze({
     renderImgPlanning();
     updateCostEstimate();
   },
+  // Called by the module after it marks rows as 'running' to refresh status pills
   refreshPlan() { renderImgPlanning(); },
 });
 
@@ -3225,74 +3228,9 @@ function updateImgRow(id, field, value) {
       });
     }
     const analyseEl = card.querySelector('.img-plan-analyse');
-    if (analyseEl) analyseEl.innerHTML = _renderAnalyse(row);
+    if (analyseEl) analyseEl.innerHTML = window._renderImgAnalyse?.(row) ?? '';
   }
   updateCostEstimate();
-}
-
-function _renderAnalyse(row) {
-  let obj;
-  try {
-    const fn = window.__IMAGE_MODULAR_API__?.buildDallePromptV2;
-    if (typeof fn !== 'function') return '';
-    obj = JSON.parse(fn(row));
-  } catch { return ''; }
-
-  const stateLabels = { debut: 'Début', encours: 'En cours', semifinal: 'Presque terminé', final: 'Terminé' };
-  const serviceDemande = (row.travaux || '').trim() || '—';
-  const serviceDetecte = obj._matched_service || '—';
-  const _ctxList       = CONTEXTE_BY_METIER[row.metier] || CONTEXTE_OPTIONS;
-  const contexteLabel  = (_ctxList.find(o => o.value === (row.contexte || _ctxList[0].value)) || _ctxList[0]).label;
-  const typeLabel      = obj.setting === 'interior' ? 'Intérieur' : 'Extérieur';
-  const etatLabel      = stateLabels[obj.state_level] || '—';
-  const arch           = obj.architecture || '—';
-  const camera         = obj.camera_position || '—';
-  const score          = obj._match_score || 0;
-  const pct = Math.min(99, score >= 15 ? 98 :
-                           score >= 10 ? Math.round(85 + (score - 10) * 2.6) :
-                           score >= 6  ? Math.round(65 + (score - 6)  * 5) :
-                                         Math.round(40 + score * 4));
-  const confColor = pct >= 80 ? '#22c55e' : pct >= 55 ? '#f59e0b' : '#ef4444';
-
-  return `
-<div class="img-analyse-head">Analyse de la scène</div>
-<div class="img-analyse-row">
-  <span class="img-analyse-key">Service demandé</span>
-  <span class="img-analyse-val img-analyse-muted">${_escHtml(serviceDemande)}</span>
-</div>
-<div class="img-analyse-row">
-  <span class="img-analyse-key">Service détecté</span>
-  <span class="img-analyse-val">${_escHtml(serviceDetecte)}</span>
-</div>
-<div class="img-analyse-row">
-  <span class="img-analyse-key">Contexte</span>
-  <span class="img-analyse-val img-analyse-muted">${_escHtml(contexteLabel)}</span>
-</div>
-<div class="img-analyse-row">
-  <span class="img-analyse-key">Type</span>
-  <span class="img-analyse-val">${typeLabel}</span>
-</div>
-<div class="img-analyse-row">
-  <span class="img-analyse-key">État</span>
-  <span class="img-analyse-val">${etatLabel}</span>
-</div>
-<div class="img-analyse-row">
-  <span class="img-analyse-key">Architecture</span>
-  <span class="img-analyse-val img-analyse-muted">${_escHtml(arch)}</span>
-</div>
-<div class="img-analyse-row img-analyse-row-last">
-  <span class="img-analyse-key">Caméra</span>
-  <span class="img-analyse-val img-analyse-muted">${_escHtml(camera)}</span>
-</div>
-<div class="img-analyse-conf">
-  <div class="img-analyse-conf-label">Confiance du matching</div>
-  <div class="img-analyse-conf-bar">
-    <div class="img-analyse-conf-track">
-      <div class="img-analyse-conf-fill" style="width:${pct}%;background:${confColor}"></div>
-    </div>
-    <span class="img-analyse-conf-pct" style="color:${confColor}">${pct} %</span>
-  </div>
-</div>`;
 }
 
 function _svcOpts(metierKey, currentValue) {
@@ -3327,7 +3265,7 @@ function _changeMetier(rowId, metierKey) {
     const ctxSel = card.querySelector('.img-ctx-select');
     if (ctxSel) ctxSel.innerHTML = _ctxOpts(metierKey, row.contexte);
     const analyseEl = card.querySelector('.img-plan-analyse');
-    if (analyseEl) analyseEl.innerHTML = _renderAnalyse(row);
+    if (analyseEl) analyseEl.innerHTML = window._renderImgAnalyse?.(row) ?? '';
   }
   updateCostEstimate();
 }
@@ -3399,7 +3337,7 @@ function _renderImgCard(row, idx) {
         <select onchange="updateImgRow(${row.id},'meteo',this.value)">${meteoOpts}</select>
       </div>
     </div>
-    <div class="img-plan-analyse">${_renderAnalyse(row)}</div>
+    <div class="img-plan-analyse">${window._renderImgAnalyse?.(row) ?? ''}</div>
   </div>
 </div>`;
 }
@@ -3416,245 +3354,4 @@ function updateCostEstimate() {
   const cost  = (total * 0.04).toFixed(2);
   const el    = document.getElementById('img-cost-estimate');
   if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} · ~$${cost}` : '';
-}
-
-// ─── Pipeline parity tests — T84/T85/T86 (Phase 7B residual) ───────────────────
-// T41–T83 supprimés Phase 7B (redondants avec runtime-tests.js autonome).
-
-async function _runPipelineParityTests() {
-  const _t = `?v7b=${Math.floor(performance.now())}`;
-  const [stateMod, batchMod, bvalMod, bpMod, wrkMod, sbMod] = await Promise.all([
-    import(`./src/image-generation/pipeline/state.js${_t}`),
-    import(`./src/image-generation/pipeline/run-batch.js${_t}`),
-    import(`./src/image-generation/validation/batch-validator.js${_t}`),
-    import(`./src/image-generation/planning/batch-planner.js${_t}`),
-    import(`./src/image-generation/safety/worker-validator.js${_t}`),
-    import(`./src/image-generation/prompt/scene-builder.js${_t}`),
-  ]);
-
-  const realFetch = window.fetch;
-  window.fetch = (...args) => { throw new Error(`[REAL_NETWORK_FORBIDDEN] ${String(args[0])}`); };
-
-  const _fakeRead    = async (r) => {
-    const raw = await r.text(); let data = null;
-    try { if (raw) data = JSON.parse(raw); } catch {}
-    return { ok: r.ok, status: r.status, raw, data };
-  };
-  const _fakeRewrite = async () => 'Mocked rewritten prompt for testing.';
-  const _fakeSleep   = async () => {};
-  const _mkImgResp  = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ data: [{ b64_json: 'dGVzdA==' }] }) });
-  const _mkSafeResp = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ safe: true, severity: 'ok', reason: '' }) } }] }) });
-
-  function _mkFetch(opts = {}) {
-    let imgCalls = 0, visionCalls = 0;
-    const fetchImpl = async (url) => {
-      if (url.includes('images/generations')) { imgCalls++; return opts.imgFn ? opts.imgFn(imgCalls) : _mkImgResp(); }
-      if (url.includes('chat/completions'))   { visionCalls++; return opts.visionFn ? opts.visionFn(visionCalls) : _mkSafeResp(); }
-      throw new Error('[UNEXPECTED_URL] ' + url);
-    };
-    return { fetchImpl, counts: () => ({ imgCalls, visionCalls }) };
-  }
-
-  function _mkUiAdapter() {
-    const calls = { updateProgress: 0, renderImage: [], tasksDone: [] };
-    return {
-      adapter: {
-        updateProgress: () => { calls.updateProgress++; },
-        renderImage:    (src, filename, label) => { calls.renderImage.push({ src: src?.slice(0, 20), filename, label }); },
-        onTaskDone:     (task) => { calls.tasksDone.push(task.taskId); },
-      },
-      calls,
-    };
-  }
-
-  function _mkRawBatchTasks(metier, svc, etat, n, seed, taskIdBase = 400) {
-    const row = { metier, travaux: svc, ville: 'Paris', etat: etat || 'encours', meteo: 'auto', contexte: 'maison', nb: n, fiche: '', images: [] };
-    const jsonScene   = sbMod.buildDallePromptV2(row);
-    const _planBase   = JSON.parse(jsonScene);
-    const presencePlan = wrkMod._buildPresencePlan(n, _planBase.state_level, _planBase._matched_key, seed);
-    const tasks = [];
-    for (let i = 0; i < n; i++) {
-      tasks.push({ taskId: taskIdBase + i, row, i, nb: n, jsonScene, presencePlan: presencePlan.slice(), slug: metier, _planBase: Object.assign({}, _planBase), status: 'pending', imageAttempt: 0, result: null, error: null });
-    }
-    bpMod._planGlobalBatch(tasks, seed);
-    bpMod._rebalanceGlobalBatchPlan(tasks, seed);
-    return tasks;
-  }
-
-  function _mkSmallBatchTasks(metier, svc, etat, n, seed, taskIdBase = 500) {
-    const tasks = _mkRawBatchTasks(metier, svc, etat, n, seed, taskIdBase);
-    bvalMod._validateCompleteBatchPlan(tasks);
-    return tasks;
-  }
-
-  const t84 = { ok: false, issues: [] };
-  const t85 = { ok: false, issues: [] };
-  const t86 = { ok: false, issues: [] };
-
-  try {
-  // ─── T84: API publique modulaire — identité directe via __IMAGE_MODULAR_API__ ─
-  try {
-    await window.__IMAGE_GEN_READY__;
-    const t84Api = window.__IMAGE_MODULAR_API__;
-    if (!t84Api || typeof t84Api !== 'object')
-      t84.issues.push('window.__IMAGE_MODULAR_API__ is not an object after readiness');
-    else {
-      const checks = [
-        ['generateAllImages',  'generateAllImages'],
-        ['addImgRow',          'addImgRow'],
-        ['downloadImagesZip',  'downloadImagesZip'],
-        ['_retryFailedImages', 'retryFailedImages'],
-      ];
-      for (const [winProp, apiProp] of checks) {
-        if (typeof t84Api[apiProp] !== 'function')
-          t84.issues.push(`__IMAGE_MODULAR_API__.${apiProp} is not a function`);
-        else if (window[winProp] !== t84Api[apiProp])
-          t84.issues.push(`window.${winProp} !== __IMAGE_MODULAR_API__.${apiProp}`);
-      }
-    }
-    t84.ok = t84.issues.length === 0;
-  } catch(e) { t84.issues.push('threw: ' + e.message); }
-
-  // ─── T85: readiness gate — stubs avant chargement, identité après ───────────
-  try {
-    const ONCLICK_FNS = ['generateAllImages', 'addImgRow', 'downloadImagesZip', '_retryFailedImages'];
-    for (const name of ONCLICK_FNS) {
-      if (typeof window[name] !== 'function')
-        t85.issues.push(`window.${name} n'est pas une fonction`);
-    }
-    if (!(window.__IMAGE_GEN_READY__ instanceof Promise))
-      t85.issues.push('window.__IMAGE_GEN_READY__ is not a Promise');
-    const t85ReadyApi = await window.__IMAGE_GEN_READY__;
-    if (!t85ReadyApi || typeof t85ReadyApi !== 'object')
-      t85.issues.push('imagegen:ready event did not resolve to an object');
-    else if (t85ReadyApi !== window.__IMAGE_MODULAR_API__)
-      t85.issues.push('imagegen:ready detail !== window.__IMAGE_MODULAR_API__');
-    const t85Bridge = window.__GMB_IMAGE_CONTEXT__;
-    if (!t85Bridge)
-      t85.issues.push('window.__GMB_IMAGE_CONTEXT__ bridge manquant post-readiness');
-    else {
-      ['getRows', 'addRow', 'removeRow', 'refreshPlan'].forEach(m => {
-        if (typeof t85Bridge[m] !== 'function') t85.issues.push(`bridge.${m} manquant`);
-      });
-    }
-    t85.ok = t85.issues.length === 0;
-  } catch(e) { t85.issues.push('threw: ' + e.message); }
-
-  // ─── T86: createImagePipeline — batch n=4 via factory publique ───────────────
-  try {
-    const s86    = stateMod.createGenerationState(); s86.runId = 86;
-    const tasks86 = _mkSmallBatchTasks('toiture', 'Remplacement toiture', 'encours', 4, 86, 860);
-    const mf86   = _mkFetch();
-    const ri86   = [];
-    const pipe86  = batchMod.createImagePipeline({
-      state: s86, fetchImpl: mf86.fetchImpl, readResponseImpl: _fakeRead,
-      rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter,
-      sleep: _fakeSleep,
-    });
-    await pipe86.runImageBatch(tasks86, 'sk-t86', ri86);
-    const c86 = mf86.counts();
-    if (c86.imgCalls !== 4) t86.issues.push(`imgCalls expected 4 got ${c86.imgCalls}`);
-    if (ri86.length !== 4)  t86.issues.push(`runImages expected 4 got ${ri86.length}`);
-    if (tasks86.filter(t => t.status === 'success').length !== 4)
-      t86.issues.push('not all 4 tasks succeeded');
-    t86.ok = t86.issues.length === 0;
-  } catch(e) { t86.issues.push('threw: ' + e.message); }
-
-  } finally {
-    window.fetch = realFetch;
-  }
-
-  return { t84, t85, t86 };
-}
-
-// ─── Local pipeline tests (run from console: _runLocalTests()) ───────────────
-
-async function _runLocalTests() {
-  const pass = (name) => console.log(`[TEST] PASS — ${name}`);
-  const fail = (name, msg) => console.error(`[TEST] FAIL — ${name}: ${msg}`);
-
-  // T39: 5 public functions on window
-  try {
-    const required = ['generateAllImages', 'addImgRow', 'downloadImagesZip', '_retryFailedImages', '_runLocalTests'];
-    const missing  = required.filter(fn => typeof window[fn] !== 'function');
-    if (!missing.length) pass('T39: API publique — 5 fonctions exposées sur window');
-    else fail('T39: API publique', `manquantes: ${JSON.stringify(missing)}`);
-  } catch(e) { fail('T39: API publique', e.message); }
-
-  // T84 / T85 / T86 via _runPipelineParityTests
-  {
-    let pipeRes;
-    try {
-      pipeRes = await _runPipelineParityTests();
-    } catch(e) {
-      fail('T84–T86: pipeline parity', e.message);
-      pipeRes = null;
-    }
-    if (pipeRes) {
-      const LABELS = {
-        t84: 'T84: API publique modulaire — identité directe window.fn === __IMAGE_MODULAR_API__.fn',
-        t85: 'T85: readiness gate — stubs pré-module + identité post imagegen:ready + bridge',
-        t86: 'T86: createImagePipeline — batch n=4 toiture, 4 images via factory publique',
-      };
-      for (const [key, label] of Object.entries(LABELS)) {
-        const r = pipeRes[key];
-        if (!r) { fail(label, 'no result'); continue; }
-        if (r.ok) pass(label);
-        else      fail(label, r.issues.join('; '));
-      }
-    }
-  }
-
-  // T87: legacy symbols absent from app.js scope
-  try {
-    const legacyNames = [
-      '_generationRunActive', '_generatedImages', '_generateImageOnly',
-      '_runImageBatch', '_generateAllImagesImpl',
-      'slugify', '_blobToBase64', 'WORK_SCENES',
-      'SITE_REALISM', '_fetchWithTimeout', '_readResponseOnce',
-    ];
-    const stillPresent = legacyNames.filter(n => typeof window[n] !== 'undefined');
-    if (!stillPresent.length) pass('T87: legacy symbols absents de window — OK');
-    else fail('T87: legacy symbols', `encore présents: ${JSON.stringify(stillPresent)}`);
-  } catch(e) { fail('T87: legacy symbols', e.message); }
-
-  // T88: single modular source via window.__IMAGE_MODULAR_API__
-  try {
-    const api = window.__IMAGE_MODULAR_API__;
-    const issues = [];
-    if (!api) issues.push('__IMAGE_MODULAR_API__ absent');
-    else {
-      const expected = ['generateAllImages', 'addImgRow', 'downloadImagesZip', 'retryFailedImages', 'buildDallePromptV2'];
-      const missing = expected.filter(k => typeof api[k] !== 'function');
-      if (missing.length) issues.push(`clés manquantes: ${JSON.stringify(missing)}`);
-      if (Object.isFrozen(api)) ; else issues.push('API non gelée (Object.freeze attendu)');
-      if (window.generateAllImages === api.generateAllImages) ; else issues.push('generateAllImages: identité rompue');
-    }
-    if (!issues.length) pass('T88: source unique modulaire — __IMAGE_MODULAR_API__ complet et gelé');
-    else fail('T88: source unique modulaire', issues.join('; '));
-  } catch(e) { fail('T88: source unique modulaire', e.message); }
-
-  // T89: bridge integration — setLastMatch/getLastMatch + mock Generate/Retry/ZIP
-  try {
-    const bridge = window.__GMB_IMAGE_CONTEXT__;
-    const issues = [];
-    if (!bridge) { issues.push('__GMB_IMAGE_CONTEXT__ absent'); }
-    else {
-      if (typeof bridge.setLastMatch === 'function' && typeof bridge.getLastMatch === 'function') {
-        const sentinel = { _test: 'T89', ts: Date.now() };
-        bridge.setLastMatch(sentinel);
-        const got = bridge.getLastMatch();
-        if (got?._test !== 'T89') issues.push('setLastMatch/getLastMatch: round-trip échoué');
-      } else {
-        issues.push('bridge: setLastMatch/getLastMatch absents');
-      }
-      ['generateAllImages', 'addImgRow', 'downloadImagesZip', '_retryFailedImages'].forEach(fn => {
-        if (typeof window[fn] !== 'function') issues.push(`window.${fn} absent`);
-      });
-    }
-    if (!issues.length) pass('T89: bridge intégration — setLastMatch/getLastMatch + API window OK');
-    else fail('T89: bridge intégration', issues.join('; '));
-  } catch(e) { fail('T89: bridge intégration', e.message); }
-
-  console.log('[TEST] Done. — T39, T84–T89 (T38, T40–T83 : supprimés Phase 7B — runtime-tests.js autonome).');
 }

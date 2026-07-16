@@ -1,11 +1,11 @@
 /**
- * ui/img-ui.js — Phase 6 shadow copy (source active : app.js)
+ * ui/img-ui.js — Phase 7C
  * Adaptateur UI pour le pipeline image modulaire.
  * Seul module autorisé à accéder à document/DOM.
- * Verbatim — app.js lignes 13382–13615 + 16437–16448.
  * Le pipeline réseau/planning/prompt ne doit jamais importer ce module.
- * Ne pas modifier avant le cutover validé.
  */
+
+import { buildDallePromptV2 } from '../prompt/scene-builder.js';
 
 // ─── createImageUiAdapter ─────────────────────────────────────────────────────
 // Factory — returns DOM-bound UI adapter.
@@ -134,4 +134,72 @@ function _escHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-export { createImageUiAdapter };
+// ─── renderAnalyse ───────────────────────────────────────────────────────────
+// Renders the scene analysis panel for an image planning row.
+// contextData = { CONTEXTE_BY_METIER, CONTEXTE_OPTIONS } from the GMB bridge.
+function renderAnalyse(row, { CONTEXTE_BY_METIER, CONTEXTE_OPTIONS } = {}) {
+  let obj;
+  try {
+    obj = JSON.parse(buildDallePromptV2(row));
+  } catch { return ''; }
+
+  const stateLabels    = { debut: 'Début', encours: 'En cours', semifinal: 'Presque terminé', final: 'Terminé' };
+  const serviceDemande = (row.travaux || '').trim() || '—';
+  const serviceDetecte = obj._matched_service || '—';
+  const ctxList        = (CONTEXTE_BY_METIER && CONTEXTE_BY_METIER[row.metier]) || CONTEXTE_OPTIONS || [];
+  const defVal         = ctxList[0]?.value;
+  const contexteLabel  = (ctxList.find(o => o.value === (row.contexte || defVal)) || ctxList[0] || {}).label || '—';
+  const typeLabel      = obj.setting === 'interior' ? 'Intérieur' : 'Extérieur';
+  const etatLabel      = stateLabels[obj.state_level] || '—';
+  const arch           = obj.architecture || '—';
+  const camera         = obj.camera_position || '—';
+  const score          = obj._match_score || 0;
+  const pct = Math.min(99,
+    score >= 15 ? 98 :
+    score >= 10 ? Math.round(85 + (score - 10) * 2.6) :
+    score >= 6  ? Math.round(65 + (score - 6)  * 5) :
+                  Math.round(40 + score * 4));
+  const confColor = pct >= 80 ? '#22c55e' : pct >= 55 ? '#f59e0b' : '#ef4444';
+
+  return `
+<div class="img-analyse-head">Analyse de la scène</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Service demandé</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(serviceDemande)}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Service détecté</span>
+  <span class="img-analyse-val">${_escHtml(serviceDetecte)}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Contexte</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(contexteLabel)}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Type</span>
+  <span class="img-analyse-val">${typeLabel}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">État</span>
+  <span class="img-analyse-val">${etatLabel}</span>
+</div>
+<div class="img-analyse-row">
+  <span class="img-analyse-key">Architecture</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(arch)}</span>
+</div>
+<div class="img-analyse-row img-analyse-row-last">
+  <span class="img-analyse-key">Caméra</span>
+  <span class="img-analyse-val img-analyse-muted">${_escHtml(camera)}</span>
+</div>
+<div class="img-analyse-conf">
+  <div class="img-analyse-conf-label">Confiance du matching</div>
+  <div class="img-analyse-conf-bar">
+    <div class="img-analyse-conf-track">
+      <div class="img-analyse-conf-fill" style="width:${pct}%;background:${confColor}"></div>
+    </div>
+    <span class="img-analyse-conf-pct" style="color:${confColor}">${pct} %</span>
+  </div>
+</div>`;
+}
+
+export { createImageUiAdapter, renderAnalyse };

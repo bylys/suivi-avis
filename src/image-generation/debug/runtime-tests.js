@@ -782,11 +782,10 @@ export async function runRuntimeTests() {
     }
   } catch (e) { fail('RT2', e.message); }
 
-  // RT3: window.addImgRow is modular (identity with __IMAGE_MODULAR_API__)
+  // RT3: window.addImgRow is modular (identity via __IMAGE_GEN_READY__)
   try {
-    await window.__IMAGE_GEN_READY__;
-    const api = window.__IMAGE_MODULAR_API__;
-    if (window.addImgRow === api.addImgRow) pass('RT3: window.addImgRow === __IMAGE_MODULAR_API__.addImgRow');
+    const api = await window.__IMAGE_GEN_READY__;
+    if (window.addImgRow === api.addImgRow) pass('RT3: window.addImgRow — modular identity via __IMAGE_GEN_READY__');
     else fail('RT3', 'addImgRow not modular');
   } catch (e) { fail('RT3', e.message); }
 

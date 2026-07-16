@@ -44,7 +44,6 @@ function createGenerationState() {
     generatedImages: [],
     imageCallLog:    [],
     lastFailedTasks: [],
-    lastApiKey:      null,
     counters: {
       requested:          0,
       imageCalls:         0,
