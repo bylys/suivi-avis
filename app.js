@@ -2975,7 +2975,7 @@ function closeGmbMap() {
 // ── GÉNÉRATEUR D'IMAGES BULK ──
 let _imgRows         = [];
 let _imgCounter      = 0;
-let _generatedImages = [];
+let _generatedImages = []; // deleted with legacy pipeline in group F
 
 const SERVICE_PRESETS = [
   'Rénovation toiture', 'Réparation toiture', 'Remplacement tuiles', 'Remplacement ardoises',
@@ -13407,12 +13407,6 @@ function _escHtml(s) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function addImgRow() {
-  const id = ++_imgCounter;
-  _imgRows.unshift({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
-  renderImgPlanning();
-}
-
 function removeImgRow(id) {
   _imgRows = _imgRows.filter(r => r.id !== id);
   renderImgPlanning();
@@ -14513,59 +14507,3 @@ async function _generateAllImagesImpl(runId) {
   _showGenerationSummary(total, succeeded.length, failed, key);
 }
 
-function appendImgCard(src, filename, label) {
-  const grid = document.getElementById('img-results-grid');
-  const card = document.createElement('div');
-  card.className = 'img-result-card';
-  card.innerHTML = `
-    <img src="${_escHtml(src)}" alt="${_escHtml(label)}" loading="lazy" />
-    <div class="img-result-card-info">
-      <div class="img-result-card-title">${_escHtml(label)}</div>
-    </div>
-  `;
-  grid.appendChild(card);
-}
-
-async function downloadImagesZip() {
-  const images = _generatedImages;
-  if (!images.length) return;
-
-  if (images.length === 1) {
-    // Une seule image : téléchargement direct JPEG
-    const { b64, url, filename } = images[0];
-    if (b64) {
-      const a = document.createElement('a');
-      a.href = `data:image/jpeg;base64,${b64}`;
-      a.download = filename;
-      a.click();
-    } else {
-      window.open(url, '_blank');
-    }
-    return;
-  }
-
-  // Plusieurs images : ZIP
-  const zip    = new JSZip();
-  const folder = zip.folder('images-gmb');
-  let   added  = 0;
-
-  for (const { b64, url, filename } of images) {
-    if (b64) {
-      folder.file(filename, b64, { base64: true });
-      added++;
-    } else if (url) {
-      try {
-        const r    = await fetch(url);
-        const blob = await r.blob();
-        folder.file(filename, await _blobToBase64(blob), { base64: true });
-        added++;
-      } catch (e) {
-        console.warn('ZIP: skip', filename, e);
-      }
-    }
-  }
-
-  if (added === 0) { alert('Impossible de récupérer les images (URLs expirées ?).'); return; }
-  const blob = await zip.generateAsync({ type: 'blob' });
-  saveAs(blob, 'images-gmb.zip');
-}
