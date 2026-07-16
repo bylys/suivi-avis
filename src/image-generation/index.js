@@ -270,15 +270,18 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests] = await Promise.all([
     import('./debug/runtime-tests.js'),
     import('./debug/integration-tests.js'),
+    import('./debug/service-routing-tests.js'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult     = await runtimeTests.runRuntimeTests();
     const integrationResult = await integrationTests.runIntegrationTests();
-    return { runtimeResult, integrationResult };
+    const routingResult     = await routingTests.runServiceRoutingTests();
+    return { runtimeResult, integrationResult, routingResult };
   };
+  window._runServiceRoutingTests = routingTests.runServiceRoutingTests;
   console.info('[IMAGE MODULE 7C] Debug harness ready — call window._runImageGenerationTests()');
 }
 

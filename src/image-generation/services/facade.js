@@ -85,6 +85,7 @@ export const WORK_SCENES_FACADE = {
       { phrase: 'peinture exterieure', score: 12 },
       { phrase: 'peinture exterieur',  score: 12 },
       { phrase: 'peinture facade',     score: 11 },
+      { phrase: 'facade peinture',     score: 11 },
       { phrase: 'peinture mur',        score: 11 },
       { phrase: 'peinture plafond',    score: 11 },
       { phrase: 'peintur',             score: 1  },
@@ -679,7 +680,7 @@ export const SITE_REALISM_FACADE = {
 
       // --- peinture extérieure ---
       {
-        _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        _for:          'exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
         setting:       'exterior',
         scene_note:    'timber shutters removed and laid on trestles outdoors — old paint being sanded before repainting, both shutters side by side on the outdoor workstation, sanding dust visible',
         scene_camera:  'standing beside the trestles, framing both shutters flat on the workstation with the sanding equipment',
@@ -707,7 +708,7 @@ export const SITE_REALISM_FACADE = {
         ],
       },
       {
-        _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        _for:          'exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
         setting:       'exterior',
         scene_note:    'exterior facade paint in progress — upper section freshly painted in new colour, lower section still original paint, clear horizontal boundary, ladder and paint tray beside the wall',
         scene_camera:  'standing back from the facade, framing the full wall height with the painted upper section and the old lower section, ladder beside the work',
@@ -736,7 +737,7 @@ export const SITE_REALISM_FACADE = {
         ],
       },
       {
-        _for:          'exterieur|exterieure|facade.*peint|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
+        _for:          'exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',
         setting:       'exterior',
         scene_note:    'garden gate being painted — masking tape along the adjacent wall junction, tarp on the ground below, new paint colour on the upper bars with old finish still on the lower section',
         scene_camera:  'standing in front of the gate, framing the painted upper bars with the masking tape at the wall junction and the tarp below',

@@ -35,10 +35,10 @@ const _REALISM_COUNTS = {
 
 function _serviceGroup(matchedService) {
   const s = (matchedService || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  if (/batterie|demarrage|boost/.test(s))             return 'batterie';
-  if (/crevaison|roue|pneu/.test(s))                  return 'crevaison';
-  if (/remorquage|remorque|transport|treuil/.test(s)) return 'remorquage';
-  if (/ouverture|ouvert/.test(s))                     return 'ouverture';
+  if (/batterie|demarrage|boost/.test(s))                                           return 'batterie';
+  if (/crevaison|roue|pneu/.test(s))                                                return 'crevaison';
+  if (/remorquage|remorque|transport|treuil|enlevement.*vehicule|enlevement.*voiture/.test(s)) return 'remorquage';
+  if (/ouverture|ouvert|cles.*enferm|deverrouillage|verrouillage/.test(s))          return 'ouverture';
   return 'default';
 }
 

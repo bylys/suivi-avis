@@ -974,6 +974,83 @@ export const SITE_REALISM_ARBORISTE = {
         ],
       },
 
+      // --- élagage arbre / peuplier (générique) ---
+      {
+        _for:          'arbre|peuplier',
+        scene_note:    'garden tree being pruned — loppers at a lateral branch collar at mid-height, cut branch sections already on the tarp below, remaining crown intact and balanced above the cuts',
+        scene_camera:  'standing back 4–6 m from the tree, framing the loppers at the active cut point with the cut pile on the tarp below',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'tarp with first cut branches piled at the tree base, lopper handles resting beside the pile',
+          midground:  'tree trunk at full height — fresh raw cut stubs visible at two or three lateral branch positions in the lower crown',
+          background: 'remaining intact upper crown, garden fence or neighbouring roof, open sky',
+        },
+        scene_debris:  'small leaf clusters and short twig sections on the tarp and around the base',
+        scene_exclude: ['felled tree', 'stump alone', 'large log sections', 'chainsaw at trunk level', 'haie hedging', 'hedge trimmer'],
+        tools: [
+          'loppers resting on the tarp beside the cut branch pile',
+          'pruning saw tucked into the tool bag at the tree base',
+          'telescopic pruning pole leaning against the trunk',
+        ],
+        protections: [
+          'tarp spread below the active section to catch cut branches',
+          'yellow drop-zone tape around the tree base',
+        ],
+        chantier_details: [
+          'fresh pale saw-cut stubs visible in the lower crown — clean angled cuts at the collar',
+          'cut branch pile on the tarp sorted loosely by diameter',
+          'small sap bead at the fresh cut face of the largest stub',
+        ],
+      },
+      {
+        _for:          'arbre|peuplier',
+        scene_note:    'tall deciduous tree or poplar after pruning — crown noticeably reduced and re-balanced, fresh white cut stubs on the main lateral branches, pile of cut sections on the ground at the base',
+        scene_camera:  'standing 7–10 m back from the tree, framing the full height with the pruned crown and cut debris below',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'cut branch pile at the tree base on a tarp, pruning tools beside the pile',
+          midground:  'full tree at height — crown clearly lightened and balanced, large fresh white cut stubs visible on the main structure',
+          background: 'open sky now more visible through the thinned crown, garden or adjacent rooftop beyond',
+        },
+        scene_debris:  'cut branch sections and leaf clusters on the tarp, fine sawdust around the base',
+        scene_exclude: ['tree fully felled', 'stump and stumping equipment', 'hedge trimmer', 'haie', 'small shrub'],
+        tools: [
+          'hand pruning saw on the tarp beside the cut pile',
+          'loppers handles visible resting on the ground near the base',
+        ],
+        protections: [
+          'tarp fully loaded with sorted cut branches below the pruned crown',
+          'safety tape at the base perimeter still in place',
+        ],
+        chantier_details: [
+          'crown clearly lighter and more open — sky now visible through gaps that were closed before',
+          'large fresh white cut stubs on the main lateral branches — diameter 4–8 cm',
+          'cut branch pile on the tarp — full and sorted, ready for removal',
+        ],
+      },
+      {
+        _for:          'arbre|peuplier',
+        scene_note:    'close-up of a clean pruning cut on a lateral branch — fresh pale wood face at the cut, smooth collar visible at the branch base, sap bead at the centre of the cut face',
+        scene_camera:  'close up at the cut face on the branch stub, framing the pale fresh wood against the surrounding bark',
+        scene_framing: {
+          work_pct:   75,
+          foreground: 'fresh pale wood face at the cut — clean smooth surface, slight off-white colour with central sap bead',
+          midground:  'branch stub and surrounding parent branch bark — collar still intact at the base',
+          background: 'living tree bark and foliage softly out of focus beyond the cut',
+        },
+        scene_debris:  'small bark flake at the cut edge from the saw exit',
+        scene_exclude: ['chainsaw cut face with rough fibres', 'dead grey wood', 'storm break or tear', 'stump at ground level'],
+        tools: [
+          'pruning saw resting on the adjacent branch beside the cut stub',
+        ],
+        protections: [],
+        chantier_details: [
+          'clean smooth cut face — saw cut made at the branch collar, no stub overhang',
+          'sap bead at the centre of the cut face — tree actively sealing the wound',
+          'collar bark intact at the base of the stub — correct pruning cut technique visible',
+        ],
+      },
+
       // Fallback: élagage général
       {
         scene_note:    'tree pruning in progress — tree fully standing, cut branches piled on tarp below, pruning tools visible at the base, canopy structure preserved',
