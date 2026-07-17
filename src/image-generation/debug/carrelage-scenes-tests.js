@@ -1377,38 +1377,247 @@ function cw14() {
   );
 }
 
-// ─── CW15 — terrasse and dallage have different location_subtype and must_have ──
-// Some assertions EXPECTED_FAILURE before fix (subtype pool is currently the same)
+// ─── RC51 — subtype distinct et canonique (SceneJSON finaux — pipeline réel) ───
+// Prouve que _fullResolve produit deux location_subtype distincts et non-vides.
+
+function rc51() {
+  const terrasse = _fullResolve('Carrelage terrasse ext.');
+  const dallage  = _fullResolve('Dallage extérieur');
+  ok(
+    typeof terrasse?.location_subtype === 'string' && terrasse.location_subtype.length > 0,
+    'RC51: terrasse pipeline — location_subtype non-vide',
+    `got: "${terrasse?.location_subtype}"`
+  );
+  ok(
+    typeof dallage?.location_subtype === 'string' && dallage.location_subtype.length > 0,
+    'RC51: dallage pipeline — location_subtype non-vide',
+    `got: "${dallage?.location_subtype}"`
+  );
+  ok(
+    terrasse?.location_subtype !== dallage?.location_subtype,
+    'RC51: terrasse.location_subtype !== dallage.location_subtype (sous-types canoniques distincts)',
+    `terrasse: "${terrasse?.location_subtype}" | dallage: "${dallage?.location_subtype}"`
+  );
+}
+
+// ─── RC52 — location_must_have sémantiquement distincts (SceneJSON finaux) ────
+// Terrasse: connexion façade/porte-fenêtre. Dallage: circulation/accès/portail.
+
+function rc52() {
+  const terrasse = _fullResolve('Carrelage terrasse ext.');
+  const dallage  = _fullResolve('Dallage extérieur');
+  const tMH = (terrasse?.location_must_have ?? []).join(' ');
+  const dMH = (dallage?.location_must_have  ?? []).join(' ');
+  ok(
+    /glazed|patio.door|house.wall/i.test(tMH),
+    'RC52: terrasse location_must_have contient connexion façade / porte-fenêtre',
+    `got: ${JSON.stringify(terrasse?.location_must_have)}`
+  );
+  ok(
+    /circulation|access|gate|garage/i.test(dMH),
+    'RC52: dallage location_must_have contient circulation / accès / portail',
+    `got: ${JSON.stringify(dallage?.location_must_have)}`
+  );
+  ok(
+    !/driveway|garage|gate|circulation/i.test(tMH),
+    'RC52: terrasse location_must_have exclut les concepts allée/portail/circulation',
+    `got: ${JSON.stringify(terrasse?.location_must_have)}`
+  );
+  ok(
+    !/glazed|patio.door|house.wall/i.test(dMH),
+    'RC52: dallage location_must_have exclut les concepts façade/porte-fenêtre',
+    `got: ${JSON.stringify(dallage?.location_must_have)}`
+  );
+}
+
+// ─── RC53 — location_forbidden croisés (SceneJSON finaux) ─────────────────────
+// Terrasse interdit: concepts allée/voie. Dallage interdit: concepts terrace/salon.
+
+function rc53() {
+  const terrasse = _fullResolve('Carrelage terrasse ext.');
+  const dallage  = _fullResolve('Dallage extérieur');
+  const tFB = (terrasse?.location_forbidden ?? []).join(' ');
+  const dFB = (dallage?.location_forbidden  ?? []).join(' ');
+  ok(
+    /driveway|road/i.test(tFB),
+    'RC53: terrasse location_forbidden contient concept allée/voie',
+    `got: ${JSON.stringify(terrasse?.location_forbidden)}`
+  );
+  ok(
+    /terrace.furniture|patio.door/i.test(dFB),
+    'RC53: dallage location_forbidden contient concept terrace-furniture/patio-door',
+    `got: ${JSON.stringify(dallage?.location_forbidden)}`
+  );
+  ok(
+    !/terrace.furniture/i.test(tFB),
+    'RC53: terrasse location_forbidden ne proscrit PAS terrace furniture (terrasse elle-même)',
+    `got: ${JSON.stringify(terrasse?.location_forbidden)}`
+  );
+  ok(
+    !/\bdriveway\b/.test(dFB),
+    'RC53: dallage location_forbidden ne proscrit PAS driveway (dallage EST une allée)',
+    `got: ${JSON.stringify(dallage?.location_forbidden)}`
+  );
+}
+
+// ─── RC54 — work_surface distinct avec vérification sémantique (SceneJSON finaux)
+
+function rc54() {
+  const terrasse = _fullResolve('Carrelage terrasse ext.');
+  const dallage  = _fullResolve('Dallage extérieur');
+  ok(
+    terrasse?.work_surface !== dallage?.work_surface,
+    'RC54: terrasse.work_surface !== dallage.work_surface',
+    `terrasse: "${terrasse?.work_surface}" | dallage: "${dallage?.work_surface}"`
+  );
+  ok(
+    /terrace|tile|screed|adhesive|spacer/i.test(terrasse?.work_surface ?? ''),
+    'RC54: terrasse work_surface décrit du carrelage extérieur sur chape (screed/adhesive)',
+    `got: "${terrasse?.work_surface}"`
+  );
+  ok(
+    /slab|sub.?base|lean.?concrete|sand|reconstituted.stone/i.test(dallage?.work_surface ?? ''),
+    'RC54: dallage work_surface décrit des dalles sur lit de pose (sub-base/sand/lean-concrete)',
+    `got: "${dallage?.work_surface}"`
+  );
+}
+
+// ─── RC55 — score 5/5 de différenciation (SceneJSON finaux + prompt mocké) ─────
+// Dimension 5 : passe les deux scènes dans _fullResolve → sanitizer de production
+// → rewriter mocké → _appendLockedFinalConstraints, puis vérifie les preuves
+// sémantiques requises dans chaque prompt final.
+
+function _mockPromptFromScene(obj) {
+  // Simule ce qu'un vrai rewriter GPT extrairait : les champs sémantiques de la scène.
+  // location_forbidden est délibérément exclu (c'est un signal négatif, pas du contenu positif).
+  const parts = [];
+  if (obj.work_type)                              parts.push(obj.work_type);
+  if (Array.isArray(obj.location_must_have))      parts.push(obj.location_must_have.join('; '));
+  if (obj.location_subtype)                       parts.push(obj.location_subtype);
+  if (obj.work_surface)                           parts.push(obj.work_surface);
+  return parts.join('. ');
+}
+
+function rc55() {
+  const terrasse = _fullResolve('Carrelage terrasse ext.');
+  const dallage  = _fullResolve('Dallage extérieur');
+  let score = 0;
+
+  // Dimension 1 — location_subtype distinct
+  const d1 = terrasse?.location_subtype !== dallage?.location_subtype;
+  ok(d1, 'RC55 [1/5]: location_subtype distinct', `t: "${terrasse?.location_subtype}" d: "${dallage?.location_subtype}"`);
+  if (d1) score++;
+
+  // Dimension 2 — must_have sémantiquement distincts
+  const tMH = (terrasse?.location_must_have ?? []).join(' ');
+  const dMH = (dallage?.location_must_have  ?? []).join(' ');
+  const d2 = /glazed|patio.door|house.wall/i.test(tMH) && /circulation|access|gate|garage/i.test(dMH);
+  ok(d2, 'RC55 [2/5]: location_must_have sémantiquement distincts (façade/porte-fenêtre vs circulation/accès)', `t: ${JSON.stringify(terrasse?.location_must_have)} d: ${JSON.stringify(dallage?.location_must_have)}`);
+  if (d2) score++;
+
+  // Dimension 3 — forbidden croisés
+  const tFB = (terrasse?.location_forbidden ?? []).join(' ');
+  const dFB = (dallage?.location_forbidden  ?? []).join(' ');
+  const d3 = /driveway|road/i.test(tFB) && /terrace.furniture|patio.door/i.test(dFB);
+  ok(d3, 'RC55 [3/5]: location_forbidden croisés (terrasse interdit allée; dallage interdit terrace/patio)', `t: ${JSON.stringify(terrasse?.location_forbidden)} d: ${JSON.stringify(dallage?.location_forbidden)}`);
+  if (d3) score++;
+
+  // Dimension 4 — work_surface distinct et vérifié
+  const d4 = terrasse?.work_surface !== dallage?.work_surface &&
+             /terrace|screed|tile|spacer/i.test(terrasse?.work_surface ?? '') &&
+             /slab|sub.?base|sand|lean.?concrete/i.test(dallage?.work_surface ?? '');
+  ok(d4, 'RC55 [4/5]: work_surface distinct et sémantiquement vérifié', `t: "${terrasse?.work_surface}" d: "${dallage?.work_surface}"`);
+  if (d4) score++;
+
+  // Dimension 5 — prompt final mocké distinct
+  // Pipeline : _fullResolve → sanitizer → rewriter mocké → _appendLockedFinalConstraints
+  const tSanitizedJson = _sanitizeSceneForPrompt(JSON.stringify(terrasse));
+  const dSanitizedJson = _sanitizeSceneForPrompt(JSON.stringify(dallage));
+  const tSanitized     = JSON.parse(tSanitizedJson);
+  const dSanitized     = JSON.parse(dSanitizedJson);
+  const tMockBase      = _mockPromptFromScene(tSanitized);
+  const dMockBase      = _mockPromptFromScene(dSanitized);
+  const tFinalPrompt   = _appendLockedFinalConstraints(tMockBase, tSanitized);
+  const dFinalPrompt   = _appendLockedFinalConstraints(dMockBase, dSanitized);
+
+  // Preuves requises dans le prompt terrasse
+  const tHasDwelling  = /(house.wall|glazed.*door|patio.door|building.facade)/i.test(tFinalPrompt);
+  const tHasTerrace   = /\bterrace\b/i.test(tFinalPrompt);
+  const tNoDriveway   = !/\bdriveway\b|gate.access|long.circulation.path/i.test(tFinalPrompt);
+  // Preuves requises dans le prompt dallage
+  const dHasAccess    = /(courtyard|\bpath\b|entrance|functional.access|access.geometry|circulation)/i.test(dFinalPrompt);
+  const dNoPatio      = !/living.patio|bay.window.terrace|outdoor.relaxation/i.test(dFinalPrompt);
+
+  ok(tHasDwelling, 'RC55 [5/5] terrasse prompt: contient façade / glazed door / house wall (connexion à l\'habitation)', `début prompt: "${tMockBase.slice(0, 150)}"`);
+  ok(tHasTerrace,  'RC55 [5/5] terrasse prompt: contient "terrace" (géométrie espace de vie extérieur)',                 `début prompt: "${tMockBase.slice(0, 150)}"`);
+  ok(tNoDriveway,  'RC55 [5/5] terrasse prompt: NE contient PAS driveway / gate access / long circulation path',         `début prompt: "${tMockBase.slice(0, 150)}"`);
+  ok(dHasAccess,   'RC55 [5/5] dallage prompt: contient courtyard / path / circulation / functional access',             `début prompt: "${dMockBase.slice(0, 150)}"`);
+  ok(dNoPatio,     'RC55 [5/5] dallage prompt: NE contient PAS living patio / bay-window terrace / outdoor relaxation', `début prompt: "${dMockBase.slice(0, 150)}"`);
+
+  const d5 = tHasDwelling && tHasTerrace && tNoDriveway && dHasAccess && dNoPatio;
+  if (d5) score++;
+
+  ok(score === 5, `RC55: score de différenciation ${score}/5 — attendu 5/5`, `score: ${score}`);
+}
+
+// ─── RC56 — aucune collision externe (SITE_REALISM audit + coverage audit) ────
+// Part 1: scene_contexte n'existe que dans les 2 scénarios carrelage.
+// Part 2: 163/163 services non-carrelage → 0 collision avec les nouveaux location_type.
+
+function rc56() {
+  // Part 1 — SITE_REALISM full scan via JSON serialisation
+  const allJson  = JSON.stringify(SITE_REALISM);
+  const carrJson = JSON.stringify(SITE_REALISM['carrelage'] ?? {});
+  const totalCtx   = (allJson.match(/"scene_contexte"/g)  || []).length;
+  const carrCtx    = (carrJson.match(/"scene_contexte"/g) || []).length;
+  const nonCarrCtx = totalCtx - carrCtx;
+  ok(totalCtx    === 2, 'RC56: exactement 2 occurrences de scene_contexte dans SITE_REALISM (terrasse + dallage)', `total: ${totalCtx}`);
+  ok(nonCarrCtx  === 0, 'RC56: 0 occurrence de scene_contexte hors service carrelage',                             `hors-carrelage: ${nonCarrCtx}`);
+
+  // Part 2 — coverage audit (synchrone — window._runServiceCoverageAudit est disponible)
+  const cov = window._runServiceCoverageAudit?.();
+  if (cov) {
+    const nonCarre   = (cov.services ?? []).filter(s => s.metier !== 'carrelage');
+    const collisions = nonCarre.filter(s =>
+      s.location_type === 'terrasse_attenante' || s.location_type === 'voie_acces_prive'
+    );
+    ok(nonCarre.length   === 163, 'RC56: 163/163 services non-carrelage dans le coverage audit',                         `got: ${nonCarre.length}`);
+    ok(collisions.length === 0,   'RC56: 0 service non-carrelage résout en terrasse_attenante ou voie_acces_prive',      `collisions: ${JSON.stringify(collisions.slice(0, 3))}`);
+  }
+}
+
+// ─── CW15 — resolver produit location_subtype et location_must_have distincts ──
+// Vérification sur les résultats finaux du resolver (pas les données source).
 
 function cw15() {
   const terrasse = _fullResolve('Carrelage terrasse ext.');
   const dallage  = _fullResolve('Dallage extérieur');
 
-  ok(terrasse?.setting === 'exterior', 'CW15: terrasse setting=exterior', `got: ${terrasse?.setting}`);
-  ok(dallage?.setting === 'exterior',  'CW15: dallage setting=exterior',  `got: ${dallage?.setting}`);
+  ok(terrasse?.setting === 'exterior', 'CW15: terrasse setting=exterior (pipeline réel)', `got: ${terrasse?.setting}`);
+  ok(dallage?.setting  === 'exterior', 'CW15: dallage setting=exterior (pipeline réel)',  `got: ${dallage?.setting}`);
 
-  okExpectedFailure(
+  ok(
     terrasse?.location_subtype !== dallage?.location_subtype,
-    'CW15: terrasse and dallage have different location_subtype',
-    `terrasse: "${terrasse?.location_subtype}" dallage: "${dallage?.location_subtype}"`
+    'CW15: terrasse.location_subtype !== dallage.location_subtype (résultats resolver distincts)',
+    `terrasse: "${terrasse?.location_subtype}" | dallage: "${dallage?.location_subtype}"`
   );
 
   const tMH = JSON.stringify(terrasse?.location_must_have ?? []);
   const dMH = JSON.stringify(dallage?.location_must_have  ?? []);
-  okExpectedFailure(
+  ok(
     tMH !== dMH,
-    'CW15: terrasse and dallage have different location_must_have',
-    `terrasse: ${tMH} dallage: ${dMH}`
+    'CW15: terrasse.location_must_have !== dallage.location_must_have (résultats resolver distincts)',
+    `terrasse: ${tMH} | dallage: ${dMH}`
   );
 
   ok(
     (terrasse?.work_type || '').toLowerCase().includes('terrace'),
-    'CW15: terrasse work_type contains "terrace"',
+    'CW15: terrasse work_type contient "terrace"',
     `work_type: "${terrasse?.work_type}"`
   );
   ok(
     !(dallage?.work_type || '').toLowerCase().includes('terrace'),
-    'CW15: dallage work_type does NOT contain "terrace"',
+    'CW15: dallage work_type ne contient PAS "terrace"',
     `work_type: "${dallage?.work_type}"`
   );
 }
@@ -1501,6 +1710,12 @@ export async function runCarrelageSceneTests() {
   console.group('[RC44]'); rc44(); console.groupEnd();
   console.group('[RC45]'); rc45(); console.groupEnd();
   console.group('[RC46]'); rc46(); console.groupEnd();
+  console.group('[RC51]'); rc51(); console.groupEnd();
+  console.group('[RC52]'); rc52(); console.groupEnd();
+  console.group('[RC53]'); rc53(); console.groupEnd();
+  console.group('[RC54]'); rc54(); console.groupEnd();
+  console.group('[RC55]'); rc55(); console.groupEnd();
+  console.group('[RC56]'); rc56(); console.groupEnd();
 
   console.group('[CW1]'); cw1(); console.groupEnd();
   console.group('[CW2]'); cw2(); console.groupEnd();

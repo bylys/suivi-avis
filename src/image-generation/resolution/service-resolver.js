@@ -81,6 +81,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism.work_surface)                      obj.work_surface     = realism.work_surface;
           if (Array.isArray(realism.location_must_have)) obj.location_must_have = realism.location_must_have;
           if (Array.isArray(realism.location_forbidden)) obj.location_forbidden = realism.location_forbidden;
+          if (realism.scene_contexte)                    obj.contexte           = realism.scene_contexte;
         }
       }
     }

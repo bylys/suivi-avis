@@ -196,6 +196,49 @@ const LOCATION_RULES = {
     safety_overrides: {},
     compatible_jobs: ['terrassement', 'maçonnerie', 'ravalement', 'nettoyage'],
   },
+
+  terrasse_attenante: {
+    label:       'Terrace attached to a residential building',
+    description: 'Outdoor living terrace directly abutting the house — tiled or paved surface for leisure, patio door or bay window connecting to the interior',
+    subtypes: [
+      'sun-exposed south-facing terrace — patio door with tile work in progress',
+      'partially shaded covered terrace with pergola structure',
+      'compact urban terrace on the ground floor with boundary planters',
+    ],
+    must_have: [
+      'house wall or glazed patio door visible at the back of the terrace',
+      'clearly defined terrace perimeter — wall, rail, or planter boundary',
+    ],
+    may_have: [
+      'terrace furniture stacked to the side of the work zone',
+      'low terrace boundary wall or railing at the perimeter',
+      'planter pots or raised beds at the terrace edge',
+      'partial view of garden or exterior beyond the terrace',
+    ],
+    forbidden: ['public road', 'pavement kerb', 'distant open horizon with no building in frame'],
+    compatible_jobs: ['carrelage', 'amenagement_exterieur', 'maconnerie'],
+  },
+
+  voie_acces_prive: {
+    label:       'Private access path, courtyard or driveway',
+    description: 'Functional exterior paving on private property — driveway, courtyard, or garden access path; no living-terrace character; access and circulation are the dominant geometry',
+    subtypes: [
+      'straight residential driveway in large slabs leading to a garage',
+      'enclosed private courtyard with boundary walls and gate',
+      'garden access path with planted borders on each side',
+    ],
+    must_have: [
+      'functional circulation or access geometry — ground-level paving extending toward a gate, garage, or boundary',
+    ],
+    may_have: [
+      'gate or low boundary wall at the property entrance',
+      'vehicle partially visible at the end of the drive',
+      'letterbox or house number marker near the entrance',
+      'planted strip or gravel border alongside the path',
+    ],
+    forbidden: ['living terrace furniture', 'glazed patio door as the central element', 'public road or pavement kerb'],
+    compatible_jobs: ['carrelage', 'terrassement', 'maconnerie', 'amenagement_exterieur', 'nettoyage'],
+  },
 };
 
 // ─── Triangle Rules ───────────────────────────────────────────────────────────
@@ -243,6 +286,12 @@ const _CONTEXTE_OPTIONS_TO_LOCATION = {
 // Aliases and normalized synonyms — covers any value not in the specific maps above.
 // Key: normalized string (lowercase, no accents, underscores). Value: LOCATION_RULES key.
 const LOCATION_ALIASES = {
+  // Outdoor residential — terrace and access paving
+  terrasse:            'terrasse_attenante',
+  terrasse_attenante:  'terrasse_attenante',
+  voie_acces_prive:    'voie_acces_prive',
+  cour_exterieure:     'voie_acces_prive',
+  allee_acces:         'voie_acces_prive',
   // Outdoor / garden
   jardin:              'jardin_prive',
   jardin_prive:        'jardin_prive',
@@ -390,6 +439,14 @@ const WORK_SURFACE_BY_SUBTYPE = {
   'traditional stone or timber barn':                         'stone or timber barn structure — walls and roof elements',
   'livestock building':                                       'livestock building floor and wall surfaces',
   'grain or hay storage building':                            'grain storage interior — bins or floor area',
+  // terrasse_attenante
+  'sun-exposed south-facing terrace — patio door with tile work in progress':  'terrace screed surface — large-format tiles being laid in full outdoor natural light',
+  'partially shaded covered terrace with pergola structure':                    'covered terrace surface — tiles under a pergola, partial shade across the work zone',
+  'compact urban terrace on the ground floor with boundary planters':          'compact terrace screed — tiles being laid, planter edge as a reference boundary',
+  // voie_acces_prive
+  'straight residential driveway in large slabs leading to a garage':          'driveway sub-base — large slabs being positioned on sand bed, garage or boundary wall ahead',
+  'enclosed private courtyard with boundary walls and gate':                   'enclosed courtyard ground — slabs on compacted sub-base, boundary walls on all sides',
+  'garden access path with planted borders on each side':                      'garden path sub-base — slabs or pavers being laid between planted borders',
   // commerce
   'retail shop with street frontage':                         'shop interior or storefront — glass façade and display window visible',
   'restaurant or café with terrace':                          'café or restaurant interior or terrace surface',

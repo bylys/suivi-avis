@@ -219,10 +219,14 @@ export const SITE_REALISM_CARRELAGE = {
 
       // ── 5. Carrelage terrasse extérieure ────────────────────────────────────
       {
-        _for:          'terrasse exterieure|carrelage terrasse',
-        scene_note:    'outdoor terrace tile installation — large format porcelain stoneware tiles on a terrace abutting the house, building facade or glazed door visible in background, full outdoor natural light',
-        scene_camera:  'standing at terrace level, 3–4 m from the house wall, wide view including the building facade or glazed door and both the tiled and untiled sections of the terrace',
-        setting:       'exterior',
+        _for:               'terrasse exterieure|carrelage terrasse',
+        scene_note:         'outdoor terrace tile installation — large format porcelain stoneware tiles on a terrace abutting the house, building facade or glazed door visible in background, full outdoor natural light',
+        scene_camera:       'standing at terrace level, 3–4 m from the house wall, wide view including the building facade or glazed door and both the tiled and untiled sections of the terrace',
+        setting:            'exterior',
+        scene_contexte:     'terrasse_attenante',
+        work_surface:       'large-format outdoor terrace tiles on a screed bed — adhesive ridges and tile spacers visible',
+        location_must_have: ['house wall or glazed patio door visible at the back of the terrace', 'clearly defined terrace perimeter — wall, rail, or planter boundary'],
+        location_forbidden: ['public road', 'house interior', 'private driveway without any terrace character'],
         tools: [
           'large-format notched trowel resting across a tile stack near the work zone',
           'heavy rubber mallet on the terrace beside the last placed tile row',
@@ -246,10 +250,14 @@ export const SITE_REALISM_CARRELAGE = {
 
       // ── 6. Dallage extérieur ─────────────────────────────────────────────────
       {
-        _for:          'dallage exterieur|dallage ext|pose.*dallage',
-        scene_note:    'outdoor paving installation — large thick concrete or reconstituted-stone slabs being laid on a sand or lean-concrete bed in a driveway, garden path, or courtyard with no building facade in the immediate foreground',
-        scene_camera:  'standing 3–4 m back, wide view of the paving area showing the laid section and the prepared sub-base, boundary wall or landscape in background',
-        setting:       'exterior',
+        _for:               'dallage exterieur|dallage ext|pose.*dallage',
+        scene_note:         'outdoor paving installation — large thick concrete or reconstituted-stone slabs being laid on a sand or lean-concrete bed in a driveway, garden path, or courtyard with no building facade in the immediate foreground',
+        scene_camera:       'standing 3–4 m back, wide view of the paving area showing the laid section and the prepared sub-base, boundary wall or landscape in background',
+        setting:            'exterior',
+        scene_contexte:     'voie_acces_prive',
+        work_surface:       'large concrete or reconstituted-stone slabs on a sand or lean-concrete bed — sub-base, joints, and slab edges visible',
+        location_must_have: ['functional circulation or access geometry — ground-level paving extending toward a gate, garage, or boundary'],
+        location_forbidden: ['living terrace furniture', 'glazed patio door as the central element', 'house interior'],
         tools: [
           'heavy rubber mallet resting on a placed slab near the work front',
           'long straightedge or planimetry rule spanning across the last laid row',
