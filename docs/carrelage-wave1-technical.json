@@ -1,0 +1,262 @@
+{
+  "_note": "Forensic technical evidence — Vague 1 carrelage. No API keys, no auth headers, no full base64.",
+  "run_meta": {
+    "date": "2026-07-17",
+    "branch": "feat/carrelage-service-scenes",
+    "model_image": "gpt-image-2",
+    "model_rewriter": "gpt-4.1",
+    "concurrency": 3,
+    "use_prompt_builder": false,
+    "total_tasks": 6,
+    "total_image_api_calls": 6,
+    "total_vision_calls": 0,
+    "vision_calls_reason": "carrelage explicitly absent from SAFETY_CHECK_RULES (safety-rules.js:39 comment: 'skipped: floor-level, blade guard already in prompt rules')"
+  },
+  "tasks": [
+    {
+      "taskId": 1,
+      "service": "Pose carrelage mural",
+      "evaluation": "PARTIAL",
+      "evaluation_reason": "Interior setting lost — wide/contextual composition + vehicle=clearly_visible contradicts interior wall tiling",
+      "batch_plan": {
+        "composition": "contextual_overview",
+        "composition_desc": "establishing shot — environment as important as the work, showing neighbourhood, road type, or property context, 10–30 m back",
+        "vehicle": "clearly_visible",
+        "workers": "workers"
+      },
+      "telemetry": {
+        "imageAttempts": 1,
+        "actualImageApiCalls": 1,
+        "imageCalls_cumulative_at_log": 5,
+        "visionAttempts": 0,
+        "retries": 0,
+        "api_status": "SUCCESS"
+      },
+      "setting_trace": {
+        "initial_scene_builder": "interior",
+        "after_applySiteRealism": "interior",
+        "after_resolveLocationAndComposition": "interior",
+        "passed_to_rewriter": "interior",
+        "rewriter_honored": false,
+        "rewriter_conflict": "composition_desc (10-30m, neighbourhood) + vehicle=clearly_visible override interior signal"
+      },
+      "site_realism_scenario_matched": "carrelage mural|pose carrelage mural",
+      "site_realism_scene_note": "wall tile installation on a vertical interior surface — neutral wall without kitchen or bathroom fixtures"
+    },
+    {
+      "taskId": 2,
+      "service": "Faïence salle de bain",
+      "evaluation": "FAIL",
+      "evaluation_reason": "Exterior photo — wide_worksite composition (5-15m standback) impossible indoors; no sanitary fixture visible",
+      "batch_plan": {
+        "composition": "wide_worksite",
+        "composition_desc": "wide shot of the full worksite showing scale — building, vehicle, or garden entirely visible in context, 5–15 m back",
+        "vehicle": "absent",
+        "workers": "none"
+      },
+      "telemetry": {
+        "imageAttempts": 1,
+        "actualImageApiCalls": 1,
+        "imageCalls_cumulative_at_log": 3,
+        "visionAttempts": 0,
+        "retries": 0,
+        "api_status": "SUCCESS"
+      },
+      "setting_trace": {
+        "initial_scene_builder": "interior",
+        "after_applySiteRealism": "interior",
+        "after_resolveLocationAndComposition": "interior",
+        "passed_to_rewriter": "interior",
+        "rewriter_honored": false,
+        "rewriter_conflict": "composition_desc (5-15m, 'building, vehicle, or garden') makes interior impossible; no interior anchor (vehicle=absent, workers=none)"
+      },
+      "site_realism_scenario_matched": "faience.*salle|faience.*bain|salle.*bain.*carre",
+      "site_realism_scene_note": "bathroom tiling — wall faience being laid around shower enclosure or bathtub surround, sanitary fixtures visible in frame"
+    },
+    {
+      "taskId": 3,
+      "service": "Faïence cuisine",
+      "evaluation": "PARTIAL",
+      "evaluation_reason": "Shows floor tiling action (incorrect surface) instead of vertical backsplash — vehicle=clearly_visible signals exterior; kitchen backsplash context lost",
+      "batch_plan": {
+        "composition": "contextual_overview",
+        "composition_desc": "establishing shot — environment as important as the work, showing neighbourhood, road type, or property context, 10–30 m back",
+        "vehicle": "clearly_visible",
+        "workers": "workers"
+      },
+      "telemetry": {
+        "imageAttempts": 1,
+        "actualImageApiCalls": 1,
+        "imageCalls_cumulative_at_log": 3,
+        "visionAttempts": 0,
+        "retries": 0,
+        "api_status": "SUCCESS"
+      },
+      "setting_trace": {
+        "initial_scene_builder": "interior",
+        "after_applySiteRealism": "interior",
+        "after_resolveLocationAndComposition": "interior",
+        "passed_to_rewriter": "interior",
+        "rewriter_honored": false,
+        "rewriter_conflict": "vehicle=clearly_visible inside a kitchen is impossible — rewriter generates exterior or wrong surface; composition at 10-30m hides backsplash detail"
+      },
+      "site_realism_scenario_matched": "faience.*cuisine|cuisine.*faience|credence",
+      "site_realism_scene_note": "kitchen splashback tiling — faience tiles being installed between worktop and wall cupboards, kitchen units clearly visible in frame"
+    },
+    {
+      "taskId": 4,
+      "service": "Carrelage terrasse ext.",
+      "evaluation": "PASS",
+      "evaluation_reason": "Exterior terrace context correct, tiling action visible — PASS individual, but pair with dallage undifferentiated",
+      "batch_plan": {
+        "composition": "contextual_overview",
+        "vehicle": "absent",
+        "workers": "workers"
+      },
+      "telemetry": {
+        "imageAttempts": 1,
+        "actualImageApiCalls": 1,
+        "imageCalls_cumulative_at_log": 6,
+        "visionAttempts": 0,
+        "retries": 0,
+        "api_status": "SUCCESS"
+      },
+      "setting_trace": {
+        "initial_scene_builder": "interior",
+        "after_applySiteRealism": "exterior",
+        "after_resolveLocationAndComposition": "exterior",
+        "passed_to_rewriter": "exterior",
+        "rewriter_honored": true
+      },
+      "site_realism_scenario_matched": "terrasse exterieure|carrelage terrasse",
+      "site_realism_scene_note": "outdoor terrace tile installation — large format porcelain stoneware tiles on a terrace abutting the house"
+    },
+    {
+      "taskId": 5,
+      "service": "Dallage extérieur",
+      "evaluation": "PASS",
+      "evaluation_reason": "Exterior paving visible — PASS individual, but pair with terrasse undifferentiated (stop rule triggered)",
+      "batch_plan": {
+        "composition": "contextual_overview",
+        "vehicle": "partially_visible",
+        "workers": "workers"
+      },
+      "telemetry": {
+        "imageAttempts": 1,
+        "actualImageApiCalls": 1,
+        "imageCalls_cumulative_at_log": 6,
+        "visionAttempts": 0,
+        "retries": 0,
+        "api_status": "SUCCESS"
+      },
+      "setting_trace": {
+        "initial_scene_builder": "interior",
+        "after_applySiteRealism": "exterior",
+        "after_resolveLocationAndComposition": "exterior",
+        "passed_to_rewriter": "exterior",
+        "rewriter_honored": true
+      },
+      "site_realism_scenario_matched": "dallage exterieur|dallage ext|pose.*dallage",
+      "site_realism_scene_note": "outdoor paving installation — large thick concrete or reconstituted-stone slabs being laid on a sand or lean-concrete bed in a driveway, garden path, or courtyard"
+    },
+    {
+      "taskId": 6,
+      "service": "Pose carrelage sol",
+      "evaluation": "PASS",
+      "evaluation_reason": "Interior floor tiling correct — medium_intervention composition (2.5-4m), no vehicle, indirect presence = clean indoor scene",
+      "batch_plan": {
+        "composition": "medium_intervention",
+        "vehicle": "absent",
+        "workers": "indirect"
+      },
+      "telemetry": {
+        "imageAttempts": 1,
+        "actualImageApiCalls": 1,
+        "imageCalls_cumulative_at_log": 6,
+        "visionAttempts": 0,
+        "retries": 0,
+        "api_status": "SUCCESS"
+      },
+      "setting_trace": {
+        "initial_scene_builder": "interior",
+        "after_applySiteRealism": "interior",
+        "after_resolveLocationAndComposition": "interior",
+        "passed_to_rewriter": "interior",
+        "rewriter_honored": true,
+        "success_reason": "medium_intervention (2.5-4m) is physically compatible with interior; vehicle=absent removes exterior contradiction; indirect presence avoids worker confusion"
+      },
+      "site_realism_scenario_matched": "carrelage sol|pose carrelage sol",
+      "site_realism_scene_note": "floor tile installation on a bare concrete screed inside a residential room — tiles laid row by row"
+    }
+  ],
+  "root_causes": [
+    {
+      "id": "RC-0",
+      "label": "_CONTEXTE_OPTIONS_TO_LOCATION['maison'] → maison_individuelle forces exterior must_have for ALL carrelage services (dominant cause)",
+      "file": "src/image-generation/config/locations.js",
+      "detail": "_CONTEXTE_OPTIONS_TO_LOCATION['maison'] = 'maison_individuelle' (line 234). All carrelage services with contexte='maison' (default) get location_type='maison_individuelle' whose must_have=['house building clearly visible — facade or roof or exterior']. The _IMG_REWRITE_SYSTEM says 'Every element in location_must_have must appear visible' — GPT-4.1 is explicitly instructed to show an exterior facade even for salle de bain. The correct location for interior services is appartement: must_have=['interior residential room — walls, ceiling, and floor of an apartment'], compatible_jobs includes carrelage. Fix: in _resolveLocationAndComposition, when obj.setting === 'interior' and locType === 'maison_individuelle', override to appartement."
+    },
+    {
+      "id": "RC-1",
+      "label": "architecture field carries exterior city description into interior SceneJSON",
+      "file": "src/image-generation/prompt/scene-builder.js",
+      "detail": "buildDallePromptV2 sets architecture=city.arch for all carrelage services because intBase is null (guard: resolvedSetting=interior && work.setting!==interior is false when work.setting is already interior). The rewriter reads architecture as priority-5 signal, receiving exterior city description."
+    },
+    {
+      "id": "RC-2",
+      "label": "Batch planner assigns exterior compositions and vehicles to interior services",
+      "file": "src/image-generation/planning/batch-planner.js",
+      "detail": "wide_worksite (5-15m, 'building, vehicle, or garden') and contextual_overview (10-30m, 'neighbourhood') are designed for exterior scenes. vehicle=clearly_visible inside a bathroom or kitchen is physically impossible. The planner does not check setting before assigning."
+    },
+    {
+      "id": "RC-3",
+      "label": "vehicle presence not gated on setting — interior services can receive clearly_visible",
+      "file": "src/image-generation/planning/vehicle-planner.js",
+      "detail": "_selectVehiclePresence has no setting check. A pre-assigned vehicle=clearly_visible for an interior kitchen or wall-tiling scene forces the rewriter to place a van outside, contradicting setting=interior."
+    },
+    {
+      "id": "RC-4",
+      "label": "_IMG_REWRITE_SYSTEM does not reference setting field",
+      "file": "src/image-generation/prompt/prompt-rewriter.js",
+      "detail": "The system prompt lists 7 priorities. None mention the `setting` field. The PromptBuilder would enforce indoor context via PHOTO_STYLE_RULES.interior when setting=interior, but _USE_PROMPT_BUILDER=false. RC-0 through RC-3 push exterior signals into the SceneJSON; RC-4 means the rewriter has no explicit instruction to override them."
+    },
+    {
+      "id": "RC-5",
+      "label": "_appendLockedFinalConstraints has no interior enforcement block",
+      "file": "src/image-generation/prompt/locked-constraints.js",
+      "detail": "The locked constraints appended to the final prompt include no interior/exterior enforcement. The CAMERA_COMPOSITION block for wide_worksite says 'building, vehicle, garden or room remains identifiable' — a mixed signal that can anchor an exterior scene."
+    }
+  ],
+  "imageCalls_interpretation": {
+    "values_logged_by_taskId": { "1": 5, "2": 3, "3": 3, "4": 6, "5": 6, "6": 6 },
+    "what_these_numbers_represent": "Value of state.counters.imageCalls (a global cumulative counter) at the moment each task's [IMAGE SUCCESS] event was logged. NOT the number of API calls made by that task.",
+    "counter_location": "generate-image.js:98 — state.counters.imageCalls++, called once per generateImageOnly() invocation",
+    "log_location": "run-batch.js:114 — console.log('[IMAGE SUCCESS] ... imageCalls=${state.counters.imageCalls}') — logs current global total, not per-task count",
+    "wrong_interpretation": "Summing the per-task snapshots: 5+3+3+6+6+6 = 29. This is meaningless — it adds apples to oranges (cumulative totals at different moments in time).",
+    "correct_interpretation": "actual_image_network_calls = imageCallLog.filter(e => e.type === 'image').length = 6 (one entry pushed at generate-image.js:99 per real network request)",
+    "per_task_evidence": [
+      { "taskId": 1, "captured_counter_value": 5, "captured_counter_semantics": "5 generateImageOnly() calls had completed across the entire run by the time task 1 logged SUCCESS", "actual_image_network_calls": 1, "actual_vision_network_calls": 0, "image_retries": 0 },
+      { "taskId": 2, "captured_counter_value": 3, "captured_counter_semantics": "3 total calls completed — task 2 was among the first to finish (batch 1 of CONCURRENCY=3)", "actual_image_network_calls": 1, "actual_vision_network_calls": 0, "image_retries": 0 },
+      { "taskId": 3, "captured_counter_value": 3, "captured_counter_semantics": "3 total calls completed — task 3 also finished in batch 1, counter unchanged since task 2 logged", "actual_image_network_calls": 1, "actual_vision_network_calls": 0, "image_retries": 0 },
+      { "taskId": 4, "captured_counter_value": 6, "captured_counter_semantics": "all 6 tasks had called the API by the time task 4 logged SUCCESS (tasks 4+5+6 ran as batch 2)", "actual_image_network_calls": 1, "actual_vision_network_calls": 0, "image_retries": 0 },
+      { "taskId": 5, "captured_counter_value": 6, "captured_counter_semantics": "same as task 4 — counter already at 6 when batch 2 tasks logged", "actual_image_network_calls": 1, "actual_vision_network_calls": 0, "image_retries": 0 },
+      { "taskId": 6, "captured_counter_value": 6, "captured_counter_semantics": "same as tasks 4+5", "actual_image_network_calls": 1, "actual_vision_network_calls": 0, "image_retries": 0 }
+    ],
+    "concurrency_reconstruction": "CONCURRENCY=3. Batch 1: tasks 1+2+3 invoke API simultaneously → counter increments to 3. Tasks 2 and 3 finish first → each logs SUCCESS at counter=3. Task 4 starts (counter=4), task 5 starts (counter=5). Task 1 (slowest of batch 1) logs SUCCESS at counter=5. Task 6 starts (counter=6). Tasks 4+5+6 log SUCCESS — counter is already 6 for all three.",
+    "proof_basis": "code_analysis — counter increment is synchronous at generate-image.js:98; SUCCESS log is at run-batch.js:114 after awaiting generateImageOnly(); CONCURRENCY=3 is the only concurrency source. No fetch log timestamps available (run completed before this forensic analysis was commissioned)."
+  },
+  "visionCalls_interpretation": {
+    "value": 0,
+    "reason": "intentional",
+    "gate_code": "run-batch.js:63 — if (imageResult.b64 && SAFETY_CHECK_RULES[task._planBase._matched_key])",
+    "evidence": "safety-rules.js:39 — comment: 'carrelage — skipped: floor-level, blade guard already in prompt rules'",
+    "SAFETY_CHECK_RULES_carrelage": "undefined (key absent)"
+  },
+  "pair_differentiation": {
+    "pair": ["Carrelage terrasse ext.", "Dallage extérieur"],
+    "individual_results": ["PASS", "PASS"],
+    "pair_differentiation": "FAIL",
+    "reason": "Both images show exterior tile/slab laying with similar framing and materials. No visible distinction between a terrace tile (porcelain stoneware, abutting house facade) and outdoor paving slab (thick concrete/reconstituted stone, driveway/path). Stop rule triggered.",
+    "stop_rule_triggered": true
+  }
+}

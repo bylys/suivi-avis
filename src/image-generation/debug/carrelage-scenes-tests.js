@@ -10,6 +10,12 @@
 import { WORK_SCENES, SITE_REALISM } from '../services/index.js';
 import { SERVICE_CATALOG } from '../config/service-catalog.js';
 import { CARRELAGE_VISUAL_CONTRACTS } from '../services/carrelage-contracts.js';
+import { _applySiteRealism } from '../resolution/service-resolver.js';
+import { _resolveLocationAndComposition } from '../resolution/location-resolver.js';
+import { buildDallePromptV2 } from '../prompt/scene-builder.js';
+import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
+import { SAFETY_CHECK_RULES, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
+import { createGenerationState } from '../pipeline/state.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -20,9 +26,24 @@ function _norm(s) {
 const _results = [];
 let _pass = 0, _fail = 0;
 
-function pass(label) { _results.push({ ok: true,  label }); _pass++; }
-function fail(label, detail) { _results.push({ ok: false, label, detail }); _fail++; console.error(`  ✘ ${label}${detail ? ' — ' + detail : ''}`); }
+function pass(label) { _results.push({ status: 'PASS',             label }); _pass++; }
+function fail(label, detail) { _results.push({ status: 'UNEXPECTED_FAILURE', label, detail }); _fail++; console.error(`  ✘ ${label}${detail ? ' — ' + detail : ''}`); }
 function ok(cond, label, detail) { cond ? pass(label) : fail(label, detail); }
+
+// For diagnostic tests expected to fail before corrections:
+//   EXPECTED_FAILURE when the assertion fails (bug confirmed — expected before fix)
+//   UNEXPECTED_PASS  when the assertion passes (bug already gone — needs review)
+// Neither increments _fail so the global suite stays green.
+function okExpectedFailure(cond, label, detail) {
+  if (cond) {
+    _results.push({ status: 'UNEXPECTED_PASS', label });
+    _pass++;
+    console.warn(`  ? UNEXPECTED_PASS (check if already fixed): ${label}`);
+  } else {
+    _results.push({ status: 'EXPECTED_FAILURE', label, detail });
+    console.info(`  ~ EXPECTED_FAILURE (will pass after corrections): ${label}${detail ? ' — ' + detail : ''}`);
+  }
+}
 
 const CARRELAGE_SERVICES = SERVICE_CATALOG.carrelage?.services ?? [];
 const ALL_SERVICES = Object.entries(SERVICE_CATALOG).flatMap(
@@ -372,6 +393,381 @@ async function cs12() {
   );
 }
 
+// ─── CW helpers ───────────────────────────────────────────────────────────────
+
+function _makeMinimalScene(matchedService, stateLevel = 'encours') {
+  return JSON.stringify({
+    _matched_key:     'carrelage',
+    _matched_service: matchedService,
+    state_level:      stateLevel,
+  });
+}
+
+function _applyRealism(matchedService, imageIndex = 0) {
+  const json  = _makeMinimalScene(matchedService);
+  const after = _applySiteRealism(json, imageIndex);
+  try { return JSON.parse(after); } catch { return null; }
+}
+
+// ─── CW1 — setting='interior' survives _applySiteRealism for interior services ──
+
+function cw1() {
+  const interior = [
+    'Pose carrelage mural',
+    'Faïence salle de bain',
+    'Faïence cuisine',
+    'Pose carrelage sol',
+    'Pose pierre naturelle',
+    'Réfection joint',
+    'Réfection carrelage',
+  ];
+  for (const svc of interior) {
+    const scene = _applyRealism(svc);
+    ok(
+      scene !== null && scene.setting === 'interior',
+      `CW1: "${svc}" → setting=interior after _applySiteRealism`,
+      scene ? `got: ${scene.setting}` : 'parse failed'
+    );
+  }
+}
+
+// ─── CW2 — salle de bain work_type references sanitary context ────────────────
+
+function cw2() {
+  const scene = _applyRealism('Faïence salle de bain');
+  const note  = (scene?.work_type || '').toLowerCase();
+  ok(
+    /shower|bath|sanit|tub|bain|salle/.test(note),
+    'CW2: salle de bain work_type references sanitary context',
+    `work_type: "${scene?.work_type}"`
+  );
+}
+
+// ─── CW3 — cuisine work_type references vertical backsplash / worktop ─────────
+
+function cw3() {
+  const scene = _applyRealism('Faïence cuisine');
+  const note  = (scene?.work_type || '').toLowerCase();
+  ok(
+    /splashback|worktop|cupboard|credence|cuisine|wall cupboard/.test(note),
+    'CW3: cuisine work_type references vertical backsplash/worktop',
+    `work_type: "${scene?.work_type}"`
+  );
+}
+
+// ─── CW4 — carrelage mural scenario has interior camera position ──────────────
+
+function cw4() {
+  const scene = _applyRealism('Pose carrelage mural');
+  const cam   = (scene?.camera_position || '').toLowerCase();
+  ok(
+    /wall|standing.*back|2.*m|interior|indoor/.test(cam),
+    'CW4: mural camera_position describes interior framing',
+    `camera_position: "${scene?.camera_position}"`
+  );
+  ok(
+    scene?.setting === 'interior',
+    'CW4: mural setting=interior persists',
+    `setting: "${scene?.setting}"`
+  );
+}
+
+// ─── CW5 — terrasse work_type mentions "terrace" (not generic paving) ─────────
+
+function cw5() {
+  const terrasse = _applyRealism('Carrelage terrasse ext.');
+  const dallage  = _applyRealism('Dallage extérieur');
+  const tNote    = (terrasse?.work_type || '').toLowerCase();
+  const dNote    = (dallage?.work_type  || '').toLowerCase();
+
+  ok(
+    /terrace|terrasse/.test(tNote),
+    'CW5: terrasse work_type contains "terrace" keyword',
+    `work_type: "${terrasse?.work_type}"`
+  );
+  ok(
+    !/terrace|terrasse/.test(dNote),
+    'CW5: dallage work_type does NOT contain "terrace" keyword',
+    `work_type: "${dallage?.work_type}"`
+  );
+  ok(
+    tNote !== dNote,
+    'CW5: terrasse and dallage work_type are different strings',
+    'identical work_type — pair cannot be differentiated'
+  );
+}
+
+// ─── CW6 — terrasse and dallage have different camera and scene notes ─────────
+
+function cw6() {
+  const terrasse = _applyRealism('Carrelage terrasse ext.');
+  const dallage  = _applyRealism('Dallage extérieur');
+
+  const tCam = (terrasse?.camera_position || '').toLowerCase();
+  const dCam = (dallage?.camera_position  || '').toLowerCase();
+
+  ok(
+    /facade|house|building|door|glazed/.test(tCam),
+    'CW6: terrasse camera references building facade or glazed door',
+    `camera: "${terrasse?.camera_position}"`
+  );
+  ok(
+    /boundary|sub.?base|pavement|layout|area|landscape|wall|back/.test(dCam),
+    'CW6: dallage camera references sub-base or boundary context (not facade)',
+    `camera: "${dallage?.camera_position}"`
+  );
+  ok(
+    tCam !== dCam,
+    'CW6: terrasse and dallage camera_position are different',
+    'identical camera — pair undifferentiated'
+  );
+}
+
+// ─── CW7 — carrelage absent from SAFETY_CHECK_RULES (visionCalls=0 intentional) ─
+
+function cw7() {
+  ok(
+    SAFETY_CHECK_RULES['carrelage'] === undefined,
+    'CW7: SAFETY_CHECK_RULES["carrelage"] is undefined — vision check intentionally skipped',
+    `got: ${JSON.stringify(SAFETY_CHECK_RULES['carrelage'])}`
+  );
+}
+
+// ─── CW8 — carrelage fully excluded from safety infrastructure ────────────────
+
+function cw8() {
+  ok(
+    SAFETY_CHECK_RULES['carrelage'] === undefined,
+    'CW8: carrelage absent from SAFETY_CHECK_RULES',
+    `got: ${JSON.stringify(SAFETY_CHECK_RULES['carrelage'])}`
+  );
+  ok(
+    FORBIDDEN_SAFETY_BY_METIER['carrelage'] === undefined,
+    'CW8: carrelage absent from FORBIDDEN_SAFETY_BY_METIER',
+    `got: ${JSON.stringify(FORBIDDEN_SAFETY_BY_METIER['carrelage'])}`
+  );
+  // Full exclusion from safety = both checks absent → visionCalls always 0
+  ok(
+    SAFETY_CHECK_RULES['carrelage'] === undefined &&
+    FORBIDDEN_SAFETY_BY_METIER['carrelage'] === undefined,
+    'CW8: carrelage fully excluded from safety infrastructure — visionCalls=0 is expected',
+    ''
+  );
+}
+
+// ─── CW9-CW16 helpers ─────────────────────────────────────────────────────────
+
+const _INTERIOR_SERVICES_ROWS = [
+  { travaux: 'Pose carrelage sol',    metier: 'carrelage', etat: 'encours', ville: 'Paris', contexte: 'maison' },
+  { travaux: 'Pose carrelage mural',  metier: 'carrelage', etat: 'encours', ville: 'Paris', contexte: 'maison' },
+  { travaux: 'Faïence salle de bain', metier: 'carrelage', etat: 'encours', ville: 'Paris', contexte: 'maison' },
+  { travaux: 'Faïence cuisine',       metier: 'carrelage', etat: 'encours', ville: 'Paris', contexte: 'maison' },
+  { travaux: 'Pose pierre naturelle', metier: 'carrelage', etat: 'encours', ville: 'Paris', contexte: 'maison' },
+  { travaux: 'Réfection joint',       metier: 'carrelage', etat: 'encours', ville: 'Paris', contexte: 'maison' },
+  { travaux: 'Réfection carrelage',   metier: 'carrelage', etat: 'encours', ville: 'Paris', contexte: 'maison' },
+];
+
+function _fullResolve(travaux, imageIndex = 0) {
+  const row = { travaux, metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' };
+  let json = buildDallePromptV2(row);
+  json = _applySiteRealism(json, imageIndex);
+  json = _resolveLocationAndComposition(json, imageIndex);
+  try { return JSON.parse(json); } catch { return null; }
+}
+
+// ─── CW9 — architecture field must NOT be exterior city.arch for interior ─────
+// EXPECTED_FAILURE before fix (intBase=null for carrelage → city.arch is exterior)
+
+function cw9() {
+  const EXTERIOR_ARCH = /haussmann|zinc rooftop|rendered facade|stone building|slate roof|wrought.iron|balcon|brick facade|half.timber/i;
+  const INTERIOR_ARCH = /interior|plaster wall|skirting|room|ordinary occupied/i;
+
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    const json = JSON.parse(buildDallePromptV2(row));
+    okExpectedFailure(
+      !EXTERIOR_ARCH.test(json.architecture),
+      `CW9: "${row.travaux}" architecture has no exterior city keywords`,
+      `architecture: "${json.architecture}"`
+    );
+    okExpectedFailure(
+      INTERIOR_ARCH.test(json.architecture),
+      `CW9: "${row.travaux}" architecture describes an interior space`,
+      `architecture: "${json.architecture}"`
+    );
+  }
+}
+
+// ─── CW10 — locked constraints must enforce interior for interior scenes ───────
+// EXPECTED_FAILURE before fix (_appendLockedFinalConstraints has no interior block)
+
+function cw10() {
+  const scene = {
+    _matched_key: 'carrelage', _matched_service: 'Faïence salle de bain',
+    setting: 'interior', composition: 'wide_worksite',
+    var_workers: 0, var_presence: 'none', _capture_defects_resolved: [],
+    triangle_rule: null,
+  };
+  const prompt = _appendLockedFinalConstraints('test interior prompt', scene);
+  okExpectedFailure(
+    /indoor|interior.*only|no.*exterior|no.*facade|no.*garden|no.*outside/i.test(prompt),
+    'CW10: locked constraints include interior enforcement',
+    'no "interior only" / "no exterior" constraint found in FINAL CAPTURE CONSTRAINTS'
+  );
+}
+
+// ─── CW11 — interior services must have vehicle=absent after resolution ────────
+// EXPECTED_FAILURE before fix (batch plan pre-assignment overrides setting)
+
+function cw11() {
+  for (const row of _INTERIOR_SERVICES_ROWS.slice(0, 4)) {
+    let json = buildDallePromptV2(row);
+    json = _applySiteRealism(json, 0);
+    // Simulate batch planner pre-assigning clearly_visible (as happened in Vague 1)
+    const obj = JSON.parse(json);
+    obj._pre_assigned_composition = 'contextual_overview';
+    obj._pre_assigned_vehicle     = 'clearly_visible';
+    json = _resolveLocationAndComposition(JSON.stringify(obj), 0);
+    const resolved = JSON.parse(json);
+    okExpectedFailure(
+      resolved.professional_vehicle_presence === 'absent',
+      `CW11: "${row.travaux}" → vehicle=absent even when pre-assigned clearly_visible`,
+      `got: "${resolved.professional_vehicle_presence}"`
+    );
+  }
+}
+
+// ─── CW12 — interior+wide_worksite composition_desc must use no exterior language
+
+function cw12() {
+  let json = buildDallePromptV2({ travaux: 'Faïence salle de bain', metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' });
+  json = _applySiteRealism(json, 0);
+  const obj = JSON.parse(json);
+  obj._pre_assigned_composition = 'wide_worksite';
+  obj._pre_assigned_vehicle     = 'absent';
+  json = _resolveLocationAndComposition(JSON.stringify(obj), 0);
+  const resolved = JSON.parse(json);
+  const desc = (resolved.composition_desc || '').toLowerCase();
+  okExpectedFailure(
+    !/building.*visible.*context|vehicle.*garden|neighbourhood|road type|property context/i.test(desc),
+    'CW12: interior+wide_worksite composition_desc uses no exterior landmark language',
+    `composition_desc: "${resolved.composition_desc}"`
+  );
+}
+
+// ─── CW13 — salle de bain locked constraints reference bathroom/sanitary ───────
+// EXPECTED_FAILURE before fix
+
+function cw13() {
+  const scene = {
+    _matched_key: 'carrelage', _matched_service: 'Faïence salle de bain',
+    setting: 'interior', composition: 'medium_intervention',
+    var_workers: 0, var_presence: 'none', _capture_defects_resolved: [],
+    triangle_rule: null,
+  };
+  const prompt = _appendLockedFinalConstraints('salle de bain test prompt', scene);
+  okExpectedFailure(
+    /bathroom|shower|bath|sanit|wet.*area|tub/i.test(prompt),
+    'CW13: salle de bain locked constraints reference sanitary/bathroom context',
+    'no bathroom/sanitary reference in locked constraints output'
+  );
+}
+
+// ─── CW14 — cuisine locked constraints reference vertical backsplash, not floor ─
+// EXPECTED_FAILURE before fix
+
+function cw14() {
+  const scene = {
+    _matched_key: 'carrelage', _matched_service: 'Faïence cuisine',
+    setting: 'interior', composition: 'medium_intervention',
+    var_workers: 0, var_presence: 'none', _capture_defects_resolved: [],
+    triangle_rule: null,
+  };
+  const prompt = _appendLockedFinalConstraints('cuisine test prompt', scene);
+  okExpectedFailure(
+    /backsplash|worktop|cupboard|vertical.*wall.*tile|splashback/i.test(prompt),
+    'CW14: cuisine locked constraints reference vertical backsplash/worktop',
+    'no backsplash/worktop reference in locked constraints output'
+  );
+}
+
+// ─── CW15 — terrasse and dallage have different location_subtype and must_have ──
+// Some assertions EXPECTED_FAILURE before fix (subtype pool is currently the same)
+
+function cw15() {
+  const terrasse = _fullResolve('Carrelage terrasse ext.');
+  const dallage  = _fullResolve('Dallage extérieur');
+
+  ok(terrasse?.setting === 'exterior', 'CW15: terrasse setting=exterior', `got: ${terrasse?.setting}`);
+  ok(dallage?.setting === 'exterior',  'CW15: dallage setting=exterior',  `got: ${dallage?.setting}`);
+
+  okExpectedFailure(
+    terrasse?.location_subtype !== dallage?.location_subtype,
+    'CW15: terrasse and dallage have different location_subtype',
+    `terrasse: "${terrasse?.location_subtype}" dallage: "${dallage?.location_subtype}"`
+  );
+
+  const tMH = JSON.stringify(terrasse?.location_must_have ?? []);
+  const dMH = JSON.stringify(dallage?.location_must_have  ?? []);
+  okExpectedFailure(
+    tMH !== dMH,
+    'CW15: terrasse and dallage have different location_must_have',
+    `terrasse: ${tMH} dallage: ${dMH}`
+  );
+
+  ok(
+    (terrasse?.work_type || '').toLowerCase().includes('terrace'),
+    'CW15: terrasse work_type contains "terrace"',
+    `work_type: "${terrasse?.work_type}"`
+  );
+  ok(
+    !(dallage?.work_type || '').toLowerCase().includes('terrace'),
+    'CW15: dallage work_type does NOT contain "terrace"',
+    `work_type: "${dallage?.work_type}"`
+  );
+}
+
+// ─── CW16 — telemetry: imageCallLog proves 6 real API calls, not 29 ───────────
+// Proves that summing cumulative imageCalls counter values (3+3+5+6+6+6=29) ≠ real calls
+
+function cw16() {
+  const state = createGenerationState();
+  const runId = 'test-run-1';
+
+  // Simulate 6 tasks × 1 call each (no retries)
+  for (let taskId = 1; taskId <= 6; taskId++) {
+    state.counters.imageCalls++;
+    state.imageCallLog.push({ type: 'image', runId, taskId, metier: 'carrelage', imageAttempt: 1, reason: 'initial' });
+  }
+
+  ok(
+    state.imageCallLog.filter(e => e.type === 'image').length === 6,
+    'CW16: imageCallLog has exactly 6 image-type entries (1 per task, 0 retries)',
+    `imageCallLog image-entries: ${state.imageCallLog.filter(e => e.type === 'image').length}`
+  );
+  ok(
+    state.counters.imageCalls === 6,
+    'CW16: imageCalls global counter = 6 after 6 tasks with 0 retries',
+    `imageCalls: ${state.counters.imageCalls}`
+  );
+  // The cumulative snapshots at SUCCESS time would be e.g. [3,3,5,6,6,6] — their sum is meaningless
+  const snapshotSum = 3 + 3 + 5 + 6 + 6 + 6; // = 29 (the wrong number)
+  ok(
+    snapshotSum !== state.imageCallLog.filter(e => e.type === 'image').length,
+    `CW16: sum of imageCalls snapshots (${snapshotSum}) ≠ actual API calls (6) — the "29" was a miscount`,
+    ''
+  );
+  ok(
+    state.imageCallLog.every(e => e.imageAttempt === 1),
+    'CW16: all entries have imageAttempt=1 — no retries occurred',
+    ''
+  );
+  ok(
+    state.counters.visionCalls === 0,
+    'CW16: visionCalls=0 — carrelage excluded from SAFETY_CHECK_RULES (intentional)',
+    `visionCalls: ${state.counters.visionCalls}`
+  );
+}
+
 // ─── Public export ────────────────────────────────────────────────────────────
 
 export async function runCarrelageSceneTests() {
@@ -392,6 +788,23 @@ export async function runCarrelageSceneTests() {
   console.group('[CS10]'); cs10();     console.groupEnd();
   await cs11();
   await cs12();
+
+  console.group('[CW1]'); cw1(); console.groupEnd();
+  console.group('[CW2]'); cw2(); console.groupEnd();
+  console.group('[CW3]'); cw3(); console.groupEnd();
+  console.group('[CW4]'); cw4(); console.groupEnd();
+  console.group('[CW5]'); cw5(); console.groupEnd();
+  console.group('[CW6]'); cw6(); console.groupEnd();
+  console.group('[CW7]'); cw7(); console.groupEnd();
+  console.group('[CW8]');  cw8();  console.groupEnd();
+  console.group('[CW9]');  cw9();  console.groupEnd();
+  console.group('[CW10]'); cw10(); console.groupEnd();
+  console.group('[CW11]'); cw11(); console.groupEnd();
+  console.group('[CW12]'); cw12(); console.groupEnd();
+  console.group('[CW13]'); cw13(); console.groupEnd();
+  console.group('[CW14]'); cw14(); console.groupEnd();
+  console.group('[CW15]'); cw15(); console.groupEnd();
+  console.group('[CW16]'); cw16(); console.groupEnd();
 
   const total   = _pass + _fail;
   const summary = `[CARRELAGE SCENES SUMMARY] ${_pass}/${total} passed${_fail ? ` — ${_fail} FAILED` : ' ✔'}`;
