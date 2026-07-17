@@ -214,8 +214,13 @@ function buildDallePromptV2(row, { lastMatchState } = {}) {
     ? ((_metierCtx.find(o => o.value === row.contexte) || {}).desc || null)
     : ((work.context_map || {})[row.contexte] || null);
 
-  const intBase = (resolvedSetting === 'interior' && work.setting !== 'interior')
-    ? INTERIOR_SCENE_BASE : null;
+  // RC-1: apply interior base when the resolved setting is interior.
+  // `resolvedSetting` is the authoritative signal: _resolveServiceSetting now returns
+  // 'exterior' explicitly for carrelage terrasse/dallage so they are never caught here.
+  // Removed `|| work.setting === 'interior'`: that flag is top-level for the whole métier
+  // (including exterior sub-services) and cannot be used alone to gate intBase.
+  const isInterior = resolvedSetting === 'interior';
+  const intBase = isInterior ? INTERIOR_SCENE_BASE : null;
 
   return JSON.stringify({
     photo_goal:        'work-progress documentation by French contractor, cheap Android smartphone',

@@ -117,6 +117,10 @@ function _resolveServiceSetting(metier, travaux, defaultSetting) {
       return 'interior';
   }
   if (met === 'carrelage') {
+    // Explicit exterior services — must precede interior check and defaultSetting.
+    // Without this, WORK_SCENES['carrelage'].setting='interior' would propagate to terrasse/dallage.
+    if (/terrasse|dallage|ext[eé]rieur/.test(svc))
+      return 'exterior';
     if (/salle.*bain|salle.*eau|cuisine.*sol|salon.*sol|chambre.*sol|couloir.*sol|interieur|interieure/.test(svc))
       return 'interior';
   }

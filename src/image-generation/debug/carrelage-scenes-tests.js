@@ -11,11 +11,24 @@ import { WORK_SCENES, SITE_REALISM } from '../services/index.js';
 import { SERVICE_CATALOG } from '../config/service-catalog.js';
 import { CARRELAGE_VISUAL_CONTRACTS } from '../services/carrelage-contracts.js';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
-import { _resolveLocationAndComposition } from '../resolution/location-resolver.js';
+import { _resolveLocationAndComposition, _isLocationCompatibleWithSetting } from '../resolution/location-resolver.js';
 import { buildDallePromptV2 } from '../prompt/scene-builder.js';
 import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
 import { SAFETY_CHECK_RULES, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
 import { createGenerationState } from '../pipeline/state.js';
+
+// CS11 needs to load a single local static file. The runtime-tests guard explicitly
+// allows same-origin GET to /docs/service-coverage-audit.json — no bypass needed.
+async function fetchLocalAuditSnapshot() {
+  const url = new URL('/docs/service-coverage-audit.json', window.location.origin);
+  if (
+    url.origin !== window.location.origin ||
+    url.pathname !== '/docs/service-coverage-audit.json'
+  ) {
+    throw new Error('[UNSAFE_TEST_RESOURCE_URL]');
+  }
+  return fetch(url, { method: 'GET', cache: 'no-store', credentials: 'same-origin' });
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -326,7 +339,7 @@ async function cs11() {
   // Fetch current persisted JSON (which was regenerated from same runtime)
   let jsonData;
   try {
-    const resp = await fetch('/docs/service-coverage-audit.json?cb=' + Date.now());
+    const resp = await fetchLocalAuditSnapshot();
     jsonData = await resp.json();
   } catch (e) {
     fail('CS11: failed to fetch service-coverage-audit.json', e.message);
@@ -555,6 +568,144 @@ function cw8() {
   );
 }
 
+// ─── RC01-RC06 : vérifications post-correction RC-0 et RC-1 ──────────────────
+// Ces tests doivent PASSER après l'implémentation de RC-0 et RC-1.
+// Ils utilisent ok() (non okExpectedFailure) et font partie du bilan global.
+
+const EXT_MH_RE   = /\b(?:facade|roof|exterior|garden|street|driveway|outdoor|house\s+building\s+clearly\s+visible)\b/i;
+const EXT_ARCH_RE = /haussmann|zinc rooftop|rendered facade|stone building|slate roof|wrought.iron|balcon|brick facade|half.timber|suburban house.*(?:slate|roof)|typical french|classic.*building/i;
+const INT_ARCH_RE = /interior|plaster wall|skirting|ordinary occupied|residential.*interior/i;
+
+// ─── RC01 — location_type intérieur compatible (pas de must_have extérieur) ───
+function rc01() {
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    let json = buildDallePromptV2(row);
+    json = _applySiteRealism(json, 0);
+    json = _resolveLocationAndComposition(json, 0);
+    const resolved = JSON.parse(json);
+    const badMH = (resolved.location_must_have || []).filter(mh => EXT_MH_RE.test(mh));
+    ok(
+      badMH.length === 0,
+      `RC01: "${row.travaux}" location_must_have has no exterior constraint`,
+      `type=${resolved.location_type} bad_must_have=${JSON.stringify(badMH)}`
+    );
+    ok(
+      resolved.location_type !== 'maison_individuelle',
+      `RC01: "${row.travaux}" location_type ≠ maison_individuelle`,
+      `got: "${resolved.location_type}"`
+    );
+  }
+}
+
+// ─── RC02 — interdictions extérieures présentes dans exclude ─────────────────
+function rc02() {
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    let json = buildDallePromptV2(row);
+    json = _applySiteRealism(json, 0);
+    json = _resolveLocationAndComposition(json, 0);
+    const resolved = JSON.parse(json);
+    const excl = resolved.exclude || [];
+    const EXT_TERMS = ['exterior facade', 'street', 'garden', 'roof', 'outdoor architecture'];
+    const covered = EXT_TERMS.filter(t => excl.some(e => e.includes(t.split(' ')[0])));
+    ok(
+      covered.length >= 2,
+      `RC02: "${row.travaux}" exclude contains ≥2 exterior categories`,
+      `exclude=${JSON.stringify(excl)}`
+    );
+  }
+}
+
+// ─── RC03 — architecture ne décrit plus la ville extérieure ──────────────────
+function rc03() {
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    const json = JSON.parse(buildDallePromptV2(row));
+    ok(
+      !EXT_ARCH_RE.test(json.architecture),
+      `RC03: "${row.travaux}" architecture has no exterior city keywords`,
+      `architecture: "${json.architecture}"`
+    );
+  }
+}
+
+// ─── RC04 — architecture décrit un espace intérieur ─────────────────────────
+function rc04() {
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    const json = JSON.parse(buildDallePromptV2(row));
+    ok(
+      INT_ARCH_RE.test(json.architecture),
+      `RC04: "${row.travaux}" architecture describes an interior space`,
+      `architecture: "${json.architecture}"`
+    );
+  }
+}
+
+// ─── RC05 — terrasse et dallage restent extérieurs ───────────────────────────
+function rc05() {
+  for (const travaux of ['Carrelage terrasse ext.', 'Dallage extérieur']) {
+    const full = _fullResolve(travaux);
+    ok(
+      full?.setting === 'exterior',
+      `RC05: "${travaux}" setting remains exterior`,
+      `got: ${full?.setting}`
+    );
+    ok(
+      full?.location_type !== 'appartement',
+      `RC05: "${travaux}" location_type is not appartement`,
+      `got: ${full?.location_type}`
+    );
+  }
+}
+
+// ─── RC06 — combinaison contradictoire setting=interior + maison_individuelle est résolue
+function rc06() {
+  // Mock: pipeline a résolu contexte='maison' → maison_individuelle, mais setting=interior
+  const mockJson = JSON.stringify({
+    _matched_key: 'carrelage',
+    _matched_service: 'Faïence salle de bain',
+    setting: 'interior',
+    contexte: 'maison',
+    exclude: [],
+  });
+  const resolved = JSON.parse(_resolveLocationAndComposition(mockJson, 0));
+  const badMH = (resolved.location_must_have || []).filter(mh => EXT_MH_RE.test(mh));
+  ok(
+    badMH.length === 0,
+    'RC06: setting=interior + contexte=maison → location_must_have sans contrainte extérieure',
+    `type=${resolved.location_type} bad_must_have=${JSON.stringify(badMH)}`
+  );
+  ok(
+    resolved.location_type !== 'maison_individuelle',
+    'RC06: maison_individuelle substitué quand setting=interior',
+    `got: "${resolved.location_type}"`
+  );
+  ok(
+    _isLocationCompatibleWithSetting(resolved.location_type, 'interior'),
+    `RC06: location "${resolved.location_type}" est compatible intérieur`,
+    ''
+  );
+}
+
+// ─── RC07 — guard locType: setting=interior + location_type=null → reste null ──
+// RC-0 ne doit pas assigner un fallback quand aucun lieu n'a été résolu.
+// Guard: `locType && !isLocationCompatibleWithSetting(...)` — le && bloque sur null.
+function rc07() {
+  // Inject a minimal scene with setting=interior and no contexte that would resolve
+  // to a location. The resolution chain (steps a-e) returns null → RC-0 guard skips.
+  const mockJson = JSON.stringify({
+    _matched_key:     'peinture',
+    _matched_service: 'Peinture intérieure',
+    setting:          'interior',
+    contexte:         '',
+    exclude:          [],
+  });
+  const resolved = JSON.parse(_resolveLocationAndComposition(mockJson, 0));
+  ok(
+    resolved.location_type === null,
+    'RC07: setting=interior + location_type=null → location_type stays null (RC-0 guard on locType)',
+    `got: "${resolved.location_type}"`
+  );
+}
+
 // ─── CW9-CW16 helpers ─────────────────────────────────────────────────────────
 
 const _INTERIOR_SERVICES_ROWS = [
@@ -584,12 +735,12 @@ function cw9() {
 
   for (const row of _INTERIOR_SERVICES_ROWS) {
     const json = JSON.parse(buildDallePromptV2(row));
-    okExpectedFailure(
+    ok(
       !EXTERIOR_ARCH.test(json.architecture),
       `CW9: "${row.travaux}" architecture has no exterior city keywords`,
       `architecture: "${json.architecture}"`
     );
-    okExpectedFailure(
+    ok(
       INTERIOR_ARCH.test(json.architecture),
       `CW9: "${row.travaux}" architecture describes an interior space`,
       `architecture: "${json.architecture}"`
@@ -788,6 +939,14 @@ export async function runCarrelageSceneTests() {
   console.group('[CS10]'); cs10();     console.groupEnd();
   await cs11();
   await cs12();
+
+  console.group('[RC01]'); rc01(); console.groupEnd();
+  console.group('[RC02]'); rc02(); console.groupEnd();
+  console.group('[RC03]'); rc03(); console.groupEnd();
+  console.group('[RC04]'); rc04(); console.groupEnd();
+  console.group('[RC05]'); rc05(); console.groupEnd();
+  console.group('[RC06]'); rc06(); console.groupEnd();
+  console.group('[RC07]'); rc07(); console.groupEnd();
 
   console.group('[CW1]'); cw1(); console.groupEnd();
   console.group('[CW2]'); cw2(); console.groupEnd();

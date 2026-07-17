@@ -15,6 +15,33 @@ import { PHOTO_COMPOSITIONS, _COMPOSITION_DIST, CAMERA_COMPOSITIONS } from '../c
 import { PROFESSIONAL_VEHICLE_RULES } from '../config/vehicles.js';
 import { _hashSeed, _pick } from '../utils/deterministic.js';
 
+// RC-0: Detect locations whose must_have constraints are incompatible with an interior setting.
+// Checks must_have strings for exterior keywords (facade, roof, garden, street, outdoor…).
+// For non-interior settings the check is always true (no constraint).
+function _isLocationCompatibleWithSetting(locType, setting) {
+  if (setting !== 'interior') return true;
+  const rules = LOCATION_RULES[locType];
+  if (!rules) return true;
+  const EXT = /\b(?:facade|roof|exterior|garden|street|driveway|outdoor|house\s+building\s+clearly\s+visible|professional\s+vehicle)\b/i;
+  return !rules.must_have?.some(mh => EXT.test(mh));
+}
+
+// RC-0: When the resolved location is incompatible with setting=interior, find the best
+// available interior-compatible location for the given métier.
+// Priority order: appartement > local_professionnel > commerce (all compatible with carrelage/peinture/etc.)
+function _resolveInteriorFallbackLocation(locType, metierKey) {
+  const INTERIOR_CANDIDATES = ['appartement', 'local_professionnel', 'commerce'];
+  for (const candidate of INTERIOR_CANDIDATES) {
+    const rules = LOCATION_RULES[candidate];
+    if (!rules) continue;
+    if (_isLocationCompatibleWithSetting(candidate, 'interior') &&
+        rules.compatible_jobs?.includes(metierKey)) {
+      return candidate;
+    }
+  }
+  return 'appartement'; // universal interior residential fallback
+}
+
 function _normalizeLocationKey(raw) {
   return String(raw || '')
     .trim()
@@ -64,12 +91,22 @@ function _resolveLocationAndComposition(jsonStr, imageIndex) {
   // 1. Location type — 5-step resolution chain (first match wins)
   const normCtx  = _normalizeLocationKey(ctx);
   const normKey  = _normalizeLocationKey(key);
-  const locType  = _CONTEXTE_TO_LOCATION[key]?.[ctx]          // a. specific métier map
-                || _CONTEXTE_OPTIONS_TO_LOCATION[ctx]          // b. generic CONTEXTE_OPTIONS
-                || LOCATION_ALIASES[normCtx]                   // c. alias / synonym
-                || (LOCATION_RULES[normCtx] ? normCtx : null)  // d. direct LOCATION_RULES match
-                || DEFAULT_LOCATION_BY_METIER[normKey]         // e. per-métier fallback
-                || null;
+  let locType  = _CONTEXTE_TO_LOCATION[key]?.[ctx]          // a. specific métier map
+             || _CONTEXTE_OPTIONS_TO_LOCATION[ctx]          // b. generic CONTEXTE_OPTIONS
+             || LOCATION_ALIASES[normCtx]                   // c. alias / synonym
+             || (LOCATION_RULES[normCtx] ? normCtx : null)  // d. direct LOCATION_RULES match
+             || DEFAULT_LOCATION_BY_METIER[normKey]         // e. per-métier fallback
+             || null;
+
+  // RC-0: override incompatible location for interior settings.
+  // Covers: contexte='maison' → maison_individuelle (must_have: facade/roof/exterior)
+  // which contradicts setting=interior for services like carrelage salle de bain, cuisine, sol, mural.
+  if (obj.setting === 'interior' && locType && !_isLocationCompatibleWithSetting(locType, 'interior')) {
+    const fallback = _resolveInteriorFallbackLocation(locType, key);
+    console.info(`[RC-0] interior override: "${locType}" → "${fallback}" (${key} / ${obj._matched_service || ''})`);
+    locType = fallback;
+  }
+
   if (!locType || !LOCATION_RULES[locType]) {
     console.warn(`[LOCATION_UNRESOLVED] métier=${key} contexte=${ctx}`);
   }
@@ -161,4 +198,4 @@ function _resolveLocationAndComposition(jsonStr, imageIndex) {
   return JSON.stringify(obj);
 }
 
-export { _normalizeLocationKey, _resolveCompatibleSubtype, _resolveWorkSurface, _resolveLocationAndComposition };
+export { _normalizeLocationKey, _resolveCompatibleSubtype, _resolveWorkSurface, _resolveLocationAndComposition, _isLocationCompatibleWithSetting, _resolveInteriorFallbackLocation };
