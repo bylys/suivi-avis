@@ -11,7 +11,9 @@ import { WORK_SCENES, SITE_REALISM } from '../services/index.js';
 import { SERVICE_CATALOG } from '../config/service-catalog.js';
 import { CARRELAGE_VISUAL_CONTRACTS } from '../services/carrelage-contracts.js';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
-import { _resolveLocationAndComposition, _isLocationCompatibleWithSetting } from '../resolution/location-resolver.js';
+import { _resolveLocationAndComposition, _isLocationCompatibleWithSetting, _resolveCompositionForSetting, _INTERIOR_COMPOSITION_OVERRIDES } from '../resolution/location-resolver.js';
+import { _sanitizeSceneForPrompt } from '../pipeline/prompt-scene-sanitizer.js';
+import { generateImageOnly }       from '../pipeline/generate-image.js';
 import { buildDallePromptV2 } from '../prompt/scene-builder.js';
 import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
 import { SAFETY_CHECK_RULES, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
@@ -57,6 +59,7 @@ function okExpectedFailure(cond, label, detail) {
     console.info(`  ~ EXPECTED_FAILURE (will pass after corrections): ${label}${detail ? ' — ' + detail : ''}`);
   }
 }
+
 
 const CARRELAGE_SERVICES = SERVICE_CATALOG.carrelage?.services ?? [];
 const ALL_SERVICES = Object.entries(SERVICE_CATALOG).flatMap(
@@ -706,6 +709,367 @@ function rc07() {
   );
 }
 
+// ─── RC21–RC24: RC-2 composition setting-awareness ───────────────────────────
+
+const _EXT_COMP_RE  = /\bneighbourhood\b|\bbuilding.*exterior\b|\bvehicle.*visible\b|\bfacade.*overview\b|\bgarden\b|\bstreet\s+view\b|\broad\s+type\b|\bproperty\s+context\b|\b5[–-]15\s*m\b|\b10[–-]30\s*m\b/i;
+const _INT_COMP_RE  = /inside the room|interior|room|kitchen|bathroom|residential/i;
+const _VALID_COMPS  = ['close_detail', 'medium_intervention', 'wide_worksite', 'contextual_overview'];
+
+// RC21 — composition_desc contains no exterior vocabulary for interior services
+function rc21() {
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    for (const comp of _VALID_COMPS) {
+      const obj = JSON.parse(_applySiteRealism(buildDallePromptV2(row), 0));
+      obj._pre_assigned_composition = comp;
+      obj._pre_assigned_vehicle     = 'absent';
+      const resolved = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+      const desc = resolved.composition_desc || '';
+      ok(
+        !_EXT_COMP_RE.test(desc),
+        `RC21: "${row.travaux}" + ${comp} → composition_desc no exterior vocabulary`,
+        `desc: "${desc}"`
+      );
+    }
+  }
+}
+
+// RC22 — three sub-assertions for interior composition/camera fields:
+//   RC22A: positive interior signal in combined composition_desc+camera_position+camera_distance
+//   RC22B: no exterior vocabulary in those same fields
+//   RC22C: camera_distance plausible for interior (no 5–30 m exterior ranges)
+// _applySiteRealism may set service-specific camera_position ("standing at bathroom
+// entrance") that doesn't contain the literal word "inside" — RC-2's overridden
+// composition_desc supplies the positive interior evidence.
+function rc22() {
+  const INT_SIGNAL_RE = /inside\s+the\s+room|interior|room\s+layout|within\s+the\s+room|indoor/i;
+  const EXT_DIST_RE   = /\b(?:5\s*to\s*[8-9]\d*|6\s*to\s*\d+|10\s*to\s*\d+|\d{2,}\s*met)/i;
+  const EXT_POS_RE    = /\b(?:facade|street|garden|outdoor|outside|open\s+sky|pavement|roof|kerb)/i;
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    for (const comp of ['wide_worksite', 'contextual_overview']) {
+      const obj = JSON.parse(_applySiteRealism(buildDallePromptV2(row), 0));
+      obj._pre_assigned_composition = comp;
+      obj._pre_assigned_vehicle     = 'absent';
+      const resolved = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+      const effectiveText = [resolved.composition_desc, resolved.camera_position, resolved.camera_distance]
+        .filter(Boolean).join(' ');
+      ok(
+        INT_SIGNAL_RE.test(effectiveText),
+        `RC22A: "${row.travaux}" + ${comp} → positive interior signal in composition/camera fields`,
+        `text: "${effectiveText.slice(0, 120)}"`
+      );
+      ok(
+        !EXT_POS_RE.test(effectiveText),
+        `RC22B: "${row.travaux}" + ${comp} → no exterior landmark in composition/camera fields`,
+        `text: "${effectiveText.slice(0, 120)}"`
+      );
+      ok(
+        !EXT_DIST_RE.test(resolved.camera_distance || ''),
+        `RC22C: "${row.travaux}" + ${comp} → camera_distance plausible for interior`,
+        `camera_distance: "${resolved.camera_distance}"`
+      );
+    }
+  }
+}
+
+// RC23 — contextual evidence preserved: sdb → sanitary/bathroom, cuisine → kitchen
+function rc23() {
+  const cases = [
+    { travaux: 'Faïence salle de bain', re: /bathroom|shower|sanit|wet.*room|room/i,  label: 'sanitary or room context' },
+    { travaux: 'Faïence cuisine',       re: /kitchen|cuisine|room/i,                   label: 'kitchen or room context' },
+    { travaux: 'Pose carrelage mural',  re: /wall|surface|room|interior/i,             label: 'vertical surface or interior context' },
+  ];
+  for (const { travaux, re, label } of cases) {
+    const obj = JSON.parse(_applySiteRealism(
+      buildDallePromptV2({ travaux, metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' }), 0
+    ));
+    obj._pre_assigned_composition = 'contextual_overview';
+    obj._pre_assigned_vehicle     = 'absent';
+    const resolved = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+    const desc = (resolved.composition_desc || '') + ' ' + (resolved.architecture || '');
+    ok(
+      re.test(desc),
+      `RC23: "${travaux}" → ${label} still visible in resolved fields`,
+      `desc: "${resolved.composition_desc}"`
+    );
+  }
+}
+
+// RC24 — exterior services (terrasse, dallage) composition_desc unchanged
+function rc24() {
+  for (const travaux of ['Carrelage terrasse ext.', 'Dallage extérieur']) {
+    const row = { travaux, metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' };
+    for (const comp of ['wide_worksite', 'contextual_overview']) {
+      const obj = JSON.parse(_applySiteRealism(buildDallePromptV2(row), 0));
+      obj._pre_assigned_composition = comp;
+      obj._pre_assigned_vehicle     = 'absent';
+      const resolved    = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+      const overrideDesc = (_INTERIOR_COMPOSITION_OVERRIDES[comp] || {}).description || '';
+      ok(
+        resolved.composition_desc !== overrideDesc,
+        `RC24: exterior "${travaux}" + ${comp} → composition_desc not replaced by interior override`,
+        `desc: "${resolved.composition_desc}"`
+      );
+    }
+  }
+}
+
+// ─── RC31–RC34: RC-3 vehicle setting-awareness ───────────────────────────────
+
+// RC31 — vehicle forced absent for all 7 interior services, regardless of pre-assigned value
+function rc31() {
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    for (const vehicleVal of ['clearly_visible', 'partially_visible', 'absent']) {
+      const obj = JSON.parse(_applySiteRealism(buildDallePromptV2(row), 0));
+      obj._pre_assigned_vehicle     = vehicleVal;
+      obj._pre_assigned_composition = 'medium_intervention';
+      const resolved = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+      ok(
+        resolved.professional_vehicle_presence === 'absent',
+        `RC31: "${row.travaux}" (pre=${vehicleVal}) → vehicle absent for interior`,
+        `got: "${resolved.professional_vehicle_presence}"`
+      );
+    }
+  }
+}
+
+// RC32 — no residual vehicle language in composition_desc when interior
+function rc32() {
+  const VEHICLE_RE = /\bprofessional van\b|\bwork vehicle\b|\bvehicle in background\b|\bbranded van\b|\bservice van\b/i;
+  for (const row of _INTERIOR_SERVICES_ROWS.slice(0, 3)) {
+    const obj = JSON.parse(_applySiteRealism(buildDallePromptV2(row), 0));
+    obj._pre_assigned_vehicle     = 'clearly_visible';
+    obj._pre_assigned_composition = 'wide_worksite';
+    const resolved = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+    const checked = [
+      resolved.composition_desc || '',
+      resolved.architecture     || '',
+      resolved.environment      || '',
+    ].join(' ');
+    ok(
+      !VEHICLE_RE.test(checked),
+      `RC32: "${row.travaux}" interior → no residual vehicle language in resolved fields`,
+      `checked: "${checked.slice(0, 80)}"`
+    );
+  }
+}
+
+// RC33 — exterior services (terrasse, dallage) vehicle plan unchanged
+function rc33() {
+  for (const travaux of ['Carrelage terrasse ext.', 'Dallage extérieur']) {
+    const row = { travaux, metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' };
+    const obj = JSON.parse(_applySiteRealism(buildDallePromptV2(row), 0));
+    obj._pre_assigned_vehicle     = 'clearly_visible';
+    obj._pre_assigned_composition = 'wide_worksite';
+    const resolved = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+    ok(
+      resolved.professional_vehicle_presence === 'clearly_visible',
+      `RC33: exterior "${travaux}" → vehicle presence not suppressed`,
+      `got: "${resolved.professional_vehicle_presence}"`
+    );
+    ok(
+      resolved._vehicle_suppression_reason === undefined,
+      `RC33: exterior "${travaux}" → no suppression reason recorded`,
+      `got: "${resolved._vehicle_suppression_reason}"`
+    );
+  }
+}
+
+// RC34 — rule depends on setting=interior, not metier=carrelage (generic test via peinture)
+function rc34() {
+  const mockJson = JSON.stringify({
+    _matched_key:           'peinture',
+    _matched_service:       'Peinture intérieure',
+    setting:                'interior',
+    contexte:               '',
+    exclude:                [],
+    // _pre_assigned_vehicle forces clearly_visible so RC-3 suppression always fires
+    _pre_assigned_vehicle:  'clearly_visible',
+    composition:            'medium_intervention',
+  });
+  const resolved = JSON.parse(_resolveLocationAndComposition(mockJson, 0));
+  ok(
+    resolved.professional_vehicle_presence === 'absent',
+    'RC34: setting=interior (peinture) → vehicle forced absent — rule is generic, not carrelage-specific',
+    `got: "${resolved.professional_vehicle_presence}"`
+  );
+  ok(
+    resolved._vehicle_suppression_reason === 'interior_setting',
+    'RC34: interior vehicle suppression records reason',
+    `got: "${resolved._vehicle_suppression_reason}"`
+  );
+}
+
+// RC35 — rewriter payload must not contain RC-3 telemetry fields
+// _planned_vehicle_presence and _vehicle_suppression_reason are batch-diagnostic
+// metadata; they must be stripped before the scene JSON reaches the rewriter.
+function rc35() {
+  const row = { travaux: 'Faïence salle de bain', metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' };
+  let json = buildDallePromptV2(row);
+  json = _applySiteRealism(json, 0);
+  const obj = JSON.parse(json);
+  obj._pre_assigned_composition = 'wide_worksite';
+  obj._pre_assigned_vehicle     = 'clearly_visible';
+  const resolved = JSON.parse(_resolveLocationAndComposition(JSON.stringify(obj), 0));
+  // Sanity: RC-3 telemetry was added to the resolved scene
+  ok(
+    resolved._planned_vehicle_presence === 'clearly_visible',
+    'RC35-pre: RC-3 _planned_vehicle_presence present in resolved scene (sanity)',
+    `got: "${resolved._planned_vehicle_presence}"`
+  );
+  ok(
+    resolved._vehicle_suppression_reason === 'interior_setting',
+    'RC35-pre: RC-3 _vehicle_suppression_reason present in resolved scene (sanity)',
+    `got: "${resolved._vehicle_suppression_reason}"`
+  );
+  // After sanitization the telemetry fields must be gone
+  const sanitized = JSON.parse(_sanitizeSceneForPrompt(JSON.stringify(resolved)));
+  ok(
+    !('_planned_vehicle_presence' in sanitized),
+    'RC35: rewriter payload has no _planned_vehicle_presence',
+    `still present: "${sanitized._planned_vehicle_presence}"`
+  );
+  ok(
+    !('_vehicle_suppression_reason' in sanitized),
+    'RC35: rewriter payload has no _vehicle_suppression_reason',
+    `still present: "${sanitized._vehicle_suppression_reason}"`
+  );
+}
+
+// RC36 — no positive vehicle signal in the rewriter payload for interior scenes.
+// Checks controlled-vocabulary values AND semantic expressions that would indicate
+// a vehicle is present. Negative instructions ("no professional vehicle visible")
+// are NOT matched — the regex anchors on positive assertion patterns only.
+function rc36() {
+  // Controlled-vocabulary positive values (professional_vehicle_presence field)
+  const POS_STRUCT_RE = /\b(?:clearly_visible|partially_visible|background_visible|required)\b/i;
+  // Semantic positive assertions (prose that positively asserts a vehicle is present)
+  // The pattern deliberately avoids matching negations ("no", "without", "exclude")
+  const POS_PROSE_RE  = /(?:^|[^a-z])(?:professional van|work vehicle|branded van|vehicle in the background|van parked outside)\b/i;
+
+  for (const row of _INTERIOR_SERVICES_ROWS.slice(0, 4)) {
+    let json = buildDallePromptV2(row);
+    json = _applySiteRealism(json, 0);
+    const obj = JSON.parse(json);
+    obj._pre_assigned_composition = 'contextual_overview';
+    obj._pre_assigned_vehicle     = 'clearly_visible';
+    json = _resolveLocationAndComposition(JSON.stringify(obj), 0);
+    const sanitized = _sanitizeSceneForPrompt(json);
+    ok(
+      !POS_STRUCT_RE.test(sanitized),
+      `RC36A: "${row.travaux}" → sanitized payload has no positive vehicle vocabulary`,
+      `found in: "${sanitized.slice(0, 200)}"`
+    );
+    ok(
+      !POS_PROSE_RE.test(sanitized),
+      `RC36B: "${row.travaux}" → sanitized payload has no positive vehicle prose`,
+      `found in: "${sanitized.slice(0, 200)}"`
+    );
+  }
+}
+
+// RC37 — actual argument captured at the rewritePromptImpl boundary via generateImageOnly.
+// Runs the full production pipeline with mocked network; captures the exact sceneStr
+// passed to rewritePromptImpl and verifies the sanitization contract on it.
+// Dynamic import with versioned URL forces a fresh fetch of generate-image.js (bypassing the
+// ES module registry which may hold a pre-edit version), while prompt-scene-sanitizer.js is
+// already in the registry (loaded at top-level import) so both share the same instance.
+async function rc37() {
+  // Force fresh load of generate-image.js to guarantee the sanitizer-import version.
+  let _generateFresh;
+  try {
+    const m = await import('../pipeline/generate-image.js?rc37v1');
+    _generateFresh = m.generateImageOnly;
+  } catch (e) {
+    fail('RC37: failed to import generateImageOnly', String(e)); return;
+  }
+
+  const row       = { travaux: 'Faïence salle de bain', metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' };
+  const jsonScene = buildDallePromptV2(row);
+
+  let capturedArg = null;
+  const mockRewrite = async (sceneStr) => { capturedArg = sceneStr; return 'MOCK_PROMPT_RC37'; };
+  const mockFetch   = async () => 'rawResponse';
+  const mockRead    = async () => ({ ok: true, data: { data: [{ b64_json: 'bW9jaw==' }] } });
+
+  const task = {
+    taskId: 999, row, i: 0, nb: 1, jsonScene,
+    presencePlan:                  ['none'],
+    slug:                          'rc37-test',
+    _planBase:                     JSON.parse(jsonScene),
+    status:                        'pending',
+    imageAttempt:                  1,
+    _pre_assigned_composition:     'contextual_overview',
+    _pre_assigned_vehicle:         'clearly_visible',
+    _pre_assigned_worker_presence: 'none',
+    _pre_assigned_worker_count:    0,
+    _capture_defects_resolved:     [{ key: 'slight_tilt', prompt: 'slightly tilted framing' }],
+    _batch_plan_id:                'rc37-batch',
+  };
+
+  try {
+    await _generateFresh(task, 'sk-mock', 1, {
+      state: createGenerationState(),
+      fetchImpl:        mockFetch,
+      readResponseImpl: mockRead,
+      rewritePromptImpl: mockRewrite,
+    });
+  } catch (e) {
+    if (!capturedArg) { fail('RC37: rewritePromptImpl never called', String(e)); return; }
+  }
+
+  if (!capturedArg) { fail('RC37: rewritePromptImpl never called (null)', ''); return; }
+
+  const payload = JSON.parse(capturedArg);
+  const INTERNAL = ['_pre_assigned_vehicle', '_pre_assigned_composition', '_capture_defects_resolved', '_planned_vehicle_presence', '_vehicle_suppression_reason'];
+  for (const f of INTERNAL) {
+    ok(!(f in payload), `RC37: rewriter arg has no "${f}"`, `found: "${payload[f]}"`);
+  }
+  ok(
+    payload.professional_vehicle_presence === 'absent',
+    'RC37: rewriter arg has professional_vehicle_presence=absent',
+    `got: "${payload.professional_vehicle_presence}"`
+  );
+}
+
+// RC38 — effective scene fields survive sanitization (composition, distances, vehicle, defects).
+// _capture_defects_resolved is stripped from the rewriter payload but _appendLockedFinalConstraints
+// reads it from _finalSceneObj (the un-sanitized scene) — so the prompt generation is unaffected.
+// photo_defects is the public camera-defect field that the rewriter does see.
+function rc38() {
+  const row = { travaux: 'Faïence salle de bain', metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' };
+  let json = buildDallePromptV2(row);
+  json = _applySiteRealism(json, 0);
+  const obj = JSON.parse(json);
+  obj._pre_assigned_composition = 'contextual_overview';
+  obj._pre_assigned_vehicle     = 'clearly_visible';
+  obj._capture_defects_resolved = [{ key: 'slight_tilt', prompt: 'slightly tilted framing' }];
+  json = _resolveLocationAndComposition(JSON.stringify(obj), 0);
+
+  const sanitized = JSON.parse(_sanitizeSceneForPrompt(json));
+
+  // Internal fields removed
+  const INTERNAL = ['_pre_assigned_vehicle', '_pre_assigned_composition', '_capture_defects_resolved', '_planned_vehicle_presence', '_vehicle_suppression_reason'];
+  for (const f of INTERNAL) {
+    ok(!(f in sanitized), `RC38: "${f}" removed from sanitized payload`, `found: "${sanitized[f]}"`);
+  }
+
+  // Effective resolved fields preserved
+  ok(typeof sanitized.composition === 'string',
+    'RC38: composition preserved',       `got: "${sanitized.composition}"`);
+  ok(typeof sanitized.composition_desc === 'string',
+    'RC38: composition_desc preserved',  `got: "${sanitized.composition_desc}"`);
+  ok(typeof sanitized.camera_distance === 'string',
+    'RC38: camera_distance preserved',   `got: "${sanitized.camera_distance}"`);
+  ok(typeof sanitized.camera_position === 'string',
+    'RC38: camera_position preserved',   `got: "${sanitized.camera_position}"`);
+  ok(sanitized.professional_vehicle_presence === 'absent',
+    'RC38: professional_vehicle_presence=absent preserved', `got: "${sanitized.professional_vehicle_presence}"`);
+  // photo_defects is the public camera-defect list; _capture_defects_resolved is the
+  // locked-constraint source used by _appendLockedFinalConstraints on _finalSceneObj.
+  ok(Array.isArray(sanitized.photo_defects),
+    'RC38: photo_defects (public defect field) preserved', `got: "${sanitized.photo_defects}"`);
+}
+
 // ─── CW9-CW16 helpers ─────────────────────────────────────────────────────────
 
 const _INTERIOR_SERVICES_ROWS = [
@@ -766,10 +1130,12 @@ function cw10() {
   );
 }
 
-// ─── CW11 — interior services must have vehicle=absent after resolution ────────
+// ─── CW11 — interior services must have vehicle=absent after resolution AND
+//           rewriter payload must contain no positive vehicle signal
 // EXPECTED_FAILURE before fix (batch plan pre-assignment overrides setting)
 
 function cw11() {
+  const POS_VEHICLE_RE = /\b(?:clearly_visible|partially_visible)\b/i;
   for (const row of _INTERIOR_SERVICES_ROWS.slice(0, 4)) {
     let json = buildDallePromptV2(row);
     json = _applySiteRealism(json, 0);
@@ -779,10 +1145,16 @@ function cw11() {
     obj._pre_assigned_vehicle     = 'clearly_visible';
     json = _resolveLocationAndComposition(JSON.stringify(obj), 0);
     const resolved = JSON.parse(json);
-    okExpectedFailure(
+    ok(
       resolved.professional_vehicle_presence === 'absent',
       `CW11: "${row.travaux}" → vehicle=absent even when pre-assigned clearly_visible`,
       `got: "${resolved.professional_vehicle_presence}"`
+    );
+    const sanitized = _sanitizeSceneForPrompt(json);
+    ok(
+      !POS_VEHICLE_RE.test(sanitized),
+      `CW11: "${row.travaux}" → rewriter payload contains no positive vehicle signal`,
+      `found in: "${sanitized.slice(0, 200)}"`
     );
   }
 }
@@ -798,7 +1170,7 @@ function cw12() {
   json = _resolveLocationAndComposition(JSON.stringify(obj), 0);
   const resolved = JSON.parse(json);
   const desc = (resolved.composition_desc || '').toLowerCase();
-  okExpectedFailure(
+  ok(
     !/building.*visible.*context|vehicle.*garden|neighbourhood|road type|property context/i.test(desc),
     'CW12: interior+wide_worksite composition_desc uses no exterior landmark language',
     `composition_desc: "${resolved.composition_desc}"`
@@ -947,6 +1319,18 @@ export async function runCarrelageSceneTests() {
   console.group('[RC05]'); rc05(); console.groupEnd();
   console.group('[RC06]'); rc06(); console.groupEnd();
   console.group('[RC07]'); rc07(); console.groupEnd();
+  console.group('[RC21]'); rc21(); console.groupEnd();
+  console.group('[RC22]'); rc22(); console.groupEnd();
+  console.group('[RC23]'); rc23(); console.groupEnd();
+  console.group('[RC24]'); rc24(); console.groupEnd();
+  console.group('[RC31]'); rc31(); console.groupEnd();
+  console.group('[RC32]'); rc32(); console.groupEnd();
+  console.group('[RC33]'); rc33(); console.groupEnd();
+  console.group('[RC34]'); rc34(); console.groupEnd();
+  console.group('[RC35]'); rc35(); console.groupEnd();
+  console.group('[RC36]'); rc36(); console.groupEnd();
+  console.group('[RC37]'); await rc37(); console.groupEnd();
+  console.group('[RC38]'); rc38(); console.groupEnd();
 
   console.group('[CW1]'); cw1(); console.groupEnd();
   console.group('[CW2]'); cw2(); console.groupEnd();

@@ -276,7 +276,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/service-routing-tests.js'),
     import('./debug/service-coverage-audit.js?v=3'),
     import('./debug/carrelage-contracts-tests.js'),
-    import('./debug/carrelage-scenes-tests.js?v=10'),
+    import('./debug/carrelage-scenes-tests.js?v=16'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult     = await runtimeTests.runRuntimeTests();

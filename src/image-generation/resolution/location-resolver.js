@@ -15,6 +15,29 @@ import { PHOTO_COMPOSITIONS, _COMPOSITION_DIST, CAMERA_COMPOSITIONS } from '../c
 import { PROFESSIONAL_VEHICLE_RULES } from '../config/vehicles.js';
 import { _hashSeed, _pick } from '../utils/deterministic.js';
 
+// RC-2: Interior-specific composition descriptions and camera distances.
+// PHOTO_COMPOSITIONS and CAMERA_COMPOSITIONS are written for exterior worksites.
+// wide_worksite (5–15 m, "building/vehicle/garden") and contextual_overview
+// (10–30 m, "neighbourhood/road type") are physically impossible inside a room.
+// close_detail and medium_intervention are already compatible with interiors.
+const _INTERIOR_COMPOSITION_OVERRIDES = {
+  wide_worksite: {
+    description:    'wide interior view — entire work area visible from inside the room, taken from 2–4 m back; active surface and room walls both identifiable',
+    camera_distance: 'approximately 2 to 4 metres',
+  },
+  contextual_overview: {
+    description:    'interior establishing shot — room layout and active work surface both visible; kitchen, bathroom, or residential interior context clearly identifiable',
+    camera_distance: 'approximately 3 to 5 metres',
+  },
+};
+
+// Returns interior overrides for compositions that require exterior space, or null if
+// the default description is already interior-compatible (close_detail, medium_intervention).
+function _resolveCompositionForSetting(composition, setting) {
+  if (setting !== 'interior') return null;
+  return _INTERIOR_COMPOSITION_OVERRIDES[composition] || null;
+}
+
 // RC-0: Detect locations whose must_have constraints are incompatible with an interior setting.
 // Checks must_have strings for exterior keywords (facade, roof, garden, street, outdoor…).
 // For non-interior settings the check is always true (no constraint).
@@ -171,6 +194,15 @@ function _resolveLocationAndComposition(jsonStr, imageIndex) {
   const camCompDef = CAMERA_COMPOSITIONS[obj.composition];
   if (camCompDef) obj.camera_distance = camCompDef.distance;
 
+  // RC-2: override composition_desc and camera_distance for interior settings.
+  // Compositions like wide_worksite / contextual_overview describe exterior space;
+  // replace with interior-compatible equivalents when setting=interior.
+  const intComp = _resolveCompositionForSetting(obj.composition, obj.setting);
+  if (intComp) {
+    obj.composition_desc = intComp.description;
+    obj.camera_distance  = intComp.camera_distance;
+  }
+
   // 4. Professional vehicle — generalized for all métiers, linked to composition
   {
     const pvSeed   = _hashSeed(`${key}|${ctx}|pvehicle${imageIndex}`);
@@ -195,7 +227,16 @@ function _resolveLocationAndComposition(jsonStr, imageIndex) {
     obj.professional_vehicle_presence = pvPresence;
   }
 
+  // RC-3: interior scenes cannot contain a professional vehicle.
+  // If the batch planner pre-assigned a vehicle presence, preserve it for telemetry
+  // since the batch planner runs before setting resolution.
+  if (obj.setting === 'interior' && obj.professional_vehicle_presence !== 'absent') {
+    obj._planned_vehicle_presence   = obj.professional_vehicle_presence;
+    obj._vehicle_suppression_reason = 'interior_setting';
+    obj.professional_vehicle_presence = 'absent';
+  }
+
   return JSON.stringify(obj);
 }
 
-export { _normalizeLocationKey, _resolveCompatibleSubtype, _resolveWorkSurface, _resolveLocationAndComposition, _isLocationCompatibleWithSetting, _resolveInteriorFallbackLocation };
+export { _normalizeLocationKey, _resolveCompatibleSubtype, _resolveWorkSurface, _resolveLocationAndComposition, _isLocationCompatibleWithSetting, _resolveInteriorFallbackLocation, _resolveCompositionForSetting, _INTERIOR_COMPOSITION_OVERRIDES };
