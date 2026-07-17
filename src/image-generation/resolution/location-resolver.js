@@ -146,15 +146,18 @@ function _resolveLocationAndComposition(jsonStr, imageIndex) {
       locationType: locType, normKey, normService: normSvc, seed: stSeed,
     });
 
-    // Work surface — derived from subtype + service
-    if (obj.location_subtype) {
+    // Work surface — scenario-level value (from _applySiteRealism) takes priority
+    if (obj.location_subtype && !obj.work_surface) {
       obj.work_surface = _resolveWorkSurface(obj.location_subtype, normSvc);
     }
 
-    // Pick 1-2 core must_have elements (not all — avoid prompt overload)
+    // Pick 1-2 core must_have elements; merge with scenario-level must_have if set
     const coreSeed = _hashSeed(`${key}|${ctx}|core${imageIndex}`);
     const coreN    = locRules.must_have.length > 1 ? (1 + (coreSeed % 2)) : 1;
-    obj.location_must_have = _pick(locRules.must_have, coreN, coreSeed);
+    const _locMH   = _pick(locRules.must_have, coreN, coreSeed);
+    obj.location_must_have = Array.isArray(obj.location_must_have)
+      ? [...new Set([...obj.location_must_have, ..._locMH])]
+      : _locMH;
 
     // Pick 1-3 optional supporting details from may_have
     if (locRules.may_have?.length) {

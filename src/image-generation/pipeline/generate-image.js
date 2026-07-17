@@ -18,7 +18,7 @@ import { _validateQuality }               from '../validation/quality-validator.
 import { _assertTaskHasBatchPlan }        from '../validation/batch-validator.js';
 import { PromptBuilder, _USE_PROMPT_BUILDER } from '../prompt/prompt-builder.js';
 import { _appendLockedFinalConstraints }  from '../prompt/locked-constraints.js';
-import { _sanitizeSceneForPrompt }        from './prompt-scene-sanitizer.js';
+import { _sanitizeSceneForPrompt, _validateInteriorPayload } from './prompt-scene-sanitizer.js';
 
 // ─── buildImageGenerationRequest ─────────────────────────────────────────────
 // Pure — verbatim params from app.js lines 13802–13806.
@@ -88,6 +88,10 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
   }
 
   const _sceneForPrompt = _sanitizeSceneForPrompt(finalScene);
+  const _interiorIssues = _validateInteriorPayload(_sceneForPrompt);
+  if (_interiorIssues.length) {
+    console.warn(`[InteriorValidate] ${_planBase._matched_key} #${i}: ${_interiorIssues.join(' | ')}`);
+  }
   const _gptPrompt = _USE_PROMPT_BUILDER
     ? PromptBuilder.build(_sceneForPrompt)
     : await rewritePromptImpl(_sceneForPrompt, apiKey);
@@ -133,4 +137,4 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
   return { b64, imgUrl, filename, src };
 }
 
-export { buildImageGenerationRequest, generateImageOnly, _sanitizeSceneForPrompt };
+export { buildImageGenerationRequest, generateImageOnly, _sanitizeSceneForPrompt, _validateInteriorPayload };

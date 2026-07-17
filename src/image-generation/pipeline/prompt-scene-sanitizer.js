@@ -22,6 +22,36 @@
  * carrelage-scenes-tests.js (tests).
  */
 
+// Positive exterior vocabulary in assertion fields (not instructions)
+const _EXT_POS_ASSERT_RE = /\b(?:facade|street|garden|outdoor|outside|open\s+sky|pavement|kerb|balcony|driveway)\b/i;
+
+// Assertion fields that describe what IS in the scene (not what is forbidden)
+const _ASSERTION_FIELDS = ['architecture', 'environment', 'composition_desc', 'camera_position', 'work_type'];
+
+// Returns array of issue strings. Empty = clean. Does NOT scan location_forbidden
+// (negative instructions are expected to contain exterior vocabulary).
+function _validateInteriorPayload(jsonStr) {
+  const issues = [];
+  let s;
+  try { s = JSON.parse(jsonStr); } catch { return issues; }
+  if (s.setting !== 'interior') return issues;
+
+  for (const f of _ASSERTION_FIELDS) {
+    const val = s[f];
+    if (typeof val === 'string' && _EXT_POS_ASSERT_RE.test(val)) {
+      issues.push(`"${f}" contains positive exterior signal: "${val.slice(0, 80)}"`);
+    }
+  }
+  if (Array.isArray(s.location_must_have)) {
+    for (const el of s.location_must_have) {
+      if (typeof el === 'string' && _EXT_POS_ASSERT_RE.test(el)) {
+        issues.push(`location_must_have item contains positive exterior signal: "${el.slice(0, 80)}"`);
+      }
+    }
+  }
+  return issues;
+}
+
 function _sanitizeSceneForPrompt(jsonStr) {
   try {
     const s = JSON.parse(jsonStr);
@@ -34,4 +64,4 @@ function _sanitizeSceneForPrompt(jsonStr) {
   } catch { return jsonStr; }
 }
 
-export { _sanitizeSceneForPrompt };
+export { _sanitizeSceneForPrompt, _validateInteriorPayload };

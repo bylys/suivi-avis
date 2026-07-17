@@ -12,8 +12,9 @@ import { SERVICE_CATALOG } from '../config/service-catalog.js';
 import { CARRELAGE_VISUAL_CONTRACTS } from '../services/carrelage-contracts.js';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
 import { _resolveLocationAndComposition, _isLocationCompatibleWithSetting, _resolveCompositionForSetting, _INTERIOR_COMPOSITION_OVERRIDES } from '../resolution/location-resolver.js';
-import { _sanitizeSceneForPrompt } from '../pipeline/prompt-scene-sanitizer.js';
+import { _sanitizeSceneForPrompt, _validateInteriorPayload } from '../pipeline/prompt-scene-sanitizer.js';
 import { generateImageOnly }       from '../pipeline/generate-image.js';
+import { _IMG_REWRITE_SYSTEM }     from '../prompt/prompt-rewriter.js';
 import { buildDallePromptV2 } from '../prompt/scene-builder.js';
 import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
 import { SAFETY_CHECK_RULES, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
@@ -1112,8 +1113,173 @@ function cw9() {
   }
 }
 
+// ─── RC41 — rewriter system contains explicit setting/location priority ────────
+
+function rc41() {
+  const txt = _IMG_REWRITE_SYSTEM;
+  ok(
+    /setting.*interior|interior.*setting|when setting is .interior./i.test(txt),
+    'RC41: rewriter system prompt references setting=interior priority',
+    `length: ${txt.length}`
+  );
+  ok(
+    /work_surface/i.test(txt),
+    'RC41: rewriter system prompt references work_surface',
+    `first 300: ${txt.slice(0, 300)}`
+  );
+  ok(
+    /immutable|mandatory.*overrid|overrid.*mandatory|location.*mandatory/i.test(txt),
+    'RC41: rewriter system prompt marks setting/location as immutable/mandatory',
+    `length: ${txt.length}`
+  );
+  ok(
+    /location_forbidden/i.test(txt),
+    'RC41: rewriter system prompt references location_forbidden',
+    `length: ${txt.length}`
+  );
+}
+
+// ─── RC42 — sanitized payload for all interior services has no exterior signal ─
+
+function rc42() {
+  for (const row of _INTERIOR_SERVICES_ROWS) {
+    let json = buildDallePromptV2(row);
+    json = _applySiteRealism(json, 0);
+    const obj = JSON.parse(json);
+    obj._pre_assigned_composition = 'medium_intervention';
+    obj._pre_assigned_vehicle     = 'absent';
+    json = _resolveLocationAndComposition(JSON.stringify(obj), 0);
+    const sanitized = _sanitizeSceneForPrompt(json);
+    const issues    = _validateInteriorPayload(sanitized);
+    ok(
+      issues.length === 0,
+      `RC42: "${row.travaux}" sanitized payload has no positive exterior signal`,
+      issues.join('; ')
+    );
+    ok(
+      JSON.parse(sanitized).professional_vehicle_presence === 'absent',
+      `RC42: "${row.travaux}" professional_vehicle_presence=absent in sanitized payload`,
+      `got: "${JSON.parse(sanitized).professional_vehicle_presence}"`
+    );
+  }
+}
+
+// ─── RC43 — actual rewriter payload for interior scene (fresh imports) ──────────
+// Module registry may hold pre-edit versions of resolver modules. Versioned dynamic
+// imports guarantee the latest code is used for each resolution step, mirroring the
+// sanitised payload that _generateFresh would pass to rewritePromptImpl.
+
+async function rc43() {
+  let sr, lr, sanitizerMod;
+  try {
+    [sr, lr, sanitizerMod] = await Promise.all([
+      import('../resolution/service-resolver.js?rc43fix'),
+      import('../resolution/location-resolver.js?rc43fix'),
+      import('../pipeline/prompt-scene-sanitizer.js?rc43fix'),
+    ]);
+  } catch (e) {
+    fail('RC43: failed to import resolution modules', String(e)); return;
+  }
+
+  const row = { travaux: 'Faïence salle de bain', metier: 'carrelage', etat: 'encours', contexte: 'maison', ville: 'Paris' };
+  let json  = buildDallePromptV2(row);
+  json      = sr._applySiteRealism(json, 0);
+
+  // Simulate batch-planner pre-assignment (normal interior case)
+  const sceneObj = JSON.parse(json);
+  sceneObj._pre_assigned_composition = 'medium_intervention';
+  sceneObj._pre_assigned_vehicle     = 'absent';
+  sceneObj._capture_defects_resolved = [];
+  json = lr._resolveLocationAndComposition(JSON.stringify(sceneObj), 0);
+
+  const sanitized = sanitizerMod._sanitizeSceneForPrompt(json);
+  const payload   = JSON.parse(sanitized);
+  const issues    = sanitizerMod._validateInteriorPayload(sanitized);
+
+  ok(issues.length === 0,
+    'RC43: rewriter payload for salle de bain has no positive exterior signal',
+    issues.join('; '));
+  ok(payload.professional_vehicle_presence === 'absent',
+    'RC43: rewriter payload has professional_vehicle_presence=absent',
+    `got: "${payload.professional_vehicle_presence}"`);
+  ok(typeof payload.work_surface === 'string' && /bathroom|wet.*area|vertical/i.test(payload.work_surface),
+    'RC43: rewriter payload has bathroom work_surface',
+    `got: "${payload.work_surface}"`);
+  ok(payload.setting === 'interior',
+    'RC43: rewriter payload has setting=interior',
+    `got: "${payload.setting}"`);
+}
+
+// ─── RC44 — locked constraints output contains interior locked block ────────────
+
+function rc44() {
+  const scene = {
+    _matched_key: 'carrelage', _matched_service: 'Faïence salle de bain',
+    setting: 'interior', composition: 'wide_worksite',
+    var_workers: 0, var_presence: 'none', _capture_defects_resolved: [],
+    triangle_rule: null,
+  };
+  const prompt = _appendLockedFinalConstraints('rc44 test prompt', scene);
+  ok(/entirely indoors|indoors/i.test(prompt),
+    'RC44: locked block contains "indoors"',
+    `first 400: "${prompt.slice(0, 400)}"`);
+  ok(/camera.*inside.*room|inside.*room/i.test(prompt),
+    'RC44: locked block contains "camera inside the room"',
+    `first 400: "${prompt.slice(0, 400)}"`);
+  ok(/no.*exterior.*facade|no.*facade|no.*outdoor|no.*garden/i.test(prompt),
+    'RC44: locked block contains exterior prohibition',
+    `first 400: "${prompt.slice(0, 400)}"`);
+  ok(/no.*professional.*vehicle/i.test(prompt),
+    'RC44: locked block contains "no professional vehicle"',
+    `first 400: "${prompt.slice(0, 400)}"`);
+}
+
+// ─── RC45 — interior validator: negative instructions not flagged as exterior ───
+
+function rc45() {
+  // location_forbidden with exterior vocabulary = negative instructions → OK
+  const cleanScene = JSON.stringify({
+    setting:              'interior',
+    composition_desc:     'inside the room looking at the tiled wall',
+    camera_position:      'standing 1.5 m from the tiled wall inside the bathroom',
+    location_forbidden:   ['no exterior facade', 'no outdoor ladder', 'no garden visible'],
+    professional_vehicle_presence: 'absent',
+  });
+  const cleanIssues = _validateInteriorPayload(cleanScene);
+  ok(cleanIssues.length === 0,
+    'RC45: negative instructions in location_forbidden do not trigger interior validator',
+    `issues: ${cleanIssues.join('; ')}`);
+
+  // positive exterior assertion in architecture → flagged
+  const badScene = JSON.stringify({
+    setting:      'interior',
+    architecture: 'house exterior facade with a balcony visible',
+    professional_vehicle_presence: 'absent',
+  });
+  const badIssues = _validateInteriorPayload(badScene);
+  ok(badIssues.length > 0,
+    'RC45: positive exterior signal in architecture triggers interior validator',
+    'expected at least one issue, got none');
+}
+
+// ─── RC46 — exterior services do not receive interior locked block ──────────────
+
+function rc46() {
+  const scene = {
+    _matched_key: 'carrelage', _matched_service: 'Carrelage terrasse ext.',
+    setting: 'exterior', composition: 'wide_worksite',
+    var_workers: 0, var_presence: 'none', _capture_defects_resolved: [],
+    triangle_rule: null,
+  };
+  const prompt = _appendLockedFinalConstraints('rc46 exterior test', scene);
+  ok(
+    !/SETTING AND LOCATION — LOCKED/i.test(prompt),
+    'RC46: exterior service does not receive interior locked block',
+    `prompt snippet: "${prompt.slice(0, 300)}"`
+  );
+}
+
 // ─── CW10 — locked constraints must enforce interior for interior scenes ───────
-// EXPECTED_FAILURE before fix (_appendLockedFinalConstraints has no interior block)
 
 function cw10() {
   const scene = {
@@ -1123,7 +1289,7 @@ function cw10() {
     triangle_rule: null,
   };
   const prompt = _appendLockedFinalConstraints('test interior prompt', scene);
-  okExpectedFailure(
+  ok(
     /indoor|interior.*only|no.*exterior|no.*facade|no.*garden|no.*outside/i.test(prompt),
     'CW10: locked constraints include interior enforcement',
     'no "interior only" / "no exterior" constraint found in FINAL CAPTURE CONSTRAINTS'
@@ -1178,7 +1344,6 @@ function cw12() {
 }
 
 // ─── CW13 — salle de bain locked constraints reference bathroom/sanitary ───────
-// EXPECTED_FAILURE before fix
 
 function cw13() {
   const scene = {
@@ -1188,7 +1353,7 @@ function cw13() {
     triangle_rule: null,
   };
   const prompt = _appendLockedFinalConstraints('salle de bain test prompt', scene);
-  okExpectedFailure(
+  ok(
     /bathroom|shower|bath|sanit|wet.*area|tub/i.test(prompt),
     'CW13: salle de bain locked constraints reference sanitary/bathroom context',
     'no bathroom/sanitary reference in locked constraints output'
@@ -1196,7 +1361,6 @@ function cw13() {
 }
 
 // ─── CW14 — cuisine locked constraints reference vertical backsplash, not floor ─
-// EXPECTED_FAILURE before fix
 
 function cw14() {
   const scene = {
@@ -1206,7 +1370,7 @@ function cw14() {
     triangle_rule: null,
   };
   const prompt = _appendLockedFinalConstraints('cuisine test prompt', scene);
-  okExpectedFailure(
+  ok(
     /backsplash|worktop|cupboard|vertical.*wall.*tile|splashback/i.test(prompt),
     'CW14: cuisine locked constraints reference vertical backsplash/worktop',
     'no backsplash/worktop reference in locked constraints output'
@@ -1331,6 +1495,12 @@ export async function runCarrelageSceneTests() {
   console.group('[RC36]'); rc36(); console.groupEnd();
   console.group('[RC37]'); await rc37(); console.groupEnd();
   console.group('[RC38]'); rc38(); console.groupEnd();
+  console.group('[RC41]'); rc41(); console.groupEnd();
+  console.group('[RC42]'); rc42(); console.groupEnd();
+  console.group('[RC43]'); await rc43(); console.groupEnd();
+  console.group('[RC44]'); rc44(); console.groupEnd();
+  console.group('[RC45]'); rc45(); console.groupEnd();
+  console.group('[RC46]'); rc46(); console.groupEnd();
 
   console.group('[CW1]'); cw1(); console.groupEnd();
   console.group('[CW2]'); cw2(); console.groupEnd();

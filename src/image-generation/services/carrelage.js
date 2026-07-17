@@ -157,10 +157,13 @@ export const SITE_REALISM_CARRELAGE = {
 
       // ── 3. Faïence salle de bain ─────────────────────────────────────────────
       {
-        _for:          'faience.*salle|faience.*bain|salle.*bain.*carre',
-        scene_note:    'bathroom tiling — wall faience being laid around shower enclosure or bathtub surround, sanitary fixtures visible in frame, precise cuts around plumbing points',
-        scene_camera:  'standing at the bathroom entrance, 1.5–2 m from the tiled wall, slightly off-centre showing both the sanitary fixture and the tile work in the same frame',
-        setting:       'interior',
+        _for:               'faience.*salle|faience.*bain|salle.*bain.*carre',
+        scene_note:         'bathroom tiling — wall faience being laid around shower enclosure or bathtub surround, sanitary fixtures visible in frame, precise cuts around plumbing points',
+        scene_camera:       'standing at the bathroom entrance, 1.5–2 m from the tiled wall, slightly off-centre showing both the sanitary fixture and the tile work in the same frame',
+        setting:            'interior',
+        work_surface:       'vertical wet-area bathroom wall',
+        location_must_have: ['shower enclosure or bathtub surround visible', 'at least one sanitary fixture in frame'],
+        location_forbidden: ['house exterior', 'floor tiling as the main action'],
         tools: [
           'fine-notched trowel resting on the bath rim near the work zone',
           'rubber mallet on the tiled surface beside freshly placed faience',
@@ -185,10 +188,13 @@ export const SITE_REALISM_CARRELAGE = {
 
       // ── 4. Faïence cuisine ───────────────────────────────────────────────────
       {
-        _for:          'faience.*cuisine|cuisine.*faience|credence',
-        scene_note:    'kitchen splashback tiling — faience tiles being installed between worktop and wall cupboards, kitchen units clearly visible in frame, cuts around electrical sockets',
-        scene_camera:  'standing at the kitchen doorway or 1.5–2 m back, eye-level view of the splashback area with worktop visible at the bottom of frame and cupboards above',
-        setting:       'interior',
+        _for:               'faience.*cuisine|cuisine.*faience|credence',
+        scene_note:         'kitchen splashback tiling — faience tiles being installed between worktop and wall cupboards, kitchen units clearly visible in frame, cuts around electrical sockets',
+        scene_camera:       'standing at the kitchen doorway or 1.5–2 m back, eye-level view of the splashback area with worktop visible at the bottom of frame and cupboards above',
+        setting:            'interior',
+        work_surface:       'vertical kitchen backsplash wall',
+        location_must_have: ['kitchen worktop visible at the bottom of frame', 'kitchen cupboards visible above the backsplash'],
+        location_forbidden: ['floor tiling as the main action', 'bathroom context'],
         tools: [
           'fine-notched trowel resting on the worktop beside the active tiling zone',
           'tile spacers along the last laid row of the splashback',
