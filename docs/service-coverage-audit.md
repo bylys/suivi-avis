@@ -1,6 +1,6 @@
 # Service Coverage Audit
 
-_Generated: 2026-07-16 — Commit: `3598e0915907`_
+_Generated: 2026-07-17 — Commit: `53788936266f`_
 
 
 ## Méthodologie
@@ -32,9 +32,9 @@ Pour chaque sous-service du catalogue, le script :
 
 | Catégorie | Nombre |
 |-----------|--------|
-| ROUTED_TO_SPECIFIC_SCENE | 122 |
+| ROUTED_TO_SPECIFIC_SCENE | 131 |
 | PARTIAL_CONTEXTE | 25 |
-| TOOLS_ONLY | 25 |
+| TOOLS_ONLY | 16 |
 | GENERIC_FALLBACK | 0 |
 | UNMATCHED | 0 |
 | **TOTAL** | **172** |
@@ -62,8 +62,8 @@ ROUTED_TO_SPECIFIC_SCENE: 18
 ### peinture (9/10 ROUTED)
 ROUTED_TO_SPECIFIC_SCENE: 9, PARTIAL_CONTEXTE: 1
 
-### carrelage (0/9 ROUTED)
-TOOLS_ONLY: 9
+### carrelage (9/9 ROUTED)
+ROUTED_TO_SPECIFIC_SCENE: 9
 
 ### vitrier (0/8 ROUTED)
 TOOLS_ONLY: 8
@@ -114,7 +114,7 @@ TOOLS_ONLY: 8
 
 > Les trois corrections de dépannage auto (Clés enfermées, Déverrouillage voiture, Enlèvement véhicule) étaient déjà ROUTED_TO_SPECIFIC_SCENE — elles corrigent le bucket sélectionné, pas la catégorie.
 
-## ROUTED_TO_SPECIFIC_SCENE (122 services)
+## ROUTED_TO_SPECIFIC_SCENE (131 services)
 
 - **toiture** / Rénovation toiture complète
 - **toiture** / Réparation toiture
@@ -177,6 +177,15 @@ TOOLS_ONLY: 8
 - **peinture** / Papier peint
 - **peinture** / Peinture extérieure
 - **peinture** / Peinture façade
+- **carrelage** / Pose carrelage sol
+- **carrelage** / Pose carrelage mural
+- **carrelage** / Faïence salle de bain
+- **carrelage** / Faïence cuisine
+- **carrelage** / Carrelage terrasse extérieure
+- **carrelage** / Dallage extérieur
+- **carrelage** / Pose pierre naturelle
+- **carrelage** / Réfection joint
+- **carrelage** / Réfection carrelage
 - **élagage** / Élagage arbre
 - **élagage** / Taille arbre haute tige
 - **élagage** / Élagage peuplier
@@ -267,17 +276,8 @@ TOOLS_ONLY: 8
 - **paysagiste** / Petite maçonnerie paysagère
 - **nettoyage** / Nettoyage haute pression
 
-## TOOLS_ONLY (25 services)
+## TOOLS_ONLY (16 services)
 
-- **carrelage** / Pose carrelage sol
-- **carrelage** / Pose carrelage mural
-- **carrelage** / Faïence salle de bain
-- **carrelage** / Faïence cuisine
-- **carrelage** / Carrelage terrasse extérieure
-- **carrelage** / Dallage extérieur
-- **carrelage** / Pose pierre naturelle
-- **carrelage** / Réfection joint
-- **carrelage** / Réfection carrelage
 - **vitrier** / Remplacement vitrage brisé
 - **vitrier** / Remplacement double vitrage
 - **vitrier** / Remplacement fenêtre PVC
@@ -306,6 +306,5 @@ Les métiers sans scénarios ciblés (TOOLS_ONLY et PARTIAL_CONTEXTE) sont à tr
 - **terrassement** (PARTIAL_CONTEXTE): Remblai, Empierrement, Nivellement, Préparation terrain, Plateforme, Évacuation des terres
 - **paysagiste** (PARTIAL_CONTEXTE): Arrosage automatique, Entretien jardin, Petite maçonnerie paysagère
 - **nettoyage** (PARTIAL_CONTEXTE): Nettoyage haute pression
-- **carrelage** (TOOLS_ONLY): Pose carrelage sol, Pose carrelage mural, Faïence salle de bain, Faïence cuisine, Carrelage terrasse extérieure, Dallage extérieur, Pose pierre naturelle, Réfection joint, Réfection carrelage
 - **vitrier** (TOOLS_ONLY): Remplacement vitrage brisé, Remplacement double vitrage, Remplacement fenêtre PVC, Remplacement fenêtre aluminium, Réparation fenêtre, Remplacement porte vitrée, Vitrage sécurité feuilleté, Bris de glace urgence
 - **débarras** (TOOLS_ONLY): Débarras appartement, Débarras maison, Débarras cave, Débarras grenier, Vider maison succession, Débarras après décès, Enlèvement encombrants, Nettoyage encombrants

@@ -10,6 +10,7 @@ import { WORK_SCENES_ETANCHEITE,     SITE_REALISM_ETANCHEITE     } from './etanc
 import { WORK_SCENES_FACADE,         SITE_REALISM_FACADE         } from './facade.js';
 import { WORK_SCENES_PAYSAGISTE,     SITE_REALISM_PAYSAGISTE     } from './paysagiste.js';
 import { WORK_SCENES_GROS_OEUVRE,    SITE_REALISM_GROS_OEUVRE    } from './gros-oeuvre.js';
+import { WORK_SCENES_CARRELAGE,      SITE_REALISM_CARRELAGE      } from './carrelage.js';
 import { WORK_SCENES_FINISHING,      SITE_REALISM_FINISHING      } from './finishing.js';
 import { WORK_SCENES_TECHNICAL_TRADES, SITE_REALISM_TECHNICAL_TRADES } from './technical-trades.js';
 import { WORK_SCENES_DEPANNAGE_AUTO, SITE_REALISM_DEPANNAGE_AUTO } from './depannage-auto.js';
@@ -37,6 +38,7 @@ export const WORK_SCENES = mergeRegistriesStrict('WORK_SCENES', [
   ['facade',           WORK_SCENES_FACADE],
   ['paysagiste',       WORK_SCENES_PAYSAGISTE],
   ['gros-oeuvre',      WORK_SCENES_GROS_OEUVRE],
+  ['carrelage',        WORK_SCENES_CARRELAGE],
   ['finishing',        WORK_SCENES_FINISHING],
   ['technical-trades', WORK_SCENES_TECHNICAL_TRADES],
   ['depannage-auto',   WORK_SCENES_DEPANNAGE_AUTO],
@@ -49,6 +51,7 @@ export const SITE_REALISM = mergeRegistriesStrict('SITE_REALISM', [
   ['facade',           SITE_REALISM_FACADE],
   ['paysagiste',       SITE_REALISM_PAYSAGISTE],
   ['gros-oeuvre',      SITE_REALISM_GROS_OEUVRE],
+  ['carrelage',        SITE_REALISM_CARRELAGE],
   ['finishing',        SITE_REALISM_FINISHING],
   ['technical-trades', SITE_REALISM_TECHNICAL_TRADES],
   ['depannage-auto',   SITE_REALISM_DEPANNAGE_AUTO],

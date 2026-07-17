@@ -75,7 +75,7 @@ def _extract_contracts():
     Returns list of dicts: {service_key, service_label, for_regex, fields_present}.
     Uses a heuristic approach: find service_key, service_label, for_regex for each block.
     """
-    path = ROOT / 'docs' / 'carrelage-visual-contracts.js'
+    path = ROOT / 'src' / 'image-generation' / 'services' / 'carrelage-contracts.js'
     text = path.read_text(encoding='utf-8')
 
     # Extract all top-level keys (service_key identifiers)
@@ -291,7 +291,7 @@ def cv7_no_cross_metier(contracts, catalog):
 
 def cv8_states_distinct(contracts):
     """début ≠ en_cours ≠ terminé for each contract (basic text comparison)."""
-    path = ROOT / 'docs' / 'carrelage-visual-contracts.js'
+    path = ROOT / 'src' / 'image-generation' / 'services' / 'carrelage-contracts.js'
     text = path.read_text(encoding='utf-8')
     errors = []
     # For each contract, extract the three state observable_action / observable_result
@@ -349,7 +349,7 @@ def cv9_risk_pairs(contracts):
     Check the 4 documented risk pairs are visually distinct
     (different work_surface and setting values).
     """
-    path = ROOT / 'docs' / 'carrelage-visual-contracts.js'
+    path = ROOT / 'src' / 'image-generation' / 'services' / 'carrelage-contracts.js'
     text = path.read_text(encoding='utf-8')
 
     risk_pairs = [
@@ -410,7 +410,7 @@ def cv9_risk_pairs(contracts):
 def cv10_tools_coherence(contracts):
     """Check obvious tool incoherence: refection_joint must not have maillet as allowed."""
     errors = []
-    path = ROOT / 'docs' / 'carrelage-visual-contracts.js'
+    path = ROOT / 'src' / 'image-generation' / 'services' / 'carrelage-contracts.js'
     text = path.read_text(encoding='utf-8')
 
     rules = {
@@ -462,7 +462,7 @@ def cv10_tools_coherence(contracts):
 
 def cv11_workers_safety(contracts):
     """Check no service has casque/gilet in safety.required."""
-    path = ROOT / 'docs' / 'carrelage-visual-contracts.js'
+    path = ROOT / 'src' / 'image-generation' / 'services' / 'carrelage-contracts.js'
     text = path.read_text(encoding='utf-8')
     errors = []
 
@@ -508,7 +508,7 @@ def cv11_workers_safety(contracts):
 
 def cv12_compositions(contracts):
     """Check composition_preferences are present and non-empty."""
-    path = ROOT / 'docs' / 'carrelage-visual-contracts.js'
+    path = ROOT / 'src' / 'image-generation' / 'services' / 'carrelage-contracts.js'
     text = path.read_text(encoding='utf-8')
     errors = []
 

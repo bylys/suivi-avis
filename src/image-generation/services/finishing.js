@@ -1,82 +1,12 @@
 /**
  * finishing.js — Phase 2 shadow copy (source active : app.js)
- * Copie stricte de WORK_SCENES {carrelage, vitrier, débarras}
- * et SITE_REALISM {carrelage, vitrier, 'débarras'}.
+ * Copie stricte de WORK_SCENES {vitrier, débarras}
+ * et SITE_REALISM {vitrier, 'débarras'}.
+ * La clé 'carrelage' a été déplacée dans services/carrelage.js.
  * Ne pas modifier avant le cutover validé.
  */
 
 export const WORK_SCENES_FINISHING = {
-  carrelage: {
-    category:         'carrelage',
-    priority:         3,
-    service_keywords: [
-      { phrase: 'floor tile',     score: 13 },
-      { phrase: 'pose carrelage', score: 13 },
-      { phrase: 'pose parquet',   score: 13 },
-      { phrase: 'carreleur',      score: 11 },
-      { phrase: 'carrelage',      score: 10 },
-      { phrase: 'parquet',        score: 9  },
-      { phrase: 'tiling',         score: 8  },
-      { phrase: 'carre',          score: 6  },
-      { phrase: 'tile',           score: 5  },
-      { phrase: 'sol',            score: 3  },
-    ],
-    exclude_if: [],
-    intro:      'floor tiling installation inside a residential property',
-    setting:    'interior',
-    secteur:    'tiler',
-    hasWorkers: false,
-    camera:     'crouching or standing inside, 2–3 m from the tiling work, slightly low angle',
-    materials:  ['porcelain tiles', 'tile adhesive', 'tile spacers', 'grout'],
-    photo_defects: [
-      'flat diffuse window light casting no shadows',
-      'slight motion blur from low ambient light in the room',
-    ],
-    exclusions: ['tile cutters', 'buckets', 'cleaning supplies', 'safety equipment', 'workers', 'people', 'furniture'],
-    states: {
-      debut: {
-        framing: {
-          work_pct:   45,
-          foreground: 'first few tiles laid in one corner, adhesive lines combed on the screed beside them',
-          midground:  'mostly bare concrete screed floor with a small completed tile section',
-          background: 'plain white wall, window or doorframe',
-        },
-        debris:      'tile adhesive residue near the first placed tiles, a cardboard tile packaging piece on the side',
-        description: 'Tiling has just started. A few tiles are in place in one corner. The rest of the floor is bare concrete screed with freshly combed adhesive ridges.',
-      },
-      encours: {
-        framing: {
-          work_pct:   60,
-          foreground: 'sharp transition between tiled section and bare screed with combed adhesive',
-          midground:  'room about half tiled — plastic spacers visible between tiles, adhesive smears on edge',
-          background: 'plain wall, window',
-        },
-        debris:      'plastic tile spacers and adhesive smears on the untiled screed, one tile offcut at the edge',
-        description: 'The room is half tiled. The completed section shows aligned tiles with spacers. The other half has combed adhesive ready for the next tiles.',
-      },
-      semifinal: {
-        framing: {
-          work_pct:   65,
-          foreground: 'nearly complete tiled floor, grout being applied between tiles',
-          midground:  'full tiled surface, grout lines still slightly damp, spacers just removed',
-          background: 'plain wall, window',
-        },
-        debris:      'grout residue on tiles near the fresh joints, a sponge and bucket of water nearby',
-        description: 'Tiling is complete. Grout is being applied and cleaned. The joints are still slightly damp. The floor looks nearly finished.',
-      },
-      final: {
-        framing: {
-          work_pct:   70,
-          foreground: 'complete clean tiled floor — aligned tiles, clean grout joints, no residue',
-          midground:  'full view of the finished tiled room',
-          background: 'clean white wall, window, door frame',
-        },
-        debris:      'none — floor clean, tiles and joints fully finished',
-        description: 'Tiling complete. The floor is clean, aligned and finished. Grout joints are dry. A professional result ready for the client.',
-      },
-    },
-  },
-
   vitrier: {
     category:         'vitrier',
     priority:         3,
@@ -222,29 +152,6 @@ export const WORK_SCENES_FINISHING = {
 };
 
 export const SITE_REALISM_FINISHING = {
-  carrelage: {
-    tools: [
-      'notched trowel resting on top of the tile stack',
-      'tile levelling clips scattered on the subfloor near the work edge',
-      'rubber mallet on the floor beside a freshly laid tile row',
-      'grout bucket with sponge balanced on the rim',
-      'plastic mixing bucket with cement residue near the room entrance',
-      'tile spacers in a small pile at the edge of the laid area',
-    ],
-    protections: [
-      'cardboard sheet covering the freshly laid tiles near the doorway',
-      'masking tape running along the skirting board at the wall edge',
-      'plastic drop sheet protecting the adjacent room threshold',
-    ],
-    chantier_details: [
-      'tile offcuts in a small pile near the wall',
-      'grout residue smear on the bare subfloor at the edge of the laid area',
-      'empty tile box flattened near the room entrance',
-      'damp grouting sponge and small water bucket near the recently grouted section',
-      'pencil reference line marked on the wall at tile height',
-    ],
-  },
-
   vitrier: {
     tools: [
       'suction cup lifting handle resting on the windowsill',
