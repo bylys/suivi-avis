@@ -29,7 +29,7 @@ CATALOG_VITRIER_SERVICES = [
 EXPECTED_FOR_PATTERNS = {
     'remplacement_vitrage_brise':    re.compile(r'vitrage.*bris|bris.*vitrage', re.I),
     'remplacement_double_vitrage':   re.compile(r'double.vitrage', re.I),
-    'remplacement_fenetre_pvc':      re.compile(r'pvc', re.I),
+    'remplacement_fenetre_pvc':      re.compile(r'fenetre.*pvc|pvc.*fenetre', re.I),
     'remplacement_fenetre_aluminium':re.compile(r'fenetre.*alumin|alumin', re.I),
     'reparation_fenetre':            re.compile(r'reparation.*fenetre|fenetre.*repar', re.I),
     'remplacement_porte_vitree':     re.compile(r'porte.vitr', re.I),

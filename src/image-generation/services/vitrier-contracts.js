@@ -315,7 +315,7 @@ export const VITRIER_VISUAL_CONTRACTS = {
       },
     },
     composition_preferences: ['medium_intervention', 'close_detail'],
-    for_regex: 'fenetre.*pvc|pvc.*fenetre|pvc',
+    for_regex: 'fenetre.*pvc|pvc.*fenetre',
   },
 
   remplacement_fenetre_aluminium: {
@@ -401,7 +401,7 @@ export const VITRIER_VISUAL_CONTRACTS = {
         observable_result: 'New aluminium window installed. Grey or anthracite metal frame flush in wall opening. Clean perimeter seal.',
         required_visual_evidence: [
           'grey or anthracite aluminium frame fully installed and sealed in wall opening',
-          'clear glass in the new frame',
+          'clear glass pane transparent in the new frame — no distortion, no cracks',
           'neat sealant bead at frame-wall junction',
           'no exposed rough opening',
         ],
@@ -802,7 +802,7 @@ export const VITRIER_VISUAL_CONTRACTS = {
 export const VITRIER_FOR_PATTERNS = {
   remplacement_vitrage_brise:    /vitrage.*bris|bris.*vitrage/i,
   remplacement_double_vitrage:   /double.vitrage/i,
-  remplacement_fenetre_pvc:      /pvc/i,
+  remplacement_fenetre_pvc:      /fenetre.*pvc|pvc.*fenetre/i,
   remplacement_fenetre_aluminium:/fenetre.*alumin|alumin/i,
   reparation_fenetre:            /reparation.*fenetre|fenetre.*repar/i,
   remplacement_porte_vitree:     /porte.vitr/i,

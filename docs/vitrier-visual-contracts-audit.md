@@ -30,7 +30,7 @@
 |---------|-----------------|-----------------|----------|-----------------|--------------|----------|--------|
 | Remplacement vitrage brisé | ✓ pose vitre unique dans cadre existant | ✓ single pane, bris visible | ✓ résidentiel, façade | ✓ 4 états | ✓ `vitrage.*bris` | ✓ gants requis | **READY** |
 | Remplacement double vitrage | ✓ extraction/pose IGU avec barre d'espacement | ✓ IGU épais, spacer bar visible | ✓ résidentiel, remplacement planifié | ✓ 4 états | ✓ `double.vitrage` | ✓ gants, 2 workers si large | **READY** |
-| Remplacement fenêtre PVC | ✓ pose cadre PVC blanc complet dans baie | ✓ vitrage IGU intégré en usine | ✓ baie maçonnée exposée, cadre blanc | ✓ 4 états | ✓ `pvc` | ✓ gants bords | **READY** |
+| Remplacement fenêtre PVC | ✓ pose cadre PVC blanc complet dans baie | ✓ vitrage IGU intégré en usine | ✓ baie maçonnée exposée, cadre blanc | ✓ 4 états | ✓ `fenetre.*pvc` | ✓ gants bords | **READY** |
 | Remplacement fenêtre aluminium | ✓ pose cadre alu gris/anthracite complet | ✓ vitrage IGU intégré en usine | ✓ baie maçonnée exposée, métal | ✓ 4 états | ✓ `alumin` | ✓ gants bords tranchants | **READY** |
 | Réparation fenêtre | ✓ intervention locale sur cadre existant intact | ✓ vitre intacte — pas de manipulation verre | ✓ fenêtre maintenue en place, pas de baie exposée | ✓ 4 états | ✓ `reparation.*fenetre` | ✓ gants si bords | **READY** |
 | Remplacement porte vitrée | ✓ pose porte hauteur 200 cm+ avec quincaillerie | ✓ verre sécurité trempé/feuilleté en porte | ✓ baie de porte, seuil, gonds, serrure visibles | ✓ 4 états | ✓ `porte.vitr` | ✓ 2 workers, gants | **READY** |
@@ -99,7 +99,7 @@
 |---------|-------|----------------|-------------------|
 | `remplacement_vitrage_brise` | `vitrage.*bris\|bris.*vitrage` | Remplacement vitrage brisé ✓ | 0 |
 | `remplacement_double_vitrage` | `double.vitrage` | Remplacement double vitrage ✓ | 0 |
-| `remplacement_fenetre_pvc` | `pvc` | Remplacement fenêtre PVC ✓ | 0 |
+| `remplacement_fenetre_pvc` | `fenetre.*pvc\|pvc.*fenetre` | Remplacement fenêtre PVC ✓ | 0 |
 | `remplacement_fenetre_aluminium` | `fenetre.*alumin\|alumin` | Remplacement fenêtre aluminium ✓ | 0 |
 | `reparation_fenetre` | `reparation.*fenetre\|fenetre.*repar` | Réparation fenêtre ✓ | 0 |
 | `remplacement_porte_vitree` | `porte.vitr` | Remplacement porte vitrée ✓ | 0 |
@@ -135,13 +135,29 @@
 
 ---
 
+## Correctif CP4 — Faux positif `Étanchéité PVC` (checkpoint pré-Phase 2)
+
+Le checkpoint étendu (164 services vs 29 dans l'audit initial) a révélé que `/pvc/i` capturait `Étanchéité PVC` (étanchéité bitume/EPDM/PVC).
+
+**Correction appliquée** : regex renforcée `fenetre.*pvc|pvc.*fenetre` — exige le contexte "fenetre" pour éviter toute capture des services d'étanchéité PVC.
+
+| | Avant | Après |
+|--|-------|-------|
+| Regex | `/pvc/i` | `/fenetre.*pvc\|pvc.*fenetre/i` |
+| Faux positifs (164 services) | 1 (`Étanchéité PVC`) | 0 |
+| Vrais positifs (vitrier) | 1 | 1 (inchangé) |
+
+---
+
 ## Statut final
 
 ```
 Contrats visuels             : 8/8 READY_FOR_IMPLEMENTATION
-Tests no-cost Python VV1–V14 : 90/90 PASS
+Checkpoint Python (164/164)  : ALL PASS (après correctif regex PVC)
+Tests VV1–V14 originaux      : 90/90 PASS (avec regex corrigée)
 Collisions regex             : 0
 Paires différenciées         : 6/6
+Faux positifs 164 services   : 0
 Runtime de production modifié: NON
 Images réelles générées      : NON
 ```

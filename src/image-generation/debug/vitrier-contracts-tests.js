@@ -42,21 +42,79 @@ const CATALOG_VITRIER_SERVICES = [
   'Bris de glace urgence',
 ];
 
-// All other catalog services from the full audit list (for external collision test)
+// All 164 non-vitrier catalog services — normalized (NFD stripped, non-alphanum → space)
 const NON_VITRIER_NORMALIZED = [
-  'remplacement tuiles','remplacement ardoises','remplacement gouttieres',
-  'remplacement batterie','elagage arbre','taille arbre haute tige',
-  'elagage peuplier','elagage en hauteur','recepage arbre','couronnage arbre',
-  'elagage arbres dangereux','abattage arbre','abattage peuplier',
-  'abattage grand arbre','abattage en zone difficile','dessouchage',
-  'abattage conifere','nettoyage toiture','debarras grenier',
-  'debarras appartement','pose carrelage sol','pose carrelage mural',
-  'faience salle de bain','faience cuisine','carrelage terrasse exterieure',
-  'dallage exterieur','peinture facade','peinture interieure',
-  'ravalement facade','nettoyage haute pression','nettoyage gouttieres',
-  'etancheite toiture','etancheite terrasse','maconnerie','terrassement maison',
-  'paysagiste','creation jardin','crevaison','remorquage','batterie demarrage',
-  'ouverture porte serrurier',
+  // toiture (11)
+  'renovation toiture complete','reparation toiture','remplacement tuiles',
+  'remplacement ardoises','couverture neuve','refection toiture',
+  'charpente','isolation combles','faitage','zinguerie','solins',
+  // nettoyage_toiture (6)
+  'demossage toiture','nettoyage toiture','traitement hydrofuge toiture',
+  'nettoyage mousse toiture','hydrofuge toiture','traitement anti mousse toiture',
+  // nettoyage_gouttieres (5)
+  'nettoyage gouttieres','debouchage gouttieres','remplacement gouttieres',
+  'entretien gouttieres','pose gouttieres',
+  // etancheite (17)
+  'reparation fuite toiture','recherche de fuite','infiltration toiture',
+  'etancheite toit terrasse','etancheite toiture plate',
+  'etancheite balcon','etancheite terrasse',
+  'etancheite epdm','etancheite pvc','etancheite bitume',
+  'refection d etancheite',
+  'reparation solin','reparation velux','reparation noue',
+  'reparation rive','etancheite cheminee','etancheite acrotere',
+  // ravalement (9)
+  'ravalement facade','renovation facade','crepi facade',
+  'ite isolation par l exterieur','enduit monocouche',
+  'enduit hydraulique','nettoyage facade','peinture facade',
+  'traitement facade pierre',
+  // maçonnerie (18)
+  'mur parpaing','mur brique','construction mur','muret',
+  'dalle beton','terrasse beton','coulage dalle',
+  'fondation','semelle beton','ferraillage',
+  'escalier beton','seuil','linteau','ouverture dans mur','percement mur',
+  'reparation fissure','rejointoiement','rejointoiement pierre',
+  // peinture (10)
+  'peinture interieure','peinture salon','peinture chambre',
+  'peinture cuisine','peinture couloir','peinture plafond',
+  'papier peint','peinture exterieure','peinture facade','enduit decoratif',
+  // carrelage (9)
+  'pose carrelage sol','pose carrelage mural','faience salle de bain',
+  'faience cuisine','carrelage terrasse exterieure','dallage exterieur',
+  'pose pierre naturelle','refection joint','refection carrelage',
+  // élagage (7)
+  'elagage arbre','taille arbre haute tige','elagage peuplier',
+  'elagage en hauteur','recepage arbre','couronnage arbre',
+  'elagage arbres dangereux',
+  // abattage (6)
+  'abattage arbre','abattage peuplier','abattage grand arbre',
+  'abattage en zone difficile','dessouchage','abattage conifere',
+  // terrassement (16)
+  'terrassement maison','terrassement piscine','terrassement terrain',
+  'decaissement','excavation','fouilles','tranchees',
+  'remblai','empierrement','nivellement','preparation terrain',
+  'creation allee','creation chemin','plateforme','vrd',
+  'evacuation des terres',
+  // paysagiste (18)
+  'creation jardin','amenagement exterieur','amenagement paysager',
+  'plantation','plantation de haies','plantation d arbres',
+  'taille de haie','taille d arbustes','creation massif',
+  'pose de gazon','gazon en rouleau','semis de gazon',
+  'arrosage automatique','bordures','paillage',
+  'entretien jardin','desherbage','petite maconnerie paysagere',
+  // depannage_auto (17)
+  'batterie a plat','demarrage batterie','boost batterie','remplacement batterie',
+  'crevaison','changement de roue','reparation pneu',
+  'remorquage','assistance routiere','vehicule en panne',
+  'ouverture de vehicule','cles enfermees','deverrouillage voiture',
+  'erreur de carburant','panne moteur','panne electrique','enlevement vehicule',
+  // nettoyage (7)
+  'nettoyage facade','nettoyage terrasse','nettoyage dallage',
+  'nettoyage paves','nettoyage allee','traitement hydrofuge facade',
+  'nettoyage haute pression',
+  // débarras (8)
+  'debarras appartement','debarras maison','debarras cave',
+  'debarras grenier','vider maison succession','debarras apres deces',
+  'enlevement encombrants','nettoyage encombrants',
 ];
 
 const REQUIRED_STATE_KEYS = ['debut', 'encours', 'semifinal', 'final'];
