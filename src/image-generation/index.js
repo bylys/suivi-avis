@@ -270,7 +270,7 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests] = await Promise.all([
     import('./debug/runtime-tests.js'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
@@ -278,6 +278,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/carrelage-contracts-tests.js'),
     import('./debug/carrelage-scenes-tests.js?v=21'),
     import('./debug/vitrier-contracts-tests.js'),
+    import('./debug/vitrier-scenes-tests.js'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult     = await runtimeTests.runRuntimeTests();
@@ -291,7 +292,8 @@ if (_params.get('imageGenTests') === '1') {
   window._runCarrelageContractsTests  = carrelageTests.runCarrelageContractsTests;
   window._runCarrelageSceneTests      = carrelageScenes.runCarrelageSceneTests;
   window._runVitrierContractsTests    = vitrierContractsTests.runVitrierContractsTests;
-  console.info('[IMAGE MODULE 7C] Debug harness ready — call window._runImageGenerationTests(), window._runCarrelageContractsTests(), window._runCarrelageSceneTests() ou window._runVitrierContractsTests()');
+  window._runVitrierScenesTests       = vitrierScenesTests.runVitrierScenesTests;
+  console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests()');
 }
 
 console.info('[IMAGE MODULE 7C] Modular API active and ready');
