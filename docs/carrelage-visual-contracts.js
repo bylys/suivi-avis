@@ -1,407 +1,917 @@
 /**
- * docs/carrelage-visual-contracts.js
+ * docs/carrelage-visual-contracts.js — feat/carrelage-visual-contracts
  * Contrats visuels pour les 9 sous-services carrelage.
+ * Source de vérité avant d'écrire les scènes WORK_SCENES / SITE_REALISM.
  *
- * Chaque objet définit ce qu'une photo DOIT montrer, ce qu'elle ne doit PAS
- * montrer, et comment on distingue ce service des huit autres.
- * Ces contrats sont la source de vérité avant d'écrire les scènes WORK_SCENES
- * et les patterns _for du SITE_REALISM.
- *
- * STATUT : à valider — aucun prompt métier modifié, aucune scène produite.
+ * STATUT : en validation — aucun WORK_SCENES / SITE_REALISM modifié.
  */
 
-export const CARRELAGE_VISUAL_CONTRACTS = [
+export const CARRELAGE_VISUAL_CONTRACTS = {
 
-  // ─── 1. Pose carrelage sol ─────────────────────────────────────────────────
-  {
-    service:       'Pose carrelage sol',
-    metier_key:    'carrelage',
-    for_regex:     'carrelage sol|pose.*sol|sol.*carrelage',
+  pose_carrelage_sol: {
+    service_key:   'pose_carrelage_sol',
+    service_label: 'Pose carrelage sol',
 
     visual_goal:
-      'Montrer une pose de carreaux sur un sol intérieur en cours de réalisation.',
+      'Montrer une pose de carreaux sur un sol intérieur en cours : rangées posées, '
+      + 'croisillons, colle visible, transition entre zone finie et zone nue.',
+
+    observable_action:
+      'un carreleur à genoux applique de la colle crantée sur le sol et pose des carreaux '
+      + 'rangée par rangée en les nivelant avec des croisillons et un maillet en caoutchouc',
 
     required_visual_evidence: [
-      'rangées de carreaux déjà posées sur le sol (au moins 30 % de la surface visible)',
+      'rangées de carreaux déjà posées (au moins 30 % de la surface visible)',
       'zone de sol encore nue avec colle fraîche ou mortier-colle visible',
       'croisillons réguliers entre les carreaux posés',
       'transition nette entre zone terminée et zone en attente',
-      'outillage au sol : truelle crantée, maillet caoutchouc',
+      'truelle crantée ou maillet au sol à côté du carreleur',
     ],
 
     forbidden_confusions: [
-      'carreaux sur un mur — ce serait "Pose carrelage mural"',
-      'contexte de salle de bain identifiable — ce serait "Faïence salle de bain"',
-      'contexte cuisine identifiable — ce serait "Faïence cuisine"',
-      'espace extérieur — ce serait "Carrelage terrasse extérieure"',
-      'travail de jointoiement seul sans pose — ce serait "Réfection joint"',
-      'pièce entièrement terminée sans preuve de chantier actif',
+      'carreaux sur un mur — serait "Pose carrelage mural"',
+      'baignoire, receveur ou robinetterie sanitaire visible — serait "Faïence salle de bain"',
+      'plan de travail ou évier cuisine — serait "Faïence cuisine"',
+      'contexte extérieur (terrasse, allée) — serait "Carrelage terrasse" ou "Dallage"',
+      'jointoiement seul sans pose de carreaux — serait "Réfection joint"',
+      'texture pierre naturelle dominante — serait "Pose pierre naturelle"',
+      'pièce vide entièrement terminée sans preuve de chantier actif',
     ],
 
-    work_surface:    'sol intérieur (couloir, pièce de vie, entrée)',
-    location_types:  ['maison', 'appartement', 'local commercial'],
-    setting:         'interior',
+    allowed_tools: [
+      'truelle crantée (peigne à colle)',
+      'maillet en caoutchouc',
+      'croisillons ou clips de nivellement',
+      'seau de mortier-colle',
+      'niveau à bulle ou laser de nivellement',
+      'coupe-carreaux ou carrelette',
+      'éponge et seau de rinçage',
+    ],
 
-    states: {
-      debut:     'sol brut ou ancien carrelage déposé, carton de carreaux ouvert, outillage sorti',
-      en_cours:  'rangées posées visibles, croisillons, zone de colle fraîche, maillet en usage',
-      termine:   'sol entièrement carrelé, joints gris encore humides, seau de rinçage visible',
+    forbidden_tools: [
+      'rouleau de peinture',
+      'marteau-piqueur (sauf dépose préalable déjà terminée)',
+      'truelle lisse seule (sans croisillons)',
+      'pistolet à mastiquer',
+    ],
+
+    work_surface:   ['sol intérieur — couloir, pièce de vie, entrée, séjour'],
+    setting:        ['interior'],
+    location_types: ['maison', 'appartement', 'local commercial'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 2,
+      posture: 'à genoux au bord de la zone de pose, bras tendus vers les carreaux',
     },
 
-    common_confusions_detail:
-      'Pose carrelage sol ≠ Dallage extérieur (contexte outdoor), ≠ Faïence (mur ou pièce humide), ≠ Pose pierre naturelle (matière)',
+    safety: {
+      required: [
+        'genouillères visibles si le carreleur est à genoux',
+        'gants de travail résistants à la colle',
+        'lunettes de protection lors des découpes',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'carreleur mesure et trace les lignes directrices sur le sol nu',
+        required_visual_evidence: [
+          'sol entièrement nu avec lignes directrices tracées à la craie ou au laser',
+          'carton de carreaux ouvert posé sur le côté',
+          'seau de colle ou sac de mortier-colle fermé',
+        ],
+      },
+      en_cours: {
+        observable_action:        'carreleur pose des carreaux rangée par rangée avec croisillons',
+        required_visual_evidence: [
+          'rangées de carreaux posés avec croisillons visibles',
+          'zone de colle fraîche sur la partie non encore carrelée',
+          'maillet en caoutchouc en main ou posé sur les carreaux fraîchement posés',
+        ],
+      },
+      termine: {
+        observable_result:        'sol entièrement carrelé, joints gris encore humides',
+        required_visual_evidence: [
+          'sol couvert uniformément de carreaux identiques',
+          'joints frais et réguliers entre chaque carreau',
+          'seau de rinçage et éponge visibles dans un coin',
+        ],
+      },
+    },
 
     composition_preferences: [
-      'angle légèrement bas depuis le coin de la pièce, montrant la longueur du travail',
-      'profondeur de champ révélant la progression de la pose',
+      'medium_intervention',
+      'wide_worksite',
     ],
+
+    for_regex: 'carrelage sol|pose carrelage sol',
   },
 
-  // ─── 2. Pose carrelage mural ───────────────────────────────────────────────
-  {
-    service:       'Pose carrelage mural',
-    metier_key:    'carrelage',
-    for_regex:     'carrelage mural|pose.*mur|mur.*carrelage',
+  pose_carrelage_mural: {
+    service_key:   'pose_carrelage_mural',
+    service_label: 'Pose carrelage mural',
 
     visual_goal:
-      'Montrer une pose de carreaux sur un mur intérieur (pas salle de bain, pas cuisine).',
+      'Montrer une pose de carreaux sur un mur intérieur vertical, '
+      + 'hors contexte salle de bain ou cuisine.',
+
+    observable_action:
+      'un carreleur debout ou sur escabeau colle des carreaux sur un mur vertical, '
+      + 'travaillant rangée par rangée de bas en haut avec un niveau à bulle ou laser',
 
     required_visual_evidence: [
-      'carreaux collés sur un mur vertical',
-      'rangées horizontales progressant de bas en haut',
-      'colle encore visible sur les carreaux pas encore posés',
-      'niveau à bulle ou lasers de guidage visible',
-      'zone du mur encore nue au-dessus ou à côté des carreaux posés',
+      'carreaux collés sur une surface murale verticale',
+      'rangées horizontales progressant vers le haut',
+      'colle visible sur la zone non encore carrelée du mur',
+      'niveau à bulle ou ligne laser visible pour le guidage',
+      'zone du mur encore nue au-dessus ou adjacente aux carreaux posés',
     ],
 
     forbidden_confusions: [
-      'carreaux au sol — ce serait "Pose carrelage sol"',
-      'baignoire ou bac de douche visible — ce serait "Faïence salle de bain"',
-      'plan de travail ou évier cuisine — ce serait "Faïence cuisine"',
-      'mur extérieur — pas dans le scope carrelage mural',
+      'carreaux au sol — serait "Pose carrelage sol"',
+      'baignoire, receveur ou robinetterie sanitaire visible — serait "Faïence salle de bain"',
+      'plan de travail ou évier cuisine — serait "Faïence cuisine"',
+      'mur extérieur — hors scope',
     ],
 
-    work_surface:    'mur intérieur (couloir, entrée, local)',
-    location_types:  ['maison', 'local commercial'],
-    setting:         'interior',
+    allowed_tools: [
+      'truelle crantée',
+      'maillet en caoutchouc',
+      'croisillons',
+      'niveau à bulle ou laser de ligne',
+      'ventouse ou crochet pour grand format',
+      'coupe-carreaux',
+      'seau de mortier-colle',
+    ],
 
-    states: {
-      debut:     'mur préparé (enduit, primaire), gabarit posé, premier carré tracé',
-      en_cours:  'rangées visibles sur le mur, outils de coupe posés au sol',
-      termine:   'mur entièrement carrelé, joints frais, éponge de nettoyage visible',
+    forbidden_tools: [
+      'rouleau de peinture',
+      'pistolet à mastiquer',
+    ],
+
+    work_surface:   ['mur intérieur vertical — couloir, entrée, local commercial'],
+    setting:        ['interior'],
+    location_types: ['maison', 'local commercial'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 2,
+      posture: 'debout ou sur escabeau, face au mur, bras levés à hauteur de travail',
     },
 
-    common_confusions_detail:
-      'Différenciateur clé : surface de travail est VERTICALE. Si pièce humide → faïence SdB ou cuisine.',
+    safety: {
+      required: [
+        'gants de travail résistants à la colle',
+        'lunettes de protection lors des découpes',
+        'escabeau stable si travail en hauteur',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+        'genouillères (travail vertical)',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'carreleur applique gabarit et trace la première rangée sur le mur',
+        required_visual_evidence: [
+          'mur préparé — enduit ou primaire visible',
+          'première rangée de guidage ou gabarit posé',
+          'seau de colle ouvert au pied du mur',
+        ],
+      },
+      en_cours: {
+        observable_action:        'carreleur colle des carreaux rangées horizontales sur le mur',
+        required_visual_evidence: [
+          'deux ou trois rangées de carreaux posées sur le mur',
+          'croisillons entre les rangées',
+          'zone nue du mur au-dessus des carreaux posés',
+        ],
+      },
+      termine: {
+        observable_result:        'mur entièrement carrelé, joints frais, surface nettoyée',
+        required_visual_evidence: [
+          'mur recouvert uniformément de carreaux du sol au plafond',
+          'joints réguliers et frais',
+          'éponge de nettoyage visible dans un coin',
+        ],
+      },
+    },
 
     composition_preferences: [
-      'cadrage en légère contre-plongée pour montrer la progression verticale',
-      'artisan visible de dos ou de côté en train de coller une rangée',
+      'medium_intervention',
     ],
+
+    for_regex: 'carrelage mural|pose carrelage mural',
   },
 
-  // ─── 3. Faïence salle de bain ──────────────────────────────────────────────
-  {
-    service:       'Faïence salle de bain',
-    metier_key:    'carrelage',
-    for_regex:     'faience.*salle|salle.*bain|douche|baignoire|sdb',
+  faience_salle_de_bain: {
+    service_key:   'faience_salle_de_bain',
+    service_label: 'Faïence salle de bain',
 
     visual_goal:
-      'Montrer une pose de faïence dans une salle de bain — contexte humide explicite.',
+      'Montrer une pose de faïence dans une salle de bain : '
+      + 'équipements sanitaires visibles, faïence murale en pose active.',
+
+    observable_action:
+      "un carreleur pose de la faïence murale autour des équipements sanitaires "
+      + "(baignoire, receveur de douche) avec découpes précises autour des arrivées d'eau",
 
     required_visual_evidence: [
-      'baignoire, receveur de douche, ou robinetterie de salle de bain visible dans le cadre',
+      'baignoire, receveur de douche, vasque ou robinetterie murale visible dans le cadre',
       'faïence murale en cours de pose autour de ces équipements',
-      'joints de silicone ou carreaux en mosaïque petits formats typiques salle de bain',
-      'sol carrelé antidérapant ou en cours de pose',
+      "découpes ajustées autour des raccords de plomberie ou des accessoires muraux",
+      'petits formats typiques salle de bain (carreaux 10×10 à 30×30 cm)',
     ],
 
     forbidden_confusions: [
-      'contexte cuisine — ce serait "Faïence cuisine"',
-      'mur générique sans équipement sanitaire — ce serait "Pose carrelage mural"',
+      'plan de travail ou évier de cuisine — serait "Faïence cuisine"',
+      'mur générique sans équipement sanitaire — serait "Pose carrelage mural"',
       'espace extérieur',
     ],
 
-    work_surface:    'murs et sol de salle de bain',
-    location_types:  ['maison', 'appartement'],
-    setting:         'interior',
+    allowed_tools: [
+      'truelle crantée fine',
+      'maillet en caoutchouc',
+      'croisillons petits formats',
+      'coupe-carreaux de précision',
+      'perce-carrelage (mèche diamant)',
+      'taloche à joints',
+      'tube de silicone salle de bain',
+    ],
 
-    states: {
-      debut:     'salle de bain débarrassée, anciens carreaux retirés, receveur visible',
-      en_cours:  'faïence à mi-hauteur, outils au sol, baignoire ou douche visible',
-      termine:   'pièce entièrement carrelée, joints silicone frais autour des équipements',
+    forbidden_tools: [
+      'rouleau de peinture',
+      'marteau-piqueur',
+    ],
+
+    work_surface:   ['murs et sol de salle de bain'],
+    setting:        ['interior'],
+    location_types: ['maison', 'appartement'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 1,
+      posture: "debout ou accroupi face à la zone de pose, espace contraint de salle de bain",
     },
 
-    common_confusions_detail:
-      'Différenciateur absolu : un équipement sanitaire (bac, baignoire, mitigeur mural) DOIT être visible.',
+    safety: {
+      required: [
+        'gants résistants aux colles et aux produits de jointoiement',
+        'lunettes lors des découpes ou perçages',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'salle de bain vidée et mur préparé, équipements en attente',
+        required_visual_evidence: [
+          'receveur de douche ou baignoire visible sans faïence autour',
+          'mur enduit ou brut, prêt à recevoir la faïence',
+          'matériaux posés dans la pièce',
+        ],
+      },
+      en_cours: {
+        observable_action:        'carreleur pose la faïence autour du receveur ou de la baignoire',
+        required_visual_evidence: [
+          'faïence à mi-hauteur sur au moins un mur',
+          'équipement sanitaire visible dans le cadre',
+          'joints de silicone partiellement posés ou en cours',
+        ],
+      },
+      termine: {
+        observable_result:        'salle de bain entièrement carrelée, joints silicone frais',
+        required_visual_evidence: [
+          "faïence couvrant l'ensemble des murs au-dessus des équipements",
+          "joints de silicone frais autour de la baignoire ou du receveur",
+          'salle de bain reconnaissable avec équipements en place',
+        ],
+      },
+    },
 
     composition_preferences: [
-      "angle montrant à la fois le mur carrelé et l'équipement de salle de bain",
-      'focus sur la transition entre faïence et silicone autour du receveur',
+      'medium_intervention',
+      'close_detail',
     ],
+
+    for_regex: 'faience.*salle|faience.*bain|salle.*bain.*carre',
   },
 
-  // ─── 4. Faïence cuisine ────────────────────────────────────────────────────
-  {
-    service:       'Faïence cuisine',
-    metier_key:    'carrelage',
-    for_regex:     'faience.*cuisine|cuisine.*faience|credence',
+  faience_cuisine: {
+    service_key:   'faience_cuisine',
+    service_label: 'Faïence cuisine',
 
     visual_goal:
-      'Montrer une pose de faïence dans une cuisine — crédence ou mur au-dessus du plan de travail.',
+      'Montrer une pose de faïence dans une cuisine — crédence derrière plan de travail ou évier.',
+
+    observable_action:
+      "un carreleur pose des carreaux de faïence en crédence derrière le plan de travail "
+      + "avec des découpes autour des prises électriques encastrées",
 
     required_visual_evidence: [
       'plan de travail ou évier de cuisine visible dans le cadre',
-      'crédence en cours de pose : carreaux collés derrière la zone cuisson ou évier',
-      "coupe de carreaux autour d'une prise encastrée ou d'un robinet mural",
+      'crédence en cours de pose sur le mur derrière la zone cuisson ou évier',
+      'découpes autour de prises encastrées ou de tuyauteries',
     ],
 
     forbidden_confusions: [
-      'salle de bain — ce serait "Faïence salle de bain"',
-      'mur générique sans contexte cuisine — ce serait "Pose carrelage mural"',
+      'baignoire, receveur ou équipement sanitaire — serait "Faïence salle de bain"',
+      'mur sans plan de travail ni évier — serait "Pose carrelage mural"',
+      'sol de cuisine — serait "Pose carrelage sol"',
     ],
 
-    work_surface:    'crédence et murs de cuisine',
-    location_types:  ['maison', 'appartement'],
-    setting:         'interior',
+    allowed_tools: [
+      'truelle crantée fine',
+      'maillet en caoutchouc',
+      'croisillons',
+      'coupe-carreaux de précision',
+      'perce-carrelage',
+      'taloche à joints',
+    ],
 
-    states: {
-      debut:     'cuisine vide ou dégagée, traits de guide tracés sur le mur',
-      en_cours:  'crédence à moitié posée, découpes autour des prises',
-      termine:   'crédence entière, joints frais, plan de travail visible en bas de cadre',
+    forbidden_tools: [
+      'rouleau de peinture',
+      'marteau-piqueur',
+    ],
+
+    work_surface:   ['crédence et murs de cuisine au-dessus du plan de travail'],
+    setting:        ['interior'],
+    location_types: ['maison', 'appartement'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 1,
+      posture: 'debout face au mur de cuisine, espace contraint entre plan de travail et mur',
     },
 
-    common_confusions_detail:
-      'Différenciateur : plan de travail ou équipement de cuisine DOIT être visible en bas du cadre.',
+    safety: {
+      required: [
+        'gants résistants à la colle',
+        'lunettes lors des perçages',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'carreleur trace les lignes directrices sur le mur de cuisine',
+        required_visual_evidence: [
+          'plan de travail visible en bas de cadre',
+          'mur nu au-dessus du plan de travail',
+          'traces de craie ou niveau laser visible',
+        ],
+      },
+      en_cours: {
+        observable_action:        'carreleur pose la crédence rangée par rangée',
+        required_visual_evidence: [
+          'crédence à moitié posée sur le mur derrière le plan de travail',
+          'découpes visibles autour des prises ou interrupteurs',
+          'évier ou plaque de cuisson visible dans le cadre',
+        ],
+      },
+      termine: {
+        observable_result:        'crédence entièrement posée, joints frais, cuisine opérationnelle',
+        required_visual_evidence: [
+          'crédence uniforme couvrant le mur derrière le plan de travail',
+          'joints frais et réguliers',
+          'plan de travail visible en bas, cuisine reconnaissable',
+        ],
+      },
+    },
 
     composition_preferences: [
-      'angle plongeant depuis le haut pour montrer crédence + plan de travail dans le même cadre',
+      'medium_intervention',
+      'close_detail',
     ],
+
+    for_regex: 'faience.*cuisine|cuisine.*faience|credence',
   },
 
-  // ─── 5. Carrelage terrasse extérieure ─────────────────────────────────────
-  {
-    service:       'Carrelage terrasse extérieure',
-    metier_key:    'carrelage',
-    for_regex:     'terrasse|exterieur.*carrelage|carrelage.*exterieur',
+  carrelage_terrasse_exterieure: {
+    service_key:   'carrelage_terrasse_exterieure',
+    service_label: 'Carrelage terrasse extérieure',
 
     visual_goal:
-      'Montrer une pose de carreaux sur une terrasse ou espace de vie extérieur.',
+      'Montrer une pose de carreaux sur une terrasse ou espace de vie extérieur : '
+      + 'contexte outdoor clairement identifiable, grand format.',
+
+    observable_action:
+      'un carreleur pose des carreaux grand format sur une terrasse extérieure '
+      + "avec lumière naturelle directe et façade ou baie vitrée visible",
 
     required_visual_evidence: [
-      'espace extérieur clairement identifiable : lumière naturelle directe, ciel ou végétation visible',
-      'carreaux grand format posés à plat (20×20 minimum typique terrasse)',
-      'transition entre zone posée et zone en cours',
-      'joints larges ou plots de fixation visibles si dalles sur plots',
+      'contexte extérieur clairement identifiable : lumière naturelle directe, ciel ou végétation visible',
+      'carreaux grand format (40×40 cm ou plus) posés à plat',
+      'transition entre zone posée et zone en cours de pose',
+      'liant ou colle pour extérieur visible (teinte grise ou blanche)',
     ],
 
     forbidden_confusions: [
-      'espace intérieur — ce serait "Pose carrelage sol"',
-      'allée ou cour sans espace de vie aménagé — ce serait "Dallage extérieur"',
-      'galets ou gravillons — hors scope',
+      'espace intérieur — serait "Pose carrelage sol"',
+      'allée, cour ou voie fonctionnelle sans espace de vie — serait "Dallage extérieur"',
+      'galets, gravillons ou autre revêtement non carrelé',
     ],
 
-    work_surface:    'terrasse ou balcon extérieur',
-    location_types:  ['maison', 'appartement (balcon)', 'local commercial'],
-    setting:         'exterior',
+    allowed_tools: [
+      'truelle crantée grand format',
+      'maillet en caoutchouc lourd',
+      'croisillons larges (3–5 mm joint extérieur)',
+      'seau de mortier-colle pour extérieur',
+      'règle de planéité',
+      'niveau à bulle',
+    ],
 
-    states: {
-      debut:     'terrasse débarrassée, chape ou structure de support visible',
-      en_cours:  'rangées posées, zone nue visible, outils au sol extérieur',
-      termine:   "terrasse entièrement carrelée, joints gris, vue sur l'extérieur",
+    forbidden_tools: [
+      'rouleau de peinture',
+    ],
+
+    work_surface:   ['terrasse, balcon extérieur, espace de vie à ciel ouvert'],
+    setting:        ['exterior'],
+    location_types: ['maison', 'appartement (grand balcon)', 'local commercial'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 2,
+      posture: "accroupi ou debout, travail en extérieur avec espace dégagé",
     },
 
-    common_confusions_detail:
-      'Différenciateur : contexte OUTDOOR obligatoire. Terrasse = espace de vie. Dallage = allée/cour fonctionnelle.',
+    safety: {
+      required: [
+        'gants de travail',
+        "chaussures de sécurité adaptées à l'extérieur",
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais (sauf terrasse en hauteur sans garde-corps)',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'carreleur prépare la surface et dispose les premiers carreaux à sec',
+        required_visual_evidence: [
+          'terrasse débarrassée et nettoyée',
+          'carreaux posés à sec pour le calepinage',
+          'ciel ou végétation visible en arrière-plan',
+        ],
+      },
+      en_cours: {
+        observable_action:        'carreleur colle et pose des carreaux grand format en extérieur',
+        required_visual_evidence: [
+          'rangées posées avec joints larges visibles',
+          'zone encore nue de la terrasse visible',
+          'environnement extérieur (façade, baie vitrée, végétation) en arrière-plan',
+        ],
+      },
+      termine: {
+        observable_result:        'terrasse entièrement carrelée, joints extérieurs gris frais',
+        required_visual_evidence: [
+          'surface de terrasse entièrement carrelée',
+          'joints gris extérieurs uniformes',
+          'contexte extérieur visible, espace de vie reconnaissable',
+        ],
+      },
+    },
 
     composition_preferences: [
-      "angle légèrement haut montrant la surface de la terrasse et l'environnement extérieur",
-      'végétation ou barrière de balcon visible en arrière-plan',
+      'wide_worksite',
+      'contextual_overview',
     ],
+
+    for_regex: 'terrasse exterieure|carrelage terrasse',
   },
 
-  // ─── 6. Dallage extérieur ─────────────────────────────────────────────────
-  {
-    service:       'Dallage extérieur',
-    metier_key:    'carrelage',
-    for_regex:     'dallage|dalle.*ext|allee|cour|acces',
+  dallage_exterieur: {
+    service_key:   'dallage_exterieur',
+    service_label: 'Dallage extérieur',
 
     visual_goal:
-      "Montrer une pose de dalles béton, pierre ou grès dans une allée, cour ou voie d'accès.",
+      'Montrer une pose de dalles épaisses (béton, pierre reconstituée) '
+      + 'dans une allée, cour ou voie fonctionnelle.',
+
+    observable_action:
+      "un poseur place des dalles épaisses sur un lit de sable ou béton maigre "
+      + "dans une allée ou cour, en les nivelant avec un maillet lourd et une règle",
 
     required_visual_evidence: [
-      'contexte extérieur fonctionnel : allée, entrée de propriété, cour',
-      'dalles épaisses posées sur sable ou béton de fondation',
-      'joints larges entre dalles (>10 mm) typiques des dallages extérieurs',
-      'outillage de maçonnerie extérieure : arrosoir, règle de mise à niveau, pioche',
+      'contexte extérieur fonctionnel visible : allée, entrée de propriété ou cour',
+      'dalles épaisses (5 cm ou plus) posées sur lit de sable ou béton de fondation',
+      'joints larges (10 mm ou plus) typiques des dallages extérieurs',
+      'outillage de maçonnerie extérieure : règle de planéité, maillet',
     ],
 
     forbidden_confusions: [
-      'terrasse aménagée avec mobilier — ce serait "Carrelage terrasse extérieure"',
-      'espace intérieur',
-      'carreaux fins < 10 mm (céramique intérieure)',
+      'terrasse avec mobilier de jardin ou espace de vie — serait "Carrelage terrasse extérieure"',
+      'carreaux fins en céramique intérieure',
+      "nettoyage d'un dallage existant — autre métier",
     ],
 
-    work_surface:    'allée, cour, entrée de propriété, trottoir privé',
-    location_types:  ['maison individuelle', "local commercial', "copropriété'],
-    setting:         'exterior',
+    allowed_tools: [
+      'maillet lourd ou masse en caoutchouc',
+      'règle de planéité ou niveau à long rayon',
+      "arrosoir ou pulvérisateur d'eau pour sable",
+      'truelle',
+      "pied-de-biche pour l'ajustement des dalles",
+      'brosses pour le jointement sablé',
+    ],
 
-    states: {
-      debut:     'sol décaissé ou chape visible, dalles en stock sur le côté',
-      en_cours:  'dalles posées sur 30–60 % de la surface, règle de niveau en action',
-      termine:   'allée entièrement dallée, joints sablés, bordures posées',
+    forbidden_tools: [
+      'rouleau de peinture',
+      'truelle crantée fine (carrelage intérieur)',
+      'croisillons petits formats',
+    ],
+
+    work_surface:   ["allée, cour, entrée de propriété, trottoir privé"],
+    setting:        ['exterior'],
+    location_types: ['maison individuelle', 'local commercial', 'copropriété'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 2,
+      posture: "debout ou accroupi, manutention de dalles lourdes en extérieur",
     },
 
-    common_confusions_detail:
-      'Différenciateur : dalles épaisses + contexte fonctionnel (accès, cour). Pas de mobilier de jardin ou de vue de vie.',
+    safety: {
+      required: [
+        'gants de manutention résistants (dalles lourdes)',
+        'chaussures de sécurité',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'poseur prépare le lit de pose — décaissement ou sable nivelé',
+        required_visual_evidence: [
+          'sol décaissé ou lit de sable visible sur au moins 50 % de la surface',
+          'dalles en stock sur le côté de la zone de travail',
+          'allée ou accès clairement identifiable',
+        ],
+      },
+      en_cours: {
+        observable_action:        'poseur place et nivelle des dalles sur le lit de pose',
+        required_visual_evidence: [
+          'dalles posées sur 30 à 60 % de la surface',
+          'règle de planéité ou niveau visible',
+          'lit de sable ou de béton visible sur la zone non encore couverte',
+        ],
+      },
+      termine: {
+        observable_result:        'allée ou cour entièrement dallée, joints sablés',
+        required_visual_evidence: [
+          'surface entièrement dallée avec joints uniformes',
+          'brosses ou balai de jointement visible dans un coin',
+          "contexte fonctionnel (portail, clôture, accès) en arrière-plan",
+        ],
+      },
+    },
 
     composition_preferences: [
-      "angle en léger contre-plongée montrant la profondeur de l'allée",
-      "prise depuis l'entrée pour montrer la progression du dallage",
+      'wide_worksite',
+      'medium_intervention',
     ],
+
+    for_regex: 'dallage exterieur|dallage ext|pose.*dallage',
   },
 
-  // ─── 7. Pose pierre naturelle ─────────────────────────────────────────────
-  {
-    service:       'Pose pierre naturelle',
-    metier_key:    'carrelage',
-    for_regex:     'pierre naturelle|travertin|ardoise|marbre|granite|schiste',
+  pose_pierre_naturelle: {
+    service_key:   'pose_pierre_naturelle',
+    service_label: 'Pose pierre naturelle',
 
     visual_goal:
-      'Montrer une pose de dalles en matière naturelle avec la texture distinctive du matériau.',
+      'Montrer une pose de dalles en matière naturelle : '
+      + 'texture non-industrielle et veinures dominantes dans le cadre.',
+
+    observable_action:
+      'un carreleur spécialisé pose des dalles en pierre naturelle (travertin, marbre, ardoise) '
+      + 'en appliquant un mortier-colle blanc spécial pierre',
 
     required_visual_evidence: [
       'texture de pierre naturelle clairement visible : veinures, porosité, irrégularités de surface',
-      'format de dalle généralement irrégulier ou grand format',
-      'mortier-colle spécial pierre naturelle (blanc ou gris clair)',
-      "transition entre zone posée et zone nue révélant l'épaisseur de la pierre",
+      'dalles grand format ou irrégulières typiques de la pose pierre',
+      'mortier-colle blanc ou gris clair visible sur les bords ou la zone non encore posée',
+      "transition entre dalle posée et sol nu révélant l'épaisseur de la pierre (> 1 cm)",
     ],
 
     forbidden_confusions: [
-      'carrelage en grès cérame imitant la pierre — texture doit être vraiment naturelle',
-      'dallage extérieur fonctionnel — ici la matière (esthétique) est le sujet',
-      'faïence en céramique standard',
+      "carrelage en grès cérame imitant la pierre — la texture doit être authentiquement naturelle",
+      'carreaux fins standard en céramique (< 8 mm)',
+      "pose sur terrasse sans distinction de matière — contexte seul ne suffit pas",
     ],
 
-    work_surface:    'sol ou mur intérieur ou extérieur, selon le contexte de la commande',
-    location_types:  ['maison', 'appartement haut de gamme', 'local commercial'],
-    setting:         'interior ou exterior selon contexte',
+    allowed_tools: [
+      'truelle crantée grand format',
+      'maillet en caoutchouc',
+      'mortier-colle blanc spécial pierre naturelle',
+      'espaceurs larges (> 3 mm)',
+      "meuleuse d'angle avec disque diamant",
+      'ponceuse orbitale pour finition',
+    ],
 
-    states: {
-      debut:     'dalles de pierre en stock, sol préparé, joints de dilatation tracés',
-      en_cours:  'dalles posées révélant leur texture naturelle, zones de colle blanche visible',
-      termine:   'surface polie ou huilée, joints fins, brillance naturelle du matériau',
+    forbidden_tools: [
+      'rouleau de peinture',
+      'mortier gris standard (risque de tâches sur pierre poreuse)',
+    ],
+
+    work_surface:   ['sol ou mur, intérieur ou extérieur selon contexte'],
+    setting:        ['interior', 'exterior'],
+    location_types: ['maison', 'appartement haut de gamme', 'local commercial'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 2,
+      posture: 'à genoux ou debout selon surface, manutention de dalles lourdes',
     },
 
-    common_confusions_detail:
-      "Différenciateur : MATIÈRE. La texture non-industrielle de la pierre doit s'imposer visuellement.",
+    safety: {
+      required: [
+        'gants de manutention (dalles lourdes et coupantes)',
+        "lunettes lors des découpes à la meuleuse",
+        'masque anti-poussière lors des découpes',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'carreleur dispose les dalles de pierre à sec pour le calepinage',
+        required_visual_evidence: [
+          'dalles de pierre naturelle en stock ou disposées à sec',
+          'texture et veinures de la pierre clairement visible',
+          'sol préparé ou joints de dilatation tracés',
+        ],
+      },
+      en_cours: {
+        observable_action:        'carreleur colle des dalles de pierre, texture naturelle en avant-plan',
+        required_visual_evidence: [
+          'dalles posées révélant leur texture naturelle (veinures, pores)',
+          'mortier-colle blanc visible sur la zone non encore posée',
+          "transition entre dalle posée et sol nu révélant l'épaisseur",
+        ],
+      },
+      termine: {
+        observable_result:        'surface en pierre naturelle posée, joints fins, aspect premium',
+        required_visual_evidence: [
+          'surface couverte de dalles de pierre avec joints fins',
+          'texture naturelle dominante dans le cadre',
+          'finition visible : polissage ou huilage selon la matière',
+        ],
+      },
+    },
 
     composition_preferences: [
-      'macro ou gros plan révélant les veines et la texture naturelle du matériau',
-      'angle rasant sur le sol pour accentuer les reliefs et irrégularités',
+      'close_detail',
+      'medium_intervention',
     ],
+
+    for_regex: 'pierre naturelle|pose.*pierre|pierre.*pose',
   },
 
-  // ─── 8. Réfection joint ───────────────────────────────────────────────────
-  {
-    service:       'Réfection joint',
-    metier_key:    'carrelage',
-    for_regex:     'joint|rejointoiement|refection.*joint|joint.*refection',
+  refection_joint: {
+    service_key:   'refection_joint',
+    service_label: 'Réfection joint',
 
     visual_goal:
-      'Montrer un travail de rejointoiement : anciens joints retirés et nouveaux appliqués.',
+      'Montrer un travail de rejointoiement sur carrelage existant : '
+      + 'anciens joints retirés, nouveau mortier appliqué, carreaux conservés.',
+
+    observable_action:
+      'un carreleur retire les anciens joints détériorés avec un disque rainureur '
+      + 'puis applique un nouveau mortier de jointoiement à la taloche',
 
     required_visual_evidence: [
-      'carrelage existant (posé depuis longtemps) constituant le fond de la scène',
-      'anciens joints noirs ou détériorés clairement visibles dans une zone',
-      'outils de rejointoiement : disque à rainurer, éponge, seau de mortier-joint',
-      "joint frais gris ou coloré appliqué dans une autre zone en contraste avec l'ancien",
+      'carrelage existant (posé depuis plusieurs années) constituant le fond de la scène',
+      'anciens joints noirs, fissurés ou manquants dans une zone clairement visible',
+      'outil de réfection joint visible : disque rainureur, taloche, raclette',
+      'joint frais gris ou coloré dans une zone contrastant avec les joints anciens',
     ],
 
     forbidden_confusions: [
-      'pose de carreaux neufs — les carreaux DOIVENT être déjà en place, anciens',
-      'démolition ou Réfection carrelage — aucun carreau arraché visible',
+      'pose de carreaux neufs — les carreaux DOIVENT être anciens et en place',
+      'dépose complète du carrelage — aucun carreau arraché, aucun sol nu',
+      'nettoyage de joints seul sans remplacement',
     ],
 
-    work_surface:    'carrelage existant (sol ou mur)',
-    location_types:  ['maison', 'appartement', 'local commercial'],
-    setting:         'interior',
+    allowed_tools: [
+      'disque à rainurer ou fraise à joints',
+      'taloche à joints (grout float)',
+      'raclette en caoutchouc',
+      "seau d'eau et éponge de rinçage",
+      'mortier de jointoiement (seau ou sachet)',
+      'aspirateur à poussière après rainurage',
+    ],
 
-    states: {
-      debut:     'joints anciens grattés dans une zone, poussière de joint visible',
-      en_cours:  'moitié des joints refaits, contraste vieux/neuf marqué',
-      termine:   'joints uniformément refaits, surface éponge-nettoyée, brillance restaurée',
+    forbidden_tools: [
+      'truelle crantée',
+      'maillet en caoutchouc',
+      'marteau-piqueur',
+      'rouleau de peinture',
+    ],
+
+    work_surface:   ['carrelage existant — sol ou mur intérieur'],
+    setting:        ['interior'],
+    location_types: ['maison', 'appartement', 'local commercial'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 1,
+      posture: 'à genoux ou accroupi sur un sol carrelé existant, ou debout face à un mur',
     },
 
-    common_confusions_detail:
-      'Différenciateur absolu : carreaux EXISTANTS + focus sur le joint. Aucun carreau neuf en cours de pose.',
+    safety: {
+      required: [
+        'gants résistants aux produits chimiques de jointoiement',
+        'masque anti-poussière lors du rainurage',
+        'lunettes lors du rainurage (projections)',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        'carreleur gratte et retire les anciens joints sur une zone',
+        required_visual_evidence: [
+          'carrelage existant avec joints anciens (noircis ou fissurés) visible',
+          'rainures vides entre carreaux dans une zone déjà traitée',
+          'disque rainureur ou fraise posée sur le carrelage',
+        ],
+      },
+      en_cours: {
+        observable_action:        'carreleur applique le nouveau mortier de jointoiement à la taloche',
+        required_visual_evidence: [
+          'contraste visible : zone avec nouveau joint gris frais vs zone avec vieux joint',
+          'taloche en caoutchouc ou raclette en main',
+          'seau de mortier de jointoiement ouvert à côté',
+        ],
+      },
+      termine: {
+        observable_result:        'joints uniformément refaits, surface nettoyée, aspect restauré',
+        required_visual_evidence: [
+          'carrelage avec joints uniformément refaits sur toute la surface',
+          'éponge de nettoyage et seau visible dans un coin',
+          'aucun joint manquant ou fissuré visible',
+        ],
+      },
+    },
 
     composition_preferences: [
-      'plan rapproché montrant le contraste visuel entre joint ancien et joint neuf',
-      'artisan appliquant le joint à la spatule en caoutchouc',
+      'close_detail',
+      'medium_intervention',
     ],
+
+    for_regex: 'refection joint|refection.*joint|joint.*refection',
   },
 
-  // ─── 9. Réfection carrelage ───────────────────────────────────────────────
-  {
-    service:       'Réfection carrelage',
-    metier_key:    'carrelage',
-    for_regex:     'refection carrelage|renovation carrelage|remplacement carrelage|carrelage.*refection',
+  refection_carrelage: {
+    service_key:   'refection_carrelage',
+    service_label: 'Réfection carrelage',
 
     visual_goal:
-      "Montrer une rénovation complète : dépose de l'ancien carrelage et pose du nouveau.",
+      "Montrer une rénovation complète : dépose de l'ancien carrelage et pose du nouveau, "
+      + 'les deux états co-existant dans le même cadre.',
+
+    observable_action:
+      "un carreleur dépose l'ancien carrelage avec burin et maillet, "
+      + "révélant le support nu, avant de poser un nouveau revêtement dans la même pièce",
 
     required_visual_evidence: [
-      "zone où l'ancien carrelage a été arraché (béton ou chape nue visible)",
-      'débris et carreaux cassés regroupés en tas dans un coin',
-      'zone adjacente où le nouveau carrelage est en cours de pose',
-      'transition visible entre les deux états (déposé / en cours de re-pose)',
+      "zone où l'ancien carrelage a été arraché : béton ou chape nue visible",
+      'débris et carreaux cassés regroupés en tas dans un coin du cadre',
+      'zone adjacente où le nouveau carrelage est en cours de pose ou déjà posé',
+      'transition lisible entre les deux états dans le même plan ou cadre',
     ],
 
     forbidden_confusions: [
-      "Pose carrelage sol simple — aucune trace de dépose d'ancien carrelage",
-      'Réfection joint — pas de carreaux arrachés ici',
-      "chantier entièrement neuf (construction) — ici c'est de la rénovation",
+      "pose de carrelage neuf seul — aucun signe de dépose d'ancien carrelage",
+      'réfection de joints — aucun carreau arraché',
+      "chantier de construction neuve — doit s'agir de rénovation avec traces de l'existant",
     ],
 
-    work_surface:    'sol ou mur intérieur, contexte rénovation',
-    location_types:  ['maison', 'appartement', 'local commercial à rénover'],
-    setting:         'interior',
+    allowed_tools: [
+      'burin plat et marteau (dépose soignée)',
+      'marteau-piqueur électrique (grandes surfaces)',
+      'truelle crantée (pour la repose)',
+      'maillet en caoutchouc (pour la repose)',
+      'benne ou sac à gravats pour les débris',
+      'balai et aspirateur après dépose',
+    ],
 
-    states: {
-      debut:     'ancien carrelage entièrement arraché, béton brut visible, burin et marteau au sol',
-      en_cours:  'moitié du sol nu + moitié avec nouveau carrelage posé, contraste fort',
-      termine:   'nouveau carrelage posé, joints frais, quelques débris résiduels dans un coin',
+    forbidden_tools: [
+      'rouleau de peinture',
+    ],
+
+    work_surface:   ['sol ou mur intérieur — contexte rénovation'],
+    setting:        ['interior'],
+    location_types: ['maison', 'appartement', 'local commercial à rénover'],
+
+    worker_rules: {
+      presence: 'optional',
+      min: 1,
+      max: 2,
+      posture: 'à genoux pour la dépose ou la repose, manutention de gravats',
     },
 
-    common_confusions_detail:
-      'Différenciateur : la DÉPOSE est visible. Carreaux cassés ou sol nu co-existent avec la pose neuve.',
+    safety: {
+      required: [
+        'gants de manutention résistants (carreaux cassés)',
+        'lunettes de protection (éclats lors de la dépose)',
+        'masque anti-poussière',
+      ],
+      forbidden: [
+        'casque de chantier',
+        'gilet haute visibilité',
+        'harnais',
+      ],
+    },
+
+    states: {
+      debut: {
+        observable_action:        "carreleur dépose l'ancien carrelage avec burin ou marteau-piqueur",
+        required_visual_evidence: [
+          'sol entièrement ou partiellement arraché, béton brut ou chape visible',
+          'carreaux cassés et débris en tas dans un coin',
+          'burin et marteau ou marteau-piqueur au sol',
+        ],
+      },
+      en_cours: {
+        observable_action:        "moitié du sol arraché, moitié avec nouveau carrelage en cours",
+        required_visual_evidence: [
+          'ligne de rupture nette entre zone arrachée (béton nu) et zone de nouvelle pose',
+          'nouveau carrelage en cours de pose visible sur un côté',
+          'carreaux cassés encore présents dans un coin',
+        ],
+      },
+      termine: {
+        observable_result:        'nouveau carrelage posé, quelques débris résiduels dans un coin',
+        required_visual_evidence: [
+          "nouveau carrelage couvrant l'ensemble de la surface",
+          'joints frais du nouveau revêtement',
+          'quelques débris ou emballages encore visibles (contexte de rénovation)',
+        ],
+      },
+    },
 
     composition_preferences: [
-      "angle montrant la ligne de rupture entre l'ancien sol arraché et le nouveau carrelage",
-      "débris bien visibles dans un angle, nouvelle pose dans l'autre",
+      'wide_worksite',
+      'medium_intervention',
     ],
+
+    for_regex: 'refection carrelage|renovation carrelage|remplacement carrelage',
   },
 
-];
+};
 
-/**
- * Récapitulatif des _for regex proposés par service.
- * À valider avant implémentation dans SITE_REALISM.
- */
-export const CARRELAGE_FOR_PATTERNS = CARRELAGE_VISUAL_CONTRACTS.map(c => ({
-  service:   c.service,
-  for_regex: c.for_regex,
-}));
+export const CARRELAGE_FOR_PATTERNS = Object.fromEntries(
+  Object.entries(CARRELAGE_VISUAL_CONTRACTS).map(([k, c]) => [k, c.for_regex])
+);
 
-/**
- * Services sans différenciateur fort en dehors du contexte
- * (pas de _for suffisant — traitement par fallback acceptable) :
- *   → Aucun : tous les 9 services ont un _for proposé.
- *
- * Services à risque de confusion (paires à tester en négatif) :
- *   Pose sol       ↔ Faïence cuisine  (sol intérieur vs crédence)
- *   Faïence SdB    ↔ Faïence cuisine  (équipement sanitaire vs plan de travail)
- *   Terrasse       ↔ Dallage          (espace de vie vs accès fonctionnel)
- *   Réfection joint ↔ Réfection carrelage (joints seuls vs dépose+repose)
- */
+export const CARRELAGE_META = {
+  metier_key:     'carrelage',
+  expected_count: 9,
+  version:        '1.0.0',
+  status:         'pending_validation',
+  risk_pairs: [
+    ['pose_carrelage_sol',           'faience_cuisine'],
+    ['faience_salle_de_bain',        'faience_cuisine'],
+    ['carrelage_terrasse_exterieure','dallage_exterieur'],
+    ['refection_joint',              'refection_carrelage'],
+  ],
+};

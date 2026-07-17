@@ -270,11 +270,12 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests] = await Promise.all([
     import('./debug/runtime-tests.js'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
     import('./debug/service-coverage-audit.js?v=3'),
+    import('./debug/carrelage-contracts-tests.js'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult     = await runtimeTests.runRuntimeTests();
@@ -283,9 +284,10 @@ if (_params.get('imageGenTests') === '1') {
     const auditParityResult = await coverageAudit.runAuditParityTest();
     return { runtimeResult, integrationResult, routingResult, auditParityResult };
   };
-  window._runServiceRoutingTests  = routingTests.runServiceRoutingTests;
-  window._runServiceCoverageAudit = coverageAudit.generateServiceCoverageAudit;
-  console.info('[IMAGE MODULE 7C] Debug harness ready — call window._runImageGenerationTests()');
+  window._runServiceRoutingTests    = routingTests.runServiceRoutingTests;
+  window._runServiceCoverageAudit   = coverageAudit.generateServiceCoverageAudit;
+  window._runCarrelageContractsTests = carrelageTests.runCarrelageContractsTests;
+  console.info('[IMAGE MODULE 7C] Debug harness ready — call window._runImageGenerationTests() ou window._runCarrelageContractsTests()');
 }
 
 console.info('[IMAGE MODULE 7C] Modular API active and ready');
