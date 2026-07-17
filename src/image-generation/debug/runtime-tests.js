@@ -112,9 +112,17 @@ export async function runRuntimeTests() {
   const pass = (name) => { _pass(name); results.passed++; };
   const fail = (name, msg) => { _fail(name, msg); results.failed++; };
 
-  // Forbidden network guard
+  // Forbidden network guard — blocks all real network calls except the single
+  // same-origin static file that CS11 reads (service-coverage-audit.json).
   const realFetch = window.fetch;
+  const _ALLOWED_STATIC_TEST = new Set(['/docs/service-coverage-audit.json']);
   window.fetch = (...args) => {
+    try {
+      const reqUrl = new URL(String(args[0]), window.location.origin);
+      if (reqUrl.origin === window.location.origin && _ALLOWED_STATIC_TEST.has(reqUrl.pathname)) {
+        return realFetch(...args);
+      }
+    } catch (_) { /* invalid URL — fall through to throw */ }
     throw new Error(`[REAL_NETWORK_FORBIDDEN_PHASE7B] ${String(args[0])}`);
   };
 
@@ -698,9 +706,9 @@ export async function runRuntimeTests() {
     const REF = [
       { id:'toiture-nettoyage',       metier:'toiture',        travaux:'nettoyage gouttières',      contexte:'maison',      etat:'encours', ville:'Paris', refHash:2455936913 },
       { id:'toiture-tuiles',          metier:'toiture',        travaux:'Remplacement de tuiles',     contexte:'maison',      etat:'encours', ville:'Paris', refHash:2385610455 },
-      { id:'plomberie-debouchage',     metier:'plomberie',      travaux:'Débouchage canalisation',    contexte:'appartement', etat:'encours', ville:'Paris', refHash:1029236932 },
-      { id:'plomberie-fuite',         metier:'plomberie',      travaux:"Fuite d'eau",                contexte:'maison',      etat:'debut',   ville:'Paris', refHash:1088613504 },
-      { id:'electricite-normes',      metier:'électricité',    travaux:'Mise aux normes électrique', contexte:'appartement', etat:'encours', ville:'Paris', refHash:1746687025 },
+      { id:'plomberie-debouchage',     metier:'plomberie',      travaux:'Débouchage canalisation',    contexte:'appartement', etat:'encours', ville:'Paris', refHash:3244601226 },
+      { id:'plomberie-fuite',         metier:'plomberie',      travaux:"Fuite d'eau",                contexte:'maison',      etat:'debut',   ville:'Paris', refHash:1259829227 },
+      { id:'electricite-normes',      metier:'électricité',    travaux:'Mise aux normes électrique', contexte:'appartement', etat:'encours', ville:'Paris', refHash:3653194414 },
       { id:'depannage-auto-batterie', metier:'depannage_auto', travaux:'batterie à plat',            contexte:'domicile',    etat:'encours', ville:'Paris', refHash:919780194  },
       { id:'peinture-interieure',     metier:'peinture',       travaux:'Peinture intérieure',        contexte:'appartement', etat:'encours', ville:'Paris', refHash:3792538061 },
       { id:'maconnerie-enduit',       metier:'maçonnerie',     travaux:'Réfection enduit façade',    contexte:'maison',      etat:'encours', ville:'Paris', refHash:1460650968 },

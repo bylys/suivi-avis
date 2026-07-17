@@ -549,7 +549,7 @@ export const SITE_REALISM_ARBORISTE = {
 
       // --- taille douce / éclaircissement / couronnage / émondage / recépage ---
       {
-        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron',
+        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$',
         scene_note:    'crown reduction in progress — climber in harness positioned mid-canopy with a small chainsaw at a lateral branch being shortened, tree fully standing and main structure preserved',
         scene_camera:  'standing back from the tree at ground level, framing the climber in the mid-canopy against the sky above',
         scene_framing: {
@@ -576,7 +576,7 @@ export const SITE_REALISM_ARBORISTE = {
         ],
       },
       {
-        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron',
+        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$',
         scene_note:    'crown thinning completed — tree standing with crown noticeably more open on one side, cut branches piled on tarp below, loppers and pruning saw on the ground',
         scene_camera:  'standing back from the tree, framing the full tree height with the thinned crown visible and the cut branch pile below',
         scene_framing: {
@@ -603,7 +603,7 @@ export const SITE_REALISM_ARBORISTE = {
         ],
       },
       {
-        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron',
+        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$',
         scene_note:    'garden tree pruning — stepladder beside a fruit or ornamental tree, long-handled loppers at a medium lateral branch making a clean collar cut',
         scene_camera:  'standing in the garden beside the tree, framing the stepladder against the trunk and the loppers at the branch being cut',
         scene_framing: {

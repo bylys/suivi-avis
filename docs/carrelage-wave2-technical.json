@@ -1,0 +1,197 @@
+{
+  "_note": "Visual validation evidence — Vague 2 carrelage. No API keys, no auth headers, no full base64.",
+  "run_meta": {
+    "date": "2026-07-17",
+    "branch": "feat/carrelage-service-scenes",
+    "pipeline_commit": "eca6f5e",
+    "pipeline_tag": "carrelage-prompts-validated-eca6f5e",
+    "model_image": "gpt-image-2",
+    "model_rewriter": "gpt-4.1",
+    "total_tasks": 5,
+    "tasks_planned": 5,
+    "tasks_succeeded": 5,
+    "tasks_failed": 0,
+    "observed_network_call_count": 6,
+    "actual_image_network_calls_per_task": null,
+    "retry_count": null,
+    "total_vision_calls": 0,
+    "vision_calls_reason": "carrelage explicitly absent from SAFETY_CHECK_RULES (safety-rules.js comment: 'skipped: floor-level, blade guard already in prompt rules')",
+    "telemetry_limitation": "Module-private task telemetry (_modLastTasks) was reset by a page reload before capture. observed_network_call_count=6 reflects a partial intercept (3x chat/completions + 3x images/generations captured before reload). Actual per-task image call count and retry count are not demonstrable."
+  },
+  "evaluation_method": "Human visual inspection of gallery screenshots — 5/5 images captured directly from the production pipeline UI. No Vision API call was made during generation (intentional — see vision_calls_reason).",
+  "tasks": [
+    {
+      "taskId": 1,
+      "service": "Dallage extérieur",
+      "wave1_result": "PASS (non différencié)",
+      "wave1_defect": "Individually plausible but visually indistinguishable from terrasse — same framing, same materials, no trait distinguishing access path from terrace. Stop rule triggered.",
+      "rc_applied": "Étape 8 — voie_acces_prive: location_type=voie_acces_prive, must_have=[circulation/access/gate/garage], forbidden=[terrace-furniture/patio-door], work_surface=slab/sub-base/sand bed",
+      "wave2_evaluation": "PASS",
+      "wave2_result_description": "Long functional access path (allée), plants on each side, loaded wheelbarrow visible, tile-cutting tool visible on ground. Clear circulation geometry — distinct from terrace living space.",
+      "rubric": {
+        "action": "PASS",
+        "surface": "PASS",
+        "contexte": "PASS",
+        "preuves": "PASS",
+        "outils": "PASS",
+        "workers": "PASS",
+        "confusion": "PASS"
+      },
+      "telemetry": {
+        "imageAttempts": null,
+        "actualImageApiCalls": null,
+        "visionAttempts": 0,
+        "retries": null,
+        "api_status": "SUCCESS"
+      },
+      "pipeline_trace": {
+        "location_type": "voie_acces_prive",
+        "location_subtype": "garden access path with planted borders on each side",
+        "setting": "exterior",
+        "scene_contexte_resolved": true,
+        "preflight_confirmed": true
+      }
+    },
+    {
+      "taskId": 2,
+      "service": "Carrelage terrasse extérieure",
+      "wave1_result": "PASS (non différencié)",
+      "wave1_defect": "Individually plausible but visually indistinguishable from dallage — both exterior tile/slab scenes with similar framing. Stop rule triggered. Note: not an interior scene failure — setting=exterior was already correct in Vague 1.",
+      "rc_applied": "Étape 8 — terrasse_attenante: location_type=terrasse_attenante, must_have=[glazed door/patio door, house wall/building facade], forbidden=[driveway/road], work_surface=terrace screed/adhesive bed",
+      "wave2_evaluation": "PASS",
+      "wave2_result_description": "Covered terrace with glazed pergola roof, pavillonnaire house with slate tiles immediately visible in background. Worker kneeling on tile surface, mortar bucket present. Clear terrace-living-space geometry.",
+      "rubric": {
+        "action": "PASS",
+        "surface": "PASS",
+        "contexte": "PASS",
+        "preuves": "PASS",
+        "outils": "PASS",
+        "workers": "PASS",
+        "confusion": "PASS"
+      },
+      "telemetry": {
+        "imageAttempts": null,
+        "actualImageApiCalls": null,
+        "visionAttempts": 0,
+        "retries": null,
+        "api_status": "SUCCESS"
+      },
+      "pipeline_trace": {
+        "location_type": "terrasse_attenante",
+        "location_subtype": "partially shaded covered terrace with pergola structure",
+        "setting": "exterior",
+        "scene_contexte_resolved": true,
+        "preflight_confirmed": true
+      }
+    },
+    {
+      "taskId": 3,
+      "service": "Faïence cuisine",
+      "wave1_result": "PARTIAL",
+      "wave1_defect": "Floor tiling action shown instead of vertical backsplash. vehicle=clearly_visible (RC-3) forced exterior context; contextual_overview (10-30m) composition (RC-2) hid the backsplash detail. Structural backsplash constraints were absent from the scenario.",
+      "rc_applied": "RC-0 (appartement override), RC-2 (interior composition), RC-3 (vehicle=absent), RC-4 (setting priority in rewriter), RC-5 (locked INTERIOR block + backsplash vertical constraint); scenario reinforced with explicit backsplash context",
+      "wave2_evaluation": "PASS",
+      "wave2_result_description": "Vertical kitchen backsplash tiling, worker kneeling in front of lower kitchen units, yellow spirit level visible on wall, mortar bucket. Kitchen context unambiguous — no sanitary fixtures.",
+      "rubric": {
+        "action": "PASS",
+        "surface": "PASS",
+        "contexte": "PASS",
+        "preuves": "PASS",
+        "outils": "PASS",
+        "workers": "PASS",
+        "confusion": "PASS"
+      },
+      "telemetry": {
+        "imageAttempts": null,
+        "actualImageApiCalls": null,
+        "visionAttempts": 0,
+        "retries": null,
+        "api_status": "SUCCESS"
+      },
+      "pipeline_trace": {
+        "location_type": "appartement",
+        "setting": "interior",
+        "rc0_override_applied": true
+      }
+    },
+    {
+      "taskId": 4,
+      "service": "Faïence salle de bain",
+      "wave1_result": "FAIL",
+      "wave1_defect": "Totally off-topic: exterior house shot, no tiling visible. Root cause: wide_worksite composition (5-15m standback, 'building, vehicle, or garden') is physically impossible inside a bathroom. No sanitary fixture, no interior anchor. Strongest single failure of Vague 1.",
+      "rc_applied": "RC-0 (appartement override eliminates exterior must_have), RC-2 (interior composition replaces wide_worksite), RC-3 (vehicle=absent), RC-4 (setting priority 0 in rewriter), RC-5 (INTERIOR SETTING lock + sanitary fixture requirement); scenario reinforced with sanitary anchor constraints",
+      "wave2_evaluation": "PASS",
+      "wave2_result_description": "Interior bathroom, worker kneeling against tiled wall, toilet and bathtub clearly visible in frame, mortar tray at foreground. Interior setting fully honored.",
+      "rubric": {
+        "action": "PASS",
+        "surface": "PASS",
+        "contexte": "PASS",
+        "preuves": "PASS",
+        "outils": "PASS",
+        "workers": "PASS",
+        "confusion": "PASS"
+      },
+      "telemetry": {
+        "imageAttempts": null,
+        "actualImageApiCalls": null,
+        "visionAttempts": 0,
+        "retries": null,
+        "api_status": "SUCCESS"
+      },
+      "pipeline_trace": {
+        "location_type": "appartement",
+        "setting": "interior",
+        "rc0_override_applied": true
+      }
+    },
+    {
+      "taskId": 5,
+      "service": "Pose carrelage mural",
+      "wave1_result": "PARTIAL",
+      "wave1_defect": "Vertical wall tiling action correct but on an exterior wall, vehicle visible in scene. RC-0 (maison_individuelle must_have=exterior facade) + RC-3 (vehicle=clearly_visible contradicts interior). Not fully correct in Vague 1.",
+      "rc_applied": "RC-0 (appartement override), RC-2 (interior composition), RC-3 (vehicle=absent), RC-4 (setting priority in rewriter), RC-5 (INTERIOR SETTING lock); scenario unchanged structurally but now benefits from full interior enforcement chain",
+      "wave2_evaluation": "PASS",
+      "wave2_result_description": "Large-format vertical wall tiles in interior space (door visible in background), black spacer clips, suction cup lifter on floor, mortar bucket. Wall surface clearly vertical and interior.",
+      "rubric": {
+        "action": "PASS",
+        "surface": "PASS",
+        "contexte": "PASS",
+        "preuves": "PASS",
+        "outils": "PASS",
+        "workers": "PASS",
+        "confusion": "PASS"
+      },
+      "telemetry": {
+        "imageAttempts": null,
+        "actualImageApiCalls": null,
+        "visionAttempts": 0,
+        "retries": null,
+        "api_status": "SUCCESS"
+      },
+      "pipeline_trace": {
+        "location_type": "appartement",
+        "setting": "interior",
+        "rc0_override_applied": true
+      }
+    }
+  ],
+  "pairwise_differentiation": {
+    "mural_vs_sol_facade": {
+      "verdict": "PASS",
+      "signal": "Vertical surface with spacer clips and suction cup — vs. horizontal floor or exterior facade"
+    },
+    "salle_de_bain_vs_cuisine_exterieur": {
+      "verdict": "PASS",
+      "signal": "Sanitary fixtures (WC + bathtub) — vs. kitchen units / outdoor environment"
+    },
+    "terrasse_vs_dallage": {
+      "verdict": "PASS",
+      "signal": "Glazed pergola roof + immediate house facade — vs. long access path with planted borders + wheelbarrow"
+    }
+  },
+  "wave1_to_wave2_stop_rule": {
+    "wave1_triggered": true,
+    "wave1_reason": "terrasse/dallage pair undifferentiated — stop rule: 1 pair entirely undifferentiated blocks Vague 2",
+    "wave2_outcome": "Stop rule cleared — all 3 pairwise distinctions PASS"
+  }
+}

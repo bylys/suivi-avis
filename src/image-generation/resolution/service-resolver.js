@@ -35,10 +35,10 @@ const _REALISM_COUNTS = {
 
 function _serviceGroup(matchedService) {
   const s = (matchedService || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  if (/batterie|demarrage|boost/.test(s))             return 'batterie';
-  if (/crevaison|roue|pneu/.test(s))                  return 'crevaison';
-  if (/remorquage|remorque|transport|treuil/.test(s)) return 'remorquage';
-  if (/ouverture|ouvert/.test(s))                     return 'ouverture';
+  if (/batterie|demarrage|boost/.test(s))                                           return 'batterie';
+  if (/crevaison|roue|pneu/.test(s))                                                return 'crevaison';
+  if (/remorquage|remorque|transport|treuil|enlevement.*vehicule|enlevement.*voiture/.test(s)) return 'remorquage';
+  if (/ouverture|ouvert|cles.*enferm|deverrouillage|verrouillage/.test(s))          return 'ouverture';
   return 'default';
 }
 
@@ -78,6 +78,10 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (Array.isArray(realism.scene_exclude)) obj.exclude = [...(obj.exclude || []), ...realism.scene_exclude];
           if (realism.time_of_day) obj.time_of_day = realism.time_of_day;
           if (realism.setting)    obj.setting     = realism.setting;
+          if (realism.work_surface)                      obj.work_surface     = realism.work_surface;
+          if (Array.isArray(realism.location_must_have)) obj.location_must_have = realism.location_must_have;
+          if (Array.isArray(realism.location_forbidden)) obj.location_forbidden = realism.location_forbidden;
+          if (realism.scene_contexte)                    obj.contexte           = realism.scene_contexte;
         }
       }
     }
@@ -117,6 +121,10 @@ function _resolveServiceSetting(metier, travaux, defaultSetting) {
       return 'interior';
   }
   if (met === 'carrelage') {
+    // Explicit exterior services — must precede interior check and defaultSetting.
+    // Without this, WORK_SCENES['carrelage'].setting='interior' would propagate to terrasse/dallage.
+    if (/terrasse|dallage|ext[eé]rieur/.test(svc))
+      return 'exterior';
     if (/salle.*bain|salle.*eau|cuisine.*sol|salon.*sol|chambre.*sol|couloir.*sol|interieur|interieure/.test(svc))
       return 'interior';
   }

@@ -44,13 +44,36 @@ function _appendLockedFinalConstraints(prompt, scene) {
     forbiddenSafety.push('No warning triangle visible anywhere in the image.');
   forbiddenSafety.push(...(FORBIDDEN_SAFETY_BY_METIER[metier] || []));
 
+  // INTERIOR SETTING — service-specific surface locks
+  const _SVC_SURFACE_LOCK = {
+    'Faïence salle de bain': {
+      active_surface: 'vertical wet-area bathroom wall',
+      must_have:   'indoor bathroom with shower, bathtub or washbasin visible in frame',
+      forbidden:   'house exterior, roof, garden, outdoor ladder, floor tiling as the main action',
+    },
+    'Faïence cuisine': {
+      active_surface: 'vertical kitchen backsplash wall',
+      must_have:   'kitchen backsplash wall above the worktop; countertop (worktop) and kitchen cupboards visible in frame',
+      forbidden:   'floor tiling as the main action, bathroom context, horizontal floor surface as the main subject',
+    },
+  };
+  const isInterior = (scene.setting === 'interior');
+  const svcLock    = _SVC_SURFACE_LOCK[scene._matched_service || ''] || null;
+
   return `${prompt}
 
 NON-NEGOTIABLE FINAL CAPTURE CONSTRAINTS — DO NOT REMOVE, WEAKEN, REINTERPRET OR CONTRADICT:
 
 WORKER PRESENCE:
 ${workerBlock}
-
+${isInterior ? `
+SETTING AND LOCATION — LOCKED
+- The entire scene must be entirely indoors. No exterior facade, no garden, no outdoor environment.
+- The camera must be physically inside the room. No outside views, no street, no driveway.
+- No professional vehicle visible anywhere in the scene.${svcLock ? `
+- Active surface: ${svcLock.active_surface}. Required in frame: ${svcLock.must_have}.
+- Not allowed: ${svcLock.forbidden}.` : ''}
+` : ''}
 CAMERA COMPOSITION: ${compKey}
 Distance from subject: ${camDef.distance}.
 The main work detail must not fill more than ${camDef.subject_max_frame_percent}% of the frame.
