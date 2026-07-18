@@ -72,6 +72,19 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             console.log(`[SAFETY REQUEST] runId=${state.runId} taskId=${task.taskId} imageAttempt=${imageAttempt} safetyAttempt=${safetyAttempt}`);
 
             const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl });
+            console.log('[SAFETY TELEMETRY]', JSON.stringify({
+              taskId:             task.taskId,
+              service:            task._planBase._matched_service,
+              imageAttempt,
+              safetyAttempt,
+              safety_rule_id:     task._planBase._matched_key,
+              safety_reason_code: safety.checkFailed ? 'check_failed'
+                                : (!safety.safe && safety.severity === 'critical') ? 'critical_violation'
+                                : 'passed',
+              safety_result:      safety.checkFailed ? 'check_failed'
+                                : (!safety.safe && safety.severity === 'critical') ? 'reject'
+                                : 'pass',
+            }));
 
             if (safety.checkFailed) {
               if (safetyAttempt < MAX_SAFETY_ATTEMPTS_PER_IMAGE) {

@@ -149,7 +149,8 @@ function _applyVariation(jsonStr, imageIndex, presenceOverride) {
     const _maxW   = _wRules ? _wRules.max_workers : 2;
     const _cSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}count${imageIndex}`);
     const _dSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}desc${imageIndex}`);
-    obj.var_workers     = (_cSeed % 100) < 65 ? 1 : Math.min(2, _maxW);
+    const _minW = (_wRules?.min_workers_when_visible) || 1;
+    obj.var_workers     = Math.max(_minW, (_cSeed % 100) < 65 ? 1 : Math.min(2, _maxW));
     obj.no_people       = false;
     obj.var_worker_desc = _buildWorkerDesc(obj._matched_key, obj.var_workers, _dSeed);
     // Worker detail debug fields (aligned with _dSeed for determinism)

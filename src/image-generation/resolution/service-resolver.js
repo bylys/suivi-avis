@@ -61,6 +61,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
       realism = realismRaw[obj.contexte] || realismRaw.default || null;
     }
     // Level 3: scenario pool — seed-pick by sub-service trigger
+    let _intVariant = null;
     if (realism && Array.isArray(realism.scenarios)) {
       const trigger = realism._trigger_service;
       const svc = (obj._matched_service || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -82,11 +83,25 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (Array.isArray(realism.location_must_have)) obj.location_must_have = realism.location_must_have;
           if (Array.isArray(realism.location_forbidden)) obj.location_forbidden = realism.location_forbidden;
           if (realism.scene_contexte)                    obj.contexte           = realism.scene_contexte;
+          _intVariant = picked.interior_variant || null;
         }
       }
     }
     // Inject context-specific description into work_type for PromptBuilder
     if (realism && realism.scene_note) obj.work_type = realism.scene_note;
+    // Apply interior variant when contexte is appartement and scenario defines one
+    if (_intVariant && /^(appartement|studio)$/.test(obj.contexte || '')) {
+      if (_intVariant.scene_note)           obj.work_type           = _intVariant.scene_note;
+      if (_intVariant.scene_camera)         obj.camera_position     = _intVariant.scene_camera;
+      if (_intVariant.setting)              obj.setting             = _intVariant.setting;
+      if (Array.isArray(_intVariant.location_must_have)) obj.location_must_have = _intVariant.location_must_have;
+      if (Array.isArray(_intVariant.location_forbidden)) obj.location_forbidden = _intVariant.location_forbidden;
+      realism = Object.assign({}, realism, {
+        tools:            _intVariant.tools            || realism?.tools,
+        protections:      _intVariant.protections      || realism?.protections,
+        chantier_details: _intVariant.chantier_details || realism?.chantier_details,
+      });
+    }
   }
 
   // Camera defects — drawn from global library (2 common, rare at ~5%)

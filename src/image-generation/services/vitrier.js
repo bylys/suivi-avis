@@ -120,16 +120,40 @@ export const SITE_REALISM_VITRIER = {
           'small plastic glazing shim wedge near the base of the installed pane',
           'empty silicone tube beside the caulk gun on the floor',
         ],
+        interior_variant: {
+          scene_note:   'single-pane glass replacement in an apartment window — cracked or broken pane removed and replaced from inside the apartment room. Window frame stays in the apartment wall. Camera inside, looking at the window. Interior floor, walls, and sill visible. No outdoor facade, no garden, no professional vehicle.',
+          scene_camera: 'standing inside the apartment room, facing the window — 2 m back at chest height, showing the frame and glass state from inside',
+          setting:      'interior',
+          location_must_have: ['apartment interior visible — interior walls, floor, and ceiling around the window', 'existing window frame in the apartment wall, viewed from inside the room', 'interior floor with drop sheet below the window sill'],
+          location_forbidden: ['house exterior facade', 'garden or outdoor area', 'professional van or vehicle visible', 'scaffolding outside', 'outdoor pavement or street'],
+          tools: [
+            'small suction cup handle resting on the interior windowsill',
+            'putty knife on the interior sill near the old putty line',
+            'caulk gun on the drop sheet on the indoor floor below the window',
+            'glazing bead strip on the indoor floor near the frame base',
+          ],
+          protections: [
+            'drop sheet on the interior floor below the window opening',
+            'rubber mat on the interior windowsill',
+            'cut-resistant gloves on the glazier',
+          ],
+          chantier_details: [
+            'cracked or broken pane in the apartment window frame, viewed from inside',
+            'glass chips on the interior drop sheet below the window sill',
+            'new single glass pane leaning against the interior wall beside the window',
+            'glazing shim on the interior sill near the pane base',
+          ],
+        },
       },
 
       // ── 2. Remplacement double vitrage ───────────────────────────────────────
       {
         _for:         'double.vitrage',
-        scene_note:   'insulating glass unit (IGU) replacement — a thick double-pane unit with a visible metallic spacer bar is extracted and a new IGU is installed. The window frame is retained. The thick edge profile (24–28 mm) and the aluminium or warm-edge spacer bar are the key visual identifiers. No broken glass — this is a planned replacement.',
-        scene_camera: 'standing 2–3 m from the window, straight-on view at eye level, slightly close to show the IGU thickness at the frame edge',
+        scene_note:   'insulating glass unit (IGU) replacement — a thick sealed double-pane unit with a visible perimeter aluminium or warm-edge spacer bar is extracted and a new IGU is installed. The window frame is retained. The thick edge profile (24–28 mm), the metallic or warm-edge spacer bar, and the sealed insulating cavity between the two panes are the mandatory visual identifiers. Camera slightly oblique to show the IGU edge and spacer clearly. No broken glass — this is a planned replacement.',
+        scene_camera: 'standing 2–3 m from the window, slightly oblique view at eye level to show the thick IGU edge and spacer bar at the frame edge',
         setting:      'exterior',
-        location_must_have: ['existing window frame retained', 'IGU unit — thick edge visible in frame or during handling'],
-        location_forbidden: ['broken or cracked pane', 'single-pane handling', 'new full frame installation'],
+        location_must_have: ['existing window frame retained', 'IGU unit — thick edge and spacer bar visible in frame or during handling', 'visible aluminium or warm-edge spacer bar at the IGU perimeter', 'thick sealed glazing unit edge profile (24–28 mm) — visually distinct from a single pane'],
+        location_forbidden: ['broken or cracked pane', 'single thin glass pane profile without visible spacer bar', 'glass edge completely hidden inside the frame — spacer bar must be visible', 'new full frame installation'],
         tools: [
           'large double-pane suction cup lifter resting against the wall near the window',
           'parclose removal tool resting on the windowsill beside the removed bead',
@@ -149,6 +173,30 @@ export const SITE_REALISM_VITRIER = {
           'small pile of old glazing tape or rubber seal on the drop sheet',
           'spacer shims and setting blocks near the window base',
         ],
+        interior_variant: {
+          scene_note:   'IGU replacement in an apartment window — thick double-pane unit with visible spacer bar replaced from inside the apartment. Window frame retained in the apartment wall. Camera inside the room, looking at the window. Interior walls, floor, and the thick IGU edge profile visible from inside.',
+          scene_camera: 'standing inside the apartment room, facing the window — 2 m back, slightly oblique to show the thick IGU edge and spacer bar from inside',
+          setting:      'interior',
+          location_must_have: ['apartment interior — interior walls and floor visible around the window', 'existing window frame in the apartment wall, viewed from inside', 'IGU thick edge and spacer bar visible from inside the room'],
+          location_forbidden: ['house exterior facade visible', 'outdoor area or garden', 'professional van or vehicle outside', 'scaffolding or ladder outside'],
+          tools: [
+            'large suction cup handles leaning against the interior wall near the window',
+            'parclose removal tool on the interior windowsill',
+            'putty knife on the drop sheet on the interior floor',
+            'caulk gun on the indoor floor at the window base',
+          ],
+          protections: [
+            'drop sheet on the indoor floor below the window',
+            'rubber mat on the interior windowsill',
+            'cut-resistant gloves on the glazier',
+          ],
+          chantier_details: [
+            'old IGU leaning against the interior wall — thick edge and spacer bar visible from inside the room',
+            'new IGU partially wrapped, leaning against the interior wall — spacer bar visible at edge',
+            'removed parcloses stacked on the drop sheet on the indoor floor',
+            'spacer shims on the indoor floor near the window base',
+          ],
+        },
       },
 
       // ── 3. Remplacement fenêtre PVC ──────────────────────────────────────────
@@ -179,6 +227,30 @@ export const SITE_REALISM_VITRIER = {
           'expanding foam residue being trimmed at the frame-wall junction — semifinal',
           'white PVC frame fully installed and sealed — neat white perimeter — final',
         ],
+        interior_variant: {
+          scene_note:   'PVC window frame installation in an apartment — white plastic multi-chamber frame fitted into a masonry opening, viewed from inside the apartment room. Camera inside looking at the window opening. Interior walls and floor visible around the opening.',
+          scene_camera: 'standing inside the apartment, facing the window opening — 2 m back, slightly oblique to show the opening depth and white PVC frame from inside',
+          setting:      'interior',
+          location_must_have: ['apartment interior visible — interior walls and floor around the window opening', 'white PVC frame in the window opening, viewed from inside the room', 'rough masonry edges visible at the opening interior face'],
+          location_forbidden: ['house exterior facade visible', 'outdoor garden or street', 'professional van outside', 'scaffolding outside'],
+          tools: [
+            'cordless drill on the indoor floor near the frame fixings',
+            'spirit level on the interior face of the PVC frame top rail',
+            'expanding foam gun on the indoor floor at the frame gap',
+            'caulk gun on the indoor floor near the interior frame perimeter',
+          ],
+          protections: [
+            'cardboard sheet on the indoor floor below the window opening',
+            'protective film on the interior face of the PVC frame',
+            'cut-resistant gloves when handling the frame edges',
+          ],
+          chantier_details: [
+            'white PVC frame in the apartment wall opening — interior face visible from inside the room',
+            'rough masonry opening edges visible from inside — debut/encours',
+            'expanding foam gap being filled at the interior frame-wall junction',
+            'white PVC frame fully installed, interior face neat and clean — final',
+          ],
+        },
       },
 
       // ── 4. Remplacement fenêtre aluminium ────────────────────────────────────
@@ -209,6 +281,30 @@ export const SITE_REALISM_VITRIER = {
           'silicone bead being applied at the aluminium frame-wall junction — semifinal',
           'grey or dark aluminium frame fully installed, clear glass pane transparent in the new frame, neat sealant bead — final',
         ],
+        interior_variant: {
+          scene_note:   'aluminium window frame installation in an apartment — grey or anthracite metal frame fitted into a masonry opening, viewed from inside the apartment room. Camera inside, looking at the opening. Interior walls and floor visible around the opening.',
+          scene_camera: 'standing inside the apartment, facing the window opening — 2 m back, showing the grey or anthracite frame from inside the room',
+          setting:      'interior',
+          location_must_have: ['apartment interior visible — interior walls and floor around the window opening', 'grey or anthracite aluminium frame in the opening, viewed from inside', 'rough masonry opening edges visible from inside the apartment'],
+          location_forbidden: ['house exterior facade visible', 'outdoor area or garden', 'professional van outside', 'scaffolding outside'],
+          tools: [
+            'cordless drill on the indoor floor near the frame fixings',
+            'spirit level on the interior face of the aluminium frame top rail',
+            'expanding foam gun on the indoor floor at the frame gap',
+            'caulk gun on the indoor floor near the interior perimeter',
+          ],
+          protections: [
+            'cardboard sheet on the indoor floor below the window opening',
+            'protective film on the interior face of the aluminium frame',
+            'cut-resistant gloves for aluminium frame edge handling',
+          ],
+          chantier_details: [
+            'grey or anthracite aluminium frame in the apartment wall opening — interior face visible',
+            'rough masonry opening edges from inside the apartment — debut/encours',
+            'silicone bead at the interior aluminium frame-wall junction — semifinal',
+            'aluminium frame installed, interior face clean — final',
+          ],
+        },
       },
 
       // ── 5. Réparation fenêtre ─────────────────────────────────────────────────
@@ -237,6 +333,29 @@ export const SITE_REALISM_VITRIER = {
           'adjustment marks or pencil lines near the hinge area on the frame',
           'lubricant or silicone smear near the working mechanism — semifinal',
         ],
+        interior_variant: {
+          scene_note:   'window mechanism repair in an apartment — broken handle, worn hinge, or failed seal repaired on an existing apartment window. Glass pane intact and untouched. Camera inside the apartment room, looking at the window. Interior walls and floor visible.',
+          scene_camera: 'standing inside the apartment room, 1.5–2 m from the window — slightly off-centre showing the mechanism being worked on from inside',
+          setting:      'interior',
+          location_must_have: ['apartment interior — interior walls and floor visible', 'existing apartment window frame in its wall opening, intact glass pane viewed from inside', 'mechanism being repaired — handle or hinge area visible from inside the room'],
+          location_forbidden: ['outdoor facade or garden visible', 'professional van or vehicle outside', 'new glass pane being installed', 'scaffolding outside'],
+          tools: [
+            'screwdriver on the interior windowsill beside the handle or hinge',
+            'allen key set on the interior sill near the hinge adjustment',
+            'replacement handle hardware on the interior sill',
+            'small silicone tube on the interior sill if re-sealing',
+          ],
+          protections: [
+            'thin gloves for mechanism parts if sharp edges',
+            'drop cloth on the interior floor if sealant applied',
+          ],
+          chantier_details: [
+            'apartment window in its wall opening — glass pane intact, viewed from inside the room',
+            'old handle or hinge on the interior sill beside the new replacement part',
+            'screws in a small tray on the interior windowsill',
+            'silicone smear near the working mechanism from inside — semifinal',
+          ],
+        },
       },
 
       // ── 6. Remplacement porte vitrée ─────────────────────────────────────────
@@ -272,11 +391,11 @@ export const SITE_REALISM_VITRIER = {
       // ── 7. Vitrage sécurité feuilleté ────────────────────────────────────────
       {
         _for:         'feuillette|vitrage.*securite|securite.*vitrage',
-        scene_note:   'laminated safety glass installation — specialist heavy glass with a visible laminated edge profile (two glass layers + PVB interlayer visible as a thin line at the pane edge). Installed using suction cups or vacuum lifter. Structural silicone or aluminium edge trims are used. Commercial or high-performance residential context.',
-        scene_camera: 'standing 2–3 m from the glazing work, slightly oblique to show the glass edge profile and the structural silicone or edge trim being applied',
+        scene_note:   'laminated safety glass installation — specialist heavy glass where a visible PVB interlayer appears as a thin clear line between two glass layers at the pane edge. No metallic spacer bar, no sealed insulating cavity — this is a monolithic laminated panel, not a double-glazed unit. Installed using suction cups or vacuum lifter. Structural silicone or aluminium edge trims are used. Camera slightly oblique to show the multilayer glass edge cross-section.',
+        scene_camera: 'standing 2–3 m from the glazing work, slightly oblique to show the multilayer laminated glass edge profile (two layers + PVB interlayer) and the structural silicone or edge trim',
         setting:      'exterior',
-        location_must_have: ['laminated glass edge profile visible — two glass layers + interlayer', 'structural silicone or aluminium edge trim in use'],
-        location_forbidden: ['single thin pane', 'standard residential window frame without structural fixing', 'emergency provisional boarding'],
+        location_must_have: ['laminated glass edge visible — two glass layers + PVB interlayer as a thin clear line between them', 'PVB interlayer visible at the glass edge — distinct from any metallic spacer bar', 'structural silicone or aluminium edge trim in use', 'multilayer glass edge cross-section — no insulating air cavity between the layers'],
+        location_forbidden: ['single thin pane', 'metallic spacer bar at the glass edge — that would be IGU not laminated glass', 'sealed insulating cavity between two panes — that is double glazing not laminate', 'standard residential window frame without structural fixing', 'emergency provisional boarding'],
         tools: [
           'large vacuum lifter or twin suction cup frame resting against the wall near the glass unit',
           'structural silicone gun on the floor near the glass perimeter',
@@ -291,12 +410,36 @@ export const SITE_REALISM_VITRIER = {
           'anti-slip rubber pads under the glass base during positioning',
         ],
         chantier_details: [
-          'laminated glass panel leaning against the wall — two-layer edge profile visible at the pane edge',
+          'laminated glass panel leaning against the wall — two-layer edge with PVB interlayer visible as a thin line at the pane edge — no spacer bar, no insulating cavity',
           'structural silicone gun with cartridge on the floor near the applied bead',
           'aluminium edge trim strip cut to length on the floor near the panel perimeter',
           'silicone bead being smoothed along the glass perimeter — semifinal',
           'fully installed laminated glass panel with neat structural silicone perimeter and aluminium edge trim — final',
         ],
+        interior_variant: {
+          scene_note:   'laminated safety glass installation in an apartment — heavy glass with visible PVB interlayer between two glass layers installed from inside the apartment. Camera inside the room, looking at the glazed opening. Interior walls and floor visible. PVB interlayer at the glass edge distinguishes this from double glazing — no metallic spacer bar, no insulating cavity.',
+          scene_camera: 'standing inside the apartment, facing the glazed panel — 2 m back, slightly oblique to show the multilayer glass edge with PVB interlayer from inside the room',
+          setting:      'interior',
+          location_must_have: ['apartment interior — interior walls and floor visible', 'laminated glass panel in the apartment opening — two-layer edge with PVB interlayer visible from inside', 'structural silicone or aluminium trim at the panel edge'],
+          location_forbidden: ['house exterior facade visible', 'outdoor garden or area', 'professional van outside', 'metallic spacer bar at the glass edge', 'insulating cavity between the glass panes'],
+          tools: [
+            'large suction cup handles leaning against the interior wall near the glass panel',
+            'structural silicone gun on the indoor floor at the panel perimeter',
+            'aluminium edge trim strip on the indoor floor near the panel',
+            'silicone smoothing tool on the indoor floor near the sealant bead',
+          ],
+          protections: [
+            'heavy-duty cut-resistant gloves for laminated glass edge handling',
+            'suction cup lifter fully engaged on the glass panel',
+            'anti-slip rubber pads under the glass base during positioning',
+          ],
+          chantier_details: [
+            'laminated glass panel in the apartment opening — two-layer edge with PVB interlayer visible from inside, no spacer bar',
+            'structural silicone bead at the interior panel perimeter',
+            'aluminium edge trim on the indoor floor near the panel',
+            'fully installed laminated glass — neat structural silicone perimeter from inside — final',
+          ],
+        },
       },
 
       // ── 8. Bris de glace urgence ─────────────────────────────────────────────
