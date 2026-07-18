@@ -4,9 +4,10 @@
  * Tests VS1–VS16, VG1–VG6, VA1–VA10.
  */
 
-import { WORK_SCENES_VITRIER, SITE_REALISM_VITRIER } from '../services/vitrier.js?v=2';
+import { WORK_SCENES_VITRIER, SITE_REALISM_VITRIER } from '../services/vitrier.js';
 import { WORK_SCENES, SITE_REALISM }                from '../services/index.js';
-import { _applySiteRealism }                         from '../resolution/service-resolver.js';
+import { _applySiteRealism }                         from '../resolution/service-resolver.js?v=1';
+import { _applyVariation }                           from '../resolution/scene-resolver.js?v=1';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 let _pass = 0, _fail = 0;
@@ -121,9 +122,9 @@ const NO_APT_VARIANT_PATTERNS = [
   { key: 'bris_urgence',  re: /bris.de.glace|glace.*urgence|urgence.*bris/i,          label: 'Bris de glace urgence' },
 ];
 
-export function runVitrierScenesTests() {
+export async function runVitrierScenesTests() {
   _pass = 0; _fail = 0;
-  console.group('[VITRIER SCENES TESTS] VS1–VS16 + VG1–VG6 + VA1–VA10');
+  console.group('[VITRIER SCENES TESTS] VS1–VS16 + VG1–VG6 + VA1–VA12 + VW1–VW2 + VT1–VT2');
 
   const ws = WORK_SCENES_VITRIER.vitrier;
   const sr = SITE_REALISM_VITRIER.vitrier;
@@ -357,11 +358,10 @@ export function runVitrierScenesTests() {
   console.group('[VS15] Source canonique unique');
   ok(typeof WORK_SCENES_VITRIER === 'object' && typeof SITE_REALISM_VITRIER === 'object',
     'VS15: vitrier.js exporte WORK_SCENES_VITRIER et SITE_REALISM_VITRIER');
-  // mergeRegistriesStrict throws on duplicate key — if we reach here, no duplicate
-  // Compare by service_keywords length as a proxy for same content
-  ok(typeof WORK_SCENES.vitrier === 'object' &&
-     WORK_SCENES.vitrier?.service_keywords?.length === WORK_SCENES_VITRIER.vitrier?.service_keywords?.length,
-    'VS15: WORK_SCENES.vitrier présent et cohérent avec WORK_SCENES_VITRIER (pas de doublon)');
+  ok(WORK_SCENES.vitrier === WORK_SCENES_VITRIER.vitrier,
+    'VS15: WORK_SCENES.vitrier === WORK_SCENES_VITRIER.vitrier (même instance, import canonique)');
+  ok(SITE_REALISM.vitrier === SITE_REALISM_VITRIER.vitrier,
+    'VS15: SITE_REALISM.vitrier === SITE_REALISM_VITRIER.vitrier (même instance, import canonique)');
   console.groupEnd();
 
   // ── VS16 — 164 services non-vitrier inchangés ─────────────────────────────
@@ -560,55 +560,148 @@ export function runVitrierScenesTests() {
   }
   console.groupEnd();
 
-  // ── VA10 — interior_variant appliqué pour contexte=appartement ──────────────
-  // Uses SITE_REALISM_VITRIER from the versioned import (fresh, cache-busted).
-  // Simulates the same application logic as service-resolver.js so the test
-  // validates both the data structure and the expected runtime outcome.
-  console.group('[VA10] interior_variant appliqué quand contexte=appartement');
-  const APT_TEST_CASES = [
-    { label: 'Remplacement vitrage brisé',    matchedService: 'remplacement vitrage brise' },
-    { label: 'Remplacement double vitrage',   matchedService: 'remplacement double vitrage' },
-    { label: 'Remplacement fenêtre PVC',      matchedService: 'remplacement fenetre pvc' },
-    { label: 'Remplacement fenêtre aluminium',matchedService: 'remplacement fenetre aluminium' },
-    { label: 'Réparation fenêtre',            matchedService: 'reparation fenetre' },
-    { label: 'Vitrage sécurité feuilleté',    matchedService: 'vitrage securite feuillette' },
+  // ── VA10 — interior_variant appliqué via le resolver de production ───────────
+  // Invokes real _applySiteRealism (production chain) with appartement context.
+  // 6 services with interior_variant × 4 states = 24 combinations.
+  // 2 exclusion services (urgence, porte vitrée) × 4 states = 8 checks.
+  console.group('[VA10] interior_variant via _applySiteRealism (chaîne prod, contexte=appartement)');
+  const APT_RESOLVER_CASES = [
+    { label: 'Remplacement vitrage brisé',     svc: 'Remplacement vitrage brisé' },
+    { label: 'Remplacement double vitrage',    svc: 'Remplacement double vitrage' },
+    { label: 'Remplacement fenêtre PVC',       svc: 'Remplacement fenêtre PVC' },
+    { label: 'Remplacement fenêtre aluminium', svc: 'Remplacement fenêtre aluminium' },
+    { label: 'Réparation fenêtre',             svc: 'Réparation fenêtre' },
+    { label: 'Vitrage sécurité feuilleté',     svc: 'Vitrage sécurité feuilleté' },
   ];
-  const _scens = SITE_REALISM_VITRIER.vitrier.scenarios;
-  for (const { label, matchedService } of APT_TEST_CASES) {
-    try {
-      const svc = matchedService.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      const scen = _scens.find(s => s._for && new RegExp(s._for, 'i').test(svc));
-      const iv = scen?.interior_variant;
-      const obj = { setting: scen?.setting || 'exterior', work_type: scen?.scene_note, contexte: 'appartement', location_must_have: scen?.location_must_have };
-      if (iv && /^(appartement|studio)$/.test(obj.contexte)) {
-        if (iv.scene_note)                        obj.work_type           = iv.scene_note;
-        if (iv.setting)                           obj.setting             = iv.setting;
-        if (Array.isArray(iv.location_must_have)) obj.location_must_have  = iv.location_must_have;
+  for (const { label, svc } of APT_RESOLVER_CASES) {
+    for (const state of STATE_KEYS) {
+      try {
+        const fakeScene = JSON.stringify({ _matched_key: 'vitrier', _matched_service: svc, contexte: 'appartement', state_level: state });
+        const result = JSON.parse(_applySiteRealism(fakeScene, 0));
+        ok(result.setting === 'interior',
+          `VA10: "${label}" [${state}] → setting=interior`);
+        ok(/apartment|interior|inside.*room|room.*inside/i.test(result.work_type || ''),
+          `VA10: "${label}" [${state}] → work_type reflète appartement`);
+        const mh = JSON.stringify(result.location_must_have || []);
+        ok(/apartment|interior|inside|indoor/i.test(mh),
+          `VA10: "${label}" [${state}] → location_must_have contient termes intérieurs`);
+      } catch(e) {
+        ok(false, `VA10: "${label}" [${state}] — erreur resolver: ${e.message}`);
       }
-      ok(obj.setting === 'interior',
-        `VA10: "${label}" → setting=interior quand contexte=appartement`);
-      ok(obj.work_type && /apartment|interior|inside.*room/i.test(obj.work_type),
-        `VA10: "${label}" → work_type reflète contexte appartement`);
-      const mh = JSON.stringify(obj.location_must_have || []);
-      ok(/apartment|interior|inside|indoor/i.test(mh),
-        `VA10: "${label}" → location_must_have contient termes intérieurs`);
-    } catch(e) {
-      ok(false, `VA10: "${label}" — erreur: ${e.message}`);
     }
   }
-  // Porte vitrée et bris urgence n'ont pas d'interior_variant (intentionnel)
-  for (const { label, matchedService } of [
-    { label: 'Remplacement porte vitrée', matchedService: 'remplacement porte vitree' },
-    { label: 'Bris de glace urgence',     matchedService: 'bris de glace urgence' },
+  // Exclusions: porte vitrée + urgence ne reçoivent PAS interior_variant même avec appartement
+  const APT_EXCLUSION_CASES = [
+    { label: 'Remplacement porte vitrée', svc: 'Remplacement porte vitrée' },
+    { label: 'Bris de glace urgence',     svc: 'Bris de glace urgence' },
+  ];
+  for (const { label, svc } of APT_EXCLUSION_CASES) {
+    for (const state of STATE_KEYS) {
+      try {
+        const fakeScene = JSON.stringify({ _matched_key: 'vitrier', _matched_service: svc, contexte: 'appartement', state_level: state });
+        const result = JSON.parse(_applySiteRealism(fakeScene, 0));
+        ok(result.setting !== 'interior',
+          `VA10: "${label}" [${state}] — setting non-interior même avec contexte=appartement`);
+      } catch(e) {
+        ok(false, `VA10: "${label}" [${state}] — erreur resolver: ${e.message}`);
+      }
+    }
+  }
+  console.groupEnd();
+
+  // ── VA11 — Matrice extérieure : 8 services × 4 états ─────────────────────
+  // contexte=maison → aucun interior_variant ne doit être appliqué
+  console.group('[VA11] Matrice extérieure — 8 services × 4 états, pas d\'interior_variant accidentel');
+  const ALL_VITRIER_SERVICES = [
+    'Remplacement vitrage brisé', 'Remplacement double vitrage',
+    'Remplacement fenêtre PVC', 'Remplacement fenêtre aluminium',
+    'Réparation fenêtre', 'Remplacement porte vitrée',
+    'Vitrage sécurité feuilleté', 'Bris de glace urgence',
+  ];
+  for (const svc of ALL_VITRIER_SERVICES) {
+    for (const state of STATE_KEYS) {
+      try {
+        const fakeScene = JSON.stringify({ _matched_key: 'vitrier', _matched_service: svc, contexte: 'maison', state_level: state });
+        const result = JSON.parse(_applySiteRealism(fakeScene, 0));
+        ok(result.setting !== 'interior',
+          `VA11: "${svc}" [${state}] contexte=maison → setting non-interior (was "${result.setting}")`);
+      } catch(e) {
+        ok(false, `VA11: "${svc}" [${state}] — erreur resolver: ${e.message}`);
+      }
+    }
+  }
+  console.groupEnd();
+
+  // ── VA12 — Exclusions urgence + porte vitrée (cas nominaux) ───────────────
+  // Even with appartement context and encours state, these two services must not receive interior variant.
+  console.group('[VA12] Urgence + porte vitrée — exclusion interior_variant confirmée');
+  for (const { label, svc } of [
+    { label: 'Remplacement porte vitrée', svc: 'Remplacement porte vitrée' },
+    { label: 'Bris de glace urgence',     svc: 'Bris de glace urgence' },
   ]) {
     try {
-      const svc = matchedService.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      const scen = _scens.find(s => s._for && new RegExp(s._for, 'i').test(svc));
-      ok(scen?.interior_variant == null,
-        `VA10: "${label}" — pas d'interior_variant (intentionnel)`);
+      const fakeScene = JSON.stringify({ _matched_key: 'vitrier', _matched_service: svc, contexte: 'appartement', state_level: 'encours' });
+      const result = JSON.parse(_applySiteRealism(fakeScene, 0));
+      ok(result.setting !== 'interior',
+        `VA12: "${label}" avec contexte=appartement — setting reste non-interior`);
     } catch(e) {
-      ok(false, `VA10: "${label}" — erreur: ${e.message}`);
+      ok(false, `VA12: "${label}" — erreur: ${e.message}`);
     }
+  }
+  console.groupEnd();
+
+  // ── VW1 — Grands vitrages : min 2 workers quand présence=workers ──────────
+  console.group('[VW1] Grands vitrages — var_workers ≥ 2 avec presenceOverride=workers');
+  const VW_LARGE_GLAZING = [
+    'Remplacement double vitrage',
+    'Vitrage sécurité feuilleté',
+    'Remplacement porte vitrée',
+  ];
+  for (const svc of VW_LARGE_GLAZING) {
+    try {
+      const fakeScene = JSON.stringify({ _matched_key: 'vitrier', _matched_service: svc, state_level: 'encours', contexte: 'maison' });
+      const result = JSON.parse(_applyVariation(fakeScene, 0, 'workers'));
+      ok(result.var_workers >= 2,
+        `VW1: "${svc}" avec workers → var_workers ≥ 2 (got ${result.var_workers})`);
+    } catch(e) {
+      ok(false, `VW1: "${svc}" — erreur: ${e.message}`);
+    }
+  }
+  console.groupEnd();
+
+  // ── VW2 — Réparation : var_workers ≥ 1 avec presenceOverride=workers ──────
+  console.group('[VW2] Réparation — var_workers ≥ 1 avec presenceOverride=workers');
+  try {
+    const fakeRepair = JSON.stringify({ _matched_key: 'vitrier', _matched_service: 'Réparation fenêtre', state_level: 'encours', contexte: 'maison' });
+    const repairResult = JSON.parse(_applyVariation(fakeRepair, 0, 'workers'));
+    ok(repairResult.var_workers >= 1,
+      `VW2: réparation avec workers → var_workers ≥ 1 (got ${repairResult.var_workers})`);
+  } catch(e) {
+    ok(false, `VW2: réparation — erreur: ${e.message}`);
+  }
+  console.groupEnd();
+
+  // ── VT1 — Télémétrie safety : champs requis présents ─────────────────────
+  // ── VT2 — Télémétrie safety : champs sensibles absents ───────────────────
+  console.group('[VT1–VT2] Télémétrie safety — run-batch.js inspecté en source');
+  try {
+    const runBatchSrc = await fetch('/src/image-generation/pipeline/run-batch.js', { cache: 'no-store' }).then(r => r.text());
+    const REQUIRED_TELEMETRY = ['taskId', 'service', 'imageAttempt', 'safetyAttempt', 'safety_rule_id', 'safety_reason_code', 'safety_result'];
+    const FORBIDDEN_TELEMETRY = ['apiKey', 'base64', 'Authorization', 'sk-'];
+    for (const field of REQUIRED_TELEMETRY) {
+      ok(runBatchSrc.includes(field),
+        `VT1: run-batch.js contient le champ télémétrie requis "${field}"`);
+    }
+    // Isolate the SAFETY TELEMETRY block to avoid false matches on other code
+    const telemetryBlock = runBatchSrc.match(/SAFETY TELEMETRY[\s\S]*?JSON\.stringify\(\{[\s\S]*?\}\)/)?.[0] || '';
+    ok(telemetryBlock.length > 0,
+      'VT1: bloc [SAFETY TELEMETRY] JSON.stringify trouvé dans run-batch.js');
+    for (const field of FORBIDDEN_TELEMETRY) {
+      ok(!telemetryBlock.includes(field),
+        `VT2: bloc télémétrie ne contient pas le champ sensible "${field}"`);
+    }
+  } catch(e) {
+    ok(false, `VT: erreur lors de l'inspection de run-batch.js — ${e.message}`);
   }
   console.groupEnd();
 
