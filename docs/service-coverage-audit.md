@@ -1,6 +1,6 @@
 # Service Coverage Audit
 
-_Generated: 2026-07-17 — Commit: `53788936266f`_
+_Generated: 2026-07-18 — Commit: `715f6c3` (vitrier Phase 2 implementé)_
 
 
 ## Méthodologie
@@ -32,9 +32,9 @@ Pour chaque sous-service du catalogue, le script :
 
 | Catégorie | Nombre |
 |-----------|--------|
-| ROUTED_TO_SPECIFIC_SCENE | 131 |
+| ROUTED_TO_SPECIFIC_SCENE | 139 |
 | PARTIAL_CONTEXTE | 25 |
-| TOOLS_ONLY | 16 |
+| TOOLS_ONLY | 8 |
 | GENERIC_FALLBACK | 0 |
 | UNMATCHED | 0 |
 | **TOTAL** | **172** |
@@ -65,8 +65,8 @@ ROUTED_TO_SPECIFIC_SCENE: 9, PARTIAL_CONTEXTE: 1
 ### carrelage (9/9 ROUTED)
 ROUTED_TO_SPECIFIC_SCENE: 9
 
-### vitrier (0/8 ROUTED)
-TOOLS_ONLY: 8
+### vitrier (8/8 ROUTED)
+ROUTED_TO_SPECIFIC_SCENE: 8
 
 ### élagage (7/7 ROUTED)
 ROUTED_TO_SPECIFIC_SCENE: 7
@@ -276,16 +276,8 @@ TOOLS_ONLY: 8
 - **paysagiste** / Petite maçonnerie paysagère
 - **nettoyage** / Nettoyage haute pression
 
-## TOOLS_ONLY (16 services)
+## TOOLS_ONLY (8 services)
 
-- **vitrier** / Remplacement vitrage brisé
-- **vitrier** / Remplacement double vitrage
-- **vitrier** / Remplacement fenêtre PVC
-- **vitrier** / Remplacement fenêtre aluminium
-- **vitrier** / Réparation fenêtre
-- **vitrier** / Remplacement porte vitrée
-- **vitrier** / Vitrage sécurité feuilleté
-- **vitrier** / Bris de glace urgence
 - **débarras** / Débarras appartement
 - **débarras** / Débarras maison
 - **débarras** / Débarras cave
@@ -306,5 +298,4 @@ Les métiers sans scénarios ciblés (TOOLS_ONLY et PARTIAL_CONTEXTE) sont à tr
 - **terrassement** (PARTIAL_CONTEXTE): Remblai, Empierrement, Nivellement, Préparation terrain, Plateforme, Évacuation des terres
 - **paysagiste** (PARTIAL_CONTEXTE): Arrosage automatique, Entretien jardin, Petite maçonnerie paysagère
 - **nettoyage** (PARTIAL_CONTEXTE): Nettoyage haute pression
-- **vitrier** (TOOLS_ONLY): Remplacement vitrage brisé, Remplacement double vitrage, Remplacement fenêtre PVC, Remplacement fenêtre aluminium, Réparation fenêtre, Remplacement porte vitrée, Vitrage sécurité feuilleté, Bris de glace urgence
 - **débarras** (TOOLS_ONLY): Débarras appartement, Débarras maison, Débarras cave, Débarras grenier, Vider maison succession, Débarras après décès, Enlèvement encombrants, Nettoyage encombrants
