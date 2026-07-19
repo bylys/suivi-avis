@@ -1,7 +1,7 @@
 /**
  * vitrier-scenes-tests.js — tests no-cost des scènes vitrier (Phase 2+3).
  * Chargé uniquement via ?imageGenTests=1.
- * Tests VS1–VS16, VG1–VG6, VA1–VA10.
+ * Tests VS1–VS16, VG1–VG6, VA1–VA12, VW1–VW2, VT1–VT2, VF1–VF10.
  */
 
 import { WORK_SCENES_VITRIER, SITE_REALISM_VITRIER } from '../services/vitrier.js';
@@ -124,7 +124,7 @@ const NO_APT_VARIANT_PATTERNS = [
 
 export async function runVitrierScenesTests() {
   _pass = 0; _fail = 0;
-  console.group('[VITRIER SCENES TESTS] VS1–VS16 + VG1–VG6 + VA1–VA12 + VW1–VW2 + VT1–VT2');
+  console.group('[VITRIER SCENES TESTS] VS1–VS16 + VG1–VG6 + VA1–VA12 + VW1–VW2 + VT1–VT2 + VF1–VF10');
 
   const ws = WORK_SCENES_VITRIER.vitrier;
   const sr = SITE_REALISM_VITRIER.vitrier;
@@ -702,6 +702,194 @@ export async function runVitrierScenesTests() {
     }
   } catch(e) {
     ok(false, `VT: erreur lors de l'inspection de run-batch.js — ${e.message}`);
+  }
+  console.groupEnd();
+
+  // ── VF1 — Tout large-glass worker a des gants anti-coupure visibles ────────
+  console.group('[VF1] Grands vitrages — gants anti-coupure obligatoires pour chaque worker');
+  const LARGE_GLASS_SERVICES = ['double.vitrage', 'feuillette|vitrage.*securite|securite.*vitrage'];
+  for (const pattern of LARGE_GLASS_SERVICES) {
+    const scen = scenarios.find(s => new RegExp(s._for, 'i').test(pattern.replace(/\|.*/,'')));
+    if (scen?.interior_variant) {
+      const iv = scen.interior_variant;
+      const protText = JSON.stringify(iv.protections || []);
+      ok(/glove/i.test(protText),
+        `VF1: "${scen._for}" interior_variant.protections mentionne gloves`);
+      ok(/cut.resistant|glazing.*glove/i.test(protText),
+        `VF1: "${scen._for}" interior_variant.protections spécifie cut-resistant ou glazing glove`);
+    }
+  }
+  console.groupEnd();
+
+  // ── VF2 — Aucune main masquée sur glass contact ─────────────────────────
+  console.group('[VF2] Grands vitrages — interdiction main masquée');
+  for (const pattern of LARGE_GLASS_SERVICES) {
+    const scen = scenarios.find(s => new RegExp(s._for, 'i').test(pattern.replace(/\|.*/,'')));
+    if (scen?.interior_variant) {
+      const iv = scen.interior_variant;
+      const fbText = JSON.stringify(iv.location_forbidden || []);
+      const protText = JSON.stringify(iv.protections || []);
+      const hasHiddenHandForbidden = /hidden|no bare hand|hand.*hidden|hands hidden/i.test(fbText + protText);
+      ok(hasHiddenHandForbidden,
+        `VF2: "${scen._for}" interior_variant interdit les mains masquées sur le verre`);
+    }
+  }
+  console.groupEnd();
+
+  // ── VF3 — Double vitrage : spacer bar + gants coexistent dans prompt ─────
+  console.group('[VF3] Double vitrage — spacer bar et gants coexistent');
+  const dvScen = scenarios.find(s => new RegExp(s._for, 'i').test('double vitrage'));
+  if (dvScen?.interior_variant) {
+    const iv3 = dvScen.interior_variant;
+    const combined = JSON.stringify(iv3);
+    ok(/spacer.bar|spacer.*bar/i.test(combined),
+      'VF3: interior_variant double vitrage contient spacer bar');
+    ok(/glove|cut.resistant/i.test(combined),
+      'VF3: interior_variant double vitrage contient gants');
+    // Both must appear — not one at the expense of the other
+    ok(/spacer.bar|spacer.*bar/i.test(JSON.stringify(iv3.location_must_have || [])),
+      'VF3: location_must_have double vitrage exige spacer bar visible');
+    ok(/glove|cut.resistant/i.test(JSON.stringify(iv3.protections || [])),
+      'VF3: protections double vitrage exige gants');
+  }
+  console.groupEnd();
+
+  // ── VF4 — Feuilleté : tranche non bloquée par les workers ───────────────
+  console.group('[VF4] Feuilleté — tranche lamifiée non bloquée par workers');
+  const feuilScen = scenarios.find(s => new RegExp(s._for, 'i').test('vitrage securite feuillette'));
+  if (feuilScen?.interior_variant) {
+    const iv4 = feuilScen.interior_variant;
+    const fb4 = JSON.stringify(iv4.location_forbidden || []);
+    ok(/rear.*view.*worker|worker.*blocking|worker.*hiding|worker.*block.*edge/i.test(fb4),
+      'VF4: location_forbidden interdit les workers bloquant la tranche vue caméra');
+    ok(/front.only.*view|only.*frontal|edge.*hidden.*frame|hidden.*inside.*frame/i.test(fb4),
+      'VF4: location_forbidden interdit vue frontale cachant la tranche');
+  }
+  console.groupEnd();
+
+  // ── VF5 — Feuilleté : interlayer PVB obligatoire en contexte appartement ─
+  console.group('[VF5] Feuilleté — PVB interlayer obligatoire en appartement');
+  if (feuilScen?.interior_variant) {
+    const iv5 = feuilScen.interior_variant;
+    const mh5 = JSON.stringify(iv5.location_must_have || []);
+    ok(/PVB|interlayer/i.test(mh5),
+      'VF5: location_must_have feuilleté interior_variant exige PVB interlayer');
+    ok(/oblique|cross.section|multilayer.*cross|cross.*section/i.test(mh5),
+      'VF5: location_must_have feuilleté interior_variant exige coupe oblique multilayer');
+  }
+  console.groupEnd();
+
+  // ── VF6 — Caméra oblique pour les deux scènes de preuve matière ──────────
+  console.group('[VF6] Caméra oblique — double vitrage et feuilleté');
+  if (dvScen?.interior_variant) {
+    ok(/oblique|three.quarter|side.*view|partly.*side/i.test(dvScen.interior_variant.scene_camera || ''),
+      'VF6: double vitrage interior_variant scene_camera mentionne angle oblique');
+  }
+  if (feuilScen?.interior_variant) {
+    ok(/oblique|three.quarter|side.*view|partly.*side/i.test(feuilScen.interior_variant.scene_camera || ''),
+      'VF6: feuilleté interior_variant scene_camera mentionne angle oblique');
+  }
+  console.groupEnd();
+
+  // ── VF7 — Contexte pièce ne prime pas sur la preuve matériau ────────────
+  console.group('[VF7] Priorité : preuve matériau > décor pièce');
+  // Double vitrage: spacer bar must appear in location_must_have (not just scene_note)
+  if (dvScen?.interior_variant) {
+    const mh7dv = JSON.stringify(dvScen.interior_variant.location_must_have || []);
+    ok(/spacer.bar|IGU.*edge|edge.*spacer/i.test(mh7dv),
+      'VF7: double vitrage interior_variant location_must_have exige spacer/IGU (preuve matière avant décor)');
+  }
+  // Feuilleté: PVB must appear in location_must_have (not just scene_note)
+  if (feuilScen?.interior_variant) {
+    const mh7f = JSON.stringify(feuilScen.interior_variant.location_must_have || []);
+    ok(/PVB|interlayer/i.test(mh7f),
+      'VF7: feuilleté interior_variant location_must_have exige PVB interlayer (preuve matière avant décor)');
+    // Sanity: bedroom/décor context must NOT appear as a location_must_have requirement
+    ok(!/bedroom|bed|lit|chambre|divan/i.test(mh7f),
+      'VF7: feuilleté interior_variant location_must_have ne liste pas le décor chambre comme obligatoire');
+  }
+  console.groupEnd();
+
+  // ── VF8 — Limite de tentatives non dépassable ────────────────────────────
+  console.group('[VF8] Audit tentatives — MAX_IMAGE_ATTEMPTS jamais dépassé');
+  // Import MAX_IMAGE_ATTEMPTS and MAX_SAFETY_ATTEMPTS_PER_IMAGE via source inspection
+  try {
+    const stateSrc = await fetch('/src/image-generation/pipeline/state.js', { cache: 'no-store' }).then(r => r.text());
+    const matchMax = stateSrc.match(/MAX_IMAGE_ATTEMPTS\s*=\s*(\d+)/);
+    const matchSafety = stateSrc.match(/MAX_SAFETY_ATTEMPTS_PER_IMAGE\s*=\s*(\d+)/);
+    const maxImg = matchMax ? parseInt(matchMax[1], 10) : null;
+    const maxSfty = matchSafety ? parseInt(matchSafety[1], 10) : null;
+    ok(maxImg !== null && maxImg >= 1,
+      `VF8: MAX_IMAGE_ATTEMPTS défini et >= 1 (got ${maxImg})`);
+    ok(maxSfty !== null && maxSfty >= 1,
+      `VF8: MAX_SAFETY_ATTEMPTS_PER_IMAGE défini et >= 1 (got ${maxSfty})`);
+    // run-batch.js must use the constant, not a hardcoded number
+    const runBatchSrc = await fetch('/src/image-generation/pipeline/run-batch.js', { cache: 'no-store' }).then(r => r.text());
+    ok(/imageAttempt\s*<=\s*MAX_IMAGE_ATTEMPTS/.test(runBatchSrc),
+      'VF8: run-batch.js utilise MAX_IMAGE_ATTEMPTS dans la condition de boucle (pas un littéral)');
+    ok(/safetyAttempt\s*<=\s*MAX_SAFETY_ATTEMPTS_PER_IMAGE/.test(runBatchSrc),
+      'VF8: run-batch.js utilise MAX_SAFETY_ATTEMPTS_PER_IMAGE dans la condition de boucle (pas un littéral)');
+  } catch(e) {
+    ok(false, `VF8: erreur lors de l'audit state.js/run-batch.js — ${e.message}`);
+  }
+  console.groupEnd();
+
+  // ── VF9 — Compteurs image et Vision séparés ──────────────────────────────
+  console.group('[VF9] Compteurs image et Vision séparés');
+  try {
+    const stateSrc2 = await fetch('/src/image-generation/pipeline/state.js', { cache: 'no-store' }).then(r => r.text());
+    ok(/imageCalls\s*:\s*0/.test(stateSrc2),
+      'VF9: state.js a un compteur imageCalls distinct');
+    ok(/visionCalls\s*:\s*0/.test(stateSrc2),
+      'VF9: state.js a un compteur visionCalls distinct');
+    // They must be separate keys (not aliased)
+    const stateCounters = stateSrc2.match(/counters\s*:\s*\{[\s\S]*?\}/)?.[0] || '';
+    ok(stateCounters.includes('imageCalls') && stateCounters.includes('visionCalls'),
+      'VF9: imageCalls et visionCalls sont deux clés distinctes dans counters{}');
+    // run-batch increments each independently
+    const runBatchSrc2 = await fetch('/src/image-generation/pipeline/run-batch.js', { cache: 'no-store' }).then(r => r.text());
+    ok(/counters\.imageCalls\+\+|counters\.imageCalls\s*\+=/.test(runBatchSrc2) ||
+       /imageCalls/.test(runBatchSrc2),
+      'VF9: run-batch.js référence imageCalls');
+    ok(/counters\.visionCalls\+\+|visionCalls/.test(runBatchSrc2),
+      'VF9: run-batch.js référence visionCalls');
+  } catch(e) {
+    ok(false, `VF9: erreur lors de l'audit des compteurs — ${e.message}`);
+  }
+  console.groupEnd();
+
+  // ── VF10 — Routes PVC et réparation inchangées ───────────────────────────
+  console.group('[VF10] Routes PVC et réparation — inchangées');
+  const pvcScen2 = scenarios.find(s => new RegExp(s._for, 'i').test('fenetre pvc'));
+  const repScen2 = scenarios.find(s => new RegExp(s._for, 'i').test('reparation fenetre'));
+  // PVC route: white frame, rough opening, no glass-only
+  if (pvcScen2) {
+    const pvcNote = pvcScen2.scene_note || '';
+    ok(/white|PVC|plastic/i.test(pvcNote),
+      'VF10: scénario PVC scene_note toujours blanc/PVC/plastic');
+    ok(pvcScen2.interior_variant != null,
+      'VF10: scénario PVC interior_variant toujours présent');
+    ok(pvcScen2.interior_variant?.setting === 'interior',
+      'VF10: PVC interior_variant.setting toujours interior');
+  }
+  // Repair route: existing frame retained, no full removal
+  if (repScen2) {
+    const repNote = repScen2.scene_note || '';
+    ok(/repair|replace.*handle|hinge|mechan|adjust/i.test(repNote),
+      'VF10: scénario réparation scene_note mentionne réglage/mécanisme/ajustement');
+    ok(repScen2.interior_variant != null,
+      'VF10: scénario réparation interior_variant toujours présent');
+    ok(repScen2.interior_variant?.setting === 'interior',
+      'VF10: réparation interior_variant.setting toujours interior');
+  }
+  // Neither PVC nor repair scene_note should have changed to mention glazing edges or PVB
+  if (pvcScen2) {
+    ok(!/PVB|interlayer|spacer.bar/i.test(pvcScen2.scene_note || ''),
+      'VF10: PVC scene_note ne mentionne pas PVB/interlayer/spacer (pas de contamination feuilleté/IGU)');
+  }
+  if (repScen2) {
+    ok(!/PVB|interlayer|spacer.bar/i.test(repScen2.scene_note || ''),
+      'VF10: réparation scene_note ne mentionne pas PVB/interlayer/spacer (pas de contamination)');
   }
   console.groupEnd();
 
