@@ -1,6 +1,6 @@
 # Service Coverage Audit
 
-_Generated: 2026-07-18 — Commit: `715f6c3` (vitrier Phase 2 implementé)_
+_Generated: 2026-07-20 — Commit: `34d218425238`_
 
 
 ## Méthodologie
@@ -114,7 +114,7 @@ TOOLS_ONLY: 8
 
 > Les trois corrections de dépannage auto (Clés enfermées, Déverrouillage voiture, Enlèvement véhicule) étaient déjà ROUTED_TO_SPECIFIC_SCENE — elles corrigent le bucket sélectionné, pas la catégorie.
 
-## ROUTED_TO_SPECIFIC_SCENE (131 services)
+## ROUTED_TO_SPECIFIC_SCENE (139 services)
 
 - **toiture** / Rénovation toiture complète
 - **toiture** / Réparation toiture
@@ -186,6 +186,14 @@ TOOLS_ONLY: 8
 - **carrelage** / Pose pierre naturelle
 - **carrelage** / Réfection joint
 - **carrelage** / Réfection carrelage
+- **vitrier** / Remplacement vitrage brisé
+- **vitrier** / Remplacement double vitrage
+- **vitrier** / Remplacement fenêtre PVC
+- **vitrier** / Remplacement fenêtre aluminium
+- **vitrier** / Réparation fenêtre
+- **vitrier** / Remplacement porte vitrée
+- **vitrier** / Vitrage sécurité feuilleté
+- **vitrier** / Bris de glace urgence
 - **élagage** / Élagage arbre
 - **élagage** / Taille arbre haute tige
 - **élagage** / Élagage peuplier
