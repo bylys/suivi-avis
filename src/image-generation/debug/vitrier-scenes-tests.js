@@ -737,46 +737,46 @@ export async function runVitrierScenesTests() {
   }
   console.groupEnd();
 
-  // ── VF3 — Double vitrage : spacer bar + gants coexistent dans prompt ─────
-  console.group('[VF3] Double vitrage — spacer bar et gants coexistent');
+  // ── VF3 — Double vitrage : suction cups + gants coexistent dans le prompt ─
+  console.group('[VF3] Double vitrage — suction cups et gants coexistent (nouveaux identifiants)');
   const dvScen = scenarios.find(s => new RegExp(s._for, 'i').test('double vitrage'));
   if (dvScen?.interior_variant) {
     const iv3 = dvScen.interior_variant;
     const combined = JSON.stringify(iv3);
-    ok(/spacer.bar|spacer.*bar/i.test(combined),
-      'VF3: interior_variant double vitrage contient spacer bar');
+    ok(/suction|IGU|thick.*double.pane|double.pane/i.test(combined),
+      'VF3: interior_variant double vitrage contient identifiant service (suction / IGU / thick double-pane)');
     ok(/glove|cut.resistant/i.test(combined),
       'VF3: interior_variant double vitrage contient gants');
-    // Both must appear — not one at the expense of the other
-    ok(/spacer.bar|spacer.*bar/i.test(JSON.stringify(iv3.location_must_have || [])),
-      'VF3: location_must_have double vitrage exige spacer bar visible');
+    // Both must appear in location_must_have
+    ok(/suction|glove|cut.resistant/i.test(JSON.stringify(iv3.location_must_have || [])),
+      'VF3: location_must_have double vitrage exige suction cups ou gants visibles');
     ok(/glove|cut.resistant/i.test(JSON.stringify(iv3.protections || [])),
       'VF3: protections double vitrage exige gants');
   }
   console.groupEnd();
 
-  // ── VF4 — Feuilleté : tranche non bloquée par les workers ───────────────
-  console.group('[VF4] Feuilleté — tranche lamifiée non bloquée par workers');
+  // ── VF4 — Feuilleté : interactions main/verre et verre entre caméra et worker interdits ──
+  console.group('[VF4] Feuilleté — main/ventouse traversant le verre et verre écran camera/worker interdits');
   const feuilScen = scenarios.find(s => new RegExp(s._for, 'i').test('vitrage securite feuillette'));
   if (feuilScen?.interior_variant) {
     const iv4 = feuilScen.interior_variant;
     const fb4 = JSON.stringify(iv4.location_forbidden || []);
-    ok(/rear.*view.*worker|worker.*blocking|worker.*hiding|worker.*block.*edge/i.test(fb4),
-      'VF4: location_forbidden interdit les workers bloquant la tranche vue caméra');
-    ok(/front.only.*view|only.*frontal|edge.*hidden.*frame|hidden.*inside.*frame/i.test(fb4),
-      'VF4: location_forbidden interdit vue frontale cachant la tranche');
+    ok(/pass.*through|intersect|merge.*glass/i.test(fb4),
+      'VF4: location_forbidden interdit main/ventouse traversant ou fusionnant avec le verre');
+    ok(/glass.*panel.*wall.*between|flat.*vertical.*wall.*between|between.*camera.*worker/i.test(fb4),
+      'VF4: location_forbidden interdit verre plan vertical entre caméra et workers');
   }
   console.groupEnd();
 
-  // ── VF5 — Feuilleté : interlayer PVB obligatoire en contexte appartement ─
-  console.group('[VF5] Feuilleté — PVB interlayer obligatoire en appartement');
+  // ── VF5 — Feuilleté : verre fissuré spider-web obligatoire en contexte appartement ──
+  console.group('[VF5] Feuilleté — verre fissuré spider-web obligatoire en appartement');
   if (feuilScen?.interior_variant) {
     const iv5 = feuilScen.interior_variant;
     const mh5 = JSON.stringify(iv5.location_must_have || []);
-    ok(/PVB|interlayer/i.test(mh5),
-      'VF5: location_must_have feuilleté interior_variant exige PVB interlayer');
-    ok(/oblique|cross.section|multilayer.*cross|cross.*section/i.test(mh5),
-      'VF5: location_must_have feuilleté interior_variant exige coupe oblique multilayer');
+    ok(/crack|fracture|spider.web/i.test(mh5),
+      'VF5: location_must_have feuilleté interior_variant exige verre fissuré spider-web');
+    ok(/bond|fragment|one.*piece|single.*piece/i.test(mh5),
+      'VF5: location_must_have feuilleté interior_variant exige fragments maintenus en un seul morceau');
   }
   console.groupEnd();
 
@@ -792,19 +792,19 @@ export async function runVitrierScenesTests() {
   }
   console.groupEnd();
 
-  // ── VF7 — Contexte pièce ne prime pas sur la preuve matériau ────────────
-  console.group('[VF7] Priorité : preuve matériau > décor pièce');
-  // Double vitrage: spacer bar must appear in location_must_have (not just scene_note)
+  // ── VF7 — Contexte pièce ne prime pas sur l'identifiant service ─────────
+  console.group('[VF7] Priorité : identifiant service > décor pièce');
+  // Double vitrage: suction cups/gloves/camera offset must appear in location_must_have
   if (dvScen?.interior_variant) {
     const mh7dv = JSON.stringify(dvScen.interior_variant.location_must_have || []);
-    ok(/spacer.bar|IGU.*edge|edge.*spacer/i.test(mh7dv),
-      'VF7: double vitrage interior_variant location_must_have exige spacer/IGU (preuve matière avant décor)');
+    ok(/suction|glove|cut.resistant|camera.*offset|no.*glass.*between/i.test(mh7dv),
+      'VF7: double vitrage interior_variant location_must_have exige suction/gloves/caméra offset (identifiant service)');
   }
-  // Feuilleté: PVB must appear in location_must_have (not just scene_note)
+  // Feuilleté: cracked/spider-web must appear in location_must_have (not just scene_note)
   if (feuilScen?.interior_variant) {
     const mh7f = JSON.stringify(feuilScen.interior_variant.location_must_have || []);
-    ok(/PVB|interlayer/i.test(mh7f),
-      'VF7: feuilleté interior_variant location_must_have exige PVB interlayer (preuve matière avant décor)');
+    ok(/crack|fracture|spider.web/i.test(mh7f),
+      'VF7: feuilleté interior_variant location_must_have exige verre fissuré spider-web (identifiant service)');
     // Sanity: bedroom/décor context must NOT appear as a location_must_have requirement
     ok(!/bedroom|bed|lit|chambre|divan/i.test(mh7f),
       'VF7: feuilleté interior_variant location_must_have ne liste pas le décor chambre comme obligatoire');
@@ -922,21 +922,21 @@ export async function runVitrierScenesTests() {
   }
   console.groupEnd();
 
-  // ── VM3 — Tranche verre en foreground dans scene_framing ──────────────────
-  console.group('[VM3] Tranche verre en foreground — scene_framing.foreground des deux services');
+  // ── VM3 — scene_framing.foreground identifie le service sans tranche en gros plan ──
+  console.group('[VM3] scene_framing.foreground — identifiant service réaliste (sans tranche extreme foreground)');
   if (vmDv?.interior_variant?.scene_framing) {
     const dvFg = vmDv.interior_variant.scene_framing.foreground || '';
-    ok(/IGU.*edge|edge.*IGU|spacer.bar|spacer.*bar/i.test(dvFg),
-      'VM3: DV scene_framing.foreground mentionne IGU edge / spacer bar');
-    ok(/oblique|angled.*camera|toward.*camera|30.*45|45.*30/i.test(dvFg),
-      'VM3: DV scene_framing.foreground mentionne angle vers caméra');
+    ok(/suction|glove|IGU|thick|double.pane|padded/i.test(dvFg),
+      'VM3: DV scene_framing.foreground mentionne suction cups / gants / IGU / padded support');
+    ok(!/30.*45.*angled.*toward|partly.*lifted.*angled.*toward.*camera/i.test(dvFg),
+      'VM3: DV scene_framing.foreground ne force plus tranche à 30–45° en extreme foreground');
   }
   if (vmFeuil?.interior_variant?.scene_framing) {
     const feFg = vmFeuil.interior_variant.scene_framing.foreground || '';
-    ok(/PVB|interlayer|laminated.*edge|laminated.*glass.*edge/i.test(feFg),
-      'VM3: feuilleté scene_framing.foreground mentionne PVB interlayer');
-    ok(/oblique|angled.*camera|toward.*camera|30.*45|45.*30/i.test(feFg),
-      'VM3: feuilleté scene_framing.foreground mentionne angle vers caméra');
+    ok(/crack|fracture|spider.web|shatter/i.test(feFg),
+      'VM3: feuilleté scene_framing.foreground mentionne verre fissuré / spider-web');
+    ok(!/PVB.*interlayer.*distinct.*line.*30|30.*45.*angled.*toward.*camera/i.test(feFg),
+      'VM3: feuilleté scene_framing.foreground ne force plus ligne PVB à 30–45° en extreme foreground');
   }
   console.groupEnd();
 
@@ -947,18 +947,18 @@ export async function runVitrierScenesTests() {
     const dvLocked = _appendLockedFinalConstraints('TEST', { ...BASE, _matched_service: 'Remplacement double vitrage' });
     ok(/NON-NEGOTIABLE/i.test(dvLocked),
       'VM4: DV — section NON-NEGOTIABLE présente');
-    ok(/oblique/i.test(dvLocked),
-      'VM4: DV — locked prompt mentionne angle oblique');
-    ok(/spacer.bar|metallic.*spacer/i.test(dvLocked),
-      'VM4: DV — locked prompt exige spacer bar visible');
+    ok(/glove|suction/i.test(dvLocked),
+      'VM4: DV — locked prompt mentionne gants et suction cups');
+    ok(/pass.*through|intersect|merge.*glass|pass.*through.*glass/i.test(dvLocked),
+      'VM4: DV — locked prompt interdit mains/ventouses traversant le verre');
 
     const feLocked = _appendLockedFinalConstraints('TEST', { ...BASE, _matched_service: 'Vitrage sécurité feuilleté' });
     ok(/NON-NEGOTIABLE/i.test(feLocked),
       'VM4: feuilleté — section NON-NEGOTIABLE présente');
-    ok(/oblique/i.test(feLocked),
-      'VM4: feuilleté — locked prompt mentionne angle oblique');
-    ok(/PVB|interlayer/i.test(feLocked),
-      'VM4: feuilleté — locked prompt exige PVB interlayer visible');
+    ok(/crack|fracture|spider/i.test(feLocked),
+      'VM4: feuilleté — locked prompt mentionne verre fissuré / spider-web');
+    ok(/pass.*through|intersect|merge.*glass|pass.*through.*glass/i.test(feLocked),
+      'VM4: feuilleté — locked prompt interdit mains/ventouses traversant le verre');
   }
   console.groupEnd();
 
@@ -969,20 +969,20 @@ export async function runVitrierScenesTests() {
     const dvOut  = _appendLockedFinalConstraints('T', { ...BASE5, _matched_service: 'Remplacement double vitrage' });
     const feOut  = _appendLockedFinalConstraints('T', { ...BASE5, _matched_service: 'Vitrage sécurité feuilleté' });
 
-    ok(/spacer.bar|metallic.*spacer/i.test(dvOut),
-      'VM5: DV locked exige spacer bar (preuve IGU)');
-    ok(/PVB|interlayer/i.test(feOut),
-      'VM5: feuilleté locked exige PVB interlayer (preuve lamifié)');
+    ok(/thick.*double.pane|double.pane|fogg|condensation|IGU/i.test(dvOut),
+      'VM5: DV locked contient indices contextuels IGU (thick double-pane / fogging / condensation)');
+    ok(/crack|fracture|spider.web/i.test(feOut),
+      'VM5: feuilleté locked contient indice visuel feuilleté (verre fissuré / spider-web fracture)');
 
-    ok(/PVB/i.test(dvOut),
-      'VM5: DV locked contient PVB dans la section interdit');
+    ok(!/spider.web|fracture.*pattern/i.test(dvOut),
+      'VM5: DV locked ne contient pas l\'indice feuilleté (spider-web fracture pattern)');
     ok(/spacer.bar/i.test(feOut),
-      'VM5: feuilleté locked contient spacer bar dans la section interdit');
+      'VM5: feuilleté locked contient spacer bar dans la section interdit (signe IGU interdit)');
 
-    ok(/sealed.*cavity|two.*separate.*pane/i.test(dvOut),
-      'VM5: DV locked décrit cavité scellée / deux panes séparés');
-    ok(/bonded|two.*glass.*layer|two.*layer.*bonded/i.test(feOut),
-      'VM5: feuilleté locked décrit couches collées / two glass layers');
+    ok(/pass.*through|intersect|merge.*glass/i.test(dvOut),
+      'VM5: DV locked interdit les intersections main/verre');
+    ok(/pass.*through|intersect|merge.*glass/i.test(feOut),
+      'VM5: feuilleté locked interdit les intersections main/verre');
 
     ok(dvOut !== feOut,
       'VM5: prompts locked DV et feuilleté sont distincts dans leur totalité');
@@ -1013,15 +1013,15 @@ export async function runVitrierScenesTests() {
     const dvFg7 = vmDv.interior_variant.scene_framing.foreground || '';
     ok(!/canvas.*drop.*cloth|paint.*tray|bache.*peinture/i.test(dvFg7),
       'VM7: DV scene_framing.foreground ne contient pas le foreground peinture');
-    ok(/IGU|spacer|edge.*pane|pane.*edge/i.test(dvFg7),
-      'VM7: DV scene_framing.foreground contient preuve matière IGU');
+    ok(/suction|glove|IGU|thick|double.pane|padded/i.test(dvFg7),
+      'VM7: DV scene_framing.foreground contient identifiant vitrier GMB (suction/glove/IGU/padded)');
   }
   if (vmFeuil?.interior_variant?.scene_framing) {
     const feFg7 = vmFeuil.interior_variant.scene_framing.foreground || '';
     ok(!/canvas.*drop.*cloth|paint.*tray|bache.*peinture/i.test(feFg7),
       'VM7: feuilleté scene_framing.foreground ne contient pas le foreground peinture');
-    ok(/PVB|interlayer|laminated/i.test(feFg7),
-      'VM7: feuilleté scene_framing.foreground contient preuve matière PVB/laminated');
+    ok(/crack|fracture|spider|shatter/i.test(feFg7),
+      'VM7: feuilleté scene_framing.foreground contient indice verre fissuré feuilleté');
   }
   console.groupEnd();
 
@@ -1049,22 +1049,22 @@ export async function runVitrierScenesTests() {
     const dv9 = _appendLockedFinalConstraints('T', { ...BASE9, _matched_service: 'Remplacement double vitrage' });
     const fe9 = _appendLockedFinalConstraints('T', { ...BASE9, _matched_service: 'Vitrage sécurité feuilleté' });
 
-    ok(/oblique/i.test(dv9) && /oblique/i.test(fe9),
-      'VM9 Axe 1 — angle oblique présent dans les deux prompts');
-    ok(/sealed.*cavity|two.*separate.*pane/i.test(dv9),
-      'VM9 Axe 2 — construction DV mentionne cavité scellée / deux panes séparés');
-    ok(/bonded|two.*glass.*layer/i.test(fe9),
-      'VM9 Axe 2 — construction feuilleté mentionne couches collées (bonded)');
-    ok(/spacer.bar|metallic.*spacer/i.test(dv9),
-      'VM9 Axe 3 — DV required contient spacer bar');
-    ok(/PVB|interlayer/i.test(fe9),
-      'VM9 Axe 3 — feuilleté required contient PVB');
-    ok(/PVB/i.test(dv9),
-      'VM9 Axe 4 — DV forbidden contient PVB (signe feuilleté interdit pour IGU)');
+    ok(/apartment|interior/i.test(dv9) && /apartment|interior/i.test(fe9),
+      'VM9 Axe 1 — contexte appartement intérieur présent dans les deux prompts');
+    ok(/thick.*double.pane|double.pane|fogg|condensation|IGU/i.test(dv9),
+      'VM9 Axe 2 — DV contient indices contextuels IGU (thick double-pane / fogging / condensation)');
+    ok(/crack|fracture|spider.web/i.test(fe9),
+      'VM9 Axe 2 — feuilleté contient indice visuel feuilleté (verre fissuré / spider-web)');
+    ok(/pass.*through|intersect|merge.*glass/i.test(dv9),
+      'VM9 Axe 3 — DV forbidden contient interdiction intersection main/verre');
+    ok(/pass.*through|intersect|merge.*glass/i.test(fe9),
+      'VM9 Axe 3 — feuilleté forbidden contient interdiction intersection main/verre');
+    ok(!/spider.web|fracture.*pattern/i.test(dv9),
+      'VM9 Axe 4 — DV ne contient pas l\'indice feuilleté (spider-web fracture pattern)');
     ok(/spacer.bar/i.test(fe9),
-      'VM9 Axe 4 — feuilleté forbidden contient spacer bar (signe IGU interdit pour feuilleté)');
+      'VM9 Axe 4 — feuilleté forbidden contient spacer bar (signe IGU interdit)');
     ok(dv9 !== fe9,
-      'VM9 Axe 5 — prompts DV et feuilleté sont distincts dans leur totalité');
+      'VM9 Axe 5 — prompts locked DV et feuilleté sont distincts dans leur totalité');
   }
   console.groupEnd();
 
@@ -1090,8 +1090,8 @@ export async function runVitrierScenesTests() {
   // ── VM11 — service-resolver applique scene_framing de l'interior_variant ──
   console.group('[VM11] service-resolver — scene_framing interior_variant propagé (framing non-peinture)');
   const VM11_CASES = [
-    { svc: 'Remplacement double vitrage', expect: /IGU|spacer.bar|spacer.*bar/i, label: 'DV' },
-    { svc: 'Vitrage sécurité feuilleté',  expect: /PVB|interlayer|laminated/i,   label: 'feuilleté' },
+    { svc: 'Remplacement double vitrage', expect: /suction|glove|IGU|thick|padded|double.pane/i, label: 'DV' },
+    { svc: 'Vitrage sécurité feuilleté',  expect: /crack|fracture|spider|shatter|laminated/i,    label: 'feuilleté' },
   ];
   for (const { svc, expect, label } of VM11_CASES) {
     try {

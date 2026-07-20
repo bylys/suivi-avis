@@ -57,14 +57,14 @@ function _appendLockedFinalConstraints(prompt, scene) {
       forbidden:   'floor tiling as the main action, bathroom context, horizontal floor surface as the main subject',
     },
     'Remplacement double vitrage': {
-      active_surface: 'insulating glass unit (IGU) edge — thick profile (24–28 mm) with metallic spacer bar and sealed cavity between two separate panes',
-      must_have:   'camera at 30–45° oblique angle to the glass plane — NOT straight-on frontal; IGU edge visible in foreground showing thick profile, metallic spacer bar, and sealed cavity between two separate panes; at least one pane edge partly out of frame or at a steep angle toward the camera',
-      forbidden:   'straight-on frontal view with IGU edge hidden; pane completely seated with spacer bar invisible inside frame; PVB interlayer — this is IGU not laminated glass; single-pane profile with no spacer bar',
+      active_surface: 'insulating glass unit (IGU) — thick double-pane unit being installed or removed near the window opening; old unit may show fogging or condensation between the panes',
+      must_have:   'interior apartment room clearly visible; worker(s) with cut-resistant glazing gloves gripping suction cup handles to manoeuvre the IGU; slightly oblique camera angle — no glass panel standing directly between the camera and the workers; all hands and suction cups on the near side of the glass, never appearing to pass through or merge with the transparent surface',
+      forbidden:   'IGU edge filling the extreme foreground as the main subject with hands framing it on both sides; any hand, arm or suction cup appearing to intersect or pass through the glass surface; glass panel as a flat vertical wall between camera and workers with workers visible only through the glass; straight-on point-blank view with glass filling the entire frame; loose broken glass fragments on the floor',
     },
     'Vitrage sécurité feuilleté': {
-      active_surface: 'laminated safety glass edge — two glass layers bonded with a thin PVB interlayer visible as a distinct clear line at the pane edge',
-      must_have:   'camera at 30–45° oblique angle to the glass plane — NOT straight-on frontal; laminated glass edge visible in foreground with thin PVB interlayer as a distinct line between two glass layers; multilayer cross-section readable at the visible pane edge',
-      forbidden:   'straight-on frontal view with glass edge hidden; metallic spacer bar at the glass edge — that is IGU not laminated glass; insulating sealed cavity between panes; single-pane profile with no interlayer visible',
+      active_surface: 'cracked laminated safety glass pane — spider-web fracture pattern across the surface, all glass fragments bonded in one intact piece with no loose shards',
+      must_have:   'interior apartment room clearly visible; cracked pane with spider-web fracture pattern visible — all fragments held together, no loose shards on the floor; worker(s) with heavy-duty glazing gloves and suction cups; slightly oblique camera angle — no glass surface standing directly between camera and workers; all hands and suction cups on the near side of the glass, never appearing to pass through or merge with the transparent surface',
+      forbidden:   'clean uncracked glass being handled without any fracture pattern — indistinguishable from any other glazing job; loose glass fragments scattered on the floor — laminated glass must stay in one piece; any hand, arm or suction cup appearing to pass through or merge with the glass surface; glass panel as a flat vertical wall between camera and workers; metallic spacer bar at the glass edge; insulating sealed cavity between panes',
     },
   };
   const isInterior = (scene.setting === 'interior');
