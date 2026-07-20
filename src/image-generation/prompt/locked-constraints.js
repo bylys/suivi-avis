@@ -56,6 +56,16 @@ function _appendLockedFinalConstraints(prompt, scene) {
       must_have:   'kitchen backsplash wall above the worktop; countertop (worktop) and kitchen cupboards visible in frame',
       forbidden:   'floor tiling as the main action, bathroom context, horizontal floor surface as the main subject',
     },
+    'Remplacement double vitrage': {
+      active_surface: 'insulating glass unit (IGU) edge — thick profile (24–28 mm) with metallic spacer bar and sealed cavity between two separate panes',
+      must_have:   'camera at 30–45° oblique angle to the glass plane — NOT straight-on frontal; IGU edge visible in foreground showing thick profile, metallic spacer bar, and sealed cavity between two separate panes; at least one pane edge partly out of frame or at a steep angle toward the camera',
+      forbidden:   'straight-on frontal view with IGU edge hidden; pane completely seated with spacer bar invisible inside frame; PVB interlayer — this is IGU not laminated glass; single-pane profile with no spacer bar',
+    },
+    'Vitrage sécurité feuilleté': {
+      active_surface: 'laminated safety glass edge — two glass layers bonded with a thin PVB interlayer visible as a distinct clear line at the pane edge',
+      must_have:   'camera at 30–45° oblique angle to the glass plane — NOT straight-on frontal; laminated glass edge visible in foreground with thin PVB interlayer as a distinct line between two glass layers; multilayer cross-section readable at the visible pane edge',
+      forbidden:   'straight-on frontal view with glass edge hidden; metallic spacer bar at the glass edge — that is IGU not laminated glass; insulating sealed cavity between panes; single-pane profile with no interlayer visible',
+    },
   };
   const isInterior = (scene.setting === 'interior');
   const svcLock    = _SVC_SURFACE_LOCK[scene._matched_service || ''] || null;

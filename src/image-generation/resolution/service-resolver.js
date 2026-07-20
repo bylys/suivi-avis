@@ -93,6 +93,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
     if (_intVariant && /^(appartement|studio)$/.test(obj.contexte || '')) {
       if (_intVariant.scene_note)           obj.work_type           = _intVariant.scene_note;
       if (_intVariant.scene_camera)         obj.camera_position     = _intVariant.scene_camera;
+      if (_intVariant.scene_framing)        obj.framing             = _intVariant.scene_framing;
       if (_intVariant.setting)              obj.setting             = _intVariant.setting;
       if (Array.isArray(_intVariant.location_must_have)) obj.location_must_have = _intVariant.location_must_have;
       if (Array.isArray(_intVariant.location_forbidden)) obj.location_forbidden = _intVariant.location_forbidden;

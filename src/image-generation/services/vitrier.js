@@ -176,6 +176,11 @@ export const SITE_REALISM_VITRIER = {
         interior_variant: {
           scene_note:   'IGU replacement in an apartment window — thick double-pane unit with visible spacer bar replaced from inside the apartment. Window frame retained in the apartment wall. Camera inside the room at a three-quarter oblique angle so the IGU thick edge and spacer bar face the lens. Workers seen from the side — not entirely from behind. All glass-handling hands visible and gloved.',
           scene_camera: 'standing inside the apartment room at a three-quarter oblique angle — 2 m back, workers seen partly from the side, IGU edge and spacer bar facing the camera, all glass-handling hands visible from inside',
+          scene_framing: {
+            foreground: 'IGU edge with metallic spacer bar and sealed cavity between two separate glass panes — partly lifted and angled toward camera at 30–45°, glazier gloves on handling hands clearly visible',
+            midground:  'apartment window opening with worker guiding the IGU unit at a three-quarter oblique angle so the thick edge and spacer bar face the lens',
+            background: 'interior apartment room — walls and floor visible',
+          },
           setting:      'interior',
           location_must_have: [
             'apartment interior — interior walls and floor visible around the window',
@@ -434,6 +439,11 @@ export const SITE_REALISM_VITRIER = {
         interior_variant: {
           scene_note:   'laminated safety glass installation in an apartment — heavy glass with visible PVB interlayer between two glass layers installed from inside the apartment. Camera inside the room at a three-quarter oblique angle so the laminated glass edge cross-section faces the lens. Workers positioned to the side — not blocking the multilayer edge. PVB interlayer visible as a distinct line between the two glass layers. No metallic spacer bar, no insulating cavity.',
           scene_camera: 'standing inside the apartment at a three-quarter oblique angle — 2 m back, laminated glass edge facing the camera, workers seen from the side so the PVB interlayer cross-section is visible in the foreground or midground',
+          scene_framing: {
+            foreground: 'laminated glass edge with thin PVB interlayer visible as a distinct line between two bonded glass layers — partly lifted and angled toward camera at 30–45°, heavy-duty glazing gloves on handling hands clearly visible',
+            midground:  'apartment wall opening with worker guiding the laminated panel at a three-quarter oblique angle so the multilayer cross-section faces the lens',
+            background: 'interior apartment room — walls and floor visible',
+          },
           setting:      'interior',
           location_must_have: [
             'apartment interior — interior walls and floor visible',

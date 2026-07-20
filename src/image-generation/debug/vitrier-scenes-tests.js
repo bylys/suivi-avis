@@ -1,13 +1,14 @@
 /**
  * vitrier-scenes-tests.js — tests no-cost des scènes vitrier (Phase 2+3).
  * Chargé uniquement via ?imageGenTests=1.
- * Tests VS1–VS16, VG1–VG6, VA1–VA12, VW1–VW2, VT1–VT2, VF1–VF10.
+ * Tests VS1–VS16, VG1–VG6, VA1–VA12, VW1–VW2, VT1–VT2, VF1–VF10, VM1–VM12.
  */
 
 import { WORK_SCENES_VITRIER, SITE_REALISM_VITRIER } from '../services/vitrier.js';
 import { WORK_SCENES, SITE_REALISM }                from '../services/index.js';
 import { _applySiteRealism }                         from '../resolution/service-resolver.js?v=1';
 import { _applyVariation }                           from '../resolution/scene-resolver.js?v=1';
+import { _appendLockedFinalConstraints }             from '../prompt/locked-constraints.js?v=1';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 let _pass = 0, _fail = 0;
@@ -124,7 +125,7 @@ const NO_APT_VARIANT_PATTERNS = [
 
 export async function runVitrierScenesTests() {
   _pass = 0; _fail = 0;
-  console.group('[VITRIER SCENES TESTS] VS1–VS16 + VG1–VG6 + VA1–VA12 + VW1–VW2 + VT1–VT2 + VF1–VF10');
+  console.group('[VITRIER SCENES TESTS] VS1–VS16 + VG1–VG6 + VA1–VA12 + VW1–VW2 + VT1–VT2 + VF1–VF10 + VM1–VM12');
 
   const ws = WORK_SCENES_VITRIER.vitrier;
   const sr = SITE_REALISM_VITRIER.vitrier;
@@ -890,6 +891,235 @@ export async function runVitrierScenesTests() {
   if (repScen2) {
     ok(!/PVB|interlayer|spacer.bar/i.test(repScen2.scene_note || ''),
       'VF10: réparation scene_note ne mentionne pas PVB/interlayer/spacer (pas de contamination)');
+  }
+  console.groupEnd();
+
+  // ── VM1 — Anti-contamination : DV ne capture pas feuilleté et vice-versa ──
+  console.group('[VM1] Anti-contamination DV ↔ feuilleté');
+  const vmDv    = scenarios.find(s => new RegExp(s._for, 'i').test('remplacement double vitrage'));
+  const vmFeuil = scenarios.find(s => new RegExp(s._for, 'i').test('vitrage securite feuillette'));
+  ok(vmDv    != null, 'VM1: scénario double vitrage résolu');
+  ok(vmFeuil != null, 'VM1: scénario feuilleté résolu');
+  if (vmDv) {
+    ok(!new RegExp(vmDv._for, 'i').test('vitrage securite feuillette'),
+      `VM1: DV _for="${vmDv._for}" ne capture pas feuilleté`);
+  }
+  if (vmFeuil) {
+    ok(!new RegExp(vmFeuil._for, 'i').test('remplacement double vitrage'),
+      `VM1: feuilleté _for="${vmFeuil._for}" ne capture pas double vitrage`);
+  }
+  console.groupEnd();
+
+  // ── VM2 — Angle oblique dans scene_camera des interior_variants ────────────
+  console.group('[VM2] Angle oblique — interior_variant.scene_camera des deux services');
+  if (vmDv?.interior_variant) {
+    ok(/oblique|three.quarter|30.*45|45.*30/i.test(vmDv.interior_variant.scene_camera || ''),
+      'VM2: double vitrage interior_variant.scene_camera mentionne angle oblique');
+  }
+  if (vmFeuil?.interior_variant) {
+    ok(/oblique|three.quarter|30.*45|45.*30/i.test(vmFeuil.interior_variant.scene_camera || ''),
+      'VM2: feuilleté interior_variant.scene_camera mentionne angle oblique');
+  }
+  console.groupEnd();
+
+  // ── VM3 — Tranche verre en foreground dans scene_framing ──────────────────
+  console.group('[VM3] Tranche verre en foreground — scene_framing.foreground des deux services');
+  if (vmDv?.interior_variant?.scene_framing) {
+    const dvFg = vmDv.interior_variant.scene_framing.foreground || '';
+    ok(/IGU.*edge|edge.*IGU|spacer.bar|spacer.*bar/i.test(dvFg),
+      'VM3: DV scene_framing.foreground mentionne IGU edge / spacer bar');
+    ok(/oblique|angled.*camera|toward.*camera|30.*45|45.*30/i.test(dvFg),
+      'VM3: DV scene_framing.foreground mentionne angle vers caméra');
+  }
+  if (vmFeuil?.interior_variant?.scene_framing) {
+    const feFg = vmFeuil.interior_variant.scene_framing.foreground || '';
+    ok(/PVB|interlayer|laminated.*edge|laminated.*glass.*edge/i.test(feFg),
+      'VM3: feuilleté scene_framing.foreground mentionne PVB interlayer');
+    ok(/oblique|angled.*camera|toward.*camera|30.*45|45.*30/i.test(feFg),
+      'VM3: feuilleté scene_framing.foreground mentionne angle vers caméra');
+  }
+  console.groupEnd();
+
+  // ── VM4 — Verrous NON-NEGOTIABLE dans locked-constraints (runtime) ─────────
+  console.group('[VM4] Verrous NON-NEGOTIABLE — _appendLockedFinalConstraints runtime');
+  {
+    const BASE = { composition: 'medium_intervention', _matched_key: 'vitrier', var_workers: 1, var_presence: 'workers', setting: 'interior', _capture_defects_resolved: [] };
+    const dvLocked = _appendLockedFinalConstraints('TEST', { ...BASE, _matched_service: 'Remplacement double vitrage' });
+    ok(/NON-NEGOTIABLE/i.test(dvLocked),
+      'VM4: DV — section NON-NEGOTIABLE présente');
+    ok(/oblique/i.test(dvLocked),
+      'VM4: DV — locked prompt mentionne angle oblique');
+    ok(/spacer.bar|metallic.*spacer/i.test(dvLocked),
+      'VM4: DV — locked prompt exige spacer bar visible');
+
+    const feLocked = _appendLockedFinalConstraints('TEST', { ...BASE, _matched_service: 'Vitrage sécurité feuilleté' });
+    ok(/NON-NEGOTIABLE/i.test(feLocked),
+      'VM4: feuilleté — section NON-NEGOTIABLE présente');
+    ok(/oblique/i.test(feLocked),
+      'VM4: feuilleté — locked prompt mentionne angle oblique');
+    ok(/PVB|interlayer/i.test(feLocked),
+      'VM4: feuilleté — locked prompt exige PVB interlayer visible');
+  }
+  console.groupEnd();
+
+  // ── VM5 — Cross-service : preuves matière mutuellement exclusives ─────────
+  console.group('[VM5] Cross-service — preuves matières mutuellement exclusives');
+  {
+    const BASE5 = { composition: 'medium_intervention', _matched_key: 'vitrier', var_workers: 1, var_presence: 'workers', setting: 'interior', _capture_defects_resolved: [] };
+    const dvOut  = _appendLockedFinalConstraints('T', { ...BASE5, _matched_service: 'Remplacement double vitrage' });
+    const feOut  = _appendLockedFinalConstraints('T', { ...BASE5, _matched_service: 'Vitrage sécurité feuilleté' });
+
+    ok(/spacer.bar|metallic.*spacer/i.test(dvOut),
+      'VM5: DV locked exige spacer bar (preuve IGU)');
+    ok(/PVB|interlayer/i.test(feOut),
+      'VM5: feuilleté locked exige PVB interlayer (preuve lamifié)');
+
+    ok(/PVB/i.test(dvOut),
+      'VM5: DV locked contient PVB dans la section interdit');
+    ok(/spacer.bar/i.test(feOut),
+      'VM5: feuilleté locked contient spacer bar dans la section interdit');
+
+    ok(/sealed.*cavity|two.*separate.*pane/i.test(dvOut),
+      'VM5: DV locked décrit cavité scellée / deux panes séparés');
+    ok(/bonded|two.*glass.*layer|two.*layer.*bonded/i.test(feOut),
+      'VM5: feuilleté locked décrit couches collées / two glass layers');
+
+    ok(dvOut !== feOut,
+      'VM5: prompts locked DV et feuilleté sont distincts dans leur totalité');
+  }
+  console.groupEnd();
+
+  // ── VM6 — Gants visibles obligatoires — DV et feuilleté ──────────────────
+  console.group('[VM6] Gants visibles — DV et feuilleté interior_variant.protections');
+  if (vmDv?.interior_variant) {
+    const dvProt = JSON.stringify(vmDv.interior_variant.protections || []);
+    ok(/visible|clearly.visible/i.test(dvProt),
+      'VM6: DV protections exige gants visibles (clearly visible)');
+    ok(/cut.resistant|glazing.*glove/i.test(dvProt),
+      'VM6: DV protections spécifie cut-resistant / glazing glove');
+  }
+  if (vmFeuil?.interior_variant) {
+    const feProt = JSON.stringify(vmFeuil.interior_variant.protections || []);
+    ok(/visible|clearly.visible/i.test(feProt),
+      'VM6: feuilleté protections exige gants visibles (clearly visible)');
+    ok(/cut.resistant|glazing.*glove|heavy.duty/i.test(feProt),
+      'VM6: feuilleté protections spécifie cut-resistant / glazing / heavy-duty glove');
+  }
+  console.groupEnd();
+
+  // ── VM7 — scene_framing.foreground sans foreground peinture ──────────────
+  console.group('[VM7] scene_framing.foreground — pas de foreground peinture (canvas drop cloth / paint tray)');
+  if (vmDv?.interior_variant?.scene_framing) {
+    const dvFg7 = vmDv.interior_variant.scene_framing.foreground || '';
+    ok(!/canvas.*drop.*cloth|paint.*tray|bache.*peinture/i.test(dvFg7),
+      'VM7: DV scene_framing.foreground ne contient pas le foreground peinture');
+    ok(/IGU|spacer|edge.*pane|pane.*edge/i.test(dvFg7),
+      'VM7: DV scene_framing.foreground contient preuve matière IGU');
+  }
+  if (vmFeuil?.interior_variant?.scene_framing) {
+    const feFg7 = vmFeuil.interior_variant.scene_framing.foreground || '';
+    ok(!/canvas.*drop.*cloth|paint.*tray|bache.*peinture/i.test(feFg7),
+      'VM7: feuilleté scene_framing.foreground ne contient pas le foreground peinture');
+    ok(/PVB|interlayer|laminated/i.test(feFg7),
+      'VM7: feuilleté scene_framing.foreground contient preuve matière PVB/laminated');
+  }
+  console.groupEnd();
+
+  // ── VM8 — Télémétrie par tâche : imageAttempt + safetyAttempt scopés ──────
+  console.group('[VM8] Télémétrie par tâche — imageAttempt/safetyAttempt scopés à chaque tâche');
+  try {
+    const runBatchSrc = await fetch('/src/image-generation/pipeline/run-batch.js', { cache: 'no-store' }).then(r => r.text());
+    ok(/for\s*\(\s*let\s+imageAttempt\s*=\s*1/.test(runBatchSrc),
+      'VM8: imageAttempt est une variable de boucle for (scopée par tâche, non cumulatif)');
+    ok(/for\s*\(\s*let\s+safetyAttempt\s*=\s*1/.test(runBatchSrc),
+      'VM8: safetyAttempt est une variable de boucle for (scopée par tâche, non cumulatif)');
+    ok(/state\.counters\.imageCalls|counters\.imageCalls/.test(runBatchSrc),
+      'VM8: imageCalls est un compteur cumulatif global distinct (state.counters.imageCalls)');
+    ok(/state\.counters\.visionCalls|counters\.visionCalls/.test(runBatchSrc),
+      'VM8: visionCalls est un compteur cumulatif global distinct (state.counters.visionCalls)');
+  } catch(e) {
+    ok(false, `VM8: erreur lors de l'inspection de run-batch.js — ${e.message}`);
+  }
+  console.groupEnd();
+
+  // ── VM9 — Deux prompts locked DV / feuilleté diffèrent sur 5 axes ─────────
+  console.group('[VM9] Prompts locked — 5 axes de différence DV vs feuilleté');
+  {
+    const BASE9 = { composition: 'medium_intervention', _matched_key: 'vitrier', var_workers: 1, var_presence: 'workers', setting: 'interior', _capture_defects_resolved: [] };
+    const dv9 = _appendLockedFinalConstraints('T', { ...BASE9, _matched_service: 'Remplacement double vitrage' });
+    const fe9 = _appendLockedFinalConstraints('T', { ...BASE9, _matched_service: 'Vitrage sécurité feuilleté' });
+
+    ok(/oblique/i.test(dv9) && /oblique/i.test(fe9),
+      'VM9 Axe 1 — angle oblique présent dans les deux prompts');
+    ok(/sealed.*cavity|two.*separate.*pane/i.test(dv9),
+      'VM9 Axe 2 — construction DV mentionne cavité scellée / deux panes séparés');
+    ok(/bonded|two.*glass.*layer/i.test(fe9),
+      'VM9 Axe 2 — construction feuilleté mentionne couches collées (bonded)');
+    ok(/spacer.bar|metallic.*spacer/i.test(dv9),
+      'VM9 Axe 3 — DV required contient spacer bar');
+    ok(/PVB|interlayer/i.test(fe9),
+      'VM9 Axe 3 — feuilleté required contient PVB');
+    ok(/PVB/i.test(dv9),
+      'VM9 Axe 4 — DV forbidden contient PVB (signe feuilleté interdit pour IGU)');
+    ok(/spacer.bar/i.test(fe9),
+      'VM9 Axe 4 — feuilleté forbidden contient spacer bar (signe IGU interdit pour feuilleté)');
+    ok(dv9 !== fe9,
+      'VM9 Axe 5 — prompts DV et feuilleté sont distincts dans leur totalité');
+  }
+  console.groupEnd();
+
+  // ── VM10 — scene_framing présent avec 3 champs dans DV et feuilleté ───────
+  console.group('[VM10] scene_framing — objet complet (foreground / midground / background)');
+  for (const [label, scen] of [['double vitrage', vmDv], ['feuilleté', vmFeuil]]) {
+    if (scen?.interior_variant) {
+      const sf = scen.interior_variant.scene_framing;
+      ok(sf != null && typeof sf === 'object',
+        `VM10: "${label}" interior_variant.scene_framing est un objet`);
+      if (sf) {
+        ok(typeof sf.foreground === 'string' && sf.foreground.length > 10,
+          `VM10: "${label}" scene_framing.foreground défini et non vide`);
+        ok(typeof sf.midground  === 'string' && sf.midground.length  > 10,
+          `VM10: "${label}" scene_framing.midground défini et non vide`);
+        ok(typeof sf.background === 'string' && sf.background.length > 5,
+          `VM10: "${label}" scene_framing.background défini et non vide`);
+      }
+    }
+  }
+  console.groupEnd();
+
+  // ── VM11 — service-resolver applique scene_framing de l'interior_variant ──
+  console.group('[VM11] service-resolver — scene_framing interior_variant propagé (framing non-peinture)');
+  const VM11_CASES = [
+    { svc: 'Remplacement double vitrage', expect: /IGU|spacer.bar|spacer.*bar/i, label: 'DV' },
+    { svc: 'Vitrage sécurité feuilleté',  expect: /PVB|interlayer|laminated/i,   label: 'feuilleté' },
+  ];
+  for (const { svc, expect, label } of VM11_CASES) {
+    try {
+      const fakeScene = JSON.stringify({ _matched_key: 'vitrier', _matched_service: svc, contexte: 'appartement', state_level: 'encours' });
+      const result = JSON.parse(_applySiteRealism(fakeScene, 0));
+      const fg = result.framing?.foreground || '';
+      ok(expect.test(fg),
+        `VM11: "${label}" framing.foreground contient preuve matière après resolver — "${fg.slice(0, 80)}"`);
+      ok(!/canvas.*drop.*cloth|paint.*tray/i.test(fg),
+        `VM11: "${label}" framing.foreground ne contient pas le foreground peinture INTERIOR_SCENE_BASE`);
+    } catch(e) {
+      ok(false, `VM11: "${svc}" — erreur resolver: ${e.message}`);
+    }
+  }
+  console.groupEnd();
+
+  // ── VM12 — Safety gate ≠ validation matériau ─────────────────────────────
+  console.group('[VM12] Safety gate — pas de validation matériau (spacer bar / PVB) dans les règles safety');
+  try {
+    const safetySrc = await fetch('/src/image-generation/safety/safety-rules.js', { cache: 'no-store' }).then(r => r.text());
+    ok(!/spacer.bar|metallic.*spacer/i.test(safetySrc),
+      'VM12: safety-rules.js ne contient pas "spacer bar" comme critère de sécurité');
+    ok(!/PVB.*interlayer|interlayer.*PVB/i.test(safetySrc),
+      'VM12: safety-rules.js ne contient pas "PVB interlayer" comme critère de sécurité');
+    ok(/glove|glass.*bare|bare.*glass|bare.*hand/i.test(safetySrc),
+      'VM12: safety-rules.js conserve les règles sécurité verre (gants / main nue)');
+  } catch(e) {
+    ok(false, `VM12: erreur lors de l'inspection de safety-rules.js — ${e.message}`);
   }
   console.groupEnd();
 
