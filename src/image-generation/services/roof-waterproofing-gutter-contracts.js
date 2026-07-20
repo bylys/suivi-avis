@@ -1076,7 +1076,7 @@ export const ROOF_VISUAL_CONTRACTS = {
       },
     },
     composition_preferences: ['wide_establishing', 'wide_establishing'],
-    status: 'NEEDS_REVIEW',
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'anti.mousse',
   },
 
@@ -2202,4 +2202,14 @@ export const RTG_META = {
       risk: 'Both are linear junctions on a pitched roof. Differentiated by: valley is a diagonal channel running between two sloping surfaces with tiles on both sides vs ridge is the horizontal summit with ridge tiles at the apex; noue channels water down; faitage runs across the top.',
     },
   ],
+};
+
+// ─── Composition alias map ─────────────────────────────────────────────────────
+// Documentary alias names used in composition_preferences →  actual runtime keys
+// in src/image-generation/config/compositions.js (PHOTO_COMPOSITIONS).
+export const ROOF_CONTRACT_COMPOSITION_MAP = {
+  close_work_detail:   'close_detail',         // tight focus on work detail
+  wide_establishing:   'wide_worksite',         // wide shot showing full site
+  medium_intervention: 'medium_intervention',   // medium shot — same key in runtime
+  detail_only:         'close_detail',          // alias for extra close detail
 };

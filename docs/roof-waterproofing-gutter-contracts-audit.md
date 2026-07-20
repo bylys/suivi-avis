@@ -3,7 +3,7 @@
 **Date :** 2026-07-20  
 **Branche :** feat/roof-waterproofing-gutter-contracts  
 **Source canonique :** `src/image-generation/services/roof-waterproofing-gutter-contracts.js`  
-**Script automatisé :** `scripts/audit_roof_waterproofing_gutter_contracts.py` (RTG-C1 à RTG-C12)
+**Script automatisé :** `scripts/audit_roof_waterproofing_gutter_contracts.py` (RTG-C1 à RTG-C12, RTG-AM1 à RTG-AM7, RTG-C13)
 
 ---
 
@@ -158,7 +158,7 @@
 
 ---
 
-## Résultats RTG-C1 à RTG-C12 (automatisés)
+## Résultats RTG-C1 à RTG-C12 + RTG-AM1 à RTG-AM7 + RTG-C13 (automatisés)
 
 Sortie complète du script `scripts/audit_roof_waterproofing_gutter_contracts.py` :
 
@@ -170,24 +170,51 @@ Audit RTG — Contrats visuels toiture/étanchéité/gouttières
 Contrats chargés : 20
 Services cluster : 39 (attendu 39)
 Services hors-cluster : 133
+Clés runtime compositions : 7 (['close_detail', 'contextual_overview',
+  'equipment_from_vehicle', 'medium_intervention', 'vehicle_arrival',
+  'wide_worksite', 'worker_action'])
 
 [RTG-C1] PASS — 39/39 services dans les 4 métiers cluster
 [RTG-C2] PASS — 20/20 contrats schéma complet
 [RTG-C3] PASS — 20 clés contract_key uniques
 [RTG-C4] PASS — 39/39 services couverts exactement par 1 contrat
 [RTG-C5] PASS — 0 collision hors-cluster sur 133 services
-[RTG-C6] PASS — 2 statuts distincts: {'NEEDS_REVIEW', 'READY_FOR_IMPLEMENTATION'}
+[RTG-C6] PASS — 20/20 contrats — 4 états visuels distincts et non vides (285 assertions)
 [RTG-C7] PASS — Tous les contrats READY_FOR_IMPLEMENTATION ont allowed_tools non vide
 [RTG-C8] PASS — Tous les contrats READY_FOR_IMPLEMENTATION ont worker_rules + safety.required
 [RTG-C9] PASS — 9 paires à risque différenciées
-[RTG-C10] PASS — Toutes les compositions dans {'close_work_detail', 'medium_intervention', 'detail_only', 'wide_establishing'}
-[RTG-C11] PASS — roof-waterproofing-gutter-contracts.js non importé dans les fichiers runtime (src/, hors debug/)
+[RTG-C10] PASS — 40 composition_preferences validées via ROOF_CONTRACT_COMPOSITION_MAP
+           → PHOTO_COMPOSITIONS (7 clés runtime)
+[RTG-C11] PASS — roof-waterproofing-gutter-contracts.js non importé dans les fichiers runtime
 [RTG-C12] PASS — Source canonique unique: roof-waterproofing-gutter-contracts.js
 
+─── RTG-AM (anti-mousse) ───────────────────────────────────────────
+
+[RTG-AM1] PASS — "Traitement anti-mousse toiture" → exactement 1 correspondance: antimousse_toiture
+[RTG-AM2] PASS — Regex /anti.mousse/ ne capture aucun des 2 labels hydrofuge
+[RTG-AM3] PASS — Regex /anti.mousse/ ne capture aucun des 3 labels nettoyage/démoussage
+[RTG-AM4] PASS — R20 required_visual_evidence distinct de R09 hydrofuge et R08 démoussage
+           (5 preuves, 6 hydrofuge, 4 démoussage)
+[RTG-AM5] PASS — R20 antimousse_toiture: 4/4 états visuels présents et distincts
+[RTG-AM6] PASS — R20 allowed_tools non vide: 4 outil(s)
+[RTG-AM7] PASS — R20 safety.required non vide: 2 équipement(s)
+
+─── Statut de déploiement ──────────────────────────────────────────
+
+[RTG-C13] PASS — 20/20 contrats READY_FOR_IMPLEMENTATION
+
 ======================================================================
-[RESULT] PASS — 12/12 (12 assertions)
+[RESULT] PASS — 20/20 (370 assertions)
 ======================================================================
 ```
+
+### Description des checks mis à jour
+
+| Check | Description | Méthode de validation |
+|---|---|---|
+| RTG-C6 | 4 états visuels (debut/encours/semifinal/final) par contrat — présents, non vides, distincts | Parse `states` block ; accepte `observable_result` pour l'état `final` |
+| RTG-C10 | Aliases documentaires résolus via `ROOF_CONTRACT_COMPOSITION_MAP` → clés runtime de `PHOTO_COMPOSITIONS` | Lit `compositions.js` en direct |
+| RTG-C13 | 20/20 contrats `READY_FOR_IMPLEMENTATION` — échoue avec `[CONTRACT_NOT_READY_FOR_IMPLEMENTATION]` | Vérification exhaustive du champ `status` |
 
 ---
 
@@ -230,10 +257,9 @@ Services hors-cluster : 133
 | R17 | Réparation Velux | `reparation_velux` | close_work_detail, medium_intervention | READY |
 | R18 | Réparation noue | `reparation_noue` | close_work_detail, medium_intervention | READY |
 | R19 | Réparation rive, Étanchéité acrotère | `reparation_rive_acrotere` | close_work_detail, medium_intervention | READY |
-| R20 | Traitement anti-mousse toiture | `antimousse_toiture` | wide_establishing × 2 | **NEEDS_REVIEW** |
+| R20 | Traitement anti-mousse toiture | `antimousse_toiture` | wide_establishing × 2 | READY |
 
-**READY_FOR_IMPLEMENTATION : 19 / 20**  
-**NEEDS_REVIEW : 1 / 20** (R20 `antimousse_toiture` — nouveau contrat créé lors de cette révision, à valider visuellement avant implémentation)
+**READY_FOR_IMPLEMENTATION : 20 / 20**
 
 ---
 
@@ -265,6 +291,10 @@ src/image-generation/services/roof-waterproofing-gutter-contracts.js
 docs/roof-waterproofing-gutter-contracts-audit.md
 scripts/audit_roof_waterproofing_gutter_contracts.py
 ```
+
+Ajouts dans `roof-waterproofing-gutter-contracts.js` (hors runtime) :
+- Export `ROOF_CONTRACT_COMPOSITION_MAP` : table de conversion alias documentaires → clés runtime
+- Contrat R20 `antimousse_toiture` complet (status `READY_FOR_IMPLEMENTATION`)
 
 ---
 
