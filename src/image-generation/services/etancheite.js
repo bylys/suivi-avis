@@ -101,6 +101,173 @@ export const SITE_REALISM_ETANCHEITE = {
 
     maison: {
       scenarios: [
+
+        // ─── Réparation fuite / recherche fuite / infiltration ────────────────
+        {
+          _for:          'fuite|infiltration|recherche.*fuite',
+          scene_note:    'localized roof leak repair — compact zone of 2–6 tiles opened to access the infiltration point, new patch membrane or sealant being applied to the identified source, rest of the roof intact and untouched',
+          scene_camera:  'crouching on the roof slope at the repair zone, framing the small open area with the patch material being applied and the surrounding undisturbed tiles',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'compact open repair zone — 2–4 tiles temporarily lifted or removed, patch material being applied to the substrate below',
+            midground:  'surrounding tiles on the pitched slope, completely undisturbed, roof intact beyond the repair perimeter',
+            background: 'tiled roof slope continuing, open sky — no flat membrane expanse, no parapet',
+          },
+          scene_debris:  'old failed sealant or membrane fragment removed from the repair zone, placed beside the open section',
+          scene_exclude: ['large flat membrane surface', 'parapet wall', 'HVAC units', 'full roof membrane replacement', 'scaffold platform', 'bitumen torch'],
+          tools: [
+            'tube of bitumen mastic or sealant with nozzle at the repair zone',
+            'patch membrane strip cut to size resting beside the open section',
+            'putty knife for spreading sealant at the junction',
+            'roof ladder hooked over the ridge for access to the repair zone',
+          ],
+          protections: [
+            'roof ladder providing safe access to the localized repair zone',
+            'knee pad on the tile surface at the work area',
+          ],
+          chantier_details: [
+            'compact repair zone — only 2–4 tiles disturbed, clear boundary with intact roof',
+            'new patch material being applied — localized intervention, not full-surface work',
+            'removed tile stack beside the repair zone — will be replaced after patch cures',
+          ],
+        },
+        {
+          _for:          'fuite|infiltration|recherche.*fuite',
+          scene_note:    'roof leak diagnosis — torch or inspection probe being used at the suspected infiltration point on a pitched tiled roof, compact zone, rest of the roof intact',
+          scene_camera:  'crouching at the suspected leak point on the tile surface, close view of the inspection being done at the junction or tile suspect',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'compact suspect zone — probe, torch, or moisture meter at the likely infiltration point at a tile joint or flashing junction',
+            midground:  'surrounding intact tiles on the pitched slope',
+            background: 'tiled roof continuing, open sky — no flat membrane, no parapet',
+          },
+          scene_debris:  'small area of debris or failed sealant at the suspect point',
+          scene_exclude: ['large flat roof', 'parapet', 'membrane roll', 'scaffold', 'HVAC units'],
+          tools: [
+            'moisture meter or inspection probe at the suspect tile junction',
+            'torch for close examination of the potential infiltration point',
+          ],
+          protections: [
+            'roof ladder for safe access',
+            'knee pad on the tile surface',
+          ],
+          chantier_details: [
+            'suspect infiltration point clearly identified — compact zone on the pitched slope',
+            'failed mortar joint or cracked tile edge at the inspection focus',
+            'surrounding tiles undisturbed — targeted investigation approach',
+          ],
+        },
+
+        // ─── Étanchéité toit-terrasse / toiture plate / EPDM / PVC / bitume / réfection ──
+        {
+          _for:          'etancheite.*toit|toiture.*plate|epdm|pvc|bitume|refection.*etanch',
+          scene_note:    'full flat roof waterproofing on a residential building — large horizontal surface with high parapet wall on all sides, new EPDM or bitumen membrane being laid across the full surface, drainage outlets visible, no ground visible below the parapet',
+          scene_camera:  'crouching or standing on the flat roof surface, wide view of the membrane work — parapet walls on all sides framing the scene, no garden or ground visible below',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'new membrane surface being unrolled or lap-joined — seam roller or squeegee at the active joint line',
+            midground:  'large flat roof surface — mix of newly laid membrane and substrate or old membrane still to be covered',
+            background: 'parapet wall rising on all sides — no garden visible, neighbouring rooftops at parapet height or above',
+          },
+          scene_debris:  'membrane offcuts stacked near the parapet, empty primer can on the substrate',
+          scene_exclude: ['ground visible below parapet', 'garden', 'railing', 'porte-fenêtre', 'balcony railing', 'compact surface', 'pitched tiled roof'],
+          tools: [
+            'seam roller pressing the membrane lap joint at the active edge',
+            'bitumen primer can with brush near the parapet base',
+            'utility knife beside the trimmed membrane roll for cutting to length',
+            'tape measure and chalk line for membrane layout alignment',
+          ],
+          protections: [
+            'protective board over the existing surface at the rooftop access point',
+            'plastic cap over the flat roof drain inlet during membrane application',
+          ],
+          chantier_details: [
+            'large continuous flat roof surface — membrane layout covering most of the area',
+            'parapet wall visible on all sides — high enough to block any ground view',
+            'drainage outlet point capped during work — will be cleared after membrane laps are sealed',
+            'membrane offcut pile near the parapet — evidence of full-surface work scale',
+          ],
+        },
+        {
+          _for:          'etancheite.*toit|toiture.*plate|epdm|pvc|bitume|refection.*etanch',
+          scene_note:    'parapet upstand waterproofing on a toit-terrasse — membrane being turned up at the parapet base forming the peripheral relevé, metal counter-flashing strip being pressed at the top of the upstand',
+          scene_camera:  'crouching at the parapet base, framing the membrane upstand being formed at the parapet foot — parapet rising above, large flat roof surface visible behind',
+          scene_framing: {
+            work_pct:   70,
+            foreground: 'membrane strip being turned up at the parapet foot — upstand being pressed firmly at the corner',
+            midground:  'flat roof surface behind, parapet wall rising beside the work area',
+            background: 'neighbouring rooftops or sky above the parapet — no garden or ground visible',
+          },
+          scene_debris:  'membrane backing strip removed and beside the upstand work zone',
+          scene_exclude: ['ground visible', 'garden', 'balcony railing', 'porte-fenêtre', 'compact balcony surface'],
+          tools: [
+            'rubber roller pressing the membrane upstand onto the parapet face',
+            'corner roller for forming the right-angle at the parapet foot',
+            'bitumen primer brush at the parapet base',
+          ],
+          protections: [
+            'protective board at the flat roof access hatch entry point',
+          ],
+          chantier_details: [
+            'membrane upstand at the parapet foot — vertical waterproofing height clearly visible',
+            'metal counter-flashing strip at the top of the upstand, screwed to the parapet face',
+            'large flat roof surface behind — scale of the toit-terrasse evident',
+          ],
+        },
+
+        // ─── Étanchéité balcon / terrasse (compact, garde-corps, porte-fenêtre) ──
+        {
+          _for:          'balcon|terrasse',
+          scene_note:    'waterproofing a compact residential balcony — small horizontal surface opening directly from a porte-fenêtre, peripheral metal railing visible, membrane being laid on the compact floor area, facade wall and window clearly visible as context',
+          scene_camera:  'standing in the open doorway or just outside, framing the compact balcony floor being waterproofed — railing on three sides, porte-fenêtre frame or facade wall clearly visible behind',
+          scene_framing: {
+            work_pct:   65,
+            foreground: 'compact balcony floor surface — new membrane being unrolled or primer being brushed on the small area',
+            midground:  'metal railing or balustrade on the balcony perimeter, drain outlet at the low corner',
+            background: 'facade wall of the building with the porte-fenêtre frame — NOT a large flat roof parapet',
+          },
+          scene_debris:  'membrane offcut on the balcony floor beside the work zone, primer can open on the substrate',
+          scene_exclude: ['large flat roof expanse', 'high parapet wall blocking all ground view', 'HVAC units', 'no railing visible', 'large horizontal surface'],
+          tools: [
+            'seam roller pressing membrane lap joint on the compact balcony floor',
+            'primer brush applying bitumen primer to the small floor area',
+            'utility knife beside the membrane roll for cutting to the balcony dimensions',
+          ],
+          protections: [
+            'protective board at the porte-fenêtre sill to protect the window frame',
+          ],
+          chantier_details: [
+            'compact balcony floor surface — much smaller than a toit-terrasse, metal railing defines the perimeter',
+            'porte-fenêtre frame visible as a clear contextual element',
+            'drain outlet at the low corner of the balcony — membrane being sealed around it',
+          ],
+        },
+        {
+          _for:          'balcon|terrasse',
+          scene_note:    'completed balcony waterproofing — new membrane laid across the compact floor, drain outlet clear, railing visible on all open sides, porte-fenêtre and facade wall as clear background context',
+          scene_camera:  'stepping back to frame the completed balcony — new floor surface, railing perimeter, porte-fenêtre behind',
+          scene_framing: {
+            work_pct:   55,
+            foreground: 'new membrane surface on the compact balcony floor — sealed at all edges and around the drain outlet',
+            midground:  'metal railing on the perimeter, drain outlet clear and unobstructed',
+            background: 'building facade with porte-fenêtre — garden or street visible a storey below through the railing',
+          },
+          scene_debris:  'light primer residue at the drain edge — floor otherwise clean',
+          scene_exclude: ['large flat roof expanse', 'high parapet wall', 'HVAC units', 'no railing'],
+          tools: [
+            'corner roller resting beside the completed membrane edge',
+          ],
+          protections: [
+            'protective foam at the window sill edge',
+          ],
+          chantier_details: [
+            'compact sealed floor — new membrane visible, edges turned up at the wall base',
+            'railing perimeter clearly defines the small balcony scale',
+            'garden or street visible below through the railing — scale contrast with toit-terrasse evident',
+          ],
+        },
+
+        // ─── Existing scenarios (pitched roof repairs) ─────────────────────────
         {
           _for:          'solin|cheminee|faitage',
           scene_note:    'chimney flashing (solin) repair on a pitched tiled roof — zinc strip being refitted around the chimney base, localized repair zone only, rest of the roof untouched',
@@ -211,7 +378,7 @@ export const SITE_REALISM_ETANCHEITE = {
           ],
         },
         {
-          _for:          'rive|gable|debord.*toit|arretier',
+          _for:          'rive|gable|debord.*toit|arretier|acrotere',
           scene_note:    'gable edge (rive) repair on a pitched tiled roof — gable tile being resealed and refitted at the roof verge, small localized repair',
           scene_camera:  'standing or crouching at the gable end of the roof, framing the verge edge and the gable tile joint',
           scene_framing: {
@@ -668,7 +835,7 @@ export const SITE_REALISM_ETANCHEITE = {
 
         // --- rive / gable (4 additional) ---
         {
-          _for:          'rive|gable|debord.*toit|arretier',
+          _for:          'rive|gable|debord.*toit|arretier|acrotere',
           scene_note:    'gable tile displaced — gable edge tile has slid out of position, gap visible at the verge, assessment before re-bedding',
           scene_camera:  'crouching at the gable end, framing the displaced tile and the gap it has left at the roof verge',
           scene_framing: {
@@ -690,7 +857,7 @@ export const SITE_REALISM_ETANCHEITE = {
           ],
         },
         {
-          _for:          'rive|gable|debord.*toit|arretier',
+          _for:          'rive|gable|debord.*toit|arretier|acrotere',
           scene_note:    'fresh mortar preparation for gable tile re-bedding — mortar being mixed in a small bucket beside the rive repair zone',
           scene_camera:  'crouching at the gable edge, framing the small mortar bucket and the gap at the gable tile ready to be filled',
           scene_framing: {
@@ -713,7 +880,7 @@ export const SITE_REALISM_ETANCHEITE = {
           ],
         },
         {
-          _for:          'rive|gable|debord.*toit|arretier',
+          _for:          'rive|gable|debord.*toit|arretier|acrotere',
           scene_note:    'section of multiple gable tiles being re-pointed — four to five consecutive rive tiles being re-mortared along the verge',
           scene_camera:  'standing at the gable end, framing the section of rive tiles being worked on — fresh mortar joints visible on several tiles',
           scene_framing: {
@@ -737,7 +904,7 @@ export const SITE_REALISM_ETANCHEITE = {
           ],
         },
         {
-          _for:          'rive|gable|debord.*toit|arretier',
+          _for:          'rive|gable|debord.*toit|arretier|acrotere',
           scene_note:    'gable edge repair complete — fresh mortar joints along the rive, gable tiles bedded and pointing set, clean verge line',
           scene_camera:  'stepping back, framing the completed gable edge — fresh mortar line running along the verge from the near end',
           scene_framing: {

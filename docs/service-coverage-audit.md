@@ -1,6 +1,6 @@
 # Service Coverage Audit
 
-_Generated: 2026-07-20 — Commit: `34d218425238`_
+_Generated: 2026-07-20 — Commit: `fe587d817cb7`_
 
 
 ## Méthodologie
@@ -32,8 +32,8 @@ Pour chaque sous-service du catalogue, le script :
 
 | Catégorie | Nombre |
 |-----------|--------|
-| ROUTED_TO_SPECIFIC_SCENE | 139 |
-| PARTIAL_CONTEXTE | 25 |
+| ROUTED_TO_SPECIFIC_SCENE | 152 |
+| PARTIAL_CONTEXTE | 12 |
 | TOOLS_ONLY | 8 |
 | GENERIC_FALLBACK | 0 |
 | UNMATCHED | 0 |
@@ -44,14 +44,14 @@ Pour chaque sous-service du catalogue, le script :
 ### toiture (11/11 ROUTED)
 ROUTED_TO_SPECIFIC_SCENE: 11
 
-### nettoyage_toiture (5/6 ROUTED)
-ROUTED_TO_SPECIFIC_SCENE: 5, PARTIAL_CONTEXTE: 1
+### nettoyage_toiture (6/6 ROUTED)
+ROUTED_TO_SPECIFIC_SCENE: 6
 
 ### nettoyage_gouttieres (5/5 ROUTED)
 ROUTED_TO_SPECIFIC_SCENE: 5
 
-### etancheite (5/17 ROUTED)
-ROUTED_TO_SPECIFIC_SCENE: 5, PARTIAL_CONTEXTE: 12
+### etancheite (17/17 ROUTED)
+ROUTED_TO_SPECIFIC_SCENE: 17
 
 ### ravalement (8/9 ROUTED)
 ROUTED_TO_SPECIFIC_SCENE: 8, PARTIAL_CONTEXTE: 1
@@ -95,6 +95,19 @@ TOOLS_ONLY: 8
 
 | Métier | Sous-service | Avant | Après |
 |--------|--------------|-------|-------|
+| nettoyage_toiture | Nettoyage toiture | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Réparation fuite toiture | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Recherche de fuite | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Infiltration toiture | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité toit terrasse | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité toiture plate | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité balcon | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité terrasse | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité EPDM | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité PVC | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité bitume | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Réfection d'étanchéité | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité acrotère | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
 | peinture | Peinture façade | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
 | élagage | Élagage arbre | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
 | élagage | Élagage peuplier | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
@@ -108,13 +121,26 @@ TOOLS_ONLY: 8
 
 | Métier | Sous-service | Ancienne catégorie | Nouvelle catégorie |
 |--------|--------------|--------------------|--------------------|
+| nettoyage_toiture | Nettoyage toiture | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Réparation fuite toiture | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Recherche de fuite | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Infiltration toiture | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité toit terrasse | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité toiture plate | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité balcon | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité terrasse | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité EPDM | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité PVC | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité bitume | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Réfection d'étanchéité | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
+| etancheite | Étanchéité acrotère | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
 | peinture | Peinture façade | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
 | élagage | Élagage arbre | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
 | élagage | Élagage peuplier | PARTIAL_CONTEXTE | ROUTED_TO_SPECIFIC_SCENE |
 
 > Les trois corrections de dépannage auto (Clés enfermées, Déverrouillage voiture, Enlèvement véhicule) étaient déjà ROUTED_TO_SPECIFIC_SCENE — elles corrigent le bucket sélectionné, pas la catégorie.
 
-## ROUTED_TO_SPECIFIC_SCENE (139 services)
+## ROUTED_TO_SPECIFIC_SCENE (152 services)
 
 - **toiture** / Rénovation toiture complète
 - **toiture** / Réparation toiture
@@ -128,6 +154,7 @@ TOOLS_ONLY: 8
 - **toiture** / Zinguerie
 - **toiture** / Solins
 - **nettoyage_toiture** / Démoussage toiture
+- **nettoyage_toiture** / Nettoyage toiture
 - **nettoyage_toiture** / Traitement hydrofuge toiture
 - **nettoyage_toiture** / Nettoyage mousse toiture
 - **nettoyage_toiture** / Hydrofuge toiture
@@ -137,11 +164,23 @@ TOOLS_ONLY: 8
 - **nettoyage_gouttieres** / Remplacement gouttières
 - **nettoyage_gouttieres** / Entretien gouttières
 - **nettoyage_gouttieres** / Pose gouttières
+- **etancheite** / Réparation fuite toiture
+- **etancheite** / Recherche de fuite
+- **etancheite** / Infiltration toiture
+- **etancheite** / Étanchéité toit terrasse
+- **etancheite** / Étanchéité toiture plate
+- **etancheite** / Étanchéité balcon
+- **etancheite** / Étanchéité terrasse
+- **etancheite** / Étanchéité EPDM
+- **etancheite** / Étanchéité PVC
+- **etancheite** / Étanchéité bitume
+- **etancheite** / Réfection d'étanchéité
 - **etancheite** / Réparation solin
 - **etancheite** / Réparation Velux
 - **etancheite** / Réparation noue
 - **etancheite** / Réparation rive
 - **etancheite** / Étanchéité cheminée
+- **etancheite** / Étanchéité acrotère
 - **ravalement** / Ravalement façade
 - **ravalement** / Rénovation façade
 - **ravalement** / Crépi façade
@@ -256,21 +295,8 @@ TOOLS_ONLY: 8
 - **nettoyage** / Nettoyage allée
 - **nettoyage** / Traitement hydrofuge façade
 
-## PARTIAL_CONTEXTE (25 services)
+## PARTIAL_CONTEXTE (12 services)
 
-- **nettoyage_toiture** / Nettoyage toiture
-- **etancheite** / Réparation fuite toiture
-- **etancheite** / Recherche de fuite
-- **etancheite** / Infiltration toiture
-- **etancheite** / Étanchéité toit terrasse
-- **etancheite** / Étanchéité toiture plate
-- **etancheite** / Étanchéité balcon
-- **etancheite** / Étanchéité terrasse
-- **etancheite** / Étanchéité EPDM
-- **etancheite** / Étanchéité PVC
-- **etancheite** / Étanchéité bitume
-- **etancheite** / Réfection d'étanchéité
-- **etancheite** / Étanchéité acrotère
 - **ravalement** / Nettoyage façade
 - **peinture** / Enduit décoratif
 - **terrassement** / Remblai
@@ -299,8 +325,6 @@ TOOLS_ONLY: 8
 
 Les métiers sans scénarios ciblés (TOOLS_ONLY et PARTIAL_CONTEXTE) sont à traiter en priorité :
 
-- **nettoyage_toiture** (PARTIAL_CONTEXTE): Nettoyage toiture
-- **etancheite** (PARTIAL_CONTEXTE): Réparation fuite toiture, Recherche de fuite, Infiltration toiture, Étanchéité toit terrasse, Étanchéité toiture plate, Étanchéité balcon, Étanchéité terrasse, Étanchéité EPDM, Étanchéité PVC, Étanchéité bitume, Réfection d'étanchéité, Étanchéité acrotère
 - **ravalement** (PARTIAL_CONTEXTE): Nettoyage façade
 - **peinture** (PARTIAL_CONTEXTE): Enduit décoratif
 - **terrassement** (PARTIAL_CONTEXTE): Remblai, Empierrement, Nivellement, Préparation terrain, Plateforme, Évacuation des terres

@@ -616,9 +616,9 @@ export const SITE_REALISM_ROOF = {
   nettoyage_toiture: {
     scenarios: [
 
-      // --- démoussage / brossage manuel ---
+      // --- démoussage / brossage manuel / nettoyage toiture ---
       {
-        _for:          'demoussa|mousse.*toit|nettoy.*mousse|brossage',
+        _for:          'demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit',
         scene_note:    'manual moss scraping from a pitched roof — stiff broom sweeping thick green moss off old tiles, debris falling onto the protective tarp below the eave',
         scene_camera:  'standing back from the house, framing the full roof slope with the worker using a long-handled stiff broom across the mossy tiles',
         scene_framing: {
@@ -693,10 +693,10 @@ export const SITE_REALISM_ROOF = {
         ],
       },
 
-      // --- traitement chimique / hydrofuge ---
+      // --- traitement hydrofuge ---
       {
-        _for:          'hydrofuge|traitement|anti.mousse',
-        scene_note:    'chemical anti-moss treatment being applied by backpack sprayer — lance fanning a spray arc across the tile surface, product spreading down from the top',
+        _for:          'hydrofuge|traitement.*hydrofuge',
+        scene_note:    'waterproofing (hydrofuge) treatment being applied by backpack sprayer — lance fanning a uniform spray arc across CLEAN tile surface already cleared of moss, product spreading down from the top in even rivulets',
         scene_camera:  'standing at the side of the house, framing the spray lance fanning chemical treatment across the mossy roof tiles',
         scene_framing: {
           work_pct:   60,
@@ -721,54 +721,143 @@ export const SITE_REALISM_ROOF = {
         ],
       },
       {
-        _for:          'hydrofuge|traitement|anti.mousse',
-        scene_note:    'treatment being applied from the ridge downward — spray lance directed at the ridge tiles first, product running in rivulets down the full slope under gravity',
-        scene_camera:  'shooting up from below, framing the spray lance at the ridge line with product rivulets running down the slope',
+        _for:          'hydrofuge|traitement.*hydrofuge',
+        scene_note:    'hydrofuge treatment from the ridge downward — spray lance directed at the CLEAN ridge tiles first, uniform product running in rivulets down the clear slope under gravity — NO moss, tiles already cleaned',
+        scene_camera:  'shooting up from below, framing the spray lance at the ridge line with product rivulets running down the clean slope',
         scene_framing: {
           work_pct:   65,
           foreground: 'spray lance at the ridge tiles — product mist at the ridge apex',
-          midground:  'treatment running down the tile surface in rivulets from ridge toward eave',
-          background: 'sky above the ridge, moss-covered lower tiles where product has not yet reached',
+          midground:  'treatment running down clean tile surface in uniform rivulets from ridge toward eave — no green moss',
+          background: 'sky above the ridge, tile surface even and clean below',
         },
-        scene_debris:  'treatment rivulets running down the tile grooves, moss beginning to darken where product reached',
-        scene_exclude: ['stiff broom scraping', 'pressure lance jet', 'new tiles'],
+        scene_debris:  'hydrofuge rivulets running down clean tile grooves — no moss, no scraped material',
+        scene_exclude: ['stiff broom scraping', 'pressure lance jet', 'new tiles', 'moss on tiles', 'green biological growth'],
         tools: [
-          'telescopic lance reaching to the ridge tiles, treatment being applied from the apex',
+          'telescopic lance reaching to the ridge tiles, hydrofuge applied from the apex',
         ],
         protections: [
-          'safety harness visible on the operator at ridge height',
-          'tarp at ground level below the eave',
+          'tarp at ground level below the eave to collect runoff',
         ],
         chantier_details: [
-          'treatment running from ridge downward in dark rivulets along the tile grooves',
+          'hydrofuge running from ridge downward in even rivulets along the clean tile grooves',
           'ridge tiles uniformly wet with product at the apex',
-          'lower tile courses still dry and moss-green — contrast with treated upper section',
+          'tile surface clean and uniform — product the only surface texture change',
         ],
       },
       {
-        _for:          'hydrofuge|traitement|anti.mousse',
-        scene_note:    'post-treatment roof — tiles uniformly dark and wet from the applied hydrofuge, protective tarp below the eave loaded with chemical runoff',
-        scene_camera:  'standing back from the house, framing the full roof slope uniformly dark with product, tarp visible below the eave',
+        _for:          'hydrofuge|traitement.*hydrofuge',
+        scene_note:    'post-hydrofuge roof — tiles uniformly dark and wet from the applied waterproofing treatment — tiles ALREADY CLEAN before application, no moss visible, protective tarp below the eave',
+        scene_camera:  'standing back from the house, framing the full roof slope uniformly dark with hydrofuge, tarp visible below the eave',
         scene_framing: {
           work_pct:   45,
-          foreground: 'heavy tarp below the eave — visibly wet with chemical runoff, weighted at corners',
-          midground:  'full roof pitch — uniformly dark and wet from the applied treatment',
+          foreground: 'heavy tarp below the eave — visibly wet with hydrofuge runoff, weighted at corners',
+          midground:  'full roof pitch — uniformly dark and wet from the hydrofuge, clean tile surface under the product',
           background: 'ridge line, sky above, garden to the side',
         },
-        scene_debris:  'chemical pooling in the tarp folds below the eave, drip marks on the house wall near the downpipe',
-        scene_exclude: ['stiff broom scraping', 'pressure lance jet', 'new tiles'],
+        scene_debris:  'hydrofuge pooling in the tarp folds below the eave — no moss debris, no scraping residue',
+        scene_exclude: ['stiff broom scraping', 'pressure lance jet', 'new tiles', 'moss', 'green growth on tiles'],
         tools: [
-          'backpack sprayer parked at the base of the house — treatment complete',
-          'empty treatment container beside the sprayer',
+          'backpack sprayer parked at the base of the house — hydrofuge application complete',
+          'empty hydrofuge container beside the sprayer',
         ],
         protections: [
-          'heavy tarp fully loaded with chemical runoff below the eave',
+          'heavy tarp fully loaded with hydrofuge runoff below the eave',
           'plastic sheet still protecting the garden shrubs below',
         ],
         chantier_details: [
-          'roof uniformly dark from the treatment — product evenly applied across the full pitch',
-          'chemical runoff pooling in the tarp folds',
-          'drip marks on the lower house wall from the product runoff',
+          'roof uniformly dark from the hydrofuge — product evenly applied across the full pitch, no mossy patches',
+          'hydrofuge runoff pooling in the tarp folds',
+          'drip marks on the lower house wall from the runoff',
+        ],
+      },
+
+      // --- traitement anti-mousse biocide ---
+      // VISUALLY DISTINCT from hydrofuge: roof still visibly covered with moss/lichen,
+      // targeted biocidal application, moss remains as main subject (not yet cleaned).
+      {
+        _for:          'anti.mousse',
+        scene_note:    'biocidal anti-moss treatment being applied to a pitched roof STILL COVERED with green and black moss — backpack sprayer with lance directing product at moss-covered tile sections in a targeted pattern, moss and lichen patches clearly the dominant visual subject',
+        scene_camera:  'standing back from the house, framing the full mossy roof slope with the treatment lance applying product to visible moss patches — moss still clearly present across most of the surface',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'protective tarp below the eave, product drip collecting — moss clumps visible on the lower tile courses (moss NOT removed yet)',
+          midground:  'pitched roof — green and black moss clearly covering most of the tile surface — wet dark patches where biocide has been applied over the moss',
+          background: 'roof slope continuing to the ridge, house wall at the side',
+        },
+        scene_debris:  'treatment drips on the tarp — NO scraped moss, biological growth still firmly on tiles',
+        scene_exclude: [
+          'clean roof tiles', 'uniform impregnation sweep', 'tiles cleared of moss before treatment',
+          'stiff broom scraping', 'pressure washing', 'new tiles',
+        ],
+        tools: [
+          'backpack chemical sprayer with telescopic lance — targeted application over moss patches',
+          'lance angled at moss-covered tile sections',
+        ],
+        protections: [
+          'heavy tarp fixed under the eave to collect biocide runoff',
+          'plastic sheet covering garden plants below the treatment zone',
+          'chemical-resistant gloves on the operator',
+        ],
+        chantier_details: [
+          'green and black moss/lichen still covering most of the tile surface — clearly visible as the main subject',
+          'wet dark patches on moss-covered tiles where biocide has landed — moss still intact underneath',
+          'biocide application pattern: some sections treated, others still dry and mossy',
+        ],
+      },
+      {
+        _for:          'anti.mousse',
+        scene_note:    'close-up of anti-moss biocide application — lance tip directing product at a close-up of a tile section still thick with moss and lichen, dark wet product visible ON TOP of the still-attached moss pads',
+        scene_camera:  'close-up from the roof surface, framing the lance tip directing biocide product onto heavily moss-covered tiles — moss pads clearly the main subject',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'lance tip 30–50 cm from the tile surface — fine biocide mist landing on thick green moss pads attached to tiles',
+          midground:  'surrounding tiles — thick continuous moss coverage, dark and textured',
+          background: 'roof slope continuing, moss-covered tiles extending in all directions',
+        },
+        scene_debris:  'biocide drip on the lower tile edge — NO scraped moss, moss pad still attached to tile face',
+        scene_exclude: [
+          'bare clean tiles under the spray', 'scraped moss pile', 'pressure washing jet',
+          'broom or scraper tool', 'moss-free tiles',
+        ],
+        tools: [
+          'lance tip of backpack sprayer applying targeted biocide to moss-covered tile section',
+        ],
+        protections: [
+          'chemical-resistant gloves on the operator',
+        ],
+        chantier_details: [
+          'moss pad surface clearly visible — thick green/black biological layer on the tile face',
+          'biocide landing on moss surface — product wet sheen on top of the moss (moss still attached)',
+          'tile surface entirely hidden by moss — no bare tile visible in the treated close-up zone',
+        ],
+      },
+      {
+        _for:          'anti.mousse',
+        scene_note:    'anti-moss treated roof immediately after application — tiles still covered with moss but biocide product has been applied, surface looks WET and dark over the moss-covered area, tarp loaded with runoff — moss remains clearly present, treatment still fresh',
+        scene_camera:  'standing back from the house, framing the full treated roof slope — moss still clearly visible, tiles dark and wet from product, tarp loaded below the eave',
+        scene_framing: {
+          work_pct:   40,
+          foreground: 'heavy tarp below the eave — wet with biocide runoff, small amounts of dislodged lichen at the tarp edge',
+          midground:  'full roof pitch — still covered with moss/lichen but now dark and wet with biocide product — moss clearly present as the main texture',
+          background: 'ridge line, sky above, garden to the side',
+        },
+        scene_debris:  'light biocide drips on the tarp — NO pile of scraped moss, biological growth still intact on tiles',
+        scene_exclude: [
+          'scraped moss pile on tarp', 'clean restored tile colour', 'uniform hydrofuge sheen without moss',
+          'broom or scraper', 'pressure washing',
+        ],
+        tools: [
+          'backpack sprayer parked at the base of the house — biocide application complete',
+          'empty anti-mousse product container beside the sprayer',
+        ],
+        protections: [
+          'heavy tarp fully wet below the eave',
+          'plastic sheet protecting garden shrubs below',
+        ],
+        chantier_details: [
+          'roof still fully mossy but dark and wet from applied biocide — moss remains as dominant texture',
+          'biocide runoff pooling in the tarp folds — no moss chunks (not scraped yet)',
+          'treatment just applied — biological material will die over days/weeks, not immediately',
         ],
       },
 
