@@ -2,7 +2,7 @@
  * roof-waterproofing-gutter-contracts.js
  * Source canonique unique pour le cluster toiture / étanchéité / gouttières.
  *
- * Couverture : 4 métiers catalogue, 39 services, 19 contrats visuels.
+ * Couverture : 4 métiers catalogue, 39 services, 20 contrats visuels.
  * Tests no-cost : src/image-generation/debug/roof-waterproofing-gutter-contracts-tests.js
  * Réexport documentaire : docs/roof-waterproofing-gutter-contracts.js
  * Aucun impact pipeline de production — pas importé dans services/index.js ni SITE_REALISM.
@@ -16,7 +16,8 @@
  * R06 zinguerie                 — Zinguerie
  * R07 solins                    — Solins
  * R08 demossage_toiture         — Démoussage toiture, Nettoyage toiture, Nettoyage mousse toiture
- * R09 hydrofuge_toiture         — Traitement hydrofuge toiture, Hydrofuge toiture, Traitement anti-mousse toiture
+ * R09 hydrofuge_toiture         — Traitement hydrofuge toiture, Hydrofuge toiture
+ * R20 antimousse_toiture        — Traitement anti-mousse toiture
  * R10 nettoyage_gouttieres      — Nettoyage gouttières, Entretien gouttières
  * R11 debouchage_gouttieres     — Débouchage gouttières
  * R12 remplacement_gouttieres   — Remplacement gouttières, Pose gouttières
@@ -136,7 +137,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['wide_worksite', 'medium_intervention'],
+    composition_preferences: ['wide_establishing', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'renovation.*toiture|refection.*toiture|couverture.*neuve',
   },
 
@@ -239,7 +241,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['medium_intervention', 'close_detail'],
+    composition_preferences: ['medium_intervention', 'close_work_detail'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'reparation toiture',
   },
 
@@ -344,7 +347,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'remplacement (tuiles|ardoises)',
   },
 
@@ -445,7 +449,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['medium_intervention', 'wide_worksite'],
+    composition_preferences: ['medium_intervention', 'wide_establishing'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'charpente|isolation.*comble',
   },
 
@@ -550,7 +555,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'faitage',
   },
 
@@ -651,7 +657,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'zinguerie',
   },
 
@@ -753,7 +760,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: '^solins$',
   },
 
@@ -857,7 +865,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['wide_worksite', 'contextual_overview'],
+    composition_preferences: ['wide_establishing', 'wide_establishing'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'demoussage|nettoyage.*toiture',
   },
 
@@ -866,22 +875,23 @@ export const ROOF_VISUAL_CONTRACTS = {
     service_key:   'hydrofuge_toiture',
     service_label: 'Hydrofuge toiture',
     covers_services: [
-      'Traitement hydrofuge toiture', 'Hydrofuge toiture', 'Traitement anti-mousse toiture',
+      'Traitement hydrofuge toiture', 'Hydrofuge toiture',
     ],
-    visual_goal:   'Show chemical treatment application on a pitched tiled roof. The roof is ALREADY CLEAN or only lightly soiled — no thick moss clumps. A backpack sprayer with telescopic lance is applying a hydrophobic or biocidal product uniformly across the tile surface.',
-    observable_action: 'Backpack chemical sprayer with telescopic lance directing a fine spray arc across clean or lightly mossy tile surface. Product running in dark rivulets down the tile grooves from the application point.',
+    visual_goal:   'Show hydrophobic impregnation treatment on a ALREADY CLEAN pitched tiled roof — no thick moss as the main subject. A backpack sprayer with telescopic lance applies the product uniformly. Key differentiator from anti-mousse: the tile surface is CLEAN and REGULAR, the treatment is an impregnating coat, not a targeted biocidal spray on active vegetation.',
+    observable_action: 'Backpack chemical sprayer with telescopic lance directing a fine uniform spray arc across clean or lightly aged tile surface. Product running in dark rivulets down the tile grooves. No moss being scraped or dislodged.',
     required_visual_evidence: [
       'backpack chemical sprayer with telescopic lance as the primary tool',
-      'tiles visibly WET and darkening uniformly from the applied product — not being scraped',
-      'no thick moss pads being dislodged — roof surface mostly clean before treatment',
-      'spray fan or rivulets of product running down tile grooves',
+      'tile surface ALREADY CLEAN — no thick moss pads visible as the main subject; at most light discolouration',
+      'uniform application: product darkening tiles evenly across the treated section — no localised target spots',
+      'surface of tiles clean and regular — even tile profile visible under the product coat',
+      'spray fan or rivulets of product running uniformly down tile grooves',
       'protective tarp below eave collecting chemical runoff',
     ],
     forbidden_confusions: [
-      'démoussage / nettoyage — thick green moss being SCRAPED off with broom or scraper (see Démoussage toiture)',
+      'traitement anti-mousse — mossy roof still covered in patches of moss/lichen, localised or manual spray (see antimousse_toiture R20)',
+      'démoussage / nettoyage — thick green moss being SCRAPED off with broom or scraper (see Démoussage toiture R08)',
       'pressure washing (high-pressure lance and machine)',
       'tile replacement or renovation',
-      'gutter treatment or cleaning',
     ],
     allowed_tools: [
       'backpack chemical sprayer with telescopic lance',
@@ -897,8 +907,8 @@ export const ROOF_VISUAL_CONTRACTS = {
       'workers or people visible (no-worker composition)',
     ],
     work_surface: [
-      'pitched tiled roof surface — clean or lightly aged tiles being coated with product',
-      'no thick moss clumps present on the tile surface',
+      'pitched tiled roof surface — clean or lightly aged tiles being uniformly coated with hydrophobic impregnation product',
+      'no thick moss clumps present — tile surface clean and regular',
     ],
     setting: ['exterior'],
     location_types: ['maison_individuelle', 'immeuble'],
@@ -926,43 +936,148 @@ export const ROOF_VISUAL_CONTRACTS = {
     },
     states: {
       debut: {
-        observable_action: 'Application starting at the ridge. Product being sprayed from the top down.',
+        observable_action: 'Application starting at the ridge. Product being sprayed from the top down on clean tiles.',
         required_visual_evidence: [
           'backpack sprayer and lance positioned at the high end or ridge of the roof',
-          'first tiles at the ridge visibly wet and darkened from the product',
-          'lower tile courses still dry and showing original colour below',
+          'first tiles at the ridge visibly wet and darkened uniformly from the product',
+          'lower tile courses still dry and showing clean original colour below',
           'protective tarp in position at the eave',
         ],
       },
       encours: {
-        observable_action: 'Treatment applied to upper half of roof. Product running in dark rivulets down the slope.',
+        observable_action: 'Treatment applied to upper half of roof. Product running in dark rivulets down the clean slope.',
         required_visual_evidence: [
           'upper section of roof uniformly wet and dark from the applied product',
-          'dark rivulets of treatment running down the tile grooves from treated to untreated section',
-          'lower section still dry showing original tile colour — clear boundary',
+          'dark rivulets of treatment running evenly down the tile grooves — no localised heavy spots',
+          'lower section still dry showing clean original tile colour — clear boundary',
           'tarp below collecting runoff',
         ],
       },
       semifinal: {
         observable_action: 'Almost complete. Last section near eave being treated.',
         required_visual_evidence: [
-          'most of the roof dark and wet with product — uniform coverage',
+          'most of the roof dark and wet with product — uniform coverage across clean tile surface',
           'last strip near the eave still dry, lance being directed at it',
           'chemical runoff on the tarp below — treatment line visible',
         ],
       },
       final: {
-        observable_result: 'Full roof treated. Uniformly dark and wet. Tarp loaded with chemical runoff.',
+        observable_result: 'Full roof treated. Uniformly dark and wet. Tarp loaded with runoff. Tile surface clean under the product.',
         required_visual_evidence: [
           'entire roof surface uniformly dark and wet from the applied product',
+          'tile surface clean and regular under the product coat — no thick moss mats',
           'backpack sprayer parked at the base of the house — treatment complete',
           'tarp below the eave visibly wet with chemical runoff',
-          'no dry tile sections remaining — uniform coverage confirmed',
         ],
       },
     },
-    composition_preferences: ['wide_worksite', 'contextual_overview'],
-    for_regex: 'hydrofuge.*toiture|traitement.*toiture|anti.mousse',
+    composition_preferences: ['wide_establishing', 'wide_establishing'],
+    status: 'READY_FOR_IMPLEMENTATION',
+    for_regex: 'hydrofuge.*toiture',
+  },
+
+  // ─── R20 ──────────────────────────────────────────────────────────────────────
+  antimousse_toiture: {
+    service_key:   'antimousse_toiture',
+    service_label: 'Traitement anti-mousse toiture',
+    covers_services: [
+      'Traitement anti-mousse toiture',
+    ],
+    visual_goal:   'Show biocidal anti-moss treatment on a pitched tiled roof that is STILL VISIBLY MARKED by moss and lichen. Distinguishable from hydrofuge by: roof surface shows patches of moss/lichen as the main context, and the application is targeted or manual rather than a uniform impregnation sweep.',
+    observable_action: 'Targeted biocidal product being applied to sections of the roof that still show moss or lichen. Application can be via hand-sprayer (small localised pump), watering can, or backpack sprayer with localised directing — but the key visual is that the tiles STILL HAVE moss/lichen on them as the dominant context.',
+    required_visual_evidence: [
+      'roof surface still clearly marked by patches of moss and/or lichen — biological growth visible as the dominant surface condition',
+      'targeted or manually directed application: product being sprayed or poured onto mossy sections, not a uniform sweep of clean tiles',
+      'difference from a plain pressure-wash clearly visible: no jet nozzle, no debris falling — biocidal product being deposited',
+      'partial treatment visible: some sections treated (darker, wet), other sections still clearly mossy — staged application context',
+      'protective tarp or containment at the eave edge for product runoff',
+    ],
+    forbidden_confusions: [
+      'hydrofuge toiture — clean tile surface with uniform impregnation sweep; no moss as main subject (see hydrofuge_toiture R09)',
+      'démoussage toiture — SCRAPING thick moss with stiff broom or hand scraper; physical debris falling onto tarp (see demossage_toiture R08)',
+      'pressure washing (high-pressure lance — jet nozzle and machine)',
+      'tile replacement or renovation',
+    ],
+    allowed_tools: [
+      'hand pump sprayer or watering can for localised anti-moss application',
+      'backpack sprayer with hand-directed lance for targeted mossy sections',
+      'protective tarp at eave edge',
+      'plastic sheet over garden shrubs below',
+    ],
+    forbidden_tools: [
+      'stiff broom or hand scraper (those are for démoussage — physical scraping)',
+      'pressure washer jet nozzle',
+      'tile lifter or roofer\'s tools',
+      'large-capacity pump applying uniform coat (that is hydrofuge)',
+    ],
+    work_surface: [
+      'pitched tiled roof surface — still visibly mossy, product being applied to targeted sections',
+      'moss/lichen patches clearly visible on tiles as the main surface context',
+    ],
+    setting: ['exterior'],
+    location_types: ['maison_individuelle', 'immeuble'],
+    worker_rules: {
+      presence: 'none',
+      min: 0,
+      max: 0,
+      posture: 'no workers visible — composition shows mossy roof with targeted product application from ground level',
+    },
+    safety: {
+      required: [
+        'protective tarp along full eave edge to collect biocidal runoff',
+        'plastic sheet over garden shrubs and plants below',
+      ],
+      conditional: [
+        'when worker IS present: chemical-resistant gloves, safety glasses, and dust/vapour mask mandatory',
+        'child and pet exclusion from treatment zone during application and drying',
+      ],
+      forbidden: [
+        'treatment applied on wet or frosty tiles — product will not adhere',
+        'biocidal product running directly onto soil or waterway without tarp containment',
+        'worker operating sprayer from an unstable ladder without stabiliser',
+      ],
+    },
+    states: {
+      debut: {
+        observable_action: 'First section being treated. Mossy tiles still dominant.',
+        required_visual_evidence: [
+          'roof surface predominantly covered in visible moss/lichen — biological growth dominant',
+          'first small section receiving product — that area visibly wet/dark from application',
+          'rest of roof still dry and mossy — treatment just starting',
+          'protective tarp in position at eave',
+        ],
+      },
+      encours: {
+        observable_action: 'Treatment advancing across mossy roof. Contrast between treated and untreated sections.',
+        required_visual_evidence: [
+          'clear contrast: one section darker/wet from biocidal product, other section still dry and mossy',
+          'moss/lichen still clearly visible on untreated section — biological growth evident',
+          'product being directed onto remaining mossy sections',
+          'tarp below collecting runoff',
+        ],
+      },
+      semifinal: {
+        observable_action: 'Most sections treated. Moss still visible but wetted with product.',
+        required_visual_evidence: [
+          'most of the roof surface wet and darkened from product application',
+          'moss/lichen still visible beneath the product — not yet killed or removed',
+          'small remaining dry/mossy section being treated',
+          'tarp loaded with runoff below',
+        ],
+      },
+      final: {
+        observable_result: 'Full roof treated. Product applied over all mossy surfaces. Drying phase. Moss still present — will die back over weeks.',
+        required_visual_evidence: [
+          'entire roof surface wet and darkened from the biocidal product',
+          'moss and lichen still visibly present on tiles — product deposited but not yet acting',
+          'protective tarp wet below the eave — runoff captured',
+          'no scraping or physical removal — chemical-only treatment visible',
+        ],
+      },
+    },
+    composition_preferences: ['wide_establishing', 'wide_establishing'],
+    status: 'NEEDS_REVIEW',
+    for_regex: 'anti.mousse',
   },
 
   // ─── R10 ──────────────────────────────────────────────────────────────────────
@@ -970,18 +1085,20 @@ export const ROOF_VISUAL_CONTRACTS = {
     service_key:   'nettoyage_gouttieres',
     service_label: 'Nettoyage gouttières',
     covers_services: ['Nettoyage gouttières', 'Entretien gouttières'],
-    visual_goal:   'Show manual gutter cleaning — extracting compacted leaves and moss debris from the gutter trough. Ladder at the eave. Gutter scoop extracting a thick mat of debris. Pile of wet leaves on ground below. Roof tiles in background as weathered context only, not the subject.',
-    observable_action: 'Worker on ladder at the gutter run using a plastic gutter scoop to extract compacted leaf and moss debris from the trough. Debris deposited in a bucket below.',
+    visual_goal:   'Show manual gutter cleaning — extracting compacted leaves and moss debris spread along the open gutter trough. Ladder at the eave. Gutter scoop working progressively along the trough. Pile of wet leaves on ground below. The gutter itself is kept in place — not replaced. Key differentiator from débouchage: the TROUGH is the work surface, debris is spread along its length (not a localised downpipe blockage).',
+    observable_action: 'Worker on ladder at the gutter run using a plastic gutter scoop to extract compacted leaf and moss debris from the open trough. Debris progressively removed by hand or with spatula. Bucket at the ladder base collecting extracted material.',
     required_visual_evidence: [
-      'gutter trough packed with compacted leaves and moss debris — clearly overflowing',
-      'gutter scoop extracting a thick mat of debris from the trough',
+      'gutter trough as the primary work surface — open channel visible with deposits spread along its length',
+      'deposits distributed along the trough section: compacted leaves, mud, or moss spread over 1 m or more of gutter length',
+      'gutter scoop or gloved hand extracting debris progressively from the trough — each pass clearing a section',
+      'debris removed progressively by hand or spatula — leaf or mud fragments being lifted rather than expelled',
+      'gutter conserved and intact throughout — same gutter profile remains in place, no new sections',
       'ladder at the eave edge as the access tool',
       'bucket or pile of wet extracted debris on the ground directly below',
-      'weathered roof tiles as background context only — not a cleaning subject',
     ],
     forbidden_confusions: [
-      'débouchage gouttières — flexible rod in downpipe, standing water, blocked inlet (see Débouchage)',
-      'remplacement/pose gouttières — new PVC sections, cordless drill, fascia brackets (see Remplacement)',
+      'débouchage gouttières — flexible rod going into the downpipe inlet; standing water backed up at the inlet; obstruction is inside the vertical pipe, not spread along the open trough (see Débouchage R11)',
+      'remplacement/pose gouttières — new PVC sections, cordless drill, fascia brackets; old sections on the ground (see Remplacement R12)',
       'démoussage toiture — roof tiles as the primary subject, no gutter as focus',
     ],
     allowed_tools: [
@@ -1064,7 +1181,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['medium_intervention', 'close_detail'],
+    composition_preferences: ['medium_intervention', 'close_work_detail'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'nettoyage.*gouttieres|entretien.*gouttieres',
   },
 
@@ -1073,25 +1191,26 @@ export const ROOF_VISUAL_CONTRACTS = {
     service_key:   'debouchage_gouttieres',
     service_label: 'Débouchage gouttières',
     covers_services: ['Débouchage gouttières'],
-    visual_goal:   'Show a blocked downpipe being cleared — flexible drain rod being fed into the downpipe from the top, OR an expelled compacted debris plug at the pipe base. Distinguish from cleaning: the DOWNPIPE is blocked, there is standing water in the gutter at the inlet, and the fix targets the pipe interior not the open trough.',
-    observable_action: 'Flexible drainage rod being fed into a blocked downpipe opening from the top. OR expelled compacted debris plug on the ground at the downpipe foot after clearance.',
+    visual_goal:   'Show a blocked downpipe being cleared — flexible drain rod being fed into the downpipe INLET from the top. Key differentiator from nettoyage: the obstruction is LOCALISED at the naissance (downpipe inlet) or inside the vertical pipe run, not spread along the open trough. Standing water backed up in the gutter at the inlet confirms the location of the blockage.',
+    observable_action: 'Flexible drainage rod being fed into the blocked downpipe inlet from the top. Rod inserted into the narrow opening at the naissance. Standing water visible in the gutter directly above the blocked inlet.',
     required_visual_evidence: [
-      'downpipe as the primary subject — the vertical pipe running down the house wall',
-      'flexible drainage rod sections disappearing into the downpipe from above, OR expelled debris plug at the pipe base',
-      'standing water backed up in the gutter at the blocked downpipe inlet',
+      'obstruction localised at the naissance (downpipe inlet) or inside the downpipe run — not spread along the open gutter trough',
+      'flexible drain rod or clearing tool being introduced into the downpipe inlet — rod entering the narrow pipe opening',
+      'standing water backed up in the gutter at the blocked downpipe inlet — water held up directly above the blockage',
       'ladder at the downpipe head as access tool',
+      'once clearance achieved: flow restored — water visibly running freely from the gutter into the downpipe',
     ],
     forbidden_confusions: [
-      'nettoyage gouttières — gutter scoop in the open trough, leaf debris being extracted (see Nettoyage)',
-      'remplacement gouttières — new PVC sections being fitted, cordless drill, no blockage context',
-      'débouchage downpipe vs open trough cleaning: here the issue is inside the vertical pipe, not in the open horizontal gutter channel',
+      'nettoyage gouttières — gutter scoop in the OPEN trough extracting leaf debris spread along its length; no standing water backed up; the horizontal trough is the work surface, not the downpipe inlet (see Nettoyage R10)',
+      'remplacement gouttières — new PVC sections being fitted, cordless drill, old sections on the ground; no blockage context (see Remplacement R12)',
+      'débouchage vs nettoyage: here the issue is INSIDE the vertical pipe at the inlet, not in the open horizontal channel',
     ],
     allowed_tools: [
-      'flexible drainage rod sections being fed into the downpipe',
+      'flexible drainage rod sections being fed into the downpipe inlet',
       'drain hook or needle nose tool at the downpipe inlet',
       'torch or phone light for inspecting inside the downpipe inlet',
       'ladder at the downpipe head',
-      'plastic sheet at the downpipe base to contain expelled debris',
+      'plastic sheet at the downpipe base to contain any expelled debris',
     ],
     forbidden_tools: [
       'gutter scoop (for open trough, not blocked pipe)',
@@ -1161,7 +1280,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'debouchage.*gouttieres',
   },
 
@@ -1262,7 +1382,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['medium_intervention', 'wide_worksite'],
+    composition_preferences: ['medium_intervention', 'wide_establishing'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'remplacement.*gouttieres|pose.*gouttieres',
   },
 
@@ -1363,7 +1484,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'reparation fuite|recherche.*fuite|infiltration.*toiture',
   },
 
@@ -1376,18 +1498,33 @@ export const ROOF_VISUAL_CONTRACTS = {
       'Étanchéité EPDM', 'Étanchéité PVC', 'Étanchéité bitume',
       "Réfection d'étanchéité",
     ],
-    visual_goal:   'Show large-scale flat roof waterproofing on a HORIZONTAL surface. Membrane rolls being laid across the full flat roof substrate. Parapet wall visible around the perimeter. This is broad surface coverage, not a localised patch. The roof plane is horizontal — no slope, no tiles.',
-    observable_action: 'Membrane roll being unrolled across the flat roof substrate. Seam roller pressing lap joints. Primer being painted on substrate. Parapet upstand being sealed with flashing at the roof edge.',
+    visual_goal:   'Show large-scale flat roof waterproofing on a LARGE HORIZONTAL surface. Membrane rolls being laid across the full flat roof substrate. Concrete or masonry acroterion/parapet wall visible around the full perimeter. Peripheral waterproofing upstands (relevés) visible at the wall bases. A drainage outlet (naissance or regard) visible on the surface. This is broad surface coverage on a building-scale roof — not a balcony, not a localised patch.',
+    observable_action: 'Membrane roll being unrolled across the large flat roof substrate. Seam roller pressing lap joints. Primer being painted on substrate. Peripheral upstands (relevés d'étanchéité) being sealed at the parapet base. Drainage naissance or regard visible.',
     required_visual_evidence: [
-      'HORIZONTAL flat roof surface as the primary subject — no tile slope visible',
-      'membrane roll (bitumen, EPDM, or PVC) being unrolled or lap-joined across the surface',
-      'parapet wall visible at the roof perimeter — defining the flat roof space',
-      'broad surface coverage — multiple membrane sheets already laid, work extending across the area',
+      'LARGE HORIZONTAL flat roof surface as the primary subject — extensive coverage, no tile slope visible',
+      'membrane roll (bitumen, EPDM, or PVC) being unrolled or lap-joined across the broad surface, maintaining continuity across the full area',
+      'concrete or masonry acroterion/parapet wall visible at the roof perimeter — structural perimeter defining the flat roof space',
+      'peripheral waterproofing upstands (relevés périphériques d'étanchéité) visible at the parapet base — membrane turned up against the wall',
+      'drainage outlet: naissance (pipe entry at wall or floor) or regard (inspection pit) visible on the surface',
+      'broad surface coverage — multiple membrane sheets already laid, work scale clearly that of a building roof not a balcony',
+    ],
+    location_must_have: [
+      'large horizontal coverage surface — building-scale roof',
+      'concrete or masonry parapet/acroterion forming the perimeter',
+      'peripheral upstands at the parapet base',
+      'drainage naissance or regard on the surface',
+      'membrane continuity across the whole surface (bitume, EPDM, or PVC)',
+    ],
+    location_forbidden: [
+      'garden visible as the main context below the surface — that is a balcony or terrasse (see R15)',
+      'garage or car visible in the background',
+      'balcony railing instead of solid parapet — that is étanchéité balcon (R15)',
+      'any pitched tiled slope visible as the primary surface',
     ],
     forbidden_confusions: [
-      'réparation fuite toiture — localised patch only (here the full surface is being treated)',
+      'réparation fuite toiture — localised patch only, compact zone; here the full building-scale surface is being treated',
       'toiture inclinée tiles — any slope with tiles is NOT a flat roof waterproofing job',
-      'étanchéité balcon/terrasse — smaller surface, balcony railing visible instead of parapet wall height',
+      'étanchéité balcon/terrasse — compact slab with balcony railing, garden or street at low height visible; surface clearly smaller (see R15)',
       'solin or chimney repair — localised junction work, not full membrane surface',
     ],
     allowed_tools: [
@@ -1470,7 +1607,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['wide_worksite', 'medium_intervention'],
+    composition_preferences: ['wide_establishing', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'etancheite toit|etancheite.*plate|etancheite.*(epdm|pvc|bitume)|refection.*etancheite',
   },
 
@@ -1479,16 +1617,30 @@ export const ROOF_VISUAL_CONTRACTS = {
     service_key:   'etancheite_balcon',
     service_label: 'Étanchéité balcon',
     covers_services: ['Étanchéité balcon', 'Étanchéité terrasse'],
-    visual_goal:   'Show waterproofing work on a balcony or ground-level terrace — a small HORIZONTAL surface at low height. Balcony railing visible at the perimeter. Garden or street visible just below the edge. Scale is compact (less than 20 m²), clearly domestic, not a full building flat roof.',
-    observable_action: 'Membrane strip or liquid resin being applied to a balcony floor surface. Drain outlet being sealed. Edge flashing or upstand being pressed against the balcony parapet or wall base.',
+    visual_goal:   'Show waterproofing work on a balcony or small terrace — a compact HORIZONTAL surface that is projecting from or integrated into a building facade. Key differentiators from étanchéité toit terrasse: the platform is clearly smaller, a PATIO DOOR or window opens directly onto it, a PERIMETER RAILING (garde-corps) is visible, and the vertical facade of the building is clearly visible behind/beside the platform. Surface is clearly less than 20 m².',
+    observable_action: 'Membrane strip or liquid resin being applied to a compact balcony or terrace floor slab. Drain outlet being sealed. Edge upstand being pressed against the wall-floor junction.',
     required_visual_evidence: [
-      'compact horizontal surface — balcony floor or terrace slab, not a full flat roof',
-      'balcony railing or low garden wall visible at the perimeter — clearly residential scale',
-      'garden, driveway, or street visible just below or at the edge — confirms low height',
+      'compact horizontal surface clearly in proportion to a domestic balcony or small terrace — clearly not a building-scale flat roof',
+      'platform projecting from or integrated into the building facade — balcony slab or terrace platform visible as a structural element of the building',
+      'patio door or french window opening directly onto the platform — door frame visible at the edge of the surface',
+      'perimeter railing (garde-corps) clearly visible at the slab edge — typical of balconies',
+      'vertical facade of the building clearly visible in the background — confirms this is a balcony/terrace attached to the building',
       'waterproofing material on the surface: membrane strip, resin coat, or liquid membrane brush',
     ],
+    location_must_have: [
+      'platform projecting from or integrated into the facade',
+      'patio door or french window opening directly onto the platform',
+      'perimeter railing (garde-corps)',
+      'vertical building facade clearly visible',
+      'surface clearly smaller than a flat roof',
+    ],
+    location_forbidden: [
+      'high solid parapet wall all around with no railing — that is toit terrasse (see R14)',
+      'surface scale of a full building roof — that is étanchéité toit terrasse',
+      'no facade or building wall visible — isolated ground terrace without building context',
+    ],
     forbidden_confusions: [
-      'étanchéité toit terrasse — full building flat roof, high parapet all around, no railing, no garden visible below at the same level',
+      'étanchéité toit terrasse — full building flat roof, high solid parapet all around, no railing, no patio door at slab level; building-scale surface (see R14)',
       'carrelage terrasse — tile installation on terrace, not membrane waterproofing',
       'peinture terrasse — paint application, not membrane or resin waterproofing',
     ],
@@ -1568,7 +1720,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['medium_intervention', 'close_detail'],
+    composition_preferences: ['medium_intervention', 'close_work_detail'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'etancheite balcon|etancheite terrasse',
   },
 
@@ -1670,7 +1823,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'reparation solin|etancheite cheminee',
   },
 
@@ -1769,7 +1923,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'velux',
   },
 
@@ -1870,7 +2025,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'reparation noue',
   },
 
@@ -1968,7 +2124,8 @@ export const ROOF_VISUAL_CONTRACTS = {
         ],
       },
     },
-    composition_preferences: ['close_detail', 'medium_intervention'],
+    composition_preferences: ['close_work_detail', 'medium_intervention'],
+    status: 'READY_FOR_IMPLEMENTATION',
     for_regex: 'reparation rive|acrotere',
   },
 
@@ -1984,7 +2141,8 @@ export const RTG_FOR_PATTERNS = {
   zinguerie:                   /zinguerie/i,
   solins:                      /^solins$/i,
   demossage_toiture:           /demoussage|nettoyage.*toiture/i,
-  hydrofuge_toiture:           /hydrofuge.*toiture|traitement.*toiture|anti.mousse/i,
+  hydrofuge_toiture:           /hydrofuge.*toiture/i,
+  antimousse_toiture:          /anti.mousse/i,
   nettoyage_gouttieres:        /nettoyage.*gouttieres|entretien.*gouttieres/i,
   debouchage_gouttieres:       /debouchage.*gouttieres/i,
   remplacement_gouttieres:     /remplacement.*gouttieres|pose.*gouttieres/i,
@@ -2000,8 +2158,8 @@ export const RTG_FOR_PATTERNS = {
 // ─── Méta ─────────────────────────────────────────────────────────────────────
 export const RTG_META = {
   metier_cluster:   'toiture / étanchéité / gouttières',
-  version:          1,
-  contract_count:   19,
+  version:          2,
+  contract_count:   20,
   service_count:    39,
   catalog_source:   'src/image-generation/config/service-catalog.js',
   canonical_source: 'src/image-generation/services/roof-waterproofing-gutter-contracts.js',
@@ -2009,7 +2167,11 @@ export const RTG_META = {
   risk_pairs: [
     {
       pair: ['demossage_toiture', 'hydrofuge_toiture'],
-      risk: 'Both involve pitched roof + tarp. Differentiated by: thick moss being physically scraped (broom/scraper) vs clean/lightly soiled tiles being sprayed with product (backpack sprayer + lance); debris falling onto tarp vs chemical runoff in tarp; dark mossy then bare tile contrast vs uniformly darkening tiles with product rivulets.',
+      risk: 'Both involve pitched roof + tarp. Differentiated by: thick moss being physically scraped (broom/scraper) vs clean/lightly soiled tiles being uniformly impregnated (backpack sprayer + lance); debris falling onto tarp vs chemical runoff; clean/mossy contrast vs uniformly darkening tiles.',
+    },
+    {
+      pair: ['hydrofuge_toiture', 'antimousse_toiture'],
+      risk: 'Both apply chemical product via sprayer. Differentiated by: roof already clean with uniform impregnation sweep (hydrofuge) vs roof still visibly mossy with localised/targeted biocidal application (anti-mousse); clean regular tile surface under product (hydrofuge) vs moss/lichen patches still dominant on tiles (anti-mousse); uniform rivulets across clean surface vs localised wet spots on mossy sections.',
     },
     {
       pair: ['reparation_fuite_toiture', 'etancheite_toit_terrasse'],
