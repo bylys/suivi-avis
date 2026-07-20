@@ -1,6 +1,6 @@
 # Service Coverage Audit
 
-_Generated: 2026-07-20 — Commit: `fe587d817cb7`_
+_Generated: 2026-07-20 — Commit: `f94ae3638043`_
 
 
 ## Méthodologie

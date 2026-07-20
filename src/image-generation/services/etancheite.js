@@ -1056,7 +1056,7 @@ export const SITE_REALISM_ETANCHEITE = {
         'bitumen primer can with brush resting on top near the edge',
         'utility knife beside the trimmed membrane roll',
         'tape measure resting on the substrate beside the chalk line',
-        'small gas torch cylinder resting on the substrate nearby',
+        'seam tape reel resting on the substrate beside the chalk line',
       ],
       protections: [
         'protective board placed over the existing membrane at the access point',
@@ -1078,7 +1078,7 @@ export const SITE_REALISM_ETANCHEITE = {
         'bitumen primer can with brush resting on top',
         'utility knife beside the trimmed membrane roll',
         'tape measure on the substrate',
-        'small gas torch cylinder on the substrate',
+        'seam tape reel resting on the substrate beside the chalk line',
       ],
       protections: [
         'protective board at the access hatch entry point',
@@ -1099,7 +1099,7 @@ export const SITE_REALISM_ETANCHEITE = {
         'bitumen primer can with brush resting on top near the edge',
         'utility knife beside the trimmed membrane roll',
         'tape measure resting on the substrate beside the chalk line',
-        'small gas torch cylinder resting on the substrate nearby',
+        'seam tape reel resting beside the last worked lap joint',
       ],
       protections: [
         'protective board placed over the existing membrane at the access point',
