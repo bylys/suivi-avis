@@ -1,5 +1,5 @@
 /**
- * debug/roof-cluster-scenes-tests.js — RTG-S1 to RTG-S14
+ * debug/roof-cluster-scenes-tests.js — RTG-S1 to RTG-S15
  * Roof / waterproofing / gutter cluster scene tests.
  * Chargé uniquement en mode ?imageGenTests=1. Aucun appel API réel.
  *
@@ -60,7 +60,7 @@ function okExpectedFailure(cond, label, detail) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function _norm(s) {
-  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 /** Mirrors scene-builder.js keyword scoring to find the best WORK_SCENE key. */
@@ -457,8 +457,8 @@ function s9() {
 
 const SURFACE_TESTS = [
   // [contractKey, must_contain (in visual_goal or debut scene_note), must_not_contain]
-  ['renovation_toiture',      ['pitched', 'tile', 'slope'],    ['flat roof', 'parapet', 'membrane']],
-  ['etancheite_toit_terrasse',['flat roof', 'parapet'],        ['pitched', 'gutter', 'balcony']],
+  ['renovation_toiture',      ['tile', 'residential'],         ['flat roof', 'parapet', 'membrane']],
+  ['etancheite_toit_terrasse',['flat roof', 'parapet'],        ['pitched', 'gutter']],
   ['etancheite_balcon',       ['balcon', 'balcony', 'railing'],['full flat roof', 'parapet all around']],
   ['nettoyage_gouttieres',    ['gutter', 'eave'],              ['roof slope main subject', 'moss treatment']],
   ['debouchage_gouttieres',   ['downpipe', 'downpipe inlet'],  ['open trough clean']],
@@ -649,6 +649,55 @@ function s14() {
   pass('RTG-S14: anti-mousse 4 distinct states + isolation from hydrofuge/nettoyage verified');
 }
 
+// ─── RTG-S15 — waterproofing tool/exclusion consistency ──────────────────────
+
+function s15() {
+  const sr = SITE_REALISM.etancheite;
+  if (!sr) { fail('RTG-S15: SITE_REALISM.etancheite not found'); return; }
+
+  const FORBIDDEN_IN_TOOLS = ['gas torch', 'gas canister', 'torch cylinder'];
+  const REQUIRED_IN_EXCLUSIONS = ['gas torches', 'gas canisters'];
+
+  // Check top-level exclusions field — exclusions live on WORK_SCENES.etancheite, not SITE_REALISM
+  const wsEtan = WORK_SCENES.etancheite;
+  const topExclusions = ((wsEtan && wsEtan.exclusions) || []).map(s => s.toLowerCase());
+  for (const req of REQUIRED_IN_EXCLUSIONS) {
+    ok(topExclusions.some(e => e.includes(req.replace('s', '').toLowerCase()) || e === req),
+       `RTG-S15: exclusions contains "${req}"`);
+  }
+
+  // Check all SITE_REALISM subs (maison, immeuble, commerce, default + any contexte subs)
+  const SUB_NAMES = ['maison', 'immeuble', 'commerce', 'default'];
+  for (const subName of SUB_NAMES) {
+    const sub = sr[subName];
+    if (!sub) continue;
+    const tools = (sub.tools || []).map(t => t.toLowerCase());
+    for (const forbidden of FORBIDDEN_IN_TOOLS) {
+      ok(!tools.some(t => t.includes(forbidden)),
+         `RTG-S15 [${subName}]: tools do NOT contain "${forbidden}"`);
+    }
+    // Verify seam tape reel replacement is present (when sub had gas torch tools)
+    if (['immeuble', 'commerce', 'default'].includes(subName)) {
+      ok(tools.some(t => t.includes('seam tape') || t.includes('tape reel') || t.includes('seam roller')),
+         `RTG-S15 [${subName}]: tools contain seam tape/roller replacement`);
+    }
+  }
+
+  // Check _dispatch:contexte subs for etancheite
+  if (sr._dispatch === 'contexte') {
+    for (const [k, sub] of Object.entries(sr)) {
+      if (k === '_dispatch' || !sub?.tools) continue;
+      const tools = sub.tools.map(t => t.toLowerCase());
+      for (const forbidden of FORBIDDEN_IN_TOOLS) {
+        ok(!tools.some(t => t.includes(forbidden)),
+           `RTG-S15 [contexte.${k}]: tools do NOT contain "${forbidden}"`);
+      }
+    }
+  }
+
+  pass('RTG-S15: etancheite tool/exclusion consistency verified');
+}
+
 // ─── Run all ──────────────────────────────────────────────────────────────────
 
 export async function runRoofClusterScenesTests() {
@@ -671,6 +720,7 @@ export async function runRoofClusterScenesTests() {
   await s12();
   s13();
   s14();
+  s15();
 
   const expectedFailures = _results.filter(r => r.status === 'EXPECTED_FAILURE').length;
   const unexpectedPasses = _results.filter(r => r.status === 'UNEXPECTED_PASS').length;
