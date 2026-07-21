@@ -87,11 +87,20 @@ let _avisFetching = null;
 async function getAvis() {
   if (_avisCache) return _avisCache;
   if (_avisFetching) return _avisFetching;
-  _avisFetching = sbGet('avis', 'select=*&order=date.desc&limit=5000').then(data => {
-    _avisCache = data;
+  _avisFetching = (async () => {
+    const PAGE = 1000;
+    let all = [], offset = 0;
+    while (true) {
+      const page = await sbGet('avis', `select=*&order=date.desc&limit=${PAGE}&offset=${offset}`);
+      if (!page.length) break;
+      all = all.concat(page);
+      if (page.length < PAGE) break;
+      offset += PAGE;
+    }
+    _avisCache = all;
     _avisFetching = null;
-    return data;
-  });
+    return all;
+  })();
   return _avisFetching;
 }
 
