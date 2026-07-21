@@ -87,7 +87,7 @@ let _avisFetching = null;
 async function getAvis() {
   if (_avisCache) return _avisCache;
   if (_avisFetching) return _avisFetching;
-  _avisFetching = sbGet('avis', 'select=*&order=date.desc').then(data => {
+  _avisFetching = sbGet('avis', 'select=*&order=date.desc&limit=5000').then(data => {
     _avisCache = data;
     _avisFetching = null;
     return data;
