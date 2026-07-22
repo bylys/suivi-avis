@@ -44,6 +44,14 @@ function _appendLockedFinalConstraints(prompt, scene) {
     forbiddenSafety.push('No warning triangle visible anywhere in the image.');
   forbiddenSafety.push(...(FORBIDDEN_SAFETY_BY_METIER[metier] || []));
 
+  // ROOF FALL SAFETY — absolute constraint injected for all roof-related métiers
+  const _ROOF_METIERS = ['toiture', 'nettoyage_toiture', 'nettoyage_gouttieres', 'etancheite'];
+  const isRoofMetier = _ROOF_METIERS.includes(metier);
+
+  // ACTIVE CREW RULE — injected for all active roof and gutter métiers with visible workers
+  const _CREW_METIERS = ['toiture', 'nettoyage_toiture', 'nettoyage_gouttieres'];
+  const isCrewMetier = _CREW_METIERS.includes(metier);
+
   // INTERIOR SETTING — service-specific surface locks
   const _SVC_SURFACE_LOCK = {
     'Faïence salle de bain': {
@@ -110,7 +118,28 @@ No readable brand names. No readable vehicle manufacturer logos as a focal point
 No generated licence plate text intended to be readable. No prominent text on tools, gauges, vehicles or clothing.
 Generic unbranded professional equipment. Any unavoidable text must be tiny, incidental and unreadable.
 ${requiredSafety.length > 0 ? '\nREQUIRED SAFETY ELEMENTS:\n' + requiredSafety.map(s => `- ${s}`).join('\n') : ''}
-${forbiddenSafety.length > 0 ? '\nFORBIDDEN SAFETY VIOLATIONS:\n' + forbiddenSafety.join('\n') : ''}`.trim();
+${forbiddenSafety.length > 0 ? '\nFORBIDDEN SAFETY VIOLATIONS:\n' + forbiddenSafety.join('\n') : ''}
+${isRoofMetier && hasWorkers ? `
+NON-NEGOTIABLE ROOF FALL SAFETY:
+If any worker is physically positioned on a pitched roof, the image must visibly show a complete and physically coherent safe-access and fall-protection configuration.
+
+Accepted configurations:
+- Stabilized access ladder with standoff, secured hooked roof ladder following the slope with hooks over the ridge, connected fall-arrest harness with lanyard leading to a visible credible ridge or roof anchor
+- Scaffold with stable working platform and guardrails
+- MEWP basket with worker remaining inside, basket guardrails visible
+- Collective edge protection with secured access path
+
+A worker freely standing on pitched tiles without visible protection is a critical safety violation.
+A backpack sprayer, shoulder straps, ordinary jacket, or unconnected harness must NEVER be interpreted as fall protection.
+The harness and lifeline must visibly connect to a plausible anchor.
+No safety line may be attached to: gutter, chimney cap, antenna, skylight, unsecured ladder, or decorative roof element.` : ''}
+${isCrewMetier && hasWorkers ? `
+NON-NEGOTIABLE ACTIVE CREW RULE:
+For active roof and gutter work (debut, encours, semifinal state), show at least two visible professional workers with distinct and physically credible roles.
+Worker 1: performs the roof or gutter intervention from secured elevated access.
+Worker 2: manages hose, tools or debris collection, or supervises the access zone from a safe position — must NOT be standing directly below the falling-object zone.
+The second worker must not replace required access or fall-protection equipment.
+Forbidden: two identical workers performing the same gesture; two workers freely standing on pitched tiles; second worker posing for the camera; second worker standing directly below falling debris.` : ''}`.trim();
 }
 
 export { _appendLockedFinalConstraints };

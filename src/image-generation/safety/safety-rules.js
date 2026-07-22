@@ -6,7 +6,29 @@
  */
 
 const FORBIDDEN_SAFETY_BY_METIER = {
-  toiture:        ['No roofer working without a safety harness and lanyard', 'No worker balanced on tiles with no edge anchor'],
+  toiture:              [
+    'No roofer working without a safety harness and lanyard',
+    'No worker balanced on tiles with no edge anchor',
+    'No single worker performing active roof work alone — minimum two workers required',
+    'No worker freely standing on pitched roof tiles without visible fall protection',
+    'No ground-level roof application using a telescopic lance from the garden',
+  ],
+  nettoyage_toiture:    [
+    'No worker on pitched roof without visible secured access equipment (roof ladder, scaffold or MEWP)',
+    'No worker on pitched roof without visible fall protection (connected harness and credible anchor)',
+    'No worker on wet or moss-covered tiles without connected fall arrest',
+    'No backpack sprayer or shoulder straps interpreted as fall protection',
+    'No single worker performing active roof treatment alone — minimum two workers required',
+    'No harness without visible connection to a plausible anchor',
+    'No rope or lifeline attached to gutter, chimney cap, antenna, skylight or unsecured element',
+    'No ground-level roof spraying with telescopic lance from the garden',
+  ],
+  nettoyage_gouttieres: [
+    'No ladder leaning directly against or inside the gutter channel',
+    'No single worker performing active gutter work alone — minimum two workers required',
+    'No ground-level gutter vacuum or telescopic ground pole as the only access method',
+    'No worker standing on the gutter trough',
+  ],
   elagage:        ['No arborist in a tree without a visible climbing harness'],
   abattage:       ['No person standing in the fall zone of a tree being felled'],
   terrassement:   ['No person standing in an open trench without visible shoring or sloping'],
@@ -17,8 +39,8 @@ const FORBIDDEN_SAFETY_BY_METIER = {
 };
 
 const _PRE_GEN_SAFETY = {
-  toiture:           'Roof materials must be in small quantities only. Never show a full industrial pallet, heavy crate, or large load on the roof slope or battens. A few tiles or a small hand-portable stack on a secured material bracket is the maximum.',
-  nettoyage_toiture: 'Worker must be on scaffold or platform, not unsupported on wet moss-covered tiles. Never show bare hands on chemical-treated surface or worker leaning over the gutter edge without a guardrail.',
+  toiture:           'Roof materials must be in small quantities only. Never show a full industrial pallet, heavy crate, or large load on the roof slope or battens. A few tiles or a small hand-portable stack on a secured material bracket is the maximum. If workers are visible: minimum two workers with distinct roles; Worker 1 on secured access (roof ladder, scaffold or MEWP) with connected fall-arrest harness; Worker 2 at safe support position.',
+  nettoyage_toiture: 'Minimum two visible professional workers with distinct roles. Worker 1 must work from a secured hooked roof ladder (hooks over the ridge, NOT resting against the gutter), scaffold platform, or MEWP basket — with a fall-arrest harness visibly connected to a credible ridge or roof anchor. A backpack sprayer, shoulder straps, or ordinary jacket must NEVER be read as fall protection. Worker 2 manages the hose, holds the safety line, or supervises access from a safe position at or near the access foot — NOT directly below the falling-object zone. No worker may stand or walk freely on pitched roof tiles, wet tiles, or moss-covered tiles without this complete and coherent protection system.',
   etancheite:        'Worker near flat roof edge must have a harness. No person on the parapet coping. No open-flame torch near a loose membrane. Roof hatch must remain clear.',
   ravalement:        'Scaffold platforms above 2 m must have visible guardrails. No person leaning past the guardrail into the void.',
   'élagage':         'If a worker is visible at height: harness and rope must be clearly attached to a credible anchor. No person under a branch being cut. No chainsaw without a two-handed grip. No floating figure with no visible support.',
@@ -29,9 +51,9 @@ const _PRE_GEN_SAFETY = {
 };
 
 const SAFETY_CHECK_RULES = {
-  toiture:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: full industrial pallet on pitched roof; worker feet/body over gutter with no platform; worker on roof with no harness/rope/roof-hook; ladder used as horizontal platform; heavy unsecured stack near roof edge. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
-  nettoyage_toiture:    "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: worker on wet moss-covered tiles without harness; leaning over gutter edge without guardrail; bare hands on chemical-treated surface without gloves. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
-  nettoyage_gouttieres: "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: ladder leaning directly against the gutter channel without standoff; person reaching far sideways past their center of gravity off the ladder; person standing on the top two rungs. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  toiture:              "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: full industrial pallet on pitched roof; worker feet/body over gutter with no platform; worker on roof with no harness/rope/roof-hook; ladder used as horizontal platform; heavy unsecured stack near roof edge; single worker performing active roof work with no second worker visible; worker freely standing on pitched tiles with no visible safety line or secured access. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  nettoyage_toiture:    "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see ANY of: (1) worker on pitched roof with no visible secured access equipment — no roof ladder hooks, no scaffold, no MEWP basket visible; (2) worker on pitched roof with no visible fall protection — no connected harness, no visible lifeline, no credible anchor; (3) worker freely standing or walking on pitched roof tiles with no protection system; (4) worker on wet or moss-covered tiles without connected fall arrest; (5) backpack sprayer or shoulder straps as the only apparent safety equipment with no harness or anchor visible; (6) single worker performing active roof work with no second worker visible; (7) ground-level roof application using a telescopic lance from the garden with no elevated access. CRITICAL REGRESSION CASE: one worker standing on a large pitched roof slope, backpack sprayer visible on back, no second worker, no roof ladder hooks, no scaffold, no MEWP, no guardrail, no visible harness connection, no visible anchor — this is always critical_violation. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  nettoyage_gouttieres: "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: ladder leaning directly against or inside the gutter channel without standoff; person reaching far sideways past their center of gravity off the ladder; person standing on the top two rungs; single worker performing active gutter work with no second worker visible; ground-level gutter vacuum or telescopic pole as the only access method for active gutter cleaning. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   etancheite:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person balanced on parapet coping; open-flame torch near a loose membrane edge; roll blocking the only roof access hatch; person within 2 m of flat roof edge with no harness. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   ravalement:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person leaning out past scaffold guardrail over the void; scaffold platform above 2 m with no guardrail; unsupported plank bridging two scaffold frames. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   // peinture — skipped: indoor low-risk, forbidden[] covers edge cases
