@@ -161,8 +161,8 @@
       "service_label": "Démoussage toiture",
       "normalized_service": "demoussage toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
-      "matched_regex": "demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
+      "routing_detail": "matched _for: demoussa|brossage|nettoyage.*toit",
+      "matched_regex": "demoussa|brossage|nettoyage.*toit",
       "fallback_used": false,
       "before_fix": null,
       "after_fix": null
@@ -172,8 +172,8 @@
       "service_label": "Nettoyage toiture",
       "normalized_service": "nettoyage toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
-      "matched_regex": "demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
+      "routing_detail": "matched _for: demoussa|brossage|nettoyage.*toit",
+      "matched_regex": "demoussa|brossage|nettoyage.*toit",
       "fallback_used": false,
       "before_fix": "PARTIAL_CONTEXTE",
       "after_fix": "ROUTED_TO_SPECIFIC_SCENE"
@@ -194,8 +194,8 @@
       "service_label": "Nettoyage mousse toiture",
       "normalized_service": "nettoyage mousse toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
-      "matched_regex": "demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
+      "routing_detail": "matched _for: demoussa|brossage|nettoyage.*toit",
+      "matched_regex": "demoussa|brossage|nettoyage.*toit",
       "fallback_used": false,
       "before_fix": null,
       "after_fix": null
@@ -216,8 +216,8 @@
       "service_label": "Traitement anti-mousse toiture",
       "normalized_service": "traitement anti-mousse toiture",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
-      "matched_regex": "demoussa|mousse.*toit|nettoy.*mousse|brossage|nettoyage.*toit",
+      "routing_detail": "matched _for: anti.mousse",
+      "matched_regex": "anti.mousse",
       "fallback_used": false,
       "before_fix": null,
       "after_fix": null
