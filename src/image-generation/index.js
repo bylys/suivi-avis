@@ -270,7 +270,7 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofScenesTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofScenesTests, roofPRTests] = await Promise.all([
     import('./debug/runtime-tests.js'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
@@ -280,6 +280,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/vitrier-contracts-tests.js'),
     import('./debug/vitrier-scenes-tests.js?v=7'),
     import('./debug/roof-cluster-scenes-tests.js?v=3'),
+    import('./debug/roof-cluster-pr-tests.js?v=3'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult     = await runtimeTests.runRuntimeTests();
@@ -295,7 +296,8 @@ if (_params.get('imageGenTests') === '1') {
   window._runVitrierContractsTests    = vitrierContractsTests.runVitrierContractsTests;
   window._runVitrierScenesTests       = vitrierScenesTests.runVitrierScenesTests;
   window._runRoofClusterScenesTests   = roofScenesTests.runRoofClusterScenesTests;
-  console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofClusterScenesTests()');
+  window._runRoofPRTests              = roofPRTests.runRoofPRTests;
+  console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofClusterScenesTests(), _runRoofPRTests()');
 }
 
 console.info('[IMAGE MODULE 7C] Modular API active and ready');
