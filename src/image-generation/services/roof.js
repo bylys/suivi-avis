@@ -773,8 +773,65 @@ export const SITE_REALISM_ROOF = {
       // Subtle wet/satiny difference between treated and untreated tiles — NOT a dramatic color change.
       // Camera: ordinary homeowner smartphone from garden/driveway (NOT contractor POV, NOT from roof).
       // TWO WORKERS: Worker 1 on secured elevated access applying product; Worker 2 at access foot.
+      // ENCOURS micro-test route: hydrofuge + encours + maison_individuelle → MEWP (state_lock).
       {
-        _for:          'hydrofuge|traitement.*hydrofuge',
+        _for:                         'hydrofuge|traitement.*hydrofuge',
+        _state_for:                   'encours',
+        _access_configuration:        'MEWP',
+        _access_configuration_source: 'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'homeowner smartphone photo of hydrofuge waterproofing treatment being applied to an already-clean pitched roof using a Mobile Elevated Work Platform (MEWP) — two professionals clearly visible: Worker 1 fully inside the elevated MEWP basket, behind the basket guardrails, applying hydrofuge product toward the clean tiles from inside the protected basket — Worker 1 is entirely inside the basket, NOT standing freely on roof tiles — Worker 2 visible beside the MEWP at the ground controls, monitoring the operation and managing the hose or equipment — tiles clean and naturally aged, small barely-satiny zone where product has been applied — photo from the garden or driveway, slightly imperfect framing',
+        scene_camera:  'ordinary homeowner smartphone from the garden or driveway, 8–15 m from the house, looking at the clean roof and MEWP alongside it — mild digital zoom, slightly imperfect framing — workers naturally off-centre and not facing the camera — MEWP basket with guardrails and visible boom clearly visible beside the eave — customer-accessible ground-level viewpoint',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'driveway or garden at the foot of the house — MEWP wheeled base on firm flat ground, outrigger pads stabilising the machine — Worker 2 at the ground-level MEWP controls, monitoring the operation and managing the hose or equipment, outside the falling-material zone',
+          midground:  'MEWP boom extended alongside the roof eave — Worker 1 fully inside the basket with visible guardrails, applying hydrofuge product toward the clean tile surface — boom clearly connected physically to the basket — tiles clean and naturally aged, small barely-satiny zone where product has been applied',
+          background: 'ridge line, pale sky above, chimney or neighbouring rooftops',
+        },
+        scene_debris:  'hydrofuge runoff in the tarp fold below the eave — no moss, no scraped material',
+        scene_exclude: [
+          'no scaffold for this fixed MEWP test route',
+          'no hooked roof ladder as primary working platform for this route',
+          'no worker on roof tiles',
+          'no floating basket without visible boom connection to the machine base',
+          'no basket without visible guardrails on the sides',
+          'no worker outside the basket at roof height',
+          'worker freely standing on roof tiles',
+          'worker stepping out of the basket onto the roof tiles',
+          'thick green moss on the tile surface', 'stiff broom scraping',
+          'pressure washing jet', 'new tiles', 'concrete mixer',
+          'dramatic black-to-orange tile colour change',
+          'single worker performing active roof treatment alone',
+          'camera from the roof surface', 'camera beside the roofer',
+          'contractor facing the camera', 'contractor centred in the frame',
+          'no logo', 'no watermark', 'no readable company branding',
+          'educational before-and-after split composition',
+        ],
+        tools: [
+          'MEWP with extending boom — basket with visible guardrails at eave level, boom clearly connected to the basket',
+          'MEWP wheeled base on firm flat ground with outrigger pads stabilising the machine',
+          'lance or spray nozzle in Worker 1\'s hands directing hydrofuge at the clean tile surface from inside the basket — Worker 1 NOT standing freely on roof tiles',
+          'product hose trailing from Worker 1 inside the basket down to the product container at the MEWP base',
+        ],
+        protections: [
+          'MEWP basket with guardrails on all sides — Worker 1 completely inside the basket, NOT standing freely on roof tiles',
+          'MEWP extending boom clearly visible below the basket — physically connected to the machine base',
+          'outrigger pads stabilising the MEWP base on firm flat ground',
+          'Worker 2 at MEWP ground controls — outside the falling-material zone',
+          'protective tarp visible below the eave edge at the base of the house',
+        ],
+        chantier_details: [
+          'tile surface clean and naturally aged — no moss, no biological growth visible',
+          'MEWP basket with guardrails positioned alongside the eave — Worker 1 fully inside the basket',
+          'MEWP boom visible extending from the wheeled base to the basket at eave level',
+          'small barely-satiny zone visible where product has been applied — subtle, not dramatic',
+          'two professionals with distinct roles: Worker 1 applying treatment from MEWP basket, Worker 2 at ground controls',
+        ],
+      },
+      {
+        _for:                         'hydrofuge|traitement.*hydrofuge',
+        _access_configuration:        'LADDER_AND_SECURED_ROOF_LADDER',
+        _access_configuration_randomized: false,
         scene_note:    'homeowner smartphone photo of hydrofuge waterproofing treatment being applied to an already-clean pitched roof — two professionals visible — complete two-ladder access system: extension ladder with standoff stabiliser leaning against the wall below the eave (arms of the standoff on the wall NOT on the gutter) giving Worker 1 access to the roof; secured hooked roof ladder lying flat along the tile slope (hooks over the ridge) as Worker 1\'s working platform — Worker 1 positioned on the hooked roof ladder, NOT standing freely on the tiles, fall-arrest harness worn with connected lanyard leading to the ridge anchor — Worker 2 at the foot of the extension ladder managing the product hose — small area of tiles slightly darker and more satiny where hydrofuge has been applied — difference is subtle, like slightly damp stone — no moss, no dramatic colour change — photo taken from the garden or driveway while work is in progress',
         scene_camera:  'ordinary homeowner smartphone from the garden or driveway, 8–15 m from the house, looking up at the roof — mild digital zoom, slightly imperfect framing — workers naturally off-centre and not facing the camera — customer-accessible ground-level viewpoint — both ladders and fall-arrest harness visible from this distance',
         scene_framing: {
@@ -823,7 +880,9 @@ export const SITE_REALISM_ROOF = {
         ],
       },
       {
-        _for:          'hydrofuge|traitement.*hydrofuge',
+        _for:                         'hydrofuge|traitement.*hydrofuge',
+        _access_configuration:        'LADDER_AND_SECURED_ROOF_LADDER',
+        _access_configuration_randomized: false,
         scene_note:    'homeowner photo from an upstairs window or adjacent terrace looking down at the clean roof during hydrofuge application — two professionals visible from above with complete two-ladder access system: extension ladder with standoff leaning against the wall below the eave (standoff arms on wall NOT on gutter), secured hooked roof ladder lying flat along the tile slope with hooks over the ridge — Worker 1 positioned on the hooked roof ladder, NOT freely on the tiles, harness visible with lanyard leading to the ridge anchor — Worker 2 visible near the extension ladder base managing the hose — small zone of tiles slightly damp or satiny where product has passed — photo slightly cropped, part of window frame or balcony railing at the edge',
         scene_camera:  'homeowner looking down from an upstairs window, balcony or adjacent elevated terrace — slightly downward angle, mild digital zoom, part of window frame or railing may appear at the image border — workers below and off-centre, not facing the camera — both ladders visible from this elevated viewpoint',
         scene_framing: {
@@ -866,7 +925,9 @@ export const SITE_REALISM_ROOF = {
         ],
       },
       {
-        _for:          'hydrofuge|traitement.*hydrofuge',
+        _for:                         'hydrofuge|traitement.*hydrofuge',
+        _access_configuration:        'LADDER_AND_SECURED_ROOF_LADDER',
+        _access_configuration_randomized: false,
         scene_note:    'homeowner photo from the garden after hydrofuge application is complete — two professionals packing up the complete two-ladder access system: hooked roof ladder still lying flat on the slope with hooks over the ridge as Worker 1 descends — Worker 1 descending the hooked roof ladder, not standing freely on the tiles — extension ladder with standoff still leaning against the wall — Worker 1 at the eave level or beginning descent, Worker 2 gathering the hose and product container at the house base — the clean roof looks essentially the same colour as before, with just a subtle even dampness — no dramatic colour change',
         scene_camera:  'ordinary homeowner smartphone from the garden or driveway, 8–12 m from the house, looking up at the roof — mild digital zoom, slightly imperfect framing, both workers and both ladders visible at the house',
         scene_framing: {
@@ -913,8 +974,12 @@ export const SITE_REALISM_ROOF = {
       // Worker 1 MUST NOT stand freely on wet moss-covered tiles.
       // MEWP: Worker 1 completely inside basket with guardrails, Worker 2 at ground controls.
       // SCAFFOLD: Worker 1 on guardrailed upper platform, Worker 2 on lower platform or at base.
+      // ENCOURS micro-test route: anti-mousse + encours + maison_individuelle → SCAFFOLD (state_lock).
       {
-        _for:          'anti.mousse',
+        _for:                         'anti.mousse',
+        _access_configuration:        'MEWP',
+        _access_configuration_source: 'priority',
+        _access_configuration_randomized: false,
         scene_note:    'homeowner smartphone photo of anti-moss biocide being applied to a heavily mossy pitched roof using a Mobile Elevated Work Platform (MEWP) — two professionals clearly visible: Worker 1 completely inside the MEWP basket with visible guardrails on all sides, extending boom clearly visible below the basket, directing a lance at the mossy tiles from inside the protected basket — Worker 1 is entirely inside the basket, NOT on the roof tiles — Worker 2 at the MEWP ground controls managing boom elevation and machine position, outside the falling-material zone — moss clearly still present as the dominant subject, small irregular damp patch visible around the nozzle — photo from the garden or driveway, slightly imperfect framing',
         scene_camera:  'ordinary homeowner smartphone from the garden or driveway, 8–15 m from the house, looking at the mossy roof and MEWP alongside it — mild digital zoom, slightly imperfect framing — workers naturally off-centre and not facing the camera — MEWP basket with guardrails clearly visible beside the eave — customer-accessible ground-level viewpoint',
         scene_framing: {
@@ -962,7 +1027,11 @@ export const SITE_REALISM_ROOF = {
         ],
       },
       {
-        _for:          'anti.mousse',
+        _for:                         'anti.mousse',
+        _state_for:                   'encours',
+        _access_configuration:        'SCAFFOLD',
+        _access_configuration_source: 'state_lock',
+        _access_configuration_randomized: false,
         scene_note:    'homeowner smartphone photo of anti-moss biocide being applied to a heavily mossy pitched roof using scaffold access — two professionals clearly visible: Worker 1 standing on the upper scaffold platform beside the roof eave with a visible guardrail on the open side, directing a lance at the mossy tiles from the platform — Worker 1 is on the scaffold platform, NOT on the roof tiles — Worker 2 on a lower scaffold platform or at the scaffold base managing the product hose and supervising — moss clearly still present as the dominant subject, small irregular damp patches where biocide has been applied — photo from the garden or driveway, slightly imperfect framing',
         scene_camera:  'ordinary homeowner smartphone from the garden or driveway, 8–15 m from the house, looking at the mossy roof and scaffold structure alongside it — mild digital zoom, slightly imperfect framing — both workers visible on the scaffold at their respective levels — scaffold guardrail clearly visible on the upper platform — customer-accessible ground-level viewpoint',
         scene_framing: {
@@ -973,6 +1042,12 @@ export const SITE_REALISM_ROOF = {
         },
         scene_debris:  'no scraped moss on the ground — moss still firmly attached to tiles, slight biocide drips on the lower tarp fold below the eave',
         scene_exclude: [
+          'no MEWP for this fixed scaffold test route',
+          'no roof-ladder worker on the slope as primary working position',
+          'no ordinary access ladder as primary work position for anti-moss treatment',
+          'no worker on roof tiles',
+          'no incomplete scaffold structure',
+          'no scaffold upper platform without guardrails',
           'worker stepping from the scaffold platform onto the roof tiles',
           'worker freely standing on mossy tiles without scaffold or MEWP',
           'scaffold upper platform without visible guardrail on the open side',

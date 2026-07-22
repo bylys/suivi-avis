@@ -1,6 +1,7 @@
 /**
- * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS34
+ * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS60
  * Worker safety, elevated access, and 2-worker crew rules for roof and gutter clusters.
+ * Includes deterministic micro-test route verification (RS52–RS60).
  * Loaded only when ?imageGenTests=1 is in the URL.
  * No real API calls — all tests are static/structural.
  */
@@ -755,24 +756,26 @@ export async function runRoofWorkerSafetyTests() {
 
   // ─── RTG-RS46 : ladder config includes secured hooked roof ladder ─────────────
 
-  runTest('RTG-RS46', 'Ladder config includes secured hooked roof ladder with hooks over the ridge', () => {
+  runTest('RTG-RS46', 'LADDER_AND_SECURED_ROOF_LADDER hydrofuge scenarios reference hooked roof ladder over the ridge', () => {
     const ladderScenarios = (SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [])
-      .filter(s => s._for && /hydrofuge/i.test(s._for));
+      .filter(s => s._for && /hydrofuge/i.test(s._for))
+      .filter(s => s._access_configuration !== 'MEWP');
+    assert(ladderScenarios.length >= 1, 'At least 1 LADDER_AND_SECURED_ROOF_LADDER hydrofuge scenario must exist');
     ladderScenarios.forEach(sc => {
       const tools = (sc.tools || []).join(' ').toLowerCase();
       const note = (sc.scene_note || '').toLowerCase();
       const combined = tools + ' ' + note;
-      assert(textContainsAny(combined, ['hooked roof ladder', 'hooked roof']), `Hydrofuge scenario must reference secured hooked roof ladder`);
-      assert(textContainsAny(combined, ['hooks over the ridge', 'hooks over ridge']), `Hydrofuge scenario must specify hooks over the ridge`);
+      assert(textContainsAny(combined, ['hooked roof ladder', 'hooked roof']), `Hydrofuge LADDER scenario must reference secured hooked roof ladder`);
+      assert(textContainsAny(combined, ['hooks over the ridge', 'hooks over ridge']), `Hydrofuge LADDER scenario must specify hooks over the ridge`);
     });
   });
 
-  // ─── RTG-RS47 : worker remains on roof ladder, not freely on tiles ────────────
+  // ─── RTG-RS47 : worker is not freely standing on tiles (ladder or MEWP) ───────
 
-  runTest('RTG-RS47', 'Worker remains on the hooked roof ladder, not freely on the tiles', () => {
-    const ladderScenarios = (SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [])
+  runTest('RTG-RS47', 'Worker is not freely standing on tiles in any hydrofuge scenario (LADDER or MEWP)', () => {
+    const hydroScenarios = (SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [])
       .filter(s => s._for && /hydrofuge/i.test(s._for));
-    ladderScenarios.forEach(sc => {
+    hydroScenarios.forEach(sc => {
       const tools = (sc.tools || []).join(' ').toLowerCase();
       const protections = (sc.protections || []).join(' ').toLowerCase();
       const note = (sc.scene_note || '').toLowerCase();
@@ -781,22 +784,25 @@ export async function runRoofWorkerSafetyTests() {
         'not standing freely on the tiles', 'not freely on tiles', 'not standing freely',
         'not freely standing on', 'working platform on the slope',
         'worker 1\'s working platform', 'positioned on the hooked roof ladder',
+        'inside the basket', 'not on roof tiles', 'completely inside the basket',
       ]);
-      assert(hasNotFreelyOnTiles, `Hydrofuge scenario must explicitly state Worker 1 is on the hooked roof ladder, not freely on tiles`);
+      assert(hasNotFreelyOnTiles, `Hydrofuge scenario "${sc._access_configuration || sc._for}" must state Worker 1 is secured (on ladder, in basket) — not freely on tiles`);
     });
   });
 
-  // ─── RTG-RS48 : harness and lifeline visibly connect to a credible anchor ──────
+  // ─── RTG-RS48 : ladder hydrofuge scenarios have harness, lanyard, anchor ───────
 
-  runTest('RTG-RS48', 'Harness and lifeline visibly connect to a credible anchor', () => {
+  runTest('RTG-RS48', 'LADDER_AND_SECURED_ROOF_LADDER hydrofuge scenarios reference harness, lanyard and anchor', () => {
     const ladderScenarios = (SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [])
-      .filter(s => s._for && /hydrofuge/i.test(s._for));
+      .filter(s => s._for && /hydrofuge/i.test(s._for))
+      .filter(s => s._access_configuration !== 'MEWP');
+    assert(ladderScenarios.length >= 1, 'At least 1 non-MEWP hydrofuge scenario must exist');
     ladderScenarios.forEach(sc => {
       const combined = (sc.tools || []).concat(sc.protections || []).join(' ').toLowerCase();
       const hasHarness = textContains(combined, 'harness');
       const hasLanyard = textContains(combined, 'lanyard');
       const hasAnchor = textContains(combined, 'anchor');
-      assert(hasHarness && hasLanyard && hasAnchor, `Hydrofuge scenario tools/protections must reference harness, connected lanyard, and credible anchor as separate visible elements`);
+      assert(hasHarness && hasLanyard && hasAnchor, `Hydrofuge LADDER scenario tools/protections must reference harness, connected lanyard, and credible anchor as separate visible elements`);
     });
   });
 
@@ -854,6 +860,189 @@ export async function runRoofWorkerSafetyTests() {
       textContainsAny(resultHydro, ['ordinary ladder', 'an ordinary ladder']),
       'Locked prompt for hydrofuge must explicitly state an ordinary ladder is not fall protection'
     );
+  });
+
+  // ─── helper: deterministic scenario resolution for encours micro-test ─────────
+
+  function _resolveEncoursMicroTestScenario(scenarios, serviceLabel, state) {
+    const labelLower = serviceLabel.toLowerCase();
+    return scenarios.find(sc => {
+      if (!sc._for) return false;
+      try { if (!new RegExp(sc._for, 'i').test(labelLower)) return false; } catch { return false; }
+      if (Array.isArray(sc._state_for)) return sc._state_for.includes(state);
+      return sc._state_for === state;
+    }) || null;
+  }
+
+  // ─── RTG-RS52 : anti-mousse encours resolves to SCAFFOLD ──────────────────────
+
+  runTest('RTG-RS52', 'Anti-moss encours maison_individuelle resolves deterministically to SCAFFOLD', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const resolved = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
+    assert(resolved, 'A state-locked scenario must exist for anti-mousse + encours');
+    assert(resolved._access_configuration === 'SCAFFOLD',
+      `Anti-moss encours must resolve to SCAFFOLD, got: ${resolved._access_configuration}`);
+  });
+
+  // ─── RTG-RS53 : hydrofuge encours resolves to MEWP ───────────────────────────
+
+  runTest('RTG-RS53', 'Hydrofuge encours maison_individuelle resolves deterministically to MEWP', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const resolved = _resolveEncoursMicroTestScenario(scenarios, 'traitement hydrofuge toiture', 'encours');
+    assert(resolved, 'A state-locked scenario must exist for hydrofuge + encours');
+    assert(resolved._access_configuration === 'MEWP',
+      `Hydrofuge encours must resolve to MEWP, got: ${resolved._access_configuration}`);
+  });
+
+  // ─── RTG-RS54 : neither micro-test route resolves to LADDER ───────────────────
+
+  runTest('RTG-RS54', 'Neither micro-test route resolves to LADDER_AND_SECURED_ROOF_LADDER', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const anti = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
+    const hydro = _resolveEncoursMicroTestScenario(scenarios, 'traitement hydrofuge toiture', 'encours');
+    assert(anti?._access_configuration !== 'LADDER_AND_SECURED_ROOF_LADDER',
+      'Anti-moss encours must not resolve to LADDER_AND_SECURED_ROOF_LADDER');
+    assert(hydro?._access_configuration !== 'LADDER_AND_SECURED_ROOF_LADDER',
+      'Hydrofuge encours must not resolve to LADDER_AND_SECURED_ROOF_LADDER');
+  });
+
+  // ─── RTG-RS55 : access configuration not randomized ───────────────────────────
+
+  runTest('RTG-RS55', 'Access configuration is not randomized for the two micro-test routes', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const anti = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
+    const hydro = _resolveEncoursMicroTestScenario(scenarios, 'traitement hydrofuge toiture', 'encours');
+    assert(anti?._access_configuration_randomized === false,
+      'Anti-moss encours _access_configuration_randomized must be false');
+    assert(hydro?._access_configuration_randomized === false,
+      'Hydrofuge encours _access_configuration_randomized must be false');
+  });
+
+  // ─── RTG-RS56 : anti-moss prompt describes two distinct scaffold workers ───────
+
+  runTest('RTG-RS56', 'Anti-moss locked_final_prompt describes two distinct scaffold workers', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const resolved = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
+    assert(resolved, 'Anti-moss encours scenario must exist');
+    const combined = [
+      resolved.scene_note || '',
+      ...(resolved.tools || []),
+      ...(resolved.protections || []),
+      ...(resolved.chantier_details || []),
+    ].join(' ').toLowerCase();
+    assert(textContains(combined, 'worker 1'), 'Anti-moss encours must describe Worker 1');
+    assert(textContains(combined, 'worker 2'), 'Anti-moss encours must describe Worker 2');
+    assert(textContainsAny(combined, ['scaffold platform', 'upper platform', 'guardrailed platform', 'scaffold upper']),
+      'Anti-moss encours must describe Worker 1 on scaffold platform with guardrails');
+    assert(textContainsAny(combined, ['lower scaffold', 'scaffold base', 'scaffold base managing', 'lower level']),
+      'Anti-moss encours must describe Worker 2 at lower scaffold level or base');
+    const mockScene = {
+      var_workers: 2, var_presence: 'workers', _matched_key: 'nettoyage_toiture',
+      _matched_service: 'Traitement anti-mousse toiture', composition: 'medium_intervention',
+      _capture_defects_resolved: [],
+    };
+    const result = _appendLockedFinalConstraints('TEST PROMPT', mockScene);
+    assert(textContains(result, 'NON-NEGOTIABLE ELEVATED ACCESS'), 'Locked prompt must contain elevated access block');
+    assert(textContains(result, '2 workers'), 'Locked prompt must mandate 2 workers');
+  });
+
+  // ─── RTG-RS57 : hydrofuge prompt describes basket worker and ground-control worker ─
+
+  runTest('RTG-RS57', 'Hydrofuge locked_final_prompt describes basket worker and ground-control worker', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const resolved = _resolveEncoursMicroTestScenario(scenarios, 'traitement hydrofuge toiture', 'encours');
+    assert(resolved, 'Hydrofuge encours scenario must exist');
+    const combined = [
+      resolved.scene_note || '',
+      ...(resolved.tools || []),
+      ...(resolved.protections || []),
+      ...(resolved.chantier_details || []),
+    ].join(' ').toLowerCase();
+    assert(textContains(combined, 'worker 1'), 'Hydrofuge encours must describe Worker 1');
+    assert(textContains(combined, 'worker 2'), 'Hydrofuge encours must describe Worker 2');
+    assert(textContainsAny(combined, ['inside the basket', 'fully inside', 'completely inside']),
+      'Hydrofuge encours must describe Worker 1 fully inside the MEWP basket');
+    assert(textContainsAny(combined, ['ground control', 'mewp control', 'ground-level mewp', 'mewp ground']),
+      'Hydrofuge encours must describe Worker 2 at MEWP ground controls');
+    const mockScene = {
+      var_workers: 2, var_presence: 'workers', _matched_key: 'nettoyage_toiture',
+      _matched_service: 'Traitement hydrofuge toiture', composition: 'medium_intervention',
+      _capture_defects_resolved: [],
+    };
+    const result = _appendLockedFinalConstraints('TEST PROMPT', mockScene);
+    assert(textContains(result, 'NON-NEGOTIABLE ELEVATED ACCESS'), 'Locked prompt must contain elevated access block');
+    assert(textContains(result, '2 workers'), 'Locked prompt must mandate 2 workers');
+  });
+
+  // ─── RTG-RS58 : no worker on roof tiles in either micro-test route ────────────
+
+  runTest('RTG-RS58', 'No worker is positioned on roof tiles in either micro-test route', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const anti = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
+    const hydro = _resolveEncoursMicroTestScenario(scenarios, 'traitement hydrofuge toiture', 'encours');
+    [anti, hydro].forEach(sc => {
+      assert(sc, 'Scenario must exist for this micro-test route');
+      const combined = [
+        sc.scene_note || '',
+        ...(sc.scene_exclude || []),
+        ...(sc.protections || []),
+      ].join(' ').toLowerCase();
+      const noFreeTiles = textContainsAny(combined, [
+        'not on roof tiles', 'not standing freely on roof tiles', 'not on the roof tiles',
+        'worker freely on mossy tiles', 'no worker on roof tiles',
+        'not standing freely on the tiles', 'not freely on tiles',
+        'worker stepping from the scaffold platform onto the roof tiles',
+        'worker stepping out of the basket onto the roof tiles',
+      ]);
+      assert(noFreeTiles,
+        `Scenario for "${sc._access_configuration}" must forbid or negate worker freely on roof tiles`);
+    });
+  });
+
+  // ─── RTG-RS59 : treatment applied from elevated access, not by ground worker ───
+
+  runTest('RTG-RS59', 'Treatment is applied from elevated access, not by the ground worker', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const anti = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
+    const hydro = _resolveEncoursMicroTestScenario(scenarios, 'traitement hydrofuge toiture', 'encours');
+    [anti, hydro].forEach(sc => {
+      assert(sc, 'Scenario must exist');
+      const note = (sc.scene_note || '').toLowerCase();
+      const hasElevatedTreatment = textContainsAny(note, [
+        'directing a lance', 'applying', 'from inside the basket', 'from inside the protected basket',
+        'from the platform', 'from the scaffold', 'from the scaffold platform',
+        'worker 1', 'treatment toward',
+      ]);
+      assert(hasElevatedTreatment,
+        `Scenario "${sc._access_configuration}" must describe treatment applied by Worker 1 from elevated access`);
+      const groundWorkerApplies = textContainsAny(note, [
+        'worker 2 applying', 'worker 2 directing', 'worker 2 spraying', 'worker 2 treating',
+      ]);
+      assert(!groundWorkerApplies,
+        `Scenario "${sc._access_configuration}" must not have Worker 2 performing the treatment`);
+    });
+  });
+
+  // ─── RTG-RS60 : customer smartphone perspective remains after locked constraints ─
+
+  runTest('RTG-RS60', 'Customer smartphone perspective remains present after locked constraints are appended', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const anti = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
+    const hydro = _resolveEncoursMicroTestScenario(scenarios, 'traitement hydrofuge toiture', 'encours');
+    [anti, hydro].forEach(sc => {
+      assert(sc, 'Scenario must exist');
+      const camera = (sc.scene_camera || '').toLowerCase();
+      assert(textContainsAny(camera, ['smartphone', 'homeowner', 'garden', 'driveway']),
+        `Scenario "${sc._access_configuration}" must reference homeowner smartphone from garden/driveway`);
+    });
+    const mockScene = {
+      var_workers: 2, var_presence: 'workers', _matched_key: 'nettoyage_toiture',
+      _matched_service: 'Traitement anti-mousse toiture', composition: 'medium_intervention',
+      _capture_defects_resolved: [],
+    };
+    const result = _appendLockedFinalConstraints('TEST PROMPT', mockScene);
+    assert(textContainsAny(result, ['smartphone', 'handheld', 'documentary']),
+      'Locked prompt must preserve documentary smartphone style after elevated access block is added');
   });
 
   // ─── summary ──────────────────────────────────────────────────────────────────
