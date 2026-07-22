@@ -117,6 +117,8 @@ const WORKER_SCENE_RULES = {
       'person reaching far sideways off the ladder',
       'standing on the top two rungs of the ladder',
       'ground-level gutter vacuum or telescopic ground pole as the only access method',
+      'ground-level downpipe unblocking — worker crouching at the pipe base as primary access for active clearance',
+      'all workers at ground level for active downpipe unblocking — at least Worker 1 must be at eave height',
     ],
     presence_indirect: [
       'extending ladder with standoff footed against the house wall — gutter scoop resting in the trough at the top, no one climbing',

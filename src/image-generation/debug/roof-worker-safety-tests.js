@@ -1,5 +1,5 @@
 /**
- * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS32
+ * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS34
  * Worker safety, elevated access, and 2-worker crew rules for roof and gutter clusters.
  * Loaded only when ?imageGenTests=1 is in the URL.
  * No real API calls — all tests are static/structural.
@@ -332,19 +332,30 @@ export async function runRoofWorkerSafetyTests() {
     assert(hasForbidden, 'WORK_SCENES_ROOF.nettoyage_toiture exclusions must forbid telescopic ground pole');
   });
 
-  // ─── RTG-RS24 : no gutter service permits ground-level work ──────────────────
+  // ─── RTG-RS24 : no gutter service permits ground-level work (policy + resolved scenes) ──
 
-  runTest('RTG-RS24', 'No gutter service permits ground-level work', () => {
+  runTest('RTG-RS24', 'No gutter service permits ground-level work — policy and resolved scenes', () => {
+    // Policy layer
     const forbidden = FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres || [];
     const hasGroundForbidden = forbidden.some(f =>
-      textContainsAny(f, ['ground-level gutter', 'telescopic ground pole', 'ground level'])
+      textContainsAny(f, ['ground-level gutter', 'telescopic ground pole', 'ground level', 'ground-level downpipe'])
     );
     assert(hasGroundForbidden, 'FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres must forbid ground-level gutter work');
+    // Resolved scene layer — no active scenario description should say both workers are at ground level
+    const allScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []);
+    const activeScenarios = allScenarios.filter(s => s._for);
+    activeScenarios.forEach(sc => {
+      const note = (sc.scene_note || '').toLowerCase();
+      const details = (sc.chantier_details || []).join(' ').toLowerCase();
+      const hasBothGroundLevel = (textContains(note, 'both workers at ground level') || textContains(details, 'both workers at ground level') || textContains(note, 'two professionals at ground level') || textContains(details, 'two professionals at ground level'));
+      assert(!hasBothGroundLevel, `Gutter scenario "${sc._for}" must not describe both workers at ground level for active work`);
+    });
   });
 
-  // ─── RTG-RS25 : every active gutter scene uses ladder, scaffold, platform or MEWP
+  // ─── RTG-RS25 : every active gutter scene resolves to elevated professional access ──
 
-  runTest('RTG-RS25', 'Every active gutter scene uses ladder, scaffold, platform or MEWP', () => {
+  runTest('RTG-RS25', 'Every active gutter scene resolves to elevated professional access', () => {
+    // WORK_SCENES states
     const activeStates = ['debut', 'encours', 'semifinal'];
     activeStates.forEach(state => {
       const stateData = WORK_SCENES_ROOF.nettoyage_gouttieres?.states?.[state];
@@ -353,11 +364,24 @@ export async function runRoofWorkerSafetyTests() {
       const hasAccess = textContainsAny(midground, ['ladder', 'scaffold', 'platform', 'mewp', 'standoff']);
       assert(hasAccess, `nettoyage_gouttieres.states.${state}.midground must reference elevated access equipment`);
     });
+    // SITE_REALISM scenarios — Worker 1 must be on elevated access in every active scenario
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    assert(activeScenarios.length > 0, 'At least one active gutter scenario must exist');
+    activeScenarios.forEach(sc => {
+      const tools = (sc.tools || []).join(' ').toLowerCase();
+      const note = (sc.scene_note || '').toLowerCase();
+      const midground = (sc.scene_framing?.midground || '').toLowerCase();
+      const hasElevated = textContainsAny(tools + ' ' + note + ' ' + midground, [
+        'ladder', 'standoff', 'scaffold', 'mewp', 'elevated platform'
+      ]);
+      assert(hasElevated, `Gutter scenario "${sc._for}" tools/note/framing must reference elevated access (ladder, standoff, scaffold, MEWP)`);
+    });
   });
 
-  // ─── RTG-RS26 : gutter ladders always include a visible standoff ──────────────
+  // ─── RTG-RS26 : gutter ladders always include a visible standoff (policy + resolved) ──
 
   runTest('RTG-RS26', 'Gutter ladders always include a visible standoff', () => {
+    // Policy layer
     const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
     const accessStr = (rules.access || []).join(' ').toLowerCase();
     assert(textContains(accessStr, 'standoff'), 'WORKER_SCENE_RULES.nettoyage_gouttieres.access must reference standoff');
@@ -365,11 +389,23 @@ export async function runRoofWorkerSafetyTests() {
     assert(textContains(safetyStr, 'standoff'), 'WORKER_SCENE_RULES.nettoyage_gouttieres.safety_required must reference standoff');
     const toolsStr = (SITE_REALISM_ROOF.nettoyage_gouttieres?.tools || []).join(' ').toLowerCase();
     assert(textContains(toolsStr, 'standoff'), 'SITE_REALISM_ROOF.nettoyage_gouttieres.tools must reference standoff stabiliser');
+    // Resolved scene layer — each active scenario with ladder must reference standoff
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    activeScenarios.forEach(sc => {
+      const tools = (sc.tools || []).join(' ').toLowerCase();
+      const note = (sc.scene_note || '').toLowerCase();
+      const hasLadder = textContains(tools + note, 'ladder');
+      if (hasLadder) {
+        const hasStandoff = textContainsAny(tools + note, ['standoff', 'scaffold', 'mewp']);
+        assert(hasStandoff, `Gutter scenario "${sc._for}" has a ladder but no standoff/scaffold/MEWP reference`);
+      }
+    });
   });
 
-  // ─── RTG-RS27 : gutter ladders never contact the gutter channel ──────────────
+  // ─── RTG-RS27 : gutter ladders never contact the gutter channel (policy + resolved) ──
 
   runTest('RTG-RS27', 'Gutter ladders never contact the gutter channel', () => {
+    // Policy layer
     const gutterForbidden = FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres || [];
     const hasForbidden = gutterForbidden.some(f =>
       textContainsAny(f, ['gutter channel', 'touching gutter', 'inside the gutter'])
@@ -380,29 +416,61 @@ export async function runRoofWorkerSafetyTests() {
       textContainsAny(f, ['directly against the gutter', 'gutter channel'])
     );
     assert(hasWorkerForbidden, 'WORKER_SCENE_RULES.nettoyage_gouttieres.forbidden must forbid ladder against gutter');
+    // Resolved scene layer — every scenario must exclude ladder-on-gutter contact
+    // (broad match: any exclude entry that mentions both "ladder" and "gutter"/"channel")
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    activeScenarios.forEach(sc => {
+      const hasLadderOnGutterExclusion = (sc.scene_exclude || []).some(e => {
+        const el = e.toLowerCase();
+        return el.includes('ladder') && (el.includes('gutter') || el.includes('channel'));
+      });
+      assert(hasLadderOnGutterExclusion, `Gutter scenario "${sc._for}" scene_exclude must contain an entry forbidding ladder contact with the gutter or channel`);
+    });
   });
 
-  // ─── RTG-RS28 : active gutter scenes contain at least two visible workers ─────
+  // ─── RTG-RS28 : active gutter scenes resolve to at least two workers ───────────
 
-  runTest('RTG-RS28', 'Active gutter scenes contain at least two visible workers', () => {
+  runTest('RTG-RS28', 'Active gutter scenes resolve to at least two visible workers', () => {
+    // Policy layer
     const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
     assert(rules.min_workers_when_visible === 2, 'WORKER_SCENE_RULES.nettoyage_gouttieres.min_workers_when_visible must be 2');
     assert(rules.max_workers >= 2, 'WORKER_SCENE_RULES.nettoyage_gouttieres.max_workers must be >= 2');
+    // Resolved scene layer — every active scenario must mention two workers
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    activeScenarios.forEach(sc => {
+      const note = (sc.scene_note || '').toLowerCase();
+      const hasTwoWorkers = textContainsAny(note, ['worker 1', 'worker 2', 'two professionals']);
+      assert(hasTwoWorkers, `Gutter scenario "${sc._for}" scene_note must describe two workers (Worker 1, Worker 2, or two professionals)`);
+    });
   });
 
-  // ─── RTG-RS29 : gutter workers have distinct roles ───────────────────────────
+  // ─── RTG-RS29 : both gutter workers receive distinct resolved roles ────────────
 
-  runTest('RTG-RS29', 'Gutter workers have distinct roles', () => {
+  runTest('RTG-RS29', 'Both gutter workers have distinct resolved roles', () => {
+    // Policy layer
     const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
     const actionsStr = (rules.actions || []).join(' ').toLowerCase();
     const hasWorker1 = textContains(actionsStr, 'worker 1');
     const hasWorker2 = textContains(actionsStr, 'worker 2');
     assert(hasWorker1 && hasWorker2, 'WORKER_SCENE_RULES.nettoyage_gouttieres.actions must define distinct Worker 1 and Worker 2 roles');
+    // Resolved scene layer — each scenario must describe both workers with distinct roles
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    activeScenarios.forEach(sc => {
+      const note = (sc.scene_note || '').toLowerCase();
+      const details = (sc.chantier_details || []).join(' ').toLowerCase();
+      const combined = note + ' ' + details;
+      const hasDistinctRoles = (
+        (textContains(combined, 'worker 1') && textContains(combined, 'worker 2')) ||
+        (textContains(combined, 'two professionals') && textContains(combined, 'distinct'))
+      );
+      assert(hasDistinctRoles, `Gutter scenario "${sc._for}" must describe Worker 1 and Worker 2 with distinct roles`);
+    });
   });
 
-  // ─── RTG-RS30 : the second worker remains outside the falling-debris zone ─────
+  // ─── RTG-RS30 : Worker 2 remains outside the falling-debris zone in resolved scenes ─
 
-  runTest('RTG-RS30', 'The second worker remains outside the falling-debris zone', () => {
+  runTest('RTG-RS30', 'Worker 2 remains outside the falling-debris zone in resolved scenes', () => {
+    // Policy layer
     const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
     const forbidden = (rules.forbidden || []).join(' ').toLowerCase();
     const safetyStr = (rules.safety_required || []).join(' ').toLowerCase();
@@ -410,29 +478,110 @@ export async function runRoofWorkerSafetyTests() {
       'directly below', 'falling-debris zone', 'falling debris', 'falling-object zone'
     ]);
     assert(hasDebrisForbidden, 'nettoyage_gouttieres must forbid Worker 2 below falling-debris zone in forbidden or safety_required');
+    // Resolved scene layer — scenarios describing Worker 2 at the ladder base must not put them in the debris zone
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    activeScenarios.forEach(sc => {
+      const foreground = (sc.scene_framing?.foreground || '').toLowerCase();
+      const note = (sc.scene_note || '').toLowerCase();
+      const combined = foreground + ' ' + note;
+      const hasWorker2 = textContains(combined, 'worker 2');
+      if (hasWorker2) {
+        const outsideDebris = textContainsAny(combined, ['outside the falling', 'not directly below', 'beside worker', 'outside the zone', 'away from']);
+        assert(outsideDebris, `Gutter scenario "${sc._for}" must place Worker 2 outside the falling-debris zone`);
+      }
+    });
   });
 
-  // ─── RTG-RS31 : no telescopic ground pole or gutter vacuum appears ────────────
+  // ─── RTG-RS31 : no ground pole or vacuum survives in resolved scenarios ─────────
 
-  runTest('RTG-RS31', 'No telescopic ground pole or ground gutter vacuum appears', () => {
+  runTest('RTG-RS31', 'No telescopic ground pole or ground gutter vacuum appears in resolved scenarios', () => {
+    // Policy layer
     const forbidden = FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres || [];
     const hasForbidden = forbidden.some(f =>
-      textContainsAny(f, ['telescopic ground pole', 'ground-level gutter vacuum', 'ground gutter'])
+      textContainsAny(f, ['telescopic ground pole', 'ground-level gutter vacuum', 'ground gutter', 'ground level'])
     );
     assert(hasForbidden, 'FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres must forbid telescopic ground pole and ground-level vacuum');
     const workerForbidden = (WORKER_SCENE_RULES.nettoyage_gouttieres?.forbidden || []).join(' ').toLowerCase();
     const hasWorkerForbidden = textContainsAny(workerForbidden, ['ground-level', 'telescopic ground']);
     assert(hasWorkerForbidden, 'WORKER_SCENE_RULES.nettoyage_gouttieres.forbidden must forbid ground-level gutter work');
+    // Resolved scene layer — no scenario tools should mention a telescopic ground pole or vacuum
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    activeScenarios.forEach(sc => {
+      const tools = (sc.tools || []).join(' ').toLowerCase();
+      const hasBadTool = textContainsAny(tools, ['telescopic pole', 'gutter vacuum', 'ground-level vacuum', 'gutter gutter vacuum']);
+      assert(!hasBadTool, `Gutter scenario "${sc._for}" tools must not include telescopic ground pole or gutter vacuum`);
+    });
   });
 
-  // ─── RTG-RS32 : final gutter state may contain fewer than two workers ─────────
+  // ─── RTG-RS32 : final gutter state may contain fewer workers only without active work ─
 
-  runTest('RTG-RS32', 'Final gutter state may contain fewer than two workers', () => {
+  runTest('RTG-RS32', 'Final gutter state may contain fewer workers only without active work', () => {
     const finalState = WORK_SCENES_ROOF.nettoyage_gouttieres?.states?.final;
     assert(finalState, 'WORK_SCENES_ROOF.nettoyage_gouttieres.states.final must exist');
     const finalDesc = (finalState.description || '').toLowerCase();
     const isCompletionScene = textContainsAny(finalDesc, ['complete', 'clear', 'clean']);
     assert(isCompletionScene, 'Final gutter state must describe completion (clean, clear, complete) — 0-1 workers acceptable');
+    // Verify final state does NOT mandate two active workers in framing
+    const finalMidground = (finalState.framing?.midground || '').toLowerCase();
+    const hasActiveWork = textContainsAny(finalMidground, ['worker 1 on ladder', 'worker 2 at the base actively', 'two professionals working']);
+    assert(!hasActiveWork, 'Final gutter state must not describe two workers actively working (completion scene)');
+  });
+
+  // ─── RTG-RS33 : downpipe unblocking cannot be performed from ground level ─────
+
+  runTest('RTG-RS33', 'Downpipe unblocking cannot be performed from ground level', () => {
+    // Policy layer
+    const forbidden = FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres || [];
+    const hasGroundPipeForbidden = forbidden.some(f =>
+      textContainsAny(f, ['ground-level downpipe', 'crouching at the downpipe', 'pipe base as primary'])
+    );
+    assert(hasGroundPipeForbidden, 'FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres must forbid ground-level downpipe unblocking');
+    const workerForbidden = (WORKER_SCENE_RULES.nettoyage_gouttieres?.forbidden || []).join(' ').toLowerCase();
+    assert(textContains(workerForbidden, 'ground-level downpipe'), 'WORKER_SCENE_RULES.nettoyage_gouttieres.forbidden must forbid ground-level downpipe unblocking');
+    // Resolved scene layer — all débouchage scenarios must have Worker 1 on elevated access
+    const debouchageScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || [])
+      .filter(s => s._for && /deboucha|bouchon|obstruct/i.test(s._for));
+    assert(debouchageScenarios.length >= 1, 'At least 1 débouchage scenario must exist');
+    debouchageScenarios.forEach(sc => {
+      const tools = (sc.tools || []).join(' ').toLowerCase();
+      const note = (sc.scene_note || '').toLowerCase();
+      const midground = (sc.scene_framing?.midground || '').toLowerCase();
+      const combined = tools + ' ' + note + ' ' + midground;
+      // Must have elevated access
+      const hasElevatedAccess = textContainsAny(combined, ['ladder', 'standoff', 'scaffold', 'mewp']);
+      assert(hasElevatedAccess, `Débouchage scenario "${sc._for}" must reference elevated access (ladder/standoff/scaffold/MEWP) — ground-only work is forbidden`);
+      // Must not say both workers are at ground level for active rod work
+      const hasBothGroundActive = textContains(combined, 'both workers at ground level') || textContains(combined, 'two professionals at ground level');
+      assert(!hasBothGroundActive, `Débouchage scenario "${sc._for}" must not place both workers at ground level for active clearance`);
+      // Must exclude ground-level downpipe feeding
+      const excludes = (sc.scene_exclude || []).join(' ').toLowerCase();
+      const hasForbiddenGroundPipe = textContainsAny(excludes, ['crouching at the downpipe base', 'ground-level downpipe', 'worker at the downpipe base as the only']);
+      assert(hasForbiddenGroundPipe, `Débouchage scenario "${sc._for}" scene_exclude must forbid worker crouching at the downpipe base for active clearance`);
+    });
+  });
+
+  // ─── RTG-RS34 : all five catalog gutter services satisfy the elevated-access rule ─
+
+  runTest('RTG-RS34', 'All five catalog gutter services satisfy the elevated-access rule', () => {
+    const GUTTER_SERVICES = [
+      { label: 'nettoyage gouttières',   forPattern: /nettoy|entretien|curag|debris|feuill/ },
+      { label: 'débouchage gouttières',  forPattern: /deboucha|bouchon|obstruct/ },
+      { label: 'remplacement gouttières',forPattern: /remplace|pose|install|neuf|nouveau/ },
+      { label: 'entretien gouttières',   forPattern: /nettoy|entretien|curag|debris|feuill/ },
+      { label: 'pose gouttières',        forPattern: /remplace|pose|install|neuf|nouveau/ },
+    ];
+    const allScenarios = SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || [];
+    GUTTER_SERVICES.forEach(svc => {
+      const matched = allScenarios.filter(s => s._for && svc.forPattern.test(s._for));
+      assert(matched.length >= 1, `Service "${svc.label}" must match at least one gutter scenario (_for)`);
+      matched.forEach(sc => {
+        const tools = (sc.tools || []).join(' ').toLowerCase();
+        const note = (sc.scene_note || '').toLowerCase();
+        const combined = tools + ' ' + note;
+        const hasElevatedAccess = textContainsAny(combined, ['ladder', 'standoff', 'scaffold', 'mewp', 'elevated']);
+        assert(hasElevatedAccess, `Service "${svc.label}" → scenario "${sc._for}" must reference elevated professional access`);
+      });
+    });
   });
 
   // ─── summary ──────────────────────────────────────────────────────────────────
