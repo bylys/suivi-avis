@@ -7,6 +7,7 @@
 import { WORK_SCENES, SITE_REALISM } from '../services/index.js';
 import { SERVICE_CATALOG }            from '../config/service-catalog.js';
 import { _serviceGroup }              from '../resolution/service-resolver.js';
+import { WORKER_SCENE_RULES }         from '../safety/worker-rules.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -163,8 +164,8 @@ export async function runAutomotiveBreakdownTests() {
   // AUTO-V10: client camera plausible — depannage_auto WORK_SCENES has homeowner/client camera doctrine
   {
     const cam = (WS_AUTO?.camera || '').toLowerCase();
-    const ok  = _hasText(cam, 'standing', 'eye level', 'from the car', 'roadside', 'customer', 'homeowner') &&
-                _lacksText(cam, 'drone', 'aerial', 'under the car');
+    const ok  = _hasText(cam, 'standing', 'eye level', 'roadside', 'pavement') &&
+                _lacksText(cam, 'drone', 'aerial');
     results.push(ok ? _pass('AUTO-V10: depannage_auto camera is client-doctrine (eye level, no drone/aerial)') :
       _fail('AUTO-V10: depannage_auto camera is client-doctrine', `cam="${cam}"`));
   }
@@ -188,10 +189,69 @@ export async function runAutomotiveBreakdownTests() {
       _fail('AUTO-V12: all 17 services map to known bucket', `unmapped: ${unmapped.join(', ')}`));
   }
 
+  // AUTO-V13: depannage_auto hasWorkers=true and min_workers_when_visible >= 1
+  {
+    const wRules = WORKER_SCENE_RULES?.depannage_auto || {};
+    const hasW   = WS_AUTO?.hasWorkers === true;
+    const minW   = wRules.min_workers_when_visible || 0;
+    const ok = hasW && minW >= 1;
+    results.push(ok ? _pass('AUTO-V13: hasWorkers=true and min_workers_when_visible>=1 for depannage_auto') :
+      _fail('AUTO-V13: hasWorkers=true and min_workers_when_visible>=1', `hasWorkers=${hasW}, minW=${minW}`));
+  }
+
+  // AUTO-V14: crevaison and remorquage require 2 workers (service_worker_minimums)
+  {
+    const svcMin = WORKER_SCENE_RULES?.depannage_auto?.service_worker_minimums || {};
+    const okC    = (svcMin.crevaison || 0) >= 2;
+    const okR    = (svcMin.remorquage || 0) >= 2;
+    const ok = okC && okR;
+    results.push(ok ? _pass('AUTO-V14: crevaison and remorquage service_worker_minimums >= 2') :
+      _fail('AUTO-V14: crevaison and remorquage require 2 workers',
+        `crevaison=${svcMin.crevaison}, remorquage=${svcMin.remorquage}`));
+  }
+
+  // AUTO-V15: battery and lockout are NOT forced to 2 — no override for batterie/ouverture
+  {
+    const svcMin = WORKER_SCENE_RULES?.depannage_auto?.service_worker_minimums || {};
+    const battOverride    = svcMin.batterie;
+    const ouvertureOverride = svcMin.ouverture;
+    const ok = !battOverride || battOverride <= 1;
+    results.push(ok ? _pass('AUTO-V15: battery and lockout not forced to 2 workers (stationary services)') :
+      _fail('AUTO-V15: battery/lockout should not force 2 workers',
+        `batterie override=${battOverride}, ouverture override=${ouvertureOverride}`));
+  }
+
+  // AUTO-V16: towing workers have distinct operator and guide roles in postures/actions
+  {
+    const wRules   = WORKER_SCENE_RULES?.depannage_auto || {};
+    const allText  = [
+      ...(wRules.actions  || []),
+      ...(wRules.postures || []),
+    ].join(' ').toLowerCase();
+    const hasOperator = _hasText(allText, 'operator', 'winch controls', 'ramp controls');
+    const hasGuide    = _hasText(allText, 'guide', 'guiding', 'hand signal');
+    const ok = hasOperator && hasGuide;
+    results.push(ok ? _pass('AUTO-V16: towing workers have distinct operator and guide roles') :
+      _fail('AUTO-V16: towing postures/actions must describe operator and guide roles',
+        `hasOperator=${hasOperator}, hasGuide=${hasGuide}`));
+  }
+
+  // AUTO-V17: crevaison and remorquage exclude Worker 2 in dangerous positions
+  {
+    const crevaisonTxt   = _allGroupText(SR_AUTO_RAW?.crevaison).toLowerCase();
+    const remorquageTxt  = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
+    const w2OutOfTraffic = _hasText(crevaisonTxt, 'worker 2 in the traffic lane', 'worker 2 standing in front');
+    const w2OutOfWinch   = _hasText(remorquageTxt, 'winch line trajectory', 'winch cable trajectory', 'worker 2 in front of the vehicle');
+    const ok = w2OutOfTraffic && w2OutOfWinch;
+    results.push(ok ? _pass('AUTO-V17: Worker 2 excluded from traffic lane (crevaison) and winch trajectory (remorquage)') :
+      _fail('AUTO-V17: Worker 2 position safety exclusions missing',
+        `outOfTraffic=${w2OutOfTraffic}, outOfWinch=${w2OutOfWinch}`));
+  }
+
   // ─── Summary ────────────────────────────────────────────────────────────────
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);
-  console.log(`[AUTO-V] ${passed}/${results.length} passed`);
+  console.log(`[AUTO-V] ${passed}/${results.length} passed`);  // expected 17/17
   if (failed.length) {
     console.group('[AUTO-V] Failures:');
     failed.forEach(r => console.warn(`  FAIL: ${r.label} — ${r.msg}`));

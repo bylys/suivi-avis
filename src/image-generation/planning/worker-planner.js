@@ -7,6 +7,7 @@
 import { COMPOSITION_RULES_BY_METIER } from '../config/compositions.js';
 import { WORKER_SCENE_RULES } from '../safety/worker-rules.js';
 import { _hashSeed } from '../utils/deterministic.js';
+import { _serviceGroup } from '../resolution/service-resolver.js';
 
 // ─── Batch worker presence planner ───────────────────────────────────────────
 // Assigns _pre_assigned_worker_presence and _pre_assigned_worker_count per task in a same-métier group.
@@ -16,7 +17,14 @@ function _planBatchWorkerPresence(group, seed) {
   const rules   = COMPOSITION_RULES_BY_METIER[metier] || {};
   const wRules  = WORKER_SCENE_RULES?.[metier] || {};
   const minWImg = rules.minimum_worker_images_per_active_batch ?? 1;
-  const minW    = wRules.min_workers_when_visible || 1;
+  let   minW    = wRules.min_workers_when_visible || 1;
+  // Service-level minimum: e.g. depannage_auto crevaison/remorquage require 2 workers
+  if (wRules.service_worker_minimums) {
+    const svcRaw    = group[0]?._planBase?._matched_service || '';
+    const svcBucket = _serviceGroup(svcRaw);
+    const svcMin    = wRules.service_worker_minimums[svcBucket];
+    if (svcMin && svcMin > minW) minW = svcMin;
+  }
   const n       = group.length;
   let workerImages = 0;
 

@@ -37,14 +37,14 @@ export const WORK_SCENES_DEPANNAGE_AUTO = {
     setting:    'exterior',
     secteur:           'breakdown technician',
     variation_setting: 'roadside',
-    hasWorkers:        false,
-    camera:            'standing 3–5 m from the car, eye level, showing vehicle and roadside context',
+    hasWorkers:        true,
+    camera:            'standing 3–5 m from the car, eye level, showing vehicle and roadside context — client smartphone shot from roadside, pavement, or adjacent parked vehicle; never from under the car, from the tow truck deck, or inside the winch cable trajectory',
     materials:  ['warning triangle on pavement', 'jump cables on seat', 'tow straps visible in van'],
     photo_defects: [
       'overexposure from bright sky against dark car bodywork',
       'slight motion blur from passing traffic in background',
     ],
-    exclusions: ['readable licence plates', 'brand logos', 'workers', 'people', 'driver'],
+    exclusions: ['readable licence plates', 'brand logos'],
     states: {
       debut: {
         framing: {
@@ -377,16 +377,16 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
     crevaison: {
       scenarios: [
         {
-          scene_note:    'full wheel change in progress — spare tyre being fitted, flat tyre removed and leaning against the car body, hydraulic jack raised under the vehicle sill',
-          scene_camera:  'crouching at the wheel arch level, framing the raised wheel gap and the spare tyre being aligned with the hub',
+          scene_note:    'full wheel change in progress — Worker 1 fitting the spare tyre at the jacked wheel arch; Worker 2 standing at a safe lateral distance behind the vehicle, monitoring traffic and managing the warning cone placement — both in high-visibility vests',
+          scene_camera:  'crouching at the wheel arch level, framing the raised wheel gap and the spare tyre being aligned with the hub — Worker 2 visible in the background at roadside, not in the traffic lane',
           scene_framing: {
             work_pct:   70,
             foreground: 'spare wheel being aligned with the hub, lug wrench on the ground beside it',
             midground:  'hydraulic jack under the vehicle sill, vehicle body raised — gap clearly visible',
-            background: 'flat tyre leaning against the car body, road or parking surface beyond',
+            background: 'flat tyre leaning against the car body, Worker 2 in high-visibility vest lateral to the vehicle on the pavement side',
           },
           scene_debris:  'wheel nuts grouped on the ground beside the removed tyre, gravel disturbed around the jack base',
-          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open', 'compressor or pressure gauge placed beside tyre with no active repair', 'equipment arranged for a photo', 'worker lying under the vehicle supported only by a small jack', 'person under the vehicle'],
+          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open', 'compressor or pressure gauge placed beside tyre with no active repair', 'equipment arranged for a photo', 'worker lying under the vehicle supported only by a small jack', 'person under the vehicle', 'Worker 2 standing in front of the vehicle', 'Worker 2 in the traffic lane', 'Worker 2 beneath the jacked sill or in the wheel gap zone'],
           tools: [
             'hydraulic jack raised under the vehicle sill',
             'lug wrench on the ground beside the spare wheel',
@@ -394,7 +394,8 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
             'torque socket beside the spare on the ground',
           ],
           protections: [
-            'reflective safety vest folded on the car roof',
+            'reflective safety vest on Worker 1 at the wheel arch',
+            'reflective safety vest on Worker 2 at the lateral roadside position',
             'warning cone placed on the road behind the vehicle',
           ],
           chantier_details: [
@@ -402,6 +403,7 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
             'wheel nuts grouped on the ground near the spare',
             'jack raised with the wheel gap clearly visible',
             'warning triangle placed further back on the road',
+            'Worker 2 visible in high-visibility vest at a safe lateral distance, outside the traffic lane',
           ],
         },
         {
@@ -654,29 +656,31 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
     remorquage: {
       scenarios: [
         {
-          scene_note:    'vehicle recovery by flatbed lorry — stalled car being winched or driven onto the lowered flatbed deck',
-          scene_camera:  'standing at the rear of the flatbed lorry, framing the lowered ramp and the stalled car at the base or mid-ramp',
+          scene_note:    'vehicle recovery by flatbed lorry — Worker 1 operating the winch or ramp controls from the rear of the flatbed; Worker 2 guiding the stalled car from a lateral safe position, hand signals visible, standing well clear of the winch cable trajectory and the vehicle path',
+          scene_camera:  'standing at the rear of the flatbed lorry, framing the lowered ramp and the stalled car at the base or mid-ramp — Worker 2 visible laterally on the pavement side',
           scene_framing: {
             work_pct:   65,
             foreground: 'flatbed ramp lowered to road level, winch cable or tyre strap visible on the ramp edge',
-            midground:  'stalled vehicle on or approaching the ramp',
-            background: 'flatbed lorry deck and cab behind, road on either side',
+            midground:  'stalled vehicle on or approaching the ramp, Worker 1 at the winch controls',
+            background: 'Worker 2 in high-visibility vest at a lateral safe position outside the winch cable line, road on either side',
           },
           scene_debris:  'wheel chock block on the deck near the car tyre, ratchet strap laid out on the ramp edge',
-          scene_exclude: ['tow strap between two cars on flat road', 'jump cables', 'battery booster', 'door wedge', 'spare tyre', 'operator standing in front of the vehicle during winch cable tensioning', 'worker in the winch line trajectory'],
+          scene_exclude: ['tow strap between two cars on flat road', 'jump cables', 'battery booster', 'door wedge', 'spare tyre', 'operator standing in front of the vehicle during winch cable tensioning', 'worker in the winch line trajectory', 'Worker 2 in front of the vehicle during winch cable tensioning', 'Worker 2 in the winch cable trajectory or between vehicles'],
           tools: [
             'ratchet strap laid on the flatbed deck near the car wheel',
             'wheel chock placed in front of the loaded car tyre',
             'winch hook visible at the vehicle tow point under the bumper',
           ],
           protections: [
-            'reflective safety vest on the recovery operator',
+            'reflective safety vest on Worker 1 at the winch controls',
+            'reflective safety vest on Worker 2 at the lateral guide position',
             'warning cone placed on the road behind the flatbed',
           ],
           chantier_details: [
             'flatbed ramp lowered and touching the road surface',
             'ratchet strap ready to secure the car on the deck',
             'wheel chock visible near the car front tyre on the deck',
+            'Worker 2 visible in high-visibility vest at a lateral safe position, guiding by hand signal — outside winch cable trajectory',
           ],
         },
         {
