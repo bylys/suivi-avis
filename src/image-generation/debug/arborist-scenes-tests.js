@@ -243,6 +243,26 @@ export async function runArboristScenesTests() {
     results.push(ok ? _pass('ARB-V18: all abattage scenario cameras are homeowner-doctrine') : _fail('ARB-V18: all abattage scenario cameras are homeowner-doctrine', `${failing.length} violation(s): ${failing.map(s => s._for).join(', ')}`));
   }
 
+  // ARB-V19: Élagage en hauteur + encours resolves deterministically to MEWP (state_lock)
+  {
+    const n = _norm('Élagage en hauteur');
+    const scenarios = _allScenarios(K_ELAGAGE);
+    const stateLocked = scenarios.filter(sc => {
+      if (!sc._for) return false;
+      try { if (!new RegExp(sc._for).test(n)) return false; } catch(_) { return false; }
+      if (!sc._state_for) return false;
+      return Array.isArray(sc._state_for) ? sc._state_for.includes('encours') : sc._state_for === 'encours';
+    });
+    const hasMewp = stateLocked.some(sc => _hasText(_allText(sc), 'basket', 'guardrail', 'outrigger', 'MEWP'));
+    const ok = stateLocked.length === 1 && hasMewp &&
+               stateLocked[0]._access_configuration === 'MEWP' &&
+               stateLocked[0]._access_configuration_source === 'state_lock' &&
+               stateLocked[0]._access_configuration_randomized === false;
+    results.push(ok ? _pass('ARB-V19: élagage en hauteur encours state_lock → MEWP') :
+      _fail('ARB-V19: élagage en hauteur encours state_lock → MEWP',
+        `locked=${stateLocked.length}, hasMewp=${hasMewp}, cfg=${stateLocked[0]?._access_configuration}, src=${stateLocked[0]?._access_configuration_source}`));
+  }
+
   // ─── Summary ─────────────────────────────────────────────────────────────
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);

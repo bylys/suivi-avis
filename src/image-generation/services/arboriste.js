@@ -234,8 +234,13 @@ export const SITE_REALISM_ARBORISTE = {
       },
 
       // ─── ARB-MEWP-PRUNING: nacelle / cherry picker ────────────────────────
+      // ENCOURS micro-test route: élagage en hauteur/peuplier + encours → MEWP (state_lock)
       {
-        _for:          'elagage.*peuplier|elagage.*hauteur|couronnage|elagage.*dangereux|elagage.*nacelle',
+        _for:                             'elagage.*peuplier|elagage.*hauteur|couronnage|elagage.*dangereux|elagage.*nacelle',
+        _state_for:                       'encours',
+        _access_configuration:            'MEWP',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
         scene_note:    'homeowner photo of aerial pruning from a MEWP (cherry picker / nacelle) — Worker 1 fully inside the basket with guardrails visible all around, boom fully extended to the crown — outriggers deployed on the ground, MEWP stabilised — Worker 2 beside the ground controls outside the drop zone — photo from garden, driveway or residential window',
         scene_camera:  'standing in the garden or from a residential window, 8–18 m from the tree, framing the extended boom with the basket at the crown — homeowner smartphone, slightly imperfect framing, Worker 2 at ground controls visible',
         scene_framing: {
