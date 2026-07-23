@@ -879,8 +879,11 @@ function _makeFakeJsonStr(matchedKey, matchedService, stateLevel) {
 // MODERATE_PITCH repair: Worker 1 kneeling on tile surface (no scaffold)
 // MODERATE_PITCH zinc:   Worker 1 dressing zinc apron / lead dresser
 function _isModeratePitchRepairOutput(obj) {
-  const mid = (obj.framing?.midground ?? '').toLowerCase();
-  return mid.includes('kneeling') || mid.includes('tile surface') || mid.includes('tile lifter');
+  const mid  = (obj.framing?.midground ?? '').toLowerCase();
+  const note = (obj.note ?? obj.scene_note ?? '').toLowerCase();
+  const hasModerateSignal = mid.includes('kneeling') || mid.includes('dry stable tile') || mid.includes('tile surface');
+  const hasHookedLadder   = mid.includes('hooked roof ladder') || note.includes('hooked roof ladder');
+  return hasModerateSignal && !hasHookedLadder;
 }
 function _isModeratePitchZincOutput(obj) {
   const fg  = (obj.framing?.foreground ?? '').toLowerCase();
@@ -889,19 +892,20 @@ function _isModeratePitchZincOutput(obj) {
 }
 
 // ─── RCW-53: ≥1 MODERATE_PITCH repair route is runtime-reachable ─────────────
+// Uses 'Remplacement tuiles' — réparation toiture is intentionally STEEP_PITCH only (A4 fix).
 
 function rcw53() {
-  const normRepair = _norm('réparation toiture');
+  const normRempla = _norm('Remplacement tuiles');
   const pool = (SITE_REALISM.toiture?.scenarios ?? []).filter(s =>
-    s._for && (() => { try { return new RegExp(s._for, 'i').test(normRepair); } catch { return false; } })()
+    s._for && (() => { try { return new RegExp(s._for, 'i').test(normRempla); } catch { return false; } })()
   );
   ok(pool.some(s => s.pitch_class === 'MODERATE_PITCH'),
-    'RCW-53: MODERATE_PITCH repair scenario is in the _applySiteRealism candidate pool',
+    'RCW-53: MODERATE_PITCH repair scenario is in the _applySiteRealism candidate pool (remplacement tuiles)',
     `pool size=${pool.length}, pitches=[${pool.map(s => s.pitch_class).join(',')}]`);
 
   let foundIndex = -1;
   for (let idx = 0; idx < 60; idx++) {
-    const json = _makeFakeJsonStr('toiture', 'Réparation toiture', 'encours');
+    const json = _makeFakeJsonStr('toiture', 'Remplacement tuiles', 'encours');
     const out  = JSON.parse(_applySiteRealism(json, idx));
     if (_isModeratePitchRepairOutput(out)) { foundIndex = idx; break; }
   }
@@ -931,34 +935,36 @@ function rcw54() {
     'No imageIndex in [0,59] produced MODERATE_PITCH zinc output');
 }
 
-// ─── RCW-55: MODERATE_PITCH not shadowed — always in pool alongside STEEP_PITCH
+// ─── RCW-55: MODERATE_PITCH not shadowed — in pool for remplacement tuiles alongside STEEP_PITCH
+// réparation toiture is intentionally STEEP_PITCH only (A4 fix); remplacement tuiles still has both.
 
 function rcw55() {
-  const normRepair = _norm('réparation toiture');
+  const normRempla = _norm('Remplacement tuiles');
   const pool = (SITE_REALISM.toiture?.scenarios ?? []).filter(s =>
-    s._for && (() => { try { return new RegExp(s._for, 'i').test(normRepair); } catch { return false; } })()
+    s._for && (() => { try { return new RegExp(s._for, 'i').test(normRempla); } catch { return false; } })()
   );
   const hasModerate = pool.some(s => s.pitch_class === 'MODERATE_PITCH');
   const hasSteep    = pool.some(s => s.pitch_class === 'STEEP_PITCH');
   ok(hasModerate && hasSteep,
-    `RCW-55: repair pool has both STEEP and MODERATE pitch scenarios (not shadowed)`,
+    `RCW-55: remplacement tuiles pool has both STEEP and MODERATE pitch scenarios (not shadowed)`,
     `pool=[${pool.map(s => s.pitch_class).join(',')}]`);
   ok(pool.length >= 4,
-    `RCW-55: repair candidate pool has ≥4 scenarios`, `count=${pool.length}`);
+    `RCW-55: remplacement tuiles candidate pool has ≥4 scenarios`, `count=${pool.length}`);
 }
 
 // ─── RCW-56: Selected pitch class survives complete task construction ──────────
+// Uses 'Remplacement tuiles' — réparation toiture is intentionally STEEP_PITCH only (A4 fix).
 
 function rcw56() {
   let moderateRepairIdx = -1;
   for (let idx = 0; idx < 60; idx++) {
-    const json = _makeFakeJsonStr('toiture', 'Réparation toiture', 'encours');
+    const json = _makeFakeJsonStr('toiture', 'Remplacement tuiles', 'encours');
     const out  = JSON.parse(_applySiteRealism(json, idx));
     if (_isModeratePitchRepairOutput(out)) { moderateRepairIdx = idx; break; }
   }
   if (moderateRepairIdx < 0) { fail('RCW-56', 'No MODERATE_PITCH repair imageIndex found — see RCW-53'); return; }
 
-  const json = _makeFakeJsonStr('toiture', 'Réparation toiture', 'encours');
+  const json = _makeFakeJsonStr('toiture', 'Remplacement tuiles', 'encours');
   const out  = JSON.parse(_applySiteRealism(json, moderateRepairIdx));
   ok(_isModeratePitchRepairOutput(out),
     `RCW-56: MODERATE_PITCH repair framing survives full _applySiteRealism pass (idx=${moderateRepairIdx})`,
