@@ -263,6 +263,32 @@ export async function runArboristScenesTests() {
         `locked=${stateLocked.length}, hasMewp=${hasMewp}, cfg=${stateLocked[0]?._access_configuration}, src=${stateLocked[0]?._access_configuration_source}`));
   }
 
+  // ARB-V20: Abattage en zone difficile + encours cannot resolve to cleanup-only scene
+  {
+    const n = _norm('Abattage en zone difficile');
+    const scenarios = _allScenarios(K_ABATTAGE);
+    const stateLocked = scenarios.filter(sc => {
+      if (!sc._for) return false;
+      try { if (!new RegExp(sc._for).test(n)) return false; } catch (_) { return false; }
+      if (!sc._state_for) return false;
+      return Array.isArray(sc._state_for) ? sc._state_for.includes('encours') : sc._state_for === 'encours';
+    });
+    // Must lock to exactly one scenario and it must NOT be a cleanup scene
+    const hasCleanup = stateLocked.some(sc => {
+      const txt = _allText(sc);
+      return _hasText(txt, 'loading', 'raking', 'green waste removal', 'loading into trailer', 'chip output') &&
+             _lacksText(txt, 'rigging rope', 'lowering device', 'crown');
+    });
+    const hasRigging = stateLocked.some(sc => _hasText(_allText(sc), 'rigging rope') && _hasText(_allText(sc), 'lowering device'));
+    const ok = stateLocked.length === 1 && hasRigging && !hasCleanup &&
+               stateLocked[0]._access_configuration === 'SECTIONAL_DISMANTLING' &&
+               stateLocked[0]._access_configuration_source === 'state_lock' &&
+               stateLocked[0]._access_configuration_randomized === false;
+    results.push(ok ? _pass('ARB-V20: abattage en zone difficile encours state_lock → SECTIONAL_DISMANTLING, not cleanup') :
+      _fail('ARB-V20: abattage en zone difficile encours state_lock → SECTIONAL_DISMANTLING, not cleanup',
+        `locked=${stateLocked.length}, hasRigging=${hasRigging}, hasCleanup=${hasCleanup}, cfg=${stateLocked[0]?._access_configuration}, src=${stateLocked[0]?._access_configuration_source}`));
+  }
+
   // ─── Summary ─────────────────────────────────────────────────────────────
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);

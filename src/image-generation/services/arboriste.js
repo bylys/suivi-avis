@@ -476,9 +476,14 @@ export const SITE_REALISM_ARBORISTE = {
       },
 
       // ─── ARB-SECTIONAL-DISMANTLING: rigging + lowering in confined space ───
+      // ENCOURS state_lock: abattage en zone difficile + encours → SECTIONAL_DISMANTLING (deterministic)
       {
-        _for:          'abattage.*zone.*difficile|abattage.*difficile|demontage|arbre.*dangereux',
-        scene_note:    'homeowner photo of sectional tree dismantling in a confined space — Worker 1 (grimpeur) in the crown with full harness + positioning rope + secondary attachment + helmet — rigging rope from the cut section through a redirect at the trunk down to Worker 2 with a lowering device — sections being lowered in a controlled sequence, not falling freely — exclusion zone established — photo from outside the exclusion zone',
+        _for:                             'abattage.*zone.*difficile|abattage.*difficile|demontage|arbre.*dangereux',
+        _state_for:                       'encours',
+        _access_configuration:            'SECTIONAL_DISMANTLING',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'homeowner photo of sectional tree dismantling in a confined space — Worker 1 (grimpeur) visible high in the crown or in a MEWP basket with full harness + positioning rope + secondary attachment + helmet — rigging rope from the cut section through a redirect at the trunk down to Worker 2 with a lowering device — section attached to rigging rope and controlled during descent — tree still partially standing — house or fence close to the tree justifying controlled dismantling — exclusion zone established — photo from outside the exclusion zone',
         scene_camera:  'standing in the garden or driveway outside the exclusion zone, 8–18 m from the tree, framing Worker 1 in the crown and Worker 2 at the lowering device — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
           work_pct:   75,
@@ -592,9 +597,10 @@ export const SITE_REALISM_ARBORISTE = {
         ],
       },
 
-      // ─── ARB-GREEN-WASTE-REMOVAL: loading and final cleanup ────────────────
+      // ─── ARB-GREEN-WASTE-REMOVAL: loading and final cleanup (semifinal/final only) ─
       {
         _for:          'abattage|dessouchage',
+        _state_for:    ['semifinal', 'final'],
         scene_note:    'homeowner photo of green waste and log removal after felling — cut logs, branch sections, and wood chips being loaded into trailer — Worker 1 and Worker 2 both on the ground loading and clearing — fresh wood from the felled tree, clearly matching the felling or stump grinding work — photo from garden or driveway',
         scene_camera:  'standing in the garden or driveway, 5–10 m from the trailer, framing both workers loading or clearing — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
