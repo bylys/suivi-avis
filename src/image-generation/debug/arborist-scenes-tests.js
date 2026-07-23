@@ -4,6 +4,8 @@
  */
 
 import { WORK_SCENES, SITE_REALISM } from '../services/index.js';
+import { CAPTURE_DEFECTS, CAPTURE_DEFECT_GROUPS } from '../config/capture-defects.js';
+import { _selectCaptureDefects } from '../planning/capture-defect-planner.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -289,10 +291,153 @@ export async function runArboristScenesTests() {
         `locked=${stateLocked.length}, hasRigging=${hasRigging}, hasCleanup=${hasCleanup}, cfg=${stateLocked[0]?._access_configuration}, src=${stateLocked[0]?._access_configuration_source}`));
   }
 
+  // ARB-V21: finger_edge only appears when batchIndex % 3 === 0
+  {
+    const seed = 99999;
+    const fingerOnAllowed  = _selectCaptureDefects(0, 4, seed).map(d => d.key);  // 0 % 3 === 0 → allowed
+    const fingerOnForbidden1 = _selectCaptureDefects(1, 4, seed).map(d => d.key);  // forbidden
+    const fingerOnForbidden2 = _selectCaptureDefects(2, 4, seed).map(d => d.key);  // forbidden
+    const fingerOnAllowed3 = _selectCaptureDefects(3, 4, seed).map(d => d.key);  // 3 % 3 === 0 → allowed
+    const fingerNeverOnForbidden = !fingerOnForbidden1.includes('finger_edge') && !fingerOnForbidden2.includes('finger_edge');
+    const fingerEligibleOnAllowed = !fingerOnAllowed.includes('finger_edge') || true; // may not pick it even if eligible
+    // Test broader: for indices 1 and 2 (forbidden), across many seeds, finger never appears
+    let fingerLeaksCount = 0;
+    for (let s = 0; s < 200; s++) {
+      for (const bi of [1, 2, 4, 5, 7, 8]) {
+        const keys = _selectCaptureDefects(bi, 10, s * 7 + 3).map(d => d.key);
+        if (keys.includes('finger_edge')) fingerLeaksCount++;
+      }
+    }
+    const ok = fingerNeverOnForbidden && fingerLeaksCount === 0;
+    results.push(ok ? _pass('ARB-V21: finger_edge never appears on batchIndex % 3 !== 0') :
+      _fail('ARB-V21: finger_edge never appears on batchIndex % 3 !== 0',
+        `leaks=${fingerLeaksCount}, idx1=${fingerOnForbidden1}, idx2=${fingerOnForbidden2}`));
+  }
+
+  // ARB-V22: finger prompt says extreme corner, never covers work or safety
+  {
+    const fingerPrompt = (CAPTURE_DEFECTS.finger_edge?.prompt || '').toLowerCase();
+    const hasCorner    = _hasText(fingerPrompt, 'corner', 'extreme');
+    const hasSafeGuard = _hasText(fingerPrompt, 'covering no', 'no work', 'safety detail');
+    const ok = hasCorner && hasSafeGuard;
+    results.push(ok ? _pass('ARB-V22: finger_edge prompt guarantees extreme corner + no work coverage') :
+      _fail('ARB-V22: finger_edge prompt guarantees extreme corner + no work coverage',
+        `prompt="${fingerPrompt}"`));
+  }
+
+  // ARB-V23: taille de haie active scene has 2 workers referenced
+  {
+    const K_PAY = (() => {
+      for (const [key, scene] of Object.entries(WORK_SCENES)) {
+        if ((scene.service_keywords || []).some(kw => _norm(kw.phrase).includes('taille de haie') || _norm(kw.phrase).includes('haie'))) return key;
+      }
+      return null;
+    })();
+    const SR_PAY = K_PAY ? (SITE_REALISM[K_PAY]?.scenarios || []) : [];
+    const hedgeSc = SR_PAY.find(sc => sc._for && new RegExp(sc._for, 'i').test('taille de haie'));
+    const txt = hedgeSc ? _allText(hedgeSc) : '';
+    const ok = hedgeSc !== undefined &&
+               _hasText(txt, 'Worker 1', 'Worker 2') &&
+               _hasText(txt, 'hedge trimmer', 'trimmer', 'taille-haie');
+    results.push(ok ? _pass('ARB-V23: taille de haie scene has 2 workers') :
+      _fail('ARB-V23: taille de haie scene has 2 workers', K_PAY ? `hedgeSc=${!!hedgeSc}, txt sample="${txt.slice(0,80)}"` : `K_PAY not found`));
+  }
+
+  // ARB-V24: tall hedge uses professional access only
+  {
+    const K_PAY = (() => {
+      for (const [key, scene] of Object.entries(WORK_SCENES)) {
+        if ((scene.service_keywords || []).some(kw => _norm(kw.phrase).includes('haie'))) return key;
+      }
+      return null;
+    })();
+    const SR_PAY = K_PAY ? (SITE_REALISM[K_PAY]?.scenarios || []) : [];
+    const hedgeSc = SR_PAY.find(sc => sc._for && new RegExp(sc._for, 'i').test('taille de haie'));
+    const txt = hedgeSc ? _allText(hedgeSc) : '';
+    const hasProfAccess = _hasText(txt, 'professional platform', 'scaffold', 'tripod', 'nacelle', 'MEWP');
+    const bansDomestic  = (hedgeSc?.scene_exclude || []).some(e =>
+      _hasText(e, 'step-stool', 'domestic', 'unstable', 'chair', 'escabeau'));
+    const ok = hedgeSc !== undefined && hasProfAccess && bansDomestic;
+    results.push(ok ? _pass('ARB-V24: tall hedge uses professional access, domestic step-stool excluded') :
+      _fail('ARB-V24: tall hedge uses professional access, domestic step-stool excluded',
+        `hasProfAccess=${hasProfAccess}, bansDomestic=${bansDomestic}`));
+  }
+
+  // ARB-V25: storm/emergency élagage dangereux scene has rigging rope + exclusion zone
+  {
+    const n = _norm('Élagage arbres dangereux');
+    const scenarios = _allScenarios(K_ELAGAGE);
+    // Storm scenarios are identified by a time_of_day field (only storm scenarios carry one)
+    // or by the specific combination of 'post-storm' + 'broken branch' in scene_note
+    const stormScs = scenarios.filter(sc => {
+      if (!sc._for) return false;
+      try { if (!new RegExp(sc._for).test(n)) return false; } catch(_) { return false; }
+      return (sc.time_of_day && _hasText(sc.time_of_day, 'storm', 'overcast')) ||
+             _hasText(sc.scene_note || '', 'post-storm', 'broken branch', 'storm');
+    });
+    const ok = stormScs.length >= 1 &&
+               stormScs.every(sc => _hasText(_allText(sc), 'rigging rope') && _hasText(_allText(sc), 'exclusion zone'));
+    results.push(ok ? _pass('ARB-V25: storm élagage dangereux scene has rigging rope + exclusion zone') :
+      _fail('ARB-V25: storm élagage dangereux scene has rigging rope + exclusion zone',
+        `stormScs=${stormScs.length}, failing: ${stormScs.filter(sc => !_hasText(_allText(sc),'rigging rope')).map(s=>s._for).join(', ')}`));
+  }
+
+  // ARB-V26: storm fallen-tree abattage scene cannot replace sectional dismantling in encours
+  {
+    const n = _norm('Abattage en zone difficile');
+    const scenarios = _allScenarios(K_ABATTAGE);
+    // Identify storm scenarios (fallen tree on ground)
+    const stormFallenScs = scenarios.filter(sc => {
+      if (!sc._for) return false;
+      try { return new RegExp(sc._for).test(n); } catch(_) { return false; }
+    }).filter(sc => _hasText(_allText(sc), 'fallen trunk', 'fallen tree', 'lying on the ground', 'tronc au sol'));
+    // Verify none of the storm scenarios are state_locked to encours
+    const stormLockedToEncours = stormFallenScs.filter(sc => {
+      if (!sc._state_for) return false;
+      return Array.isArray(sc._state_for) ? sc._state_for.includes('encours') : sc._state_for === 'encours';
+    });
+    const ok = stormFallenScs.length >= 1 && stormLockedToEncours.length === 0;
+    results.push(ok ? _pass('ARB-V26: fallen-tree storm scene cannot appear in encours (no encours state_lock)') :
+      _fail('ARB-V26: fallen-tree storm scene cannot appear in encours',
+        `stormFallenScs=${stormFallenScs.length}, stormLockedToEncours=${stormLockedToEncours.length}`));
+  }
+
+  // ARB-V27: semifinal/final can use green-waste cleanup (state_for includes semifinal+final)
+  {
+    const abattageCleanup = _allScenarios(K_ABATTAGE).filter(sc => {
+      const txt = _allText(sc);
+      return _hasText(txt, 'loading', 'raking', 'green waste', 'log removal') && !_hasText(txt, 'rigging rope');
+    });
+    const ok = abattageCleanup.some(sc => {
+      const sf = sc._state_for;
+      return Array.isArray(sf) && sf.includes('semifinal') && sf.includes('final');
+    });
+    results.push(ok ? _pass('ARB-V27: green-waste cleanup available for semifinal and final states') :
+      _fail('ARB-V27: green-waste cleanup available for semifinal and final states',
+        `abattageCleanup count=${abattageCleanup.length}`));
+  }
+
+  // ARB-V28: no client/child/animal/vehicle in exclusion zone across all arborist scenes
+  {
+    const allArboristScenarios = [..._allScenarios(K_ELAGAGE), ..._allScenarios(K_ABATTAGE)];
+    const missingExclusion = allArboristScenarios.filter(sc => {
+      const txt = _allText(sc);
+      // Only check scenarios that establish an exclusion zone
+      if (!_hasText(txt, 'exclusion zone', 'drop zone', 'fall zone')) return false;
+      // These scenarios should exclude bystanders from the danger zone
+      const excl = (sc.scene_exclude || []).join(' ').toLowerCase();
+      return _lacksText(excl, 'bystander', 'client', 'spectateur', 'children', 'pets', 'animals', 'lone worker', 'solo');
+    });
+    const ok = missingExclusion.length === 0;
+    results.push(ok ? _pass('ARB-V28: all exclusion-zone arborist scenes ban bystanders/animals') :
+      _fail('ARB-V28: all exclusion-zone arborist scenes ban bystanders/animals',
+        `${missingExclusion.length} scene(s) missing: ${missingExclusion.map(s => s._for?.slice(0,30)).join(', ')}`));
+  }
+
   // ─── Summary ─────────────────────────────────────────────────────────────
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);
-  console.log(`[ARB-V] ${passed}/${results.length} passed`);
+  console.log(`[ARB-V] ${passed}/${results.length} passed`); // target: 28/28
   if (failed.length) {
     console.group('[ARB-V] Failures:');
     failed.forEach(r => console.warn(`  FAIL: ${r.label} — ${r.msg}`));

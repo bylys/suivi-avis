@@ -356,6 +356,47 @@ export const SITE_REALISM_ARBORISTE = {
         ],
       },
 
+      // ─── ARB-STORM-EMERGENCY (élagage): hanging broken branch, post-storm ───
+      {
+        _for:          'elagage.*dangereux|arbre.*dangereux',
+        scene_note:    'homeowner photo of emergency arborist response after a storm — dangerous broken branch still attached to the tree, hanging at a threatening angle over a garden or property — Worker 1 (grimpeur or in MEWP basket) rigging the broken limb to control its fall — rigging rope from the broken branch through a redirect to Worker 2 at the lowering device — exclusion zone visible around the fall zone — grey overcast post-storm sky, wet ground, fresh storm debris at the base — photo from outside the exclusion zone at a safe distance',
+        scene_camera:  'standing in the garden or driveway outside the exclusion zone, 8–18 m from the tree, framing the broken branch still hanging, Worker 1 rigging in the crown or basket, and Worker 2 at the lowering device — homeowner smartphone, slightly imperfect framing',
+        time_of_day:   'overcast — grey post-storm sky, diffuse flat light, no rain',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'Worker 2 at the lowering device — laterally offset from the direct fall zone — fresh storm debris: broken twigs, wet leaves on the ground',
+          midground:  'broken branch partially attached to the tree, hanging at a dangerous angle — rigging rope secured above the snap point and running to Worker 2 — Worker 1 in the crown with full harness or in MEWP basket in position to rig',
+          background: 'rest of the tree crown showing storm damage, exclusion zone tape, house or fence confirming residential context — grey overcast sky',
+        },
+        scene_debris:  'fresh broken twigs, wet leaves, and small branch debris on the ground from the storm — clearly recent and green',
+        scene_exclude: [
+          'storm still actively raging — no rain, wind effects, or lightning in scene',
+          'workers near overhead power lines',
+          'bystanders inside the exclusion zone',
+          'camera inside the exclusion zone or below the hanging branch',
+          'arbre entièrement tombé — ce scénario est pour branche suspendue uniquement',
+          'tree fully on the ground — use fallen-tree clearance scene for that situation',
+          'dramatic catastrophe mise-en-scène',
+        ],
+        tools: [
+          'rigging rope attached to the broken branch — controlling the descent sequence',
+          'lowering device at Worker 2s ground position',
+          'chainsaw on tool lanyard if trimming is in progress',
+        ],
+        protections: [
+          'exclusion zone clearly established around the fall zone of the broken branch',
+          'Worker 2 laterally offset from the direct drop zone',
+          'Worker 1 in full harness + double attachment or in MEWP basket with guardrail',
+          'helmet and eye protection on both workers',
+        ],
+        chantier_details: [
+          'broken branch still hanging at a threatening angle — storm aftermath context',
+          'fresh storm debris on the wet ground — grey post-storm diffuse light',
+          'rigging rope controlling the broken limb — no free fall',
+          'two professionals with distinct roles: Worker 1 securing the broken limb, Worker 2 managing the lowering device and exclusion zone',
+        ],
+      },
+
       // ─── ARB-BRANCH-CHIPPING: chipper + trailer, controlled feeding ─────────
       {
         _for:          'elagage|taille.*arbre|recepage|couronnage',
@@ -594,6 +635,48 @@ export const SITE_REALISM_ARBORISTE = {
           'Worker 1 feeding one manageable piece at a time — controlled, not overloading',
           'Worker 2 managing chip output or debris from a safe distance — not beside the inlet',
           'two professionals with distinct roles: Worker 1 feeding chipper, Worker 2 managing output and debris from a safe distance',
+        ],
+      },
+
+      // ─── ARB-STORM-EMERGENCY (abattage): fallen tree clearance, post-storm ──
+      {
+        _for:          'abattage.*zone.*difficile|abattage.*difficile|demontage|arbre.*dangereux',
+        // No _state_for — applies to debut (assessment/start); encours is locked to SECTIONAL_DISMANTLING
+        scene_note:    'homeowner photo of fallen tree clearance after a storm — tree trunk lying on the ground after the fall — Worker 1 using a chainsaw to cut the trunk into manageable sections — Worker 2 moving cut sections away from the trunk at a safe lateral position outside the cutting zone — exclusion zone around the active cutting area — grey post-storm overcast sky, wet ground, fresh debris — photo from outside the work zone at a safe distance',
+        scene_camera:  'standing at the garden edge or driveway, 6–15 m from the fallen trunk, framing both workers and the clearance operation — homeowner smartphone, slightly imperfect framing',
+        time_of_day:   'overcast — grey post-storm sky, wet ground, no rain or wind in scene',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'Worker 2 moving a cut log section away from the main trunk at a safe lateral position — fresh cut surface clearly visible on the section — storm debris at the sides',
+          midground:  'Worker 1 cutting the trunk with a chainsaw — fresh cut section partially separated — cut sections accumulating in an organised pile beside the trunk — fallen trunk lying on the ground from the storm',
+          background: 'remaining tree stump or damaged crown visible, garden or property context from the storm — grey post-storm diffuse light',
+        },
+        scene_debris:  'fresh cut log sections, broken branch debris, wet leaves on the ground — storm aftermath context, clearly recent',
+        scene_exclude: [
+          'tree still upright — this scene is specifically for fallen tree on the ground',
+          'workers performing aerial rigging with the tree shown entirely on the ground',
+          'storm still actively raging — no rain, lightning, or wind effects in scene',
+          'workers near overhead power lines',
+          'bystanders inside the exclusion zone',
+          'Worker 2 directly in the fall zone of the cut section',
+          'dramatic catastrophe staging',
+        ],
+        tools: [
+          'chainsaw at Worker 1s position on the fallen trunk — active cutting in progress',
+          'wedge placed in the cut to prevent saw pinch',
+          'peavey or cant hook near Worker 2 for rolling or moving cut sections',
+        ],
+        protections: [
+          'chainsaw chaps clearly visible on Worker 1',
+          'helmet, ear, and eye protection on Worker 1',
+          'Worker 2 at safe lateral distance from the cutting zone — not in the drop zone of the cut section',
+          'exclusion zone around the active cutting area',
+        ],
+        chantier_details: [
+          'fallen trunk lying on the ground from the storm — clearance context, not aerial dismantling',
+          'fresh cut sections accumulating beside the main trunk — organised site management',
+          'grey post-storm light — wet ground — recently fallen tree requiring clearance',
+          'two professionals with distinct roles: Worker 1 cutting sections with chainsaw, Worker 2 moving and stacking sections from a safe lateral position',
         ],
       },
 
