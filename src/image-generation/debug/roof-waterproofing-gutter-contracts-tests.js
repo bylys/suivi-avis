@@ -333,6 +333,15 @@ export function runRoofContractsTests() {
         `RTG-C10: [${c.service_key}] presence=none → au moins une composition large (wide/contextual)`);
     }
   }
+  // Gutter contracts previously had presence:'none' — now presence:'required' with workers.
+  // Verify their min >= 2 (replaces the 3 conditional assertions that no longer fire).
+  const GUTTER_KEYS = ['nettoyage_gouttieres', 'debouchage_gouttieres', 'remplacement_gouttieres'];
+  for (const key of GUTTER_KEYS) {
+    const c = ROOF_VISUAL_CONTRACTS[key];
+    ok(c && (c.worker_rules || {}).min >= 2,
+      `RTG-C10: [${key}] presence=required — worker_rules.min >= 2`,
+      `min=${c?.worker_rules?.min}`);
+  }
   console.groupEnd();
 
   // ── RTG-C11 — aucun contrat dupliqué ─────────────────────────────────────
