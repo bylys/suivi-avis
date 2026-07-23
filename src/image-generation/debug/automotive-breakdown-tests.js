@@ -267,10 +267,140 @@ export async function runAutomotiveBreakdownTests() {
       _fail('AUTO-V18: camera field triggers indoor-camera validator', v18Failures.join('; ')));
   }
 
+  // AUTO-V19: battery jump service requires visible booster or jump cables (not multimeter only)
+  {
+    const batterie = SR_AUTO_RAW?.batterie;
+    const txt      = _allGroupText(batterie);
+    const hasBooster = _hasText(txt, 'booster pack', 'jump-start cable', 'jump cable', 'clamp cable', 'portable battery booster');
+    results.push(hasBooster
+      ? _pass('AUTO-V19: battery jump service references visible booster or jump cables as primary device')
+      : _fail('AUTO-V19: battery jump requires booster or jump cables in scene text', `txt="${txt.slice(0,120)}"`));
+  }
+
+  // AUTO-V20: multimeter-only diagnosis cannot satisfy battery jump-start (must be prohibited)
+  {
+    const batterie = SR_AUTO_RAW?.batterie;
+    const allExclText = (batterie?.scenarios || [])
+      .flatMap(s => s.scene_exclude || []).concat(batterie?.exclusions || []).join(' ').toLowerCase();
+    const hasMeterOnlyProhibition = _hasText(allExclText,
+      'multimeter as sole intervention',
+      'multimeter-only diagnosis',
+      'no booster or jump cables',
+      'technician only measuring voltage with no booster',
+    );
+    results.push(hasMeterOnlyProhibition
+      ? _pass('AUTO-V20: multimeter-only diagnosis prohibited in battery jump-start scenes')
+      : _fail('AUTO-V20: multimeter-only prohibition missing from battery scene exclusions', `excl="${allExclText.slice(0,120)}"`));
+  }
+
+  // AUTO-V21: tire-change Worker 2 has roadside-safety or wheel-support role
+  {
+    const crevaisonTxt = _allGroupText(SR_AUTO_RAW?.crevaison).toLowerCase();
+    const hasW2Safety  = _hasText(crevaisonTxt, 'worker 2 (road safety', 'worker 2 focused on road safety', 'worker 2: places or monitors cones', 'worker 2 (guide)');
+    results.push(hasW2Safety
+      ? _pass('AUTO-V21: tire-change Worker 2 has roadside-safety or wheel-support role')
+      : _fail('AUTO-V21: Worker 2 roadside-safety role missing from tire-change scene', `txt="${crevaisonTxt.slice(0,120)}"`));
+  }
+
+  // AUTO-V22: tire-change scene forbids open hood and engine intervention
+  {
+    const crevaison = SR_AUTO_RAW?.crevaison;
+    const txt       = _allGroupText(crevaison).toLowerCase();
+    const allExcl   = [(crevaison?.exclusions || []), ...(crevaison?.scenarios || []).map(s => s.scene_exclude || [])]
+      .flat().join(' ').toLowerCase();
+    const hoodForbidden   = _hasText(allExcl, 'open hood', 'bonnet open') || _hasText(txt, 'hood closed');
+    const engineForbidden = _hasText(allExcl, 'engine inspection', 'mixed battery and tire', 'worker 2 performing unrelated mechanical');
+    const ok = hoodForbidden && engineForbidden;
+    results.push(ok
+      ? _pass('AUTO-V22: tire-change scene forbids open hood and engine/battery intervention')
+      : _fail('AUTO-V22: open hood or engine intervention prohibition missing from tire-change', `hood=${hoodForbidden}, engine=${engineForbidden}`));
+  }
+
+  // AUTO-V23: towing flatbed is structurally connected to recovery truck
+  {
+    const remorquageTxt = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
+    const hasIntegrated = _hasText(remorquageTxt, 'integrated flatbed', 'same chassis', 'chassis and flatbed', 'cab, chassis');
+    results.push(hasIntegrated
+      ? _pass('AUTO-V23: towing scene references integrated flatbed structurally connected to recovery truck')
+      : _fail('AUTO-V23: integrated flatbed requirement missing from towing scene', `txt="${remorquageTxt.slice(0,120)}"`));
+  }
+
+  // AUTO-V24: truck cab, chassis and flatbed are aligned
+  {
+    const remorquageTxt = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
+    const hasAligned    = _hasText(remorquageTxt, 'longitudinal axis', 'aligned on', 'cab through chassis', 'continuous chassis');
+    results.push(hasAligned
+      ? _pass('AUTO-V24: truck cab, chassis and flatbed alignment referenced in towing scene')
+      : _fail('AUTO-V24: cab-chassis-flatbed alignment missing from towing scene', `txt="${remorquageTxt.slice(0,120)}"`));
+  }
+
+  // AUTO-V25: winch cable has visible origin and credible attachment point
+  {
+    const remorquageTxt = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
+    const hasOrigin     = _hasText(remorquageTxt, 'winch mounted', 'winch on the recovery truck', 'mounted winch');
+    const hasAttachment = _hasText(remorquageTxt, 'tow point', 'recovery point', 'attachment point');
+    const ok = hasOrigin && hasAttachment;
+    results.push(ok
+      ? _pass('AUTO-V25: winch cable has visible origin on truck and credible attachment on vehicle')
+      : _fail('AUTO-V25: winch origin or attachment missing from towing scene', `origin=${hasOrigin}, attach=${hasAttachment}`));
+  }
+
+  // AUTO-V26: recovered vehicle has visible wheel restraints
+  {
+    const remorquageTxt = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
+    const hasRestraints = _hasText(remorquageTxt, 'ratchet strap', 'wheel restraint', 'wheel strap', 'strap over car tyre', 'securing the vehicle');
+    results.push(hasRestraints
+      ? _pass('AUTO-V26: towing scene references wheel restraints securing the recovered vehicle')
+      : _fail('AUTO-V26: wheel restraints missing from towing scene', `txt="${remorquageTxt.slice(0,120)}"`));
+  }
+
+  // AUTO-V27: warning triangle mandatory for roadside towing and tire change
+  {
+    const remorquageTxt = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
+    const crevaisonTxt  = _allGroupText(SR_AUTO_RAW?.crevaison).toLowerCase();
+    const towingTriangle   = _hasText(remorquageTxt, 'triangle mandatory', 'warning triangle mandatory', 'warning triangle placed on the road at credible');
+    const tireTriangle     = _hasText(crevaisonTxt,  'warning triangle mandatory', 'triangle mandatory on road');
+    const ok = towingTriangle && tireTriangle;
+    results.push(ok
+      ? _pass('AUTO-V27: warning triangle mandatory for roadside towing and tire change')
+      : _fail('AUTO-V27: triangle mandatory rule missing', `towing=${towingTriangle}, tire=${tireTriangle}`));
+  }
+
+  // AUTO-V28: warning triangle optional for private driveway lockout
+  {
+    const ouvertureTxt = _allGroupText(SR_AUTO_RAW?.ouverture).toLowerCase();
+    const isOptional   = _hasText(ouvertureTxt, 'triangle optional', 'warning triangle optional', 'optional at private', 'not forced in a residential');
+    results.push(isOptional
+      ? _pass('AUTO-V28: warning triangle optional for private driveway lockout')
+      : _fail('AUTO-V28: triangle optional rule missing from lockout scene', `txt="${ouvertureTxt.slice(0,120)}"`));
+  }
+
+  // AUTO-V29: triangle placement never blocks worker or vehicle operation
+  {
+    const remorquageTxt = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
+    const crevaisonTxt  = _allGroupText(SR_AUTO_RAW?.crevaison).toLowerCase();
+    const combined = remorquageTxt + ' ' + crevaisonTxt;
+    const hasUpstream  = _hasText(combined, 'upstream', 'credible distance', 'further back on the road');
+    results.push(hasUpstream
+      ? _pass('AUTO-V29: triangle placed at upstream distance, not blocking work zone')
+      : _fail('AUTO-V29: upstream triangle placement not referenced', `txt="${combined.slice(0,120)}"`));
+  }
+
+  // AUTO-V30: camera remains outside winch and vehicle movement paths
+  {
+    const cam = (WS_AUTO?.camera || '').toLowerCase();
+    const outsideWinch    = _hasText(cam, 'winch cable', 'winch', 'outside the path');
+    const outsideMovement = _hasText(cam, 'vehicle movement corridor', 'movement corridor');
+    const ok = outsideWinch && outsideMovement;
+    results.push(ok
+      ? _pass('AUTO-V30: camera doctrine excludes winch path and vehicle movement corridor')
+      : _fail('AUTO-V30: camera winch/movement exclusion missing', `cam="${cam}"`));
+  }
+
   // ─── Summary ────────────────────────────────────────────────────────────────
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);
-  console.log(`[AUTO-V] ${passed}/${results.length} passed`);  // expected 18/18
+  console.log(`[AUTO-V] ${passed}/${results.length} passed`);  // expected 30/30
   if (failed.length) {
     console.group('[AUTO-V] Failures:');
     failed.forEach(r => console.warn(`  FAIL: ${r.label} — ${r.msg}`));
