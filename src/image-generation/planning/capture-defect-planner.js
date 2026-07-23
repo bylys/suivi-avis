@@ -8,9 +8,14 @@ import { CAPTURE_DEFECTS, CAPTURE_DEFECT_GROUPS } from '../config/capture-defect
 import { _hashSeed } from '../utils/deterministic.js';
 
 // Returns 1 or 2 defect objects, varied across batch positions, never the same defect twice per image.
-// Deterministic finger rule: finger_edge is only eligible when batchIndex % 3 === 0 (≈1 image in 3).
-function _selectCaptureDefects(batchIndex, batchTotal, seed) {
-  const fingerAllowed = batchIndex % 3 === 0;
+// Deterministic finger rule (scoped): only arboriste (elagage/abattage) and paysagiste/taille-de-haie
+// apply the 1-in-3 restriction. All other métiers keep the original weighted-random behaviour.
+function _selectCaptureDefects(batchIndex, batchTotal, seed, metier, service) {
+  const _svc = (service || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const fingerScopeActive =
+    metier === 'elagage' || metier === 'abattage' ||
+    (metier === 'paysagiste' && /taille.*haie|haie/.test(_svc));
+  const fingerAllowed = !fingerScopeActive || batchIndex % 3 === 0;
   const keys   = Object.keys(CAPTURE_DEFECTS).filter(k => k !== 'finger_edge' || fingerAllowed);
   const countS = _hashSeed(`defects|count|${seed}|${batchIndex}`);
   const count  = (countS % 4 === 0) ? 1 : 2;

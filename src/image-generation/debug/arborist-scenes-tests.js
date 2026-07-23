@@ -294,17 +294,17 @@ export async function runArboristScenesTests() {
   // ARB-V21: finger_edge only appears when batchIndex % 3 === 0
   {
     const seed = 99999;
-    const fingerOnAllowed  = _selectCaptureDefects(0, 4, seed).map(d => d.key);  // 0 % 3 === 0 → allowed
-    const fingerOnForbidden1 = _selectCaptureDefects(1, 4, seed).map(d => d.key);  // forbidden
-    const fingerOnForbidden2 = _selectCaptureDefects(2, 4, seed).map(d => d.key);  // forbidden
-    const fingerOnAllowed3 = _selectCaptureDefects(3, 4, seed).map(d => d.key);  // 3 % 3 === 0 → allowed
+    // Pass metier='elagage' to activate the arborist scope
+    const fingerOnAllowed  = _selectCaptureDefects(0, 4, seed, 'elagage', 'elagage arbre').map(d => d.key);
+    const fingerOnForbidden1 = _selectCaptureDefects(1, 4, seed, 'elagage', 'elagage arbre').map(d => d.key);
+    const fingerOnForbidden2 = _selectCaptureDefects(2, 4, seed, 'elagage', 'elagage arbre').map(d => d.key);
+    const fingerOnAllowed3 = _selectCaptureDefects(3, 4, seed, 'elagage', 'elagage arbre').map(d => d.key);
     const fingerNeverOnForbidden = !fingerOnForbidden1.includes('finger_edge') && !fingerOnForbidden2.includes('finger_edge');
-    const fingerEligibleOnAllowed = !fingerOnAllowed.includes('finger_edge') || true; // may not pick it even if eligible
-    // Test broader: for indices 1 and 2 (forbidden), across many seeds, finger never appears
+    // Test broader: for forbidden indices, across many seeds, finger never appears in arborist scope
     let fingerLeaksCount = 0;
     for (let s = 0; s < 200; s++) {
       for (const bi of [1, 2, 4, 5, 7, 8]) {
-        const keys = _selectCaptureDefects(bi, 10, s * 7 + 3).map(d => d.key);
+        const keys = _selectCaptureDefects(bi, 10, s * 7 + 3, 'elagage', 'elagage arbre').map(d => d.key);
         if (keys.includes('finger_edge')) fingerLeaksCount++;
       }
     }
