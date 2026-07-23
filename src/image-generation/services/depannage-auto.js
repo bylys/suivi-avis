@@ -386,7 +386,7 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
             background: 'flat tyre leaning against the car body, road or parking surface beyond',
           },
           scene_debris:  'wheel nuts grouped on the ground beside the removed tyre, gravel disturbed around the jack base',
-          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open', 'compressor or pressure gauge placed beside tyre with no active repair', 'equipment arranged for a photo'],
+          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open', 'compressor or pressure gauge placed beside tyre with no active repair', 'equipment arranged for a photo', 'worker lying under the vehicle supported only by a small jack', 'person under the vehicle'],
           tools: [
             'hydraulic jack raised under the vehicle sill',
             'lug wrench on the ground beside the spare wheel',
@@ -663,7 +663,7 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
             background: 'flatbed lorry deck and cab behind, road on either side',
           },
           scene_debris:  'wheel chock block on the deck near the car tyre, ratchet strap laid out on the ramp edge',
-          scene_exclude: ['tow strap between two cars on flat road', 'jump cables', 'battery booster', 'door wedge', 'spare tyre'],
+          scene_exclude: ['tow strap between two cars on flat road', 'jump cables', 'battery booster', 'door wedge', 'spare tyre', 'operator standing in front of the vehicle during winch cable tensioning', 'worker in the winch line trajectory'],
           tools: [
             'ratchet strap laid on the flatbed deck near the car wheel',
             'wheel chock placed in front of the loaded car tyre',
