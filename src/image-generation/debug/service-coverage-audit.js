@@ -217,7 +217,7 @@ export async function runAuditParityTest() {
 
   let persistedRaw;
   try {
-    const resp = await fetch('/docs/service-coverage-audit.json');
+    const resp = await fetch('/docs/service-coverage-audit.json', { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     persistedRaw = await resp.json();
   } catch (e) {

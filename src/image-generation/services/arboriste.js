@@ -1,76 +1,107 @@
 /**
- * arboriste.js — Phase 2 shadow copy (source active : app.js)
- * Copie stricte de WORK_SCENES {élagage, abattage} et SITE_REALISM {abattage, 'élagage'}.
- * Ne pas modifier avant le cutover validé.
+ * arboriste.js — Phase 7D (arborist cluster)
+ * WORK_SCENES + SITE_REALISM for élagage and abattage services.
+ *
+ * Safety doctrine (ALL scenarios):
+ *  - Minimum 2 workers, distinct roles — both visible in every state
+ *  - Homeowner camera: ordinary smartphone from garden / driveway / sidewalk / residential window
+ *    — workers actively working, camera clearly separated from professional zone
+ *    — NEVER from basket / beside climber / worker POV / drone / commercial / posed
+ *  - Drop zone: Worker 2 always laterally offset, outside the direct branch drop zone,
+ *    away from suspended branches and the felling direction
+ *  - Public / clients / vehicles / animals outside the exclusion zone in all scenarios
+ *
+ * 10 visual contracts:
+ *  ARB-CLIMBING-PRUNING   — grimpeur in crown, professional tree-climbing harness + positioning rope + credible anchor on strong trunk or major branch union + secondary attachment while cutting + chainsaw on tool lanyard
+ *  ARB-MEWP-PRUNING       — nacelle, basket + guardrails + outriggers + ground controls
+ *  ARB-GROUND-PRUNING     — pole saw / hand tools from ground, no aerial access
+ *  ARB-SECTIONAL-DISMANTLING — dismantling with rigging rope + lowering device
+ *  ARB-GROUND-FELLING     — clear felling direction, exclusion zone, controlled cut
+ *  ARB-DANGEROUS-TREE     — high-risk work, full PPE + rigging + multiple controls
+ *  ARB-HEDGE-TRIMMING     — hedge trimmer from ground or professional platform (→ paysagiste.js)
+ *  ARB-STUMP-GRINDING     — stump grinder, guards, exclusion zone
+ *  ARB-BRANCH-CHIPPING    — chipper + trailer, controlled feeding
+ *  ARB-GREEN-WASTE-REMOVAL — loading, cleanup, trailer management
  */
 
 export const WORK_SCENES_ARBORISTE = {
+
   élagage: {
     category:         'arboriste',
     priority:         3,
     service_keywords: [
-      { phrase: 'taille arbre',   score: 12 },
-      { phrase: 'rognage souche', score: 12 },
-      { phrase: 'emondage',       score: 10 },
-      { phrase: 'elagage',        score: 10 },
-      { phrase: 'elagueur',       score: 10 },
-      { phrase: 'taille haie',    score: 9  },
-      { phrase: 'haie',           score: 4  },
-      { phrase: 'arbust',         score: 3  },
+      { phrase: 'taille arbre',       score: 12 },
+      { phrase: 'elagage arbre',      score: 12 },
+      { phrase: 'elagage peuplier',   score: 12 },
+      { phrase: 'elagage en hauteur', score: 12 },
+      { phrase: 'recepage arbre',     score: 12 },
+      { phrase: 'couronnage arbre',   score: 12 },
+      { phrase: 'elagage arbres dangereux', score: 12 },
+      { phrase: 'emondage',           score: 10 },
+      { phrase: 'elagage',            score: 10 },
+      { phrase: 'elagueur',           score: 10 },
+      { phrase: 'rognage souche',     score: 9  },
     ],
     exclude_if: [],
-    intro:      'tree pruning and hedge trimming at a residential garden',
+    intro:      'tree pruning at a residential property — ordinary customer smartphone photo taken from the garden or driveway while arborists are actively working',
     setting:    'exterior',
     secteur:           'arborist',
     variation_setting: 'garden',
-    hasWorkers:        false,
-    camera:            'standing on the ground, 5–8 m from the tree, angled slightly upward',
-    materials:  ['cut branches', 'hedge clippings', 'fresh sawdust', 'bark chips'],
+    hasWorkers:        true,
+    camera:     'ordinary homeowner smartphone photo taken from the garden, driveway or a residential window — 6–15 m from the tree, looking up at the crown or across at the work zone — slightly imperfect framing and slightly tilted horizon — arborists actively at work, not posed or looking at the camera',
+    materials:  ['cut branches', 'fresh sawdust', 'bark chips', 'rigging rope', 'chipper trailer nearby'],
     photo_defects: [
-      'slight upward tilt distorting verticals',
-      'pale sky clipping exposure on bright patches',
+      'slight upward tilt from shooting at aerial workers',
+      'pale sky clipping exposure on bright patches behind the crown',
     ],
-    exclusions: ['chainsaws', 'helmets', 'ropes', 'harnesses', 'chippers', 'safety equipment', 'workers', 'people'],
+    exclusions: [
+      'camera in the tree canopy beside the climber',
+      'drone aerial view',
+      'worker POV or GoPro angle',
+      'commercial studio shot',
+      'workers posed looking at camera',
+      'solo worker with no colleague visible',
+    ],
     states: {
       debut: {
         framing: {
           work_pct:   40,
-          foreground: 'a small pile of first cut branches on the lawn beside the tree',
-          midground:  'tree mostly intact with one section freshly trimmed — raw cut marks visible on main branch',
-          background: 'garden fence, neighbouring roof, pale sky',
+          foreground: 'Worker 2 on the ground managing ropes or setting up the exclusion zone — cones or tape at the perimeter — first cut branches falling or already on the ground',
+          midground:  'tree mostly intact — Worker 1 ascending or positioned at the first work zone, first branch section removed, raw cut mark visible',
+          background: 'garden fence, neighbouring roof, pale sky — access vehicle or chipper at the driveway edge',
         },
-        debris:      'a few scattered branch offcuts and light sawdust near the base',
-        description: 'Pruning has just started. The tree is mostly full. One branch section has been removed, leaving a clean raw cut mark. Materials are barely disturbed.',
+        debris:      'a few scattered branch offcuts and sawdust near the base — site still being set up',
+        description: 'Pruning has just started. Worker 1 is ascending or at the first work zone. Worker 2 manages ropes and the exclusion zone on the ground. The tree is mostly full.',
       },
       encours: {
         framing: {
-          work_pct:   55,
-          foreground: 'branches and clippings piled on lawn around the base, fresh sawdust visible',
-          midground:  'tree crown partially pruned — clearly lighter on one side, major cuts visible',
-          background: 'neighbouring rooflines and sky now more visible through the thinned crown',
+          work_pct:   60,
+          foreground: 'Worker 2 on the ground outside the drop zone — managing the lowering rope or guiding falling branches away from the exclusion zone — branches and clippings piling up nearby',
+          midground:  'Worker 1 actively cutting in the crown — tree crown noticeably lighter on one side, several major cut points visible, fresh sawdust falling',
+          background: 'neighbouring rooflines and sky now more visible through the thinned crown — chipper or trailer parked at the garden edge',
         },
-        debris:      'cut branches and hedge clippings piled on lawn, sawdust scattered around base',
-        description: 'Pruning is underway. The crown is noticeably lighter on one side. Branches are piled on the lawn. The job is active and progressing well.',
+        debris:      'cut branches and clippings piled outside the drop zone, sawdust scattered around base',
+        description: 'Pruning is underway. Worker 1 is cutting in the crown. Worker 2 manages ropes and guides falling branches from a safe lateral position outside the drop zone.',
       },
       semifinal: {
         framing: {
           work_pct:   50,
-          foreground: 'most branches already removed and stacked, one last pile being managed',
-          midground:  'tree properly shaped, fresh cuts on all main branches neatly done',
-          background: 'open sky now visible, clean garden structure emerging',
+          foreground: 'Worker 2 stacking or feeding cut branches into the chipper — most major branches already removed and managed',
+          midground:  'tree properly shaped — Worker 1 descending or doing final cuts at the upper crown, fresh clean cut marks on all main branches',
+          background: 'open sky now visible, clean garden structure emerging — chipper or trailer alongside',
         },
-        debris:      'a tidy pile of cut branches ready for removal, fine sawdust remaining on the lawn',
-        description: 'The pruning is nearly complete. The tree has a clean shape. Cut material is being organised into neat piles for removal.',
+        debris:      'tidy pile of cut branches being processed — chipper running or branches stacked for removal',
+        description: 'The pruning is nearly complete. Worker 1 finishes the upper crown or descends. Worker 2 is processing cut material or stacking branches at the ground.',
       },
       final: {
         framing: {
-          work_pct:   60,
-          foreground: 'clean lawn with only a small heap of last trimmings at the edge',
-          midground:  'properly shaped tree — balanced crown, all cuts clean and neatly done',
-          background: 'tidy garden, neighbouring house, open sky',
+          work_pct:   55,
+          foreground: 'Worker 2 clearing last branch debris from the lawn — bags or trailer being loaded — lawn being raked clean',
+          midground:  'Worker 1 on the ground doing a final inspection of the shaped crown — properly balanced tree, all cuts clean and neatly done',
+          background: 'tidy garden, neighbouring house, open sky — chipper or trailer at the driveway exit',
         },
-        debris:      'minimal — one small bundle of branches at garden edge, lawn otherwise clear',
-        description: 'Work is finished. The tree is well shaped. The garden is clean and tidy. A professional result ready to photograph for a client.',
+        debris:      'minimal — one small bundle of branches at garden edge, lawn otherwise clear, trailer loaded',
+        description: 'Work is finished. Worker 1 inspects the shaped crown at ground level. Worker 2 clears debris and loads the trailer. A professional result.',
       },
     },
   },
@@ -79,945 +110,517 @@ export const WORK_SCENES_ARBORISTE = {
     category:         'arboriste',
     priority:         3,
     service_keywords: [
-      { phrase: 'abattage arbre', score: 13 },
-      { phrase: 'dessouchage',    score: 11 },
-      { phrase: 'abattage',       score: 9  },
-      { phrase: 'abatage',        score: 9  },
+      { phrase: 'abattage arbre',          score: 13 },
+      { phrase: 'abattage peuplier',       score: 13 },
+      { phrase: 'abattage grand arbre',    score: 13 },
+      { phrase: 'abattage en zone difficile', score: 13 },
+      { phrase: 'abattage conifere',       score: 12 },
+      { phrase: 'dessouchage',             score: 12 },
+      { phrase: 'abattage',                score: 9  },
+      { phrase: 'abatage',                 score: 9  },
     ],
     exclude_if: [],
-    intro:      'large tree felling at a residential property',
+    intro:      'tree felling or stump grinding at a residential property — ordinary customer smartphone photo taken from a safe position outside the exclusion zone while arborists are actively working',
     setting:    'exterior',
-    secteur:           'tree feller',
+    secteur:           'arborist',
     variation_setting: 'garden',
-    hasWorkers:        false,
-    camera:            'standing back 7–10 m, wide view of felled or sectioned tree',
-    materials:  ['log sections', 'bark chips', 'coarse sawdust', 'large branches'],
+    hasWorkers:        true,
+    camera:     'ordinary homeowner smartphone photo from the garden, driveway or residential window — 8–15 m from the work zone, outside the exclusion zone, slightly imperfect framing — arborists actively working, exclusion zone clearly visible in the scene',
+    materials:  ['log sections', 'bark chips', 'coarse sawdust', 'large branches', 'rigging rope', 'exclusion zone tape'],
     photo_defects: [
       'motion blur on peripheral branches from wind',
       'JPEG compression on dense bark and wood grain texture',
     ],
-    exclusions: ['chainsaws', 'safety gear', 'ropes', 'cranes', 'workers', 'people'],
+    exclusions: [
+      'camera inside the exclusion zone',
+      'bystanders in the fall direction',
+      'drone aerial view',
+      'solo worker with no colleague visible',
+      'second worker in the felling direction during active felling',
+    ],
     states: {
       debut: {
         framing: {
           work_pct:   40,
-          foreground: 'first cut log sections placed neatly at the garden edge',
-          midground:  'tree still standing with lower branches removed and base notched',
-          background: 'garden fence, neighbouring house',
+          foreground: 'Worker 2 setting up the exclusion zone — cones or tape at the perimeter, keeping the area clear — first preparatory cuts or rigging rope being set up high on the trunk',
+          midground:  'tree still standing — Worker 1 at the base making the notch cut or ascending for rigging — base notch and rope attachment point visible',
+          background: 'garden fence, neighbouring house — access vehicle at the driveway edge',
         },
-        debris:      'bark chips and a light coat of sawdust around the base of the standing tree',
-        description: 'Felling has just started. The tree is still standing but lower branches are removed. The first cuts are made at the base.',
+        debris:      'bark chips and sawdust around the base — first wood chips from the notch cut',
+        description: 'Felling or dismantling has just started. Worker 1 is cutting or rigging. Worker 2 sets up the exclusion zone and keeps bystanders clear.',
       },
       encours: {
         framing: {
-          work_pct:   60,
-          foreground: 'trunk sections laid on ground in an organised row, bark chips around them',
-          midground:  'main trunk partially sectioned, upper part still standing',
-          background: 'sky now more open above where canopy is being reduced',
+          work_pct:   65,
+          foreground: 'Worker 2 outside the fall zone managing the guide rope or monitoring the exclusion zone — trunk sections or branches being lowered or fallen',
+          midground:  'active cutting in progress — notch and back-cut or rigging saw running — trunk or branch sections on the ground, upper part still being worked',
+          background: 'sky now more open above where canopy is being reduced — chipper or trailer nearby',
         },
-        debris:      'log sections, branches and sawdust on the ground — an active but organised work site',
-        description: 'The tree is being sectioned. Several log pieces are already on the ground. The upper trunk and crown are still being worked.',
+        debris:      'log sections, branches and sawdust on the ground — an active but controlled work site',
+        description: 'Active felling or sectional dismantling underway. Worker 1 makes the controlled cuts. Worker 2 manages the guide rope and exclusion zone from a safe lateral position.',
       },
       semifinal: {
         framing: {
           work_pct:   55,
-          foreground: 'log sections stacked neatly on one side, sawdust on ground',
-          midground:  'fresh flat stump visible, remaining small branches being cleared',
-          background: 'open sky where the tree stood, neighbouring house now visible',
+          foreground: 'Worker 2 stacking log sections or feeding branches into the chipper at the garden edge — organised material management',
+          midground:  'Worker 1 at ground level sectioning or processing the felled trunk — fresh flat stump visible, remaining branches being cleared',
+          background: 'open sky where the tree stood, neighbouring house now visible — cleaner garden emerging',
         },
-        debris:      'neatly stacked logs, fine sawdust coat on surrounding ground',
-        description: 'The tree is down. The trunk is sectioned. Logs are being stacked. The stump is clean and flat. Final clearing underway.',
+        debris:      'neatly stacked logs, fine sawdust coat on surrounding ground — chipper running nearby',
+        description: 'The tree is down or the main sections have fallen. Worker 1 sections the trunk. Worker 2 manages the log pile and feeds the chipper.',
       },
       final: {
         framing: {
           work_pct:   50,
-          foreground: 'clean garden with fresh flat stump visible',
-          midground:  'tidy log pile stacked against fence or garden wall',
-          background: 'open sky, neighbouring property now visible, cleared garden',
+          foreground: 'Worker 2 loading last branches into the trailer or raking sawdust from the lawn — garden almost clear',
+          midground:  'Worker 1 inspecting the stump or doing final ground clearing — clean flat stump visible, minimal debris remaining',
+          background: 'open sky, neighbouring property now visible, cleared garden — trailer at the driveway exit',
         },
-        debris:      'minimal — stump and a tidy log pile are the only evidence of work',
-        description: 'Felling complete. Garden clear. Logs neatly stacked. The stump is all that remains. A clean professional finish.',
+        debris:      'minimal — stump or fresh-ground stump area and a tidy log pile are the only evidence of work',
+        description: 'Felling complete. Worker 1 inspects the stump. Worker 2 loads the trailer. Garden is clear and clean.',
       },
     },
   },
 
 };
 
+// ─── SITE_REALISM_ARBORISTE ───────────────────────────────────────────────────
+
 export const SITE_REALISM_ARBORISTE = {
-  abattage: {
+
+  élagage: {
     scenarios: [
 
-      // --- abattage direct ---
+      // ─── ARB-CLIMBING-PRUNING: grimpeur in crown ──────────────────────────
       {
-        _for:          'abattage.*arbre|abattage.*peup|abattage.*conif',
-        scene_note:    'tree felling in progress — notch and back-cut made at the base, directional guide rope tensioned from high on the trunk, tree still standing with the hinge cut visible',
-        scene_camera:  'standing at a safe distance from the fall zone, framing the base of the tree with the notch cut and the guide rope running upward',
+        _for:          'elagage.*arbre|taille.*arbre.*haute|elagage.*peuplier|elagage.*hauteur|recepage|couronnage|elagage.*dangereux',
+        scene_note:    'homeowner photo of aerial tree pruning — Worker 1 (grimpeur) positioned against the main trunk or a strong branch in the crown, double-rope technique: positioning rope + connected fall-arrest harness + secondary attachment + chainsaw on tool lanyard — Worker 2 on the ground outside the direct branch drop zone, managing the lowering rope from a protected lateral position — crown being progressively reduced from the top — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway, 8–15 m from the tree, looking up at Worker 1 in the crown — homeowner smartphone, slightly imperfect upward framing, Worker 2 visible on the ground in the foreground',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'Worker 2 on the ground outside the drop zone — managing the lowering rope from a protected lateral position beside the trunk, not underneath the falling branches — cones or tape marking the exclusion zone perimeter',
+          midground:  'Worker 1 in the crown against the main trunk or a strong branch — harness and positioning rope clearly visible, chainsaw on a tool lanyard, actively cutting a branch section — crown progressively opened from the top',
+          background: 'sky visible through the thinned crown, garden fence or neighbouring roofline below',
+        },
+        scene_debris:  'cut branch sections on the lawn outside the drop zone, sawdust falling from the active cut above',
+        scene_exclude: [
+          'Worker 1 hanging from a thin twig or small branch instead of main trunk or strong branch',
+          'Worker 1 floating in mid-air with no visible rope or trunk contact',
+          'chainsaw without tool lanyard visible',
+          'Worker 2 standing directly under the active cut or falling branch zone',
+          'single arborist climbing alone with no ground worker',
+          'camera from the basket beside the climber',
+          'drone or aerial view',
+          'bystanders inside the exclusion zone',
+        ],
+        tools: [
+          'positioning rope and carabiner at Worker 1s harness attachment point',
+          'chainsaw on a tool lanyard at the cut branch',
+          'lowering rope running from the cut branch section down to Worker 2',
+          'cones or exclusion tape at the drop zone perimeter',
+        ],
+        protections: [
+          'full climbing harness on Worker 1 — double-rope technique: positioning rope + secondary attachment',
+          'helmet with ear and eye protection on Worker 1',
+          'tool lanyard on the chainsaw — cannot fall freely',
+          'Worker 2 in protected lateral position outside the drop zone managing the lowering rope',
+        ],
+        chantier_details: [
+          'Worker 1 braced against main trunk or strong branch — not floating or hanging from thin wood',
+          'positioning rope and secondary attachment both visible — correct double-attachment technique',
+          'chainsaw on a tool lanyard — securely attached and not at risk of falling',
+          'two professionals with distinct roles: Worker 1 cutting in the crown, Worker 2 managing lowering rope outside drop zone',
+        ],
+      },
+
+      // ─── ARB-MEWP-PRUNING: nacelle / cherry picker ────────────────────────
+      {
+        _for:          'elagage.*peuplier|elagage.*hauteur|couronnage|elagage.*dangereux|elagage.*nacelle',
+        scene_note:    'homeowner photo of aerial pruning from a MEWP (cherry picker / nacelle) — Worker 1 fully inside the basket with guardrails visible all around, boom fully extended to the crown — outriggers deployed on the ground, MEWP stabilised — Worker 2 beside the ground controls outside the drop zone — photo from garden, driveway or residential window',
+        scene_camera:  'standing in the garden or from a residential window, 8–18 m from the tree, framing the extended boom with the basket at the crown — homeowner smartphone, slightly imperfect framing, Worker 2 at ground controls visible',
         scene_framing: {
           work_pct:   65,
-          foreground: 'yellow safety tape exclusion zone at the fall area perimeter, guide stake at the fall direction',
-          midground:  'tree trunk base — notch and back-cut clearly visible in the wood, rope attached high and tensioned',
-          background: 'crown of the tree, open fall zone beyond',
+          foreground: 'Worker 2 beside the MEWP ground controls outside the drop zone — outriggers clearly visible, deployed and stabilising the machine on the ground',
+          midground:  'Worker 1 fully inside the basket at the crown — guardrails visible all around the basket, Worker 1 using chainsaw or loppers to cut a branch, boom at full extension',
+          background: 'sky visible through the thinned crown, garden or driveway behind',
         },
-        scene_debris:  'fresh sawdust at the base of the trunk around the notch cut, wood chip pile from the notch removal',
-        scene_exclude: ['felled tree on the ground', 'only stump visible', 'dessouchage equipment', 'simple light pruning', 'tree completely intact'],
+        scene_debris:  'cut branch sections on the lawn below the crown, fresh sawdust below the active cut zone',
+        scene_exclude: [
+          'Worker 1 climbing out of the basket into the tree',
+          'Worker 1 sitting on the basket guardrails',
+          'Worker 2 standing under actively falling branches or in the drop zone',
+          'MEWP without outriggers deployed',
+          'MEWP basket floating with no guardrails visible',
+          'single worker in the basket with no ground colleague',
+          'drone view from above the basket',
+          'camera positioned from inside or beside the basket',
+          'bystanders inside the exclusion zone',
+        ],
         tools: [
-          'chainsaw beside the cut — notch cut just completed',
-          'guide rope running from the trunk base up to the attachment point high on the tree',
-          'wedge blocks on the ground near the trunk base',
+          'chainsaw or long-reach loppers at the cut branch inside the basket',
+          'ground remote controls beside Worker 2',
         ],
         protections: [
-          'yellow safety tape marking the exclusion zone in the fall direction',
-          'guide stake driven into the ground at the calculated fall direction',
+          'full basket with guardrails on all sides — Worker 1 fully inside',
+          'outriggers deployed and locked — MEWP stabilised on firm ground',
+          'Worker 2 at ground controls outside the drop zone and falling-branch zone',
         ],
         chantier_details: [
-          'notch and back-cut clearly visible in the trunk at base level',
-          'guide rope tensioned from the trunk attachment point toward the desired fall direction',
-          'fresh sawdust pile at the base from the notch cut',
-        ],
-      },
-      {
-        _for:          'abattage.*arbre|abattage.*peup|abattage.*conif',
-        scene_note:    'tree mid-fall — trunk at 30–45 degrees, crown swinging into the fall zone, guide rope under tension, exclusion zone clear',
-        scene_camera:  'standing well outside the fall zone, framing the leaning trunk at 30–45 degrees with the crown swinging',
-        scene_framing: {
-          work_pct:   70,
-          foreground: 'exclusion zone tape and safety cones at the near perimeter',
-          midground:  'tree trunk at 30–45 degrees — crown swinging into the prepared fall zone',
-          background: 'cleared fall zone, open garden or field where the tree will land',
-        },
-        scene_debris:  'small bark fragments at the base from the cut, guide rope slack forming behind the falling trunk',
-        scene_exclude: ['tree standing upright intact', 'stump only', 'dessouchage', 'log pile', 'simple pruning'],
-        tools: [
-          'guide rope in tension from the upper trunk toward the direction of fall',
-          'chainsaw on the ground at the safe distance — cut already made',
-        ],
-        protections: [
-          'yellow safety tape exclusion zone visibly clear of the fall direction',
-          'operator at safe distance away from the fall zone',
-        ],
-        chantier_details: [
-          'trunk at steep lean angle — crown clearly in motion',
-          'guide rope tracking the controlled fall direction — rope in tension',
-          'fall zone prepared and clear ahead of the falling crown',
-        ],
-      },
-      {
-        _for:          'abattage.*arbre|abattage.*peup|abattage.*conif',
-        scene_note:    'tree freshly felled — full trunk on the ground in the fall zone, fresh-cut stump visible at trunk base, sawdust around the stump, exclusion tape still in place',
-        scene_camera:  'standing beside the stump, framing the full length of the fallen trunk on the ground with the stump in the foreground',
-        scene_framing: {
-          work_pct:   55,
-          foreground: 'fresh-cut stump with growth rings visible — sawdust and wood chips around the base',
-          midground:  'fallen trunk stretching along the ground — bark, crown foliage at the far end',
-          background: 'open fall zone, safety tape still in place at the perimeter',
-        },
-        scene_debris:  'sawdust ring around the stump base, wood chips from the notch cut, bark fragments on the ground',
-        scene_exclude: ['tree standing', 'sections already cut up', 'dessouchage', 'log pile stacked'],
-        tools: [
-          'chainsaw on the ground near the stump — felling just completed',
-          'measuring tape near the stump base',
-        ],
-        protections: [
-          'yellow safety tape exclusion zone still in place around the fall area',
-        ],
-        chantier_details: [
-          'fresh-cut stump with concentric growth rings visible on the flat face',
-          'fallen trunk on the ground — full length visible from stump to crown',
-          'sawdust ring around the stump from the cut',
+          'MEWP outriggers clearly deployed on solid ground — machine stable',
+          'Worker 1 fully inside the basket — guardrails visible all around, not climbing out into tree',
+          'Worker 2 at ground controls outside the drop zone — not under the basket or falling branches',
+          'two professionals with distinct roles: Worker 1 cutting from basket, Worker 2 at ground controls managing machine and exclusion zone',
         ],
       },
 
-      // --- démontage par sections / zone difficile ---
+      // ─── ARB-GROUND-PRUNING: lower branches from stable ground ─────────────
       {
-        _for:          'zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage',
-        scene_note:    'tree being dismantled section by section from the top — upper sections already removed, arborist climber at the top of the shortened stub trunk, multiple log sections at the base',
-        scene_camera:  'standing back from the tree, framing the partially dismantled stub trunk with the climber at the top against the sky',
-        scene_framing: {
-          work_pct:   65,
-          foreground: 'log sections on the ground at the base — stacked and arranged, sawdust around them',
-          midground:  'shortened stub trunk — much shorter than original height, climber in harness at the top',
-          background: 'sky above, property or tight garden space visible beside the work area',
-        },
-        scene_debris:  'sawdust ring around the base, bark fragments from previous sections on the ground',
-        scene_exclude: ['intact standing full tree', 'simple felling', 'tree in open field', 'dessouchage'],
-        tools: [
-          'climbing rope running from the climber at the top of the stub down to ground handlers',
-          'chainsaw at the climber\'s position for the next section cut',
-          'log sections on the ground from previous section removals',
-        ],
-        protections: [
-          'full climbing harness and helmet on the climber at the stub top',
-          'exclusion zone below the working area',
-          'lowering rope for controlled section descent',
-        ],
-        chantier_details: [
-          'stub trunk significantly shorter than the original tree — sections removed progressively from top',
-          'climber in harness at the top of the shortened stub — height still significant',
-          'log section pile at the base growing as each section is lowered',
-        ],
-      },
-      {
-        _for:          'zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage',
-        scene_note:    'large trunk section being lowered by rope — section suspended mid-air between the stub and the ground, rope under tension, ground handler controlling the descent speed',
-        scene_camera:  'standing back, framing the suspended trunk section hanging from the lowering rope between canopy height and the ground',
-        scene_framing: {
-          work_pct:   70,
-          foreground: 'ground handler with the lowering rope — hands gripping the rope, rope taut under the section weight',
-          midground:  'large trunk section suspended mid-air — bark clearly visible, rope through the top ring',
-          background: 'stub trunk above, property or structure beside the controlled lowering zone',
-        },
-        scene_debris:  'bark fragments on the ground below the suspended section from the cut, sawdust at the ground immediately below',
-        scene_exclude: ['tree falling uncontrolled', 'intact standing tree', 'simple felling', 'dessouchage'],
-        tools: [
-          'lowering rope through a rigging ring at the top of the suspended section',
-          'ground handler with gloved hands on the rope controlling the descent',
-        ],
-        protections: [
-          'hard hat and gloves on the ground handler',
-          'exclusion zone below the lowering path',
-        ],
-        chantier_details: [
-          'trunk section suspended mid-air — log mass visible, rope taut under tension',
-          'ground handler controlling descent speed with the lowering rope',
-          'controlled lowering arc clear of the adjacent property',
-        ],
-      },
-      {
-        _for:          'zone.*diffic|diffic.*zone|grand.*arbre|gros.*arbre|demontage',
-        scene_note:    'partially dismantled tree — several upper sections removed, leaving a reduced stub trunk still standing, log billets at the base, tight garden or property boundary visible',
-        scene_camera:  'standing in the garden, framing the reduced stub trunk with the log billets at the base and the property boundary close beside',
-        scene_framing: {
-          work_pct:   55,
-          foreground: 'log billets on the ground at the base — varied section lengths, fresh cut ends visible',
-          midground:  'reduced stub trunk — upper sections removed, clean cut at the current top level',
-          background: 'tight property boundary beside the work area — fence, wall or house clearly close to the trunk',
-        },
-        scene_debris:  'sawdust around the billet pile, bark fragments on the ground',
-        scene_exclude: ['full intact tree', 'open field felling', 'dessouchage', 'tree completely down'],
-        tools: [
-          'chainsaw resting against the stub trunk',
-          'rigging rope coiled beside the billet pile',
-        ],
-        protections: [
-          'exclusion zone tape still in place around the work area',
-        ],
-        chantier_details: [
-          'stub trunk clean-cut at the current working height — progressive dismantling visible',
-          'log billet pile at the base — each section from a previous cut',
-          'tight property boundary clearly visible beside the trunk — confined working space',
-        ],
-      },
-
-      // --- dessouchage ---
-      {
-        _for:          'dessouchage|souche',
-        scene_note:    'stump grinder working on a fresh stump — rotating cutting wheel engaged with the stump surface, wood chips being thrown to the side, operator behind the machine',
-        scene_camera:  'standing to the side of the stump grinder, framing the cutting wheel engaged with the fresh stump',
-        scene_framing: {
-          work_pct:   70,
-          foreground: 'stump grinder with the rotating cutting wheel engaged on the stump surface — chips being thrown',
-          midground:  'fresh stump being ground — surface visibly decreasing in height as the wheel removes wood',
-          background: 'garden or lawn around the stump, sawdust and chip debris scattered wide',
-        },
-        scene_debris:  'wood chips being thrown to the sides from the grinding wheel, sawdust and chip ring forming around the machine',
-        scene_exclude: ['intact standing tree', 'simple pruning', 'felling in progress', 'log pile from felling'],
-        tools: [
-          'stump grinder machine with rotating cutting wheel engaged on the stump surface',
-        ],
-        protections: [
-          'chip deflector guard on the grinder protecting the operator',
-          'eye protection on the operator',
-          'chip splash zone cleared around the grinder',
-        ],
-        chantier_details: [
-          'cutting wheel actively engaged with the stump — top surface being progressively reduced',
-          'fresh wood chip shower being thrown to the sides from the grinding wheel',
-          'stump clearly decreasing in height as the grinder works across it',
-        ],
-      },
-      {
-        _for:          'dessouchage|souche',
-        scene_note:    'partially ground stump — circular grinding marks visible on the stump face, wood chips scattered wide, stump reduced to below-grade level on one side',
-        scene_camera:  'crouching beside the stump, framing the grinding marks and the wood chip scatter',
-        scene_framing: {
-          work_pct:   75,
-          foreground: 'fresh grinding marks on the stump face — circular grinder path clearly visible in the wood',
-          midground:  'stump partially ground — one side reduced to below-grade, other side still full height',
-          background: 'garden lawn, wood chips scattered across the surrounding grass',
-        },
-        scene_debris:  'fresh wood chips scattered wide around the stump from the grinding operation',
-        scene_exclude: ['intact standing tree', 'full stump untouched', 'felling in progress'],
-        tools: [
-          'stump grinder parked beside the stump between passes',
-        ],
-        protections: [],
-        chantier_details: [
-          'circular grinding path marks clearly visible on the stump face',
-          'stump partially reduced — one side to below-grade, revealing the grinding depth',
-          'wood chip scatter wide around the stump from the grinding operation',
-        ],
-      },
-      {
-        _for:          'dessouchage|souche',
-        scene_note:    'dessouchage completed — stump removed to below-grade level, depression in the lawn where the stump was, wood chip pile in the hollow, surrounding lawn intact',
-        scene_camera:  'standing above the completed area, framing the ground-level result where the stump was',
-        scene_framing: {
-          work_pct:   45,
-          foreground: 'ground-level depression where the stump was — wood chip pile filling the hollow',
-          midground:  'lawn around the removal area — grass intact, slight disturbance from the machine tracks',
-          background: 'garden surroundings, fence or garden edge beyond',
-        },
-        scene_debris:  'wood chip pile in the depression, fine sawdust on the surrounding grass from the grinding',
-        scene_exclude: ['intact standing tree', 'stump still visible above ground', 'felling in progress'],
-        tools: [
-          'stump grinder parked away — work completed',
-          'rake on the ground beside the chip pile for tidying',
-        ],
-        protections: [],
-        chantier_details: [
-          'depression in the lawn at ground level — stump ground to below grade',
-          'wood chip pile filling the hollow from the grinding debris',
-          'surrounding lawn intact with slight machine track marks beside the area',
-        ],
-      },
-
-      // --- après tempête ---
-      {
-        _for:          'tempete|orage|vent.*fort|apres.*vent|arbre.*tombe',
-        scene_note:    'wind-fallen tree leaning against a garden fence or low wall — root ball exposed, trunk on the ground at a low angle, grey overcast sky and wet ground after the storm',
-        scene_camera:  'standing back, framing the fallen tree leaning against the fence with the exposed root ball at the base',
+        _for:          'elagage.*arbre|taille.*arbre|recepage|couronnage',
+        scene_note:    'homeowner photo of ground-level tree pruning — Worker 1 using a pole saw or long-handled loppers to cut lower branches from stable ground — Worker 2 collecting and stacking cut branches at a safe lateral distance from the drop zone — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway, 6–12 m from the tree, looking at Worker 1 using the pole saw — homeowner smartphone, slightly imperfect framing, both workers visible',
         scene_framing: {
           work_pct:   60,
-          foreground: 'exposed root ball on the wet ground — earth and roots upended, depression in the lawn beside it',
-          midground:  'trunk at a low angle resting on the fence or wall — bark and crown visible',
-          background: 'grey overcast sky, wet garden, fence partially visible under the trunk',
+          foreground: 'Worker 2 at a safe lateral distance from Worker 1 — stacking or collecting cut branch sections on the lawn, outside the falling-branch zone',
+          midground:  'Worker 1 on stable ground using a telescopic pole saw to cut a lower branch — both feet firmly on the ground, pole saw extended upward at the target branch',
+          background: 'tree crown above, garden fence or neighbouring roofline beyond',
         },
-        scene_debris:  'wet mud and soil debris around the exposed root ball, small branches and leaves on the wet ground',
-        scene_exclude: ['catastrophic structural damage', 'house destroyed', 'multiple fallen trees', 'sunny dry weather', 'dramatic sky'],
+        scene_debris:  'cut branch sections and fresh sawdust on the lawn around Worker 2s stacking area',
+        scene_exclude: [
+          'Worker 1 on an unstable garden ladder or chair',
+          'Worker 2 standing beside the active cutting point in the falling-branch zone',
+          'solo arborist with no ground colleague',
+          'aerial work — no climbing or basket needed at this height',
+          'chainsaw without protective chaps or PPE',
+        ],
         tools: [
-          'orange safety cones placed around the danger area',
-          'safety tape visible around the fallen tree perimeter',
+          'telescopic pole saw extended to the target lower branch',
+          'long-handled loppers as an alternative tool on the ground beside Worker 1',
         ],
         protections: [
-          'safety tape marking the hazard area around the fallen tree',
-          'orange cones beside the root ball',
+          'helmet and eye protection on Worker 1',
+          'both workers on stable ground — no ladder or elevated access',
+          'Worker 2 at safe lateral distance outside the falling-branch zone',
         ],
         chantier_details: [
-          'root ball fully exposed — roots and compacted earth visible on the upended side',
-          'depression in the lawn where the root ball was anchored',
-          'wet conditions throughout — wet ground, wet bark, wet leaves',
-        ],
-      },
-      {
-        _for:          'tempete|orage|vent.*fort|apres.*vent|arbre.*tombe',
-        scene_note:    'storm tree being sectioned on a blocked path or driveway — trunk already on the ground, chainsaw cutting sections, cones and safety tape in place, grey sky, ground wet',
-        scene_camera:  'standing beside the trunk, framing the chainsaw cutting into a trunk section with cones and tape visible',
-        scene_framing: {
-          work_pct:   65,
-          foreground: 'orange safety cones and safety tape at the roadside or path edge — cleared public area',
-          midground:  'trunk section being cut by chainsaw — sawdust flying, operator in HV vest',
-          background: 'grey overcast sky, wet surfaces, utility vehicle or van visible in the background',
-        },
-        scene_debris:  'sawdust on the wet ground at the cut point, cut sections beside the trunk, wet leaves on the path',
-        scene_exclude: ['catastrophic damage', 'multiple trees down', 'house destroyed', 'dry sunny weather'],
-        tools: [
-          'chainsaw cutting a trunk section on the ground',
-          'utility van visible in the background — crew on site',
-        ],
-        protections: [
-          'high-visibility vests on all workers',
-          'orange cones at the site perimeter',
-          'safety tape across the blocked path',
-          'hard hats on the workers',
-        ],
-        chantier_details: [
-          'trunk section on the wet ground — chainsaw actively cutting',
-          'sawdust on the wet path surface from the cut',
-          'cut sections already separated beside the trunk — sections being progressively created',
+          'Worker 1 standing on stable flat ground, pole saw fully extended to the cut branch',
+          'no ladder — branch height accessible from ground with pole tool',
+          'Worker 2 laterally offset from the cut zone, collecting and stacking branches safely',
+          'two professionals with distinct roles: Worker 1 cutting with pole saw, Worker 2 managing cut material from a safe lateral position',
         ],
       },
 
-      // --- intervention de nuit / urgence ---
+      // ─── ARB-DANGEROUS-TREE: high-risk aerial work, full rigging ───────────
       {
-        _for:          'urgence|nuit|nocturne|route.*bloqu',
-        time_of_day:   'night',
-        scene_note:    'night emergency felling — work floodlights illuminating a fallen or dangerous tree on a road or driveway, workers in high-visibility vests with chainsaw, orange cones, dark background',
-        scene_camera:  'standing outside the light zone, framing the lit work area with the dark surroundings beyond',
+        _for:          'elagage.*dangereux|arbre.*dangereux|elagage.*difficile|abattage.*difficile',
+        scene_note:    'homeowner photo of high-risk tree work — dangerous or structurally compromised tree being dismantled section by section with full rigging — Worker 1 (grimpeur) in the crown with complete harness + positioning rope + secondary attachment + helmet — rigging rope running from the cut section through a redirect at the trunk down to Worker 2 with a lowering device — controlled section lowering, exclusion zone clearly established — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway well outside the exclusion zone, 10–20 m from the tree, framing Worker 1 in the crown and Worker 2 at the lowering device on the ground — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
-          work_pct:   65,
-          foreground: 'orange cones and safety tape at the lit perimeter — blocking the road or driveway',
-          midground:  'workers in HV vests operating chainsaw on the fallen trunk, work floodlight illuminating the scene',
-          background: 'dark background — trees silhouetted against the dark sky beyond the light zone',
+          work_pct:   75,
+          foreground: 'Worker 2 at the lowering device (friction hitch or descender) on the ground — laterally offset from the direct drop zone, managing the rope as a section is being lowered — exclusion zone tape or cones at the perimeter',
+          midground:  'Worker 1 in the crown rigged against the main trunk — positioning rope and secondary attachment both visible — rigging rope running from the attached section through the redirect to the ground — section ready to be cut and lowered',
+          background: 'sky, neighbouring property — clear exclusion zone beyond the controlled lowering area',
         },
-        scene_debris:  'sawdust visible in the floodlight cone on the ground beside the cut, cut log sections in the light',
-        scene_exclude: ['daytime lighting', 'cinematic lighting', 'police flashing lights unless specified', 'completely dark unreadable scene'],
+        scene_debris:  'previously lowered sections already on the ground outside the drop zone, controlled pile — no freely fallen debris',
+        scene_exclude: [
+          'sections falling freely without rigging rope control',
+          'swinging branch or section moving toward house or fence',
+          'Worker 2 standing below the suspended section or directly in the drop zone',
+          'rigging rope routed through tree anatomy instead of a dedicated redirect',
+          'single arborist without ground support',
+          'chainsaw without tool lanyard',
+          'bystanders inside the exclusion zone',
+          'camera inside the exclusion zone',
+        ],
         tools: [
-          'chainsaw operated by a worker in HV vest in the floodlight zone',
-          'work floodlight on tripod providing the main illumination',
+          'rigging rope attached to the cut section — running through a redirect block on the trunk to Worker 2',
+          'lowering device (friction hitch or mechanical descender) at Worker 2s ground position',
+          'chainsaw on tool lanyard at Worker 1s position in the crown',
         ],
         protections: [
-          'high-visibility vests on all workers — clearly lit by the floodlight',
-          'hard hats on workers',
-          'orange cones blocking the road or driveway approach',
-          'safety tape across the hazard zone',
+          'full climbing harness + positioning rope + secondary attachment on Worker 1 — double-rope technique',
+          'helmet with ear and eye protection on Worker 1',
+          'rigging rope controlling every section from attachment to ground — no free falls',
+          'Worker 2 laterally offset with lowering device outside the direct drop zone',
+          'exclusion zone tape or cones clearly marking the danger area perimeter',
         ],
         chantier_details: [
-          'floodlight cone illuminating the work area — sharp light-dark boundary',
-          'HV vests bright in the floodlight — professional emergency response visible',
-          'dark surroundings beyond the light zone — night conditions clearly communicated',
+          'rigging rope attached above the cut point — section controlled from attachment to landing',
+          'Worker 1 braced against main trunk or strong branch — double-attachment visible',
+          'Worker 2 at lowering device in a protected lateral position — managing controlled descent of each section',
+          'two professionals with distinct roles: Worker 1 cutting and rigging sections in the crown, Worker 2 managing lowering device and exclusion zone at ground level',
         ],
       },
+
+      // ─── ARB-BRANCH-CHIPPING: chipper + trailer, controlled feeding ─────────
       {
-        _for:          'urgence|nuit|nocturne|route.*bloqu',
-        time_of_day:   'night',
-        scene_note:    'night emergency — van headlights and work floodlight creating combined illumination on a fresh stump or fallen trunk, workers visible in HV gear, dark sky above',
-        scene_camera:  'standing outside the combined light zone, framing the van headlights and floodlight overlapping on the work area',
+        _for:          'elagage|taille.*arbre|recepage|couronnage',
+        scene_note:    'homeowner photo of branch chipping at the end of pruning — Worker 1 feeding manageable branch sections one at a time into the wood chipper inlet — Worker 2 managing the chip flow or handling branch debris at a safe distance from the chipper hopper — chipper and trailer at the garden edge or driveway — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway, 5–10 m from the chipper, framing Worker 1 feeding branches into the chipper and Worker 2 managing debris — homeowner smartphone, slightly imperfect framing',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'Worker 2 at a safe distance from the chipper hopper — managing the chip output, handling branch debris, or clearing the area — not pushing the same branch as Worker 1',
+          midground:  'Worker 1 feeding a manageable branch section into the chipper inlet from the correct side — wood chips flowing into the trailer or chip bag — chipper body and inlet clearly visible',
+          background: 'trailer being filled with wood chips, garden or driveway, branches piled beside the chipper',
+        },
+        scene_debris:  'wood chips piling up in the trailer or chip bag, fresh cut branch sections beside the chipper feed point',
+        scene_exclude: [
+          'Worker 1 or Worker 2 with hands near the rotating chipper blades or inlet rollers',
+          'Worker inside the chipper hopper',
+          'two workers pushing the same branch into the chipper at the same time dangerously',
+          'branches blocking the road or access route',
+          'chipper without visible safety guards on the inlet',
+          'solo worker operating chipper with no colleague present',
+        ],
+        tools: [
+          'wood chipper with clearly visible inlet guard and chip outlet chute',
+          'manageable branch being fed one at a time into the chipper',
+          'trailer or chip bag collecting wood chip output',
+        ],
+        protections: [
+          'Worker 1 feeding from the correct side of the inlet — hands away from the rollers',
+          'Worker 2 at safe distance from the chipper body — not beside the inlet during feeding',
+          'ear protection visible on both workers — chipper noise level',
+        ],
+        chantier_details: [
+          'Worker 1 feeding one manageable branch at a time — controlled pace, not overloading the chipper',
+          'Worker 2 at safe distance from the chipper — managing chip output or branch debris',
+          'wood chips accumulating in the trailer — organised site management',
+          'two professionals with distinct roles: Worker 1 feeding branches into chipper, Worker 2 managing chip output and branch debris from a safe distance',
+        ],
+      },
+
+      // ─── ARB-GREEN-WASTE-REMOVAL: loading, cleanup, final state ───────────
+      {
+        _for:          'elagage|taille.*arbre|recepage|couronnage',
+        scene_note:    'homeowner photo of green waste removal at the end of arborist work — cut branches, leaf debris, and wood chips being loaded into a trailer — Worker 1 and Worker 2 both on the ground loading and clearing — fresh cut branches and leaves matching the tree species worked, small log sections, clean sawdust — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway, 5–10 m from the trailer, framing both workers loading or clearing — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
           work_pct:   55,
-          foreground: 'van parked with headlights on, orange cones at the road edge',
-          midground:  'work floodlight zone with workers in HV vests at the fallen trunk or fresh stump',
-          background: 'dark sky, tree silhouettes beyond the light, distant surroundings in darkness',
+          foreground: 'Worker 2 loading cut branches or raking fresh sawdust from the lawn — fresh green leaves and branches clearly matching the worked tree species',
+          midground:  'Worker 1 loading larger branch sections into the trailer or stacking them — trailer partially or fully loaded with green waste: fresh branches, leaves, small log pieces, wood chips',
+          background: 'shaped or felled tree in background, garden or driveway, trailer at the edge',
         },
-        scene_debris:  'sawdust and cut sections visible in the combined light zone on the ground',
-        scene_exclude: ['daylight', 'overly dramatic cinematic light', 'scene too dark to read work'],
+        scene_debris:  'fresh cut branches with green leaves, sawdust, wood chips — all matching arborist work (no construction waste or inert debris)',
+        scene_exclude: [
+          'construction waste or inert debris in the debris pile',
+          'branches blocking road or pavement access',
+          'solo worker loading alone with no colleague visible',
+          'dry dead wood inconsistent with fresh pruning or felling work',
+        ],
         tools: [
-          'work floodlight on tripod in the combined light zone',
-          'utility van with headlights on',
-          'chainsaw or hand tools in the workers\' hands',
+          'trailer being loaded with fresh green waste',
+          'rake or leaf blower for cleaning the lawn area',
+          'pitchfork or branch hook for loading larger pieces',
         ],
         protections: [
-          'HV vests on all workers clearly visible in the combined light',
-          'orange cones at the road edge or perimeter',
+          'both workers using appropriate work gloves for branch handling',
         ],
         chantier_details: [
-          'combined light from van headlights and floodlight — overlapping warm and cool tones',
-          'workers\' HV vests clearly visible in the combined light zone',
-          'dark sky and silhouetted trees beyond the lit area — unmistakable night context',
+          'fresh green branches and leaves clearly matching the tree species that was worked',
+          'wood chips and sawdust from the chipper run — consistent with the pruning or felling work',
+          'trailer loaded with only arborist green waste — no mixed or inert debris',
+          'two professionals with distinct roles: Worker 1 loading larger branch sections, Worker 2 raking and loading finer debris and sawdust',
         ],
       },
 
-      // Fallback: abattage général
-      {
-        scene_note:    'tree felling work in progress — trunk on the ground or stump visible, safety exclusion zone in place, fresh sawdust and wood chips on the ground',
-        scene_camera:  'standing beside the stump or fallen trunk, framing the evidence of felling with the exclusion zone visible',
-        scene_framing: {
-          work_pct:   50,
-          foreground: 'fresh-cut stump with growth rings visible, sawdust ring around the base',
-          midground:  'fallen trunk on the ground or cut sections nearby, exclusion tape visible',
-          background: 'garden or site surroundings, cleared fall zone',
-        },
-        scene_debris:  'fresh sawdust at the stump base, wood chip pile, bark fragments on the ground',
-        scene_exclude: ['intact standing tree with no work', 'dessouchage equipment if not relevant'],
-        tools: [
-          'guide stake driven into the ground at the calculated fall direction',
-          'measuring tape on the ground near the base of the tree',
-          'rope coil resting at the base for directional pull',
-        ],
-        protections: [
-          'yellow safety tape marking the exclusion zone around the felling area',
-          'tarp spread on the ground at the expected landing zone',
-        ],
-        chantier_details: [
-          'fresh wood chips scattered on the ground at the base of the tree',
-          'cut branch sections stacked in a pile nearby',
-          'sap mark on the freshly exposed cut end of a branch',
-        ],
-      },
-    ],
-    tools: [
-      'guide stake driven into the ground at the calculated fall direction',
-      'measuring tape on the ground near the base of the tree',
-      'rope coil resting at the base for directional pull',
-      'hand saw resting against a cut lower branch',
-      'wedge blocks on the ground near the trunk base',
-    ],
-    protections: [
-      'yellow safety tape marking the exclusion zone around the felling area',
-      'tarp spread on the ground at the expected landing zone',
-    ],
-    chantier_details: [
-      'fresh wood chips scattered on the ground at the base of the tree',
-      'cut branch sections stacked in a pile nearby',
-      'sap mark on the freshly exposed cut end of a branch',
-      'sawdust pile at the base of the trunk',
-      'small root fragment disturbed and exposed at the base of the tree',
     ],
   },
 
-  'élagage': {
+  abattage: {
     scenarios: [
 
-      // --- taille douce / éclaircissement / couronnage / émondage / recépage ---
+      // ─── ARB-GROUND-FELLING: controlled ground felling ─────────────────────
       {
-        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$',
-        scene_note:    'crown reduction in progress — climber in harness positioned mid-canopy with a small chainsaw at a lateral branch being shortened, tree fully standing and main structure preserved',
-        scene_camera:  'standing back from the tree at ground level, framing the climber in the mid-canopy against the sky above',
-        scene_framing: {
-          work_pct:   65,
-          foreground: 'tarp on the ground at the tree base, cut branch lengths already laid out on the tarp',
-          midground:  'tree trunk and primary branches, climber with harness and small chainsaw visible in the canopy',
-          background: 'sky above the canopy, garden or fence line behind the tree',
-        },
-        scene_debris:  'small green leaf clusters and cut twig sections on the tarp below the working position',
-        scene_exclude: ['felled tree on ground', 'stump alone', 'large log sections in pile', 'tree completely bare', 'chainsaw at trunk base'],
-        tools: [
-          'small chainsaw operated by the climber at the branch cut point',
-          'climbing rope running from the harness to the anchor branch above',
-        ],
-        protections: [
-          'helmet and full harness visible on the climber in the canopy',
-          'tarp spread on the ground at the tree base to catch debris',
-          'yellow safety tape marking the drop zone around the base',
-        ],
-        chantier_details: [
-          'climber in harness positioned mid-canopy at the active cut point',
-          'cut branch sections on the tarp below — sorted by length',
-          'fresh cut stubs visible in the crown at previously removed positions',
-        ],
-      },
-      {
-        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$',
-        scene_note:    'crown thinning completed — tree standing with crown noticeably more open on one side, cut branches piled on tarp below, loppers and pruning saw on the ground',
-        scene_camera:  'standing back from the tree, framing the full tree height with the thinned crown visible and the cut branch pile below',
-        scene_framing: {
-          work_pct:   55,
-          foreground: 'cut branch pile on tarp with loppers and pruning saw beside the pile',
-          midground:  'full tree standing — crown visibly lighter and more open on the thinned side',
-          background: 'garden, fence or house wall behind the tree',
-        },
-        scene_debris:  'small leaf clusters and cut twigs scattered on the ground around the tarp edge',
-        scene_exclude: ['felled tree', 'large log sections', 'stump only', 'chainsaw at trunk level', 'bare tree'],
-        tools: [
-          'loppers on the ground beside the cut branch pile',
-          'hand pruning saw resting on the pile',
-          'telescopic pruning pole leaning against the trunk',
-        ],
-        protections: [
-          'tarp loaded with sorted cut branches below the crown',
-          'yellow safety tape on the ground defining the drop zone',
-        ],
-        chantier_details: [
-          'crown clearly more open on the thinned side — lighter canopy density visible',
-          'sorted cut branch pile on the tarp — sections of various diameters',
-          'sap marks on the fresh cut stubs still visible in the crown',
-        ],
-      },
-      {
-        _for:          'taille|eclairciss|emondage|couronnage|recepage|reduc.*couron|elagage arbre$|elagage peuplier$',
-        scene_note:    'garden tree pruning — stepladder beside a fruit or ornamental tree, long-handled loppers at a medium lateral branch making a clean collar cut',
-        scene_camera:  'standing in the garden beside the tree, framing the stepladder against the trunk and the loppers at the branch being cut',
-        scene_framing: {
-          work_pct:   65,
-          foreground: 'stepladder leaning against the trunk, loppers at the branch collar',
-          midground:  'fruit or ornamental tree at full height — other branches undisturbed',
-          background: 'garden wall or fence, shrubs behind',
-        },
-        scene_debris:  'small cut twig section on the garden ground below the ladder, leaf debris at the ladder feet',
-        scene_exclude: ['felled tree', 'stump', 'chainsaw', 'climbing harness in tree', 'large cut logs'],
-        tools: [
-          'long-handled loppers at the lateral branch collar — clean collar cut being made',
-          'stepladder positioned against the tree trunk',
-        ],
-        protections: [
-          'stable stepladder on level ground beside the trunk',
-        ],
-        chantier_details: [
-          'lopper blades at the branch collar — clean angled cut position',
-          'other branches undisturbed — targeted individual pruning only',
-          'small cut twig on the ground below from the previous cut',
-        ],
-      },
-
-      // --- suppression branches mortes ---
-      {
-        _for:          'branche.*mort|mort.*branche|bois.*mort|supp.*mort',
-        scene_note:    'dead branch removal — grey-brown leafless branch being cut from the canopy, pruning saw at the collar, living green foliage clearly surrounding the dead wood',
-        scene_camera:  'close-up in the canopy, framing the pruning saw at the dead branch base with living branches on either side',
+        _for:          'abattage.*arbre|abattage.*peuplier|abattage.*grand|abattage.*conif',
+        scene_note:    'homeowner photo of controlled tree felling — notch and back-cut made at the base, directional guide rope tensioned from high on the trunk, tree still standing with the hinge cut visible — exclusion zone clearly established in the felling direction — Worker 1 at the base making the controlled cut — Worker 2 outside the fall zone managing the guide rope from a safe lateral position — photo from outside the exclusion zone',
+        scene_camera:  'standing outside the exclusion zone, 10–20 m from the tree base, framing the trunk base with the notch cut and guide rope running upward — homeowner smartphone, slightly imperfect framing, Worker 2 with guide rope visible',
         scene_framing: {
           work_pct:   70,
-          foreground: 'pruning saw at the dead branch base collar — grey-brown dead wood clearly distinct from the green living branches beside it',
-          midground:  'dead branch extending away — bare and leafless, cracked bark visible',
-          background: 'living green canopy surrounding, sky beyond',
+          foreground: 'yellow safety tape or cones marking the exclusion zone perimeter in the fall direction — Worker 2 laterally offset outside the fall zone holding the guide rope taut, ready to tension it',
+          midground:  'Worker 1 at the trunk base making the controlled back-cut — chainsaw visible at the cut, notch clearly visible in the wood face, guide rope running up to the attachment point high on the trunk',
+          background: 'crown of the tree above — clear fall zone beyond the trunk — neighbouring property clearly outside the fall direction',
         },
-        scene_debris:  'dry bark fragments at the stub base where the cut is being made',
-        scene_exclude: ['felled tree', 'stump', 'all branches green and healthy', 'chainsaw at trunk level'],
+        scene_debris:  'fresh sawdust at the base of the trunk around the notch cut, wood chip pile from the notch removal',
+        scene_exclude: [
+          'second worker in the felling direction',
+          'house or car directly in the fall direction',
+          'bystanders inside the exclusion zone',
+          'felled tree already on the ground — this is the pre-felling moment',
+          'chainsaw without PPE',
+          'solo feller with no guide-rope colleague',
+          'camera inside the exclusion zone',
+        ],
         tools: [
-          'hand pruning saw at the dead branch base collar',
+          'chainsaw at the back-cut position — notch cut already made',
+          'guide rope running from the trunk up to the attachment point high on the tree',
+          'wedge blocks on the ground near the trunk base',
+          'safety tape or cones marking the exclusion zone',
         ],
         protections: [
-          'hard hat visible on the worker in the canopy',
-          'climbing harness visible',
-          'tarp below to catch the dead branch',
+          'exclusion zone clearly established in the fall direction — tape or cones visible',
+          'chainsaw PPE on Worker 1: chaps, helmet, visor, ear protection, gloves',
+          'Worker 2 at safe lateral position outside the fall zone, tensioning the guide rope',
+          'no workers, public, vehicles, or animals in the fall direction',
         ],
         chantier_details: [
-          'grey-brown dead branch — cracked bark and no leaves visible against the green canopy',
-          'pruning saw making a clean cut at the branch collar',
-          'living green branches at adjacent junctions — healthy tree context evident',
-        ],
-      },
-      {
-        _for:          'branche.*mort|mort.*branche|bois.*mort|supp.*mort',
-        scene_note:    'dead branch pile after removal — dry grey leafless sections piled beside the still-standing living tree, crown visible and green behind the pile',
-        scene_camera:  'standing in the garden, framing the dead branch pile in the foreground and the living tree crown behind',
-        scene_framing: {
-          work_pct:   50,
-          foreground: 'pile of grey dry dead branch sections — no leaves, cracked bark, chalky dried cut ends',
-          midground:  'tree trunk, lower crown intact and green',
-          background: 'full tree canopy — living and green, visibly cleared of the dead wood',
-        },
-        scene_debris:  'dry bark fragments beside the dead branch pile',
-        scene_exclude: ['felled tree', 'living green branches mixed in the pile', 'stump', 'chainsaw at trunk level'],
-        tools: [
-          'pruning saw on the ground beside the dead branch pile',
-          'loppers beside the pile',
-        ],
-        protections: [
-          'tarp under the pile',
-        ],
-        chantier_details: [
-          'dead branch pile — grey, dry, chalky cut ends — clearly not living wood',
-          'living tree canopy above — green and dense, cleared of the dead wood',
-          'colour contrast between grey dead branches and green living canopy clearly visible',
-        ],
-      },
-      {
-        _for:          'branche.*mort|mort.*branche|bois.*mort|supp.*mort',
-        scene_note:    'close-up of a fresh cut on a dead branch stub — dry grey wood face at the cut, flaking bark around the base, no sap, clean cut revealing dry internal wood grain',
-        scene_camera:  'close-up on the branch stub in the tree, framing the cut face of the dead branch',
-        scene_framing: {
-          work_pct:   80,
-          foreground: 'fresh cut face on the dead branch stub — grey dry wood, no sap, dry crumbly internal structure',
-          midground:  'living bark of the parent branch and healthy collar forming around the stub base',
-          background: 'green canopy surrounding the stub position',
-        },
-        scene_debris:  'dry bark fragments at the stub base where the cut was made',
-        scene_exclude: ['fresh sap on the cut face', 'living green branch', 'felled tree', 'stump'],
-        tools: [
-          'pruning saw resting on the adjacent living branch beside the cut stub',
-        ],
-        protections: [],
-        chantier_details: [
-          'cut face of the dead branch — grey dry wood, no sap, contrasting with living tissue',
-          'living bark collar at the stub base — healthy tree tissue forming a ring around the dead wood',
-          'dry bark flaking at the stub edges',
+          'notch and back-cut clearly visible in the trunk — hinge cut in progress',
+          'guide rope tensioned from attachment point high on trunk toward safe fall direction',
+          'exclusion zone clearly established and free of bystanders in the fall direction',
+          'two professionals with distinct roles: Worker 1 making the controlled cut at the base, Worker 2 managing guide rope from a safe lateral position outside the fall zone',
         ],
       },
 
-      // --- élagage de sécurité / arbres dangereux ---
+      // ─── ARB-SECTIONAL-DISMANTLING: rigging + lowering in confined space ───
       {
-        _for:          'danger|securite|risque',
-        scene_note:    'hazardous branch removal — large inclined branch overhanging a fence or property with a rope attached high for controlled drop, exclusion zone marked with safety tape',
-        scene_camera:  'standing back from the tree, framing the hazardous inclined branch with the guide rope running from its upper section',
+        _for:          'abattage.*zone.*difficile|abattage.*difficile|demontage|arbre.*dangereux',
+        scene_note:    'homeowner photo of sectional tree dismantling in a confined space — Worker 1 (grimpeur) in the crown with full harness + positioning rope + secondary attachment + helmet — rigging rope from the cut section through a redirect at the trunk down to Worker 2 with a lowering device — sections being lowered in a controlled sequence, not falling freely — exclusion zone established — photo from outside the exclusion zone',
+        scene_camera:  'standing in the garden or driveway outside the exclusion zone, 8–18 m from the tree, framing Worker 1 in the crown and Worker 2 at the lowering device — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
-          work_pct:   60,
-          foreground: 'yellow safety tape defining the exclusion zone below the hazardous branch',
-          midground:  'tree with the inclined or cracked branch — rope visible running from the upper section of the branch',
-          background: 'fence, house wall or garden structure that the branch threatens',
+          work_pct:   75,
+          foreground: 'Worker 2 at the lowering device (descender or friction hitch) on the ground — laterally offset from the direct drop zone — exclusion zone tape at the perimeter, lowered sections piled in the controlled drop area',
+          midground:  'Worker 1 in the crown against the main trunk — positioning rope and secondary attachment clearly visible — rigging rope running from an attached section through the redirect block to the ground — active cut in progress',
+          background: 'confined space context: house, wall or fence close to the tree — clear exclusion zone — lowered sections accumulating in the drop area',
         },
-        scene_debris:  'light bark debris at the base of the trunk from preliminary assessment',
-        scene_exclude: ['healthy well-balanced tree', 'simple taille légère', 'no exclusion zone', 'completed log pile'],
+        scene_debris:  'sections previously lowered in a controlled pile in the designated landing zone — no scattered freely-fallen debris',
+        scene_exclude: [
+          'sections falling freely with no rigging rope control',
+          'swinging section moving toward house wall or fence',
+          'Worker 2 standing directly below the suspended section',
+          'rope routed through living tree anatomy instead of a dedicated redirect',
+          'solo arborist with no ground support',
+          'chainsaw without tool lanyard',
+          'bystanders inside the exclusion zone',
+          'camera inside the exclusion zone or below Worker 1',
+        ],
         tools: [
-          'guide rope attached to the hazardous branch upper section for controlled drop',
-          'chainsaw at the cut point on the hazardous branch',
+          'rigging rope attached above the cut point — running to redirect block on the trunk then to Worker 2',
+          'lowering device at Worker 2s position — mechanical descender or friction hitch',
+          'chainsaw on tool lanyard at Worker 1s position in the crown',
         ],
         protections: [
-          'yellow safety tape marking the exclusion zone',
-          'hard hat and harness on the climber at the cut point',
+          'full climbing harness + positioning rope + secondary attachment on Worker 1',
+          'helmet with ear and eye protection on Worker 1',
+          'rigging rope controlling every section — no free falls at any point',
+          'Worker 2 laterally offset with lowering device outside the direct drop zone',
+          'exclusion zone clearly established around the controlled landing area',
         ],
         chantier_details: [
-          'rope attached and tensioned on the hazardous branch — ready for controlled lowering',
-          'branch inclined or cracked — visible structural failure or overhang threat',
-          'exclusion zone marked with safety tape — property beyond the tape visible',
+          'rigging rope controls every section from the cut point to the ground — no free falls',
+          'Worker 1 braced against trunk with double-attachment visible in the crown',
+          'Worker 2 at lowering device in a protected lateral position — managing controlled descent',
+          'two professionals with distinct roles: Worker 1 cutting and rigging in the crown, Worker 2 managing lowering device and controlled landing zone at ground level',
         ],
       },
+
+      // ─── ARB-STUMP-GRINDING: stump grinder + guards ────────────────────────
       {
-        _for:          'danger|securite|risque',
-        scene_note:    'climber in a structurally compromised tree — harness and lanyard visible, chainsaw at a dangerous split fork, house or fence clearly visible below as the threatened structure',
-        scene_camera:  'looking up from the garden, framing the climber in harness at the dangerous fork with the property visible behind',
+        _for:          'dessouchage|stump|souche',
+        scene_note:    'homeowner photo of stump grinding — visible stump being ground by the stump grinder — machine guard clearly in place — wood chips flying into the guard area — Worker 1 at the grinder controls — Worker 2 keeping the exclusion zone clear or managing wood chip debris from a safe distance — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway, 5–10 m from the grinder, framing the stump grinder at work and both workers — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
           work_pct:   65,
-          foreground: 'tree trunk at the base, exclusion zone tape around the base',
-          midground:  'climber in harness positioned at the dangerous fork — chainsaw in hand at the cut point',
-          background: 'house wall or garden fence clearly visible below the canopy — the threatened property',
+          foreground: 'Worker 2 at a safe distance from the grinding wheel — managing the wood chip debris area or keeping the exclusion zone clear — not beside the rotating cutting wheel',
+          midground:  'Worker 1 at the stump grinder controls — grinding wheel engaged on the visible stump, machine guard clearly in place, wood chips accumulating at the guard perimeter — stump progressively being reduced',
+          background: 'garden or driveway behind, remaining tree area or fresh garden space',
         },
-        scene_debris:  'small bark fragments on the ground below from preliminary cuts',
-        scene_exclude: ['healthy balanced tree', 'simple taille', 'no harness', 'completed log pile'],
+        scene_debris:  'wood chips and coarse sawdust piling up at the guard perimeter and beside the grinding area',
+        scene_exclude: [
+          'Worker 2 standing beside the rotating cutting wheel or below the chip ejection zone',
+          'hands or feet near the rotating grinding wheel',
+          'stump grinder without visible machine guard in place',
+          'solo operator with no ground colleague',
+          'bystanders or pets inside the chip ejection zone',
+        ],
         tools: [
-          'small chainsaw in the climber\'s hand at the dangerous fork junction',
-          'climbing rope and lanyard keeping the climber secured to the trunk',
+          'stump grinder with grinding wheel engaged on the stump',
+          'machine guard clearly visible around the cutting wheel',
+          'rake or shovel beside Worker 2 for wood chip management',
         ],
         protections: [
-          'full climbing harness and helmet on the climber',
-          'exclusion zone tape at the base',
+          'machine guard in place around the cutting wheel — chip ejection contained',
+          'Worker 1 at the controls — correct operating position, not beside the wheel',
+          'Worker 2 at safe distance outside the chip ejection zone and away from the rotating parts',
+          'hearing protection visible on both workers — grinder noise level',
         ],
         chantier_details: [
-          'climber at the compromised fork — structural crack or bark inclusion visible at the junction',
-          'chainsaw ready at the cut point — controlled removal about to begin',
-          'property clearly visible below — risk context unmistakable',
-        ],
-      },
-      {
-        _for:          'danger|securite|risque',
-        scene_note:    'controlled branch lowering — large heavy branch just cut, suspended mid-air by the lowering rope between the canopy and the ground, rope under tension, ground handler controlling the descent',
-        scene_camera:  'standing back, framing the branch suspended by the rope between the canopy and the ground',
-        scene_framing: {
-          work_pct:   70,
-          foreground: 'rope handler at the base with hands on the rope — rope taut under the branch load',
-          midground:  'large branch suspended mid-air — hanging from the rope between canopy height and the ground',
-          background: 'tree canopy above, fence or property that was threatened beyond the branch path',
-        },
-        scene_debris:  'leaf fragments dislodged during the cut on the ground below the suspension point',
-        scene_exclude: ['branch fallen without control', 'no rope visible', 'small lightweight branch'],
-        tools: [
-          'lowering rope under tension from the suspended branch to the ground handler',
-          'friction saver or rigging ring at the anchor point above',
-        ],
-        protections: [
-          'hard hat on the ground handler',
-          'exclusion zone tape visible at the perimeter',
-        ],
-        chantier_details: [
-          'large branch suspended mid-air by the lowering rope — rope taut under visible load',
-          'ground handler controlling the descent speed — hands clearly on the rope',
-          'property safely clear of the controlled lowering arc',
+          'stump clearly visible and being ground — progressive reduction of the stump diameter',
+          'machine guard in place — wood chips contained around the guard perimeter',
+          'Worker 2 at safe distance — managing chip debris or exclusion zone, not beside the wheel',
+          'two professionals with distinct roles: Worker 1 operating the grinder, Worker 2 managing chip debris and exclusion zone from a safe distance',
         ],
       },
 
-      // --- taille en hauteur ---
+      // ─── ARB-BRANCH-CHIPPING: chipper + trailer (abattage cleanup) ─────────
       {
-        _for:          'hauteur|haute.*tige|haut.*tige',
-        scene_note:    'telescopic pruning pole at full extension — operator at ground level directing the pole head deep into the high canopy, both arms raised, cut twig sections falling',
-        scene_camera:  'standing beside the operator, framing the extended pole disappearing into the upper canopy',
+        _for:          'abattage|dessouchage',
+        scene_note:    'homeowner photo of branch chipping after felling — cut branches, crown sections and small log pieces being fed into the wood chipper — Worker 1 feeding manageable branch sections one at a time — Worker 2 managing chip output or branch debris from a safe distance — chipper and trailer at the garden edge or driveway — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway, 5–10 m from the chipper, framing Worker 1 feeding branches and Worker 2 managing debris — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
           work_pct:   60,
-          foreground: 'operator at ground level, both arms raised holding the extended pole at an angle into the canopy',
-          midground:  'tall tree — pole disappearing into the upper crown at full extension',
-          background: 'garden or open area beyond the tree',
+          foreground: 'Worker 2 at safe distance from the chipper hopper — managing the chip output into the trailer or clearing branch debris from the garden — not pushing branches into the chipper at the same time as Worker 1',
+          midground:  'Worker 1 feeding a manageable branch section into the chipper inlet — wood chips flowing into the trailer — chipper body and inlet guard clearly visible',
+          background: 'trailer filling with wood chips, felled log sections in a pile behind, garden or driveway',
         },
-        scene_debris:  'small cut twig sections and leaf clusters falling from the canopy around the operator',
-        scene_exclude: ['ladder', 'climbing harness in tree', 'aerial platform', 'felled tree', 'stump'],
+        scene_debris:  'fresh cut branches from the felled tree — fresh leaves and wood, coarse sawdust, bark pieces — matching abattage work',
+        scene_exclude: [
+          'Worker 1 or Worker 2 with hands near the chipper rollers or inlet blades',
+          'two workers pushing the same branch into the chipper simultaneously',
+          'branches or logs blocking the road or access route',
+          'chipper without visible safety guard on the inlet',
+          'solo worker operating chipper with no colleague',
+        ],
         tools: [
-          'telescopic pruning pole at full extension with pole saw head in the upper canopy',
+          'wood chipper with clearly visible inlet guard and chip outlet chute',
+          'manageable branch sections being fed one at a time',
+          'trailer being loaded with wood chip output',
         ],
         protections: [
-          'hard hat on the operator at ground level',
-          'safety goggles on the operator',
+          'Worker 1 feeding from the correct side of the inlet — hands away from the rollers',
+          'Worker 2 at safe distance from the chipper — not beside the inlet during feeding',
+          'ear protection visible on both workers',
         ],
         chantier_details: [
-          'telescopic pole at full extension — straight line from operator hands to upper canopy',
-          'cut twig sections falling from the canopy as the pole saw works',
-          'operator both arms raised — guiding the pole head through the canopy from below',
-        ],
-      },
-      {
-        _for:          'hauteur|haute.*tige|haut.*tige',
-        scene_note:    'arborist climber high in the upper canopy — looking up from the garden, climber in full gear positioned in the upper crown against the open sky',
-        scene_camera:  'looking up from ground level, framing the climber high in the canopy against the sky above',
-        scene_framing: {
-          work_pct:   55,
-          foreground: 'tree trunk rising from the ground, climbing rope running upward from the harness',
-          midground:  'upper canopy — climber with harness, helmet, and small chainsaw visible high in the crown',
-          background: 'open sky above and behind the climber',
-        },
-        scene_debris:  'small leaf clusters and bark fragments on the ground below from work at height',
-        scene_exclude: ['operator at ground level', 'telescopic pole', 'aerial platform', 'felled tree'],
-        tools: [
-          'small arborist chainsaw in the climber\'s hand at height',
-          'climbing rope running from the harness through the branch anchor above',
-        ],
-        protections: [
-          'full climbing harness, helmet and face visor visible on the climber at height',
-        ],
-        chantier_details: [
-          'climber high in the upper crown — tree scale clearly visible from ground perspective',
-          'climbing rope running from the harness to the anchor point above the climber',
-          'open sky behind the climber — height and exposure clearly communicated',
-        ],
-      },
-      {
-        _for:          'hauteur|haute.*tige|haut.*tige',
-        scene_note:    'articulated aerial work platform beside a tall tree — operator in the basket at upper canopy height trimming outer branches, basket elevated to full reach',
-        scene_camera:  'standing back from the tree, framing the aerial platform arm extended to canopy height with the operator in the basket',
-        scene_framing: {
-          work_pct:   60,
-          foreground: 'aerial platform base on the ground beside the tree — outriggers deployed',
-          midground:  'platform arm extended upward, basket at upper canopy height with operator',
-          background: 'upper canopy of the tall tree, sky above',
-        },
-        scene_debris:  'cut branch sections on the ground below from trimming work',
-        scene_exclude: ['climbing harness in tree', 'telescopic pole from ground', 'felled tree', 'stump'],
-        tools: [
-          'operator in the basket using chainsaw or loppers at canopy height',
-          'aerial work platform with fully extended arm beside the tree',
-        ],
-        protections: [
-          'operator harness clipped to the basket safety rail',
-          'outriggers deployed at the base for platform stability',
-          'safety tape around the platform work zone',
-        ],
-        chantier_details: [
-          'aerial platform basket at full height — operator level with the upper canopy',
-          'platform arm fully elevated and extended — mechanical reach clearly visible',
-          'cut branch sections on the ground below from the trimming work',
+          'branch material from felled tree — fresh cuts, green wood, consistent with felling work',
+          'Worker 1 feeding one manageable piece at a time — controlled, not overloading',
+          'Worker 2 managing chip output or debris from a safe distance — not beside the inlet',
+          'two professionals with distinct roles: Worker 1 feeding chipper, Worker 2 managing output and debris from a safe distance',
         ],
       },
 
-      // --- après tempête ---
+      // ─── ARB-GREEN-WASTE-REMOVAL: loading and final cleanup ────────────────
       {
-        _for:          'tempete|orage|vent.*fort|apres.*vent|branche.*cass',
-        scene_note:    'storm-broken branch — large branch broken at a V-shaped split mid-canopy, hanging at a dangerous angle with green foliage still attached, grey overcast sky, wet ground',
-        scene_camera:  'standing back from the tree, framing the broken hanging branch clearly visible against the grey sky',
-        scene_framing: {
-          work_pct:   60,
-          foreground: 'wet ground surface, small puddles from the recent storm',
-          midground:  'tree with the broken branch hanging — V-shaped split at the break point clearly visible',
-          background: 'grey overcast sky, wet garden or fence line visible',
-        },
-        scene_debris:  'torn wood fibres at the branch break point, scattered wet leaves on the ground below',
-        scene_exclude: ['catastrophic damage', 'multiple fallen trees', 'destroyed house', 'sunny dry weather'],
-        tools: [
-          'safety tape or rope marking the exclusion zone below the hanging branch',
-        ],
-        protections: [
-          'orange safety cones placed below the hanging branch',
-          'safety tape defining the danger area',
-        ],
-        chantier_details: [
-          'V-shaped break at the branch split — wood fibres torn, branch still connected',
-          'branch hanging at a dangerous angle with full foliage — clear storm damage',
-          'wet ground and puddles from the recent storm — damp atmosphere throughout',
-        ],
-      },
-      {
-        _for:          'tempete|orage|vent.*fort|apres.*vent|branche.*cass',
-        scene_note:    'post-storm clearance — damaged branch just removed, worker in high-visibility vest, wet road or garden, safety cones in place, grey sky, scattered wet debris on the ground',
-        scene_camera:  'standing back, framing the worker in HV vest with the removed branch on the ground and safety cones visible',
-        scene_framing: {
-          work_pct:   55,
-          foreground: 'safety cones on the wet surface, removed branch section on the ground',
-          midground:  'worker in high-visibility vest — chainsaw or loppers in hand, work just completed',
-          background: 'grey overcast sky, wet road or garden, utility vehicle visible in background',
-        },
-        scene_debris:  'wet leaf and twig debris scattered on the ground around the removed branch',
-        scene_exclude: ['catastrophic damage', 'multiple trees down', 'destroyed structure', 'dry sunny weather'],
-        tools: [
-          'chainsaw in the worker\'s hand — branch just cut',
-          'utility vehicle in the background',
-        ],
-        protections: [
-          'high-visibility vest on the worker',
-          'safety cones placed around the work area',
-          'safety tape visible at the perimeter',
-          'hard hat on the worker',
-        ],
-        chantier_details: [
-          'removed branch section on the wet ground — work just completed',
-          'worker in full HV gear — professional emergency response clearly visible',
-          'wet conditions throughout — ground, debris, and cones all visibly wet',
-        ],
-      },
-
-      // --- intervention de nuit / urgence ---
-      {
-        _for:          'urgence|nuit|nocturne',
-        time_of_day:   'night',
-        scene_note:    'night pruning emergency — work floodlight illuminating a tree or broken branch, arborist in high-visibility vest with chainsaw, orange safety cones, dark background',
-        scene_camera:  'standing at the edge of the light cone, framing the worker and tree illuminated by the work floodlight against the dark background',
-        scene_framing: {
-          work_pct:   65,
-          foreground: 'work floodlight on a tripod at the edge of the lit zone, orange cones in the light',
-          midground:  'worker in HV vest with chainsaw at the tree, trunk illuminated in the floodlight cone',
-          background: 'dark background — trees or garden in darkness beyond the light cone boundary',
-        },
-        scene_debris:  'cut branch sections on the ground in the floodlight cone, bark chips visible in the light',
-        scene_exclude: ['daytime bright sunlight', 'cinematic dramatic lighting', 'completely dark unreadable scene'],
-        tools: [
-          'chainsaw in the worker\'s hand in the floodlight zone',
-          'work floodlight on tripod as the main illumination',
-        ],
-        protections: [
-          'high-visibility vest on the worker — clearly visible in the work light',
-          'hard hat on the worker',
-          'orange safety cones in the lit area around the tree base',
-        ],
-        chantier_details: [
-          'work floodlight cone illuminating the tree and worker — sharp light-dark boundary',
-          'HV vest bright in the floodlight — professional emergency response visible',
-          'dark background beyond the light cone — night conditions clearly communicated',
-        ],
-      },
-      {
-        _for:          'urgence|nuit|nocturne',
-        time_of_day:   'night',
-        scene_note:    'night call-out — van headlights and work floodlight creating combined illumination on the work area, tree silhouetted against the dark sky, worker in HV vest active',
-        scene_camera:  'standing outside the combined light zone, framing the overlapping van headlights and floodlight on the work area',
-        scene_framing: {
-          work_pct:   55,
-          foreground: 'van parked with headlights on, orange cones at the road edge',
-          midground:  'work floodlight zone with worker in HV vest at the tree in the combined light',
-          background: 'dark sky, tree silhouetted against the darkness, surroundings in shadow',
-        },
-        scene_debris:  'light debris visible in the headlight zone on the ground',
-        scene_exclude: ['daylight', 'overly cinematic lighting', 'scene too dark to read the work'],
-        tools: [
-          'work floodlight on tripod in the combined light zone',
-          'utility van parked with headlights on',
-        ],
-        protections: [
-          'high-visibility vests on all workers clearly visible in the combined light',
-          'orange cones at the roadside or perimeter',
-        ],
-        chantier_details: [
-          'combined light cone from van headlights and floodlight — overlapping illumination',
-          'tree silhouetted against the dark sky beyond the lit zone',
-          'HV vests clearly visible in the combined light — unmistakable night emergency context',
-        ],
-      },
-
-      // Fallback: élagage général
-      {
-        scene_note:    'tree pruning in progress — tree fully standing, cut branches piled on tarp below, pruning tools visible at the base, canopy structure preserved',
-        scene_camera:  'standing back from the tree, framing the full height with cut branches on the tarp below',
+        _for:          'abattage|dessouchage',
+        scene_note:    'homeowner photo of green waste and log removal after felling — cut logs, branch sections, and wood chips being loaded into trailer — Worker 1 and Worker 2 both on the ground loading and clearing — fresh wood from the felled tree, clearly matching the felling or stump grinding work — photo from garden or driveway',
+        scene_camera:  'standing in the garden or driveway, 5–10 m from the trailer, framing both workers loading or clearing — homeowner smartphone, slightly imperfect framing',
         scene_framing: {
           work_pct:   50,
-          foreground: 'tarp with cut branch pile at the tree base, pruning tools on the ground',
-          midground:  'tree at full height — canopy intact, fresh cut stubs visible in the lower crown',
-          background: 'garden or open space behind the tree',
+          foreground: 'Worker 2 loading branch sections or raking wood chips from the ground — fresh cut wood and debris clearly matching the felled tree species',
+          midground:  'Worker 1 loading larger log sections into the trailer or stacking them — trailer being filled with fresh logs, branch sections, wood chips',
+          background: 'fresh stump visible where the tree stood, open garden or cleared driveway, trailer at the edge',
         },
-        scene_debris:  'small leaf clusters and twig sections on the ground around the tarp edge',
-        scene_exclude: ['felled tree on ground', 'stump alone', 'large log billets', 'dessouchage equipment'],
+        scene_debris:  'fresh cut log sections, branch pieces, wood chips from the felled tree — all fresh and consistent with abattage or stump grinding (no construction waste)',
+        scene_exclude: [
+          'construction waste or inert debris mixed with arborist waste',
+          'logs or branches blocking road or pavement',
+          'solo worker loading alone with no colleague visible',
+          'debris inconsistent with felling work: dry dead wood, garden waste, building rubble',
+        ],
         tools: [
-          'telescopic pruning pole leaning against the tree trunk',
-          'lopper handles resting on the ground near the tree base',
-          'hand pruning saw resting on a cut branch stub',
+          'trailer being loaded with fresh logs and green waste',
+          'peavey or cant hook for rolling large log sections',
+          'rake for clearing wood chips from the ground',
         ],
         protections: [
-          'tarp spread below the canopy to catch cut branches and leaf debris',
-          'yellow safety tape marking the drop zone around the tree base',
+          'both workers using appropriate work gloves for log and branch handling',
         ],
         chantier_details: [
-          'tree standing — canopy structure preserved, targeted branches removed',
-          'cut branch pile on the tarp — sorted by size',
-          'sap marks on the fresh cut stubs visible in the lower crown',
+          'fresh log sections and branch pieces from the felled tree — clearly matching the tree species',
+          'wood chips from the chipper run — consistent with the felling and chipping work',
+          'trailer loaded with clean arborist waste only — no mixed or inert debris',
+          'two professionals with distinct roles: Worker 1 loading large logs, Worker 2 loading smaller pieces and raking debris',
         ],
       },
-    ],
-    tools: [
-      'telescopic pruning pole leaning against the tree trunk',
-      'lopper handles resting on the ground near the tree base',
-      'hand pruning saw resting on a cut branch stub',
-      'branch hook resting against the trunk',
-    ],
-    protections: [
-      'tarp spread below the canopy to catch cut branches and leaf debris',
-      'yellow safety tape marking the drop zone around the tree base',
-    ],
-    chantier_details: [
-      'fresh wood chips scattered on the ground around the tree base',
-      'cut branch pile on the tarp sorted by diameter',
-      'sap mark on the freshly exposed cut end of a pruned limb',
-      'small twigs and leaf clusters scattered around the base of the tree',
-      'pale fresh wood visible at the pruning cut against the older bark',
+
     ],
   },
 

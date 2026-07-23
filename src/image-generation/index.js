@@ -270,11 +270,11 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests] = await Promise.all([
     import('./debug/runtime-tests.js?v=10'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
-    import('./debug/service-coverage-audit.js?v=3'),
+    import('./debug/service-coverage-audit.js?v=4'),
     import('./debug/carrelage-contracts-tests.js'),
     import('./debug/carrelage-scenes-tests.js?v=21'),
     import('./debug/vitrier-contracts-tests.js'),
@@ -286,6 +286,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/service-resolver-statelock-tests.js?v=1'),
     import('./debug/roof-covering-waterproofing-validation-tests.js?v=3'),
     import('./debug/cov-fix-scenes-tests.js'),
+    import('./debug/arborist-scenes-tests.js'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();
@@ -308,7 +309,8 @@ if (_params.get('imageGenTests') === '1') {
   window._runServiceResolverStateLockTests               = resolverStateLockTests.runServiceResolverStateLockTests;
   window._runRoofCoveringWaterproofingValidationTests    = rcwTests.runRoofCoveringWaterproofingValidationTests;
   window._runCovFixScenesTests                          = covFixTests.runCovFixScenesTests;
-  console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofContractsTests(), _runRoofClusterScenesTests(), _runRoofPRTests(), _runRoofWorkerSafetyTests(), _runServiceResolverStateLockTests(), _runRoofCoveringWaterproofingValidationTests(), _runCovFixScenesTests()');
+  window._runArboristScenesTests                        = arboristScenesTests.runArboristScenesTests;
+  console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofContractsTests(), _runRoofClusterScenesTests(), _runRoofPRTests(), _runRoofWorkerSafetyTests(), _runServiceResolverStateLockTests(), _runRoofCoveringWaterproofingValidationTests(), _runCovFixScenesTests(), _runArboristScenesTests()');
 }
 
 console.info('[IMAGE MODULE 7C] Modular API active and ready');
