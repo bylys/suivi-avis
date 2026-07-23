@@ -9,6 +9,7 @@ import { WORK_SCENES, SITE_REALISM }                from '../services/index.js';
 import { _applySiteRealism }                         from '../resolution/service-resolver.js?v=1';
 import { _applyVariation }                           from '../resolution/scene-resolver.js?v=1';
 import { _appendLockedFinalConstraints }             from '../prompt/locked-constraints.js?v=1';
+import { SAFETY_CHECK_RULES }                        from '../safety/safety-rules.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 let _pass = 0, _fail = 0;
@@ -1110,16 +1111,14 @@ export async function runVitrierScenesTests() {
 
   // ── VM12 — Safety gate ≠ validation matériau ─────────────────────────────
   console.group('[VM12] Safety gate — pas de validation matériau (spacer bar / PVB) dans les règles safety');
-  try {
-    const safetySrc = await fetch('/src/image-generation/safety/safety-rules.js', { cache: 'no-store' }).then(r => r.text());
-    ok(!/spacer.bar|metallic.*spacer/i.test(safetySrc),
+  {
+    const vitRule = SAFETY_CHECK_RULES.vitrier || '';
+    ok(!/spacer.bar|metallic.*spacer/i.test(vitRule),
       'VM12: safety-rules.js ne contient pas "spacer bar" comme critère de sécurité');
-    ok(!/PVB.*interlayer|interlayer.*PVB/i.test(safetySrc),
+    ok(!/PVB.*interlayer|interlayer.*PVB/i.test(vitRule),
       'VM12: safety-rules.js ne contient pas "PVB interlayer" comme critère de sécurité');
-    ok(/glove|glass.*bare|bare.*glass|bare.*hand/i.test(safetySrc),
+    ok(/glove|glass.*bare|bare.*glass|bare.*hand/i.test(vitRule),
       'VM12: safety-rules.js conserve les règles sécurité verre (gants / main nue)');
-  } catch(e) {
-    ok(false, `VM12: erreur lors de l'inspection de safety-rules.js — ${e.message}`);
   }
   console.groupEnd();
 
