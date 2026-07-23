@@ -1307,7 +1307,7 @@ export const ROOF_VISUAL_CONTRACTS = {
       'cordless drill/screwdriver for fascia brackets and wall clips',
       'new PVC gutter section being clipped onto brackets',
       'new fascia brackets in packaging at the ladder shelf',
-      'gutter clip tool for securing section',
+      'clip tool for locking section onto fascia brackets',
       'level and tape measure for correct fall alignment',
       'hacksaw for cutting gutter section to length',
     ],

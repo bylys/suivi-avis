@@ -69,7 +69,11 @@ function _applySiteRealism(jsonStr, imageIndex) {
         const scenSeed = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}`);
         const targeted  = realism.scenarios.filter(s => s._for && new RegExp(s._for, 'i').test(svc));
         const fallback  = realism.scenarios.filter(s => !s._for);
-        const pool      = targeted.length ? targeted : fallback;
+        const stateLocked = targeted.filter(s => {
+          if (!s._state_for) return false;
+          return Array.isArray(s._state_for) ? s._state_for.includes(obj.state_level) : s._state_for === obj.state_level;
+        });
+        const pool      = stateLocked.length ? stateLocked : (targeted.length ? targeted : fallback);
         const picked    = pool.length ? _pick(pool, 1, scenSeed)[0] : null;
         if (picked) {
           realism = Object.assign({}, realism, picked);
@@ -84,6 +88,9 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (Array.isArray(realism.location_forbidden)) obj.location_forbidden = realism.location_forbidden;
           if (realism.scene_contexte)                    obj.contexte           = realism.scene_contexte;
           _intVariant = picked.interior_variant || null;
+          if (realism._access_configuration !== undefined)            obj._access_configuration            = realism._access_configuration;
+          if (realism._access_configuration_source !== undefined)     obj._access_configuration_source     = realism._access_configuration_source;
+          if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
         }
       }
     }

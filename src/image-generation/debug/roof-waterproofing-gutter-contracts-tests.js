@@ -9,6 +9,7 @@ import {
   ROOF_VISUAL_CONTRACTS,
   RTG_FOR_PATTERNS,
   RTG_META,
+  ROOF_CONTRACT_COMPOSITION_MAP,
 } from '../services/roof-waterproofing-gutter-contracts.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -309,21 +310,25 @@ export function runRoofContractsTests() {
   console.groupEnd();
 
   // ── RTG-C10 — compositions compatibles ───────────────────────────────────
+  // Alias resolution: contracts use documentary alias names → ROOF_CONTRACT_COMPOSITION_MAP
+  // resolves them to actual runtime keys in VALID_COMPOSITIONS.
   console.group('[RTG-C10] Compositions compatibles');
+  const resolveComposition = p => ROOF_CONTRACT_COMPOSITION_MAP[p] || p;
   for (const c of contracts) {
     const prefs = c.composition_preferences || [];
     ok(prefs.length >= 1 && prefs.length <= 3,
       `RTG-C10: [${c.service_key}] 1-3 composition_preferences`);
     for (const p of prefs) {
-      ok(VALID_COMPOSITIONS.has(p),
-        `RTG-C10: [${c.service_key}] "${p}" est une valeur valide`);
+      const resolved = resolveComposition(p);
+      ok(VALID_COMPOSITIONS.has(resolved),
+        `RTG-C10: [${c.service_key}] "${p}" résolu en "${resolved}" est une valeur valide`);
     }
   }
   // Les services sans-worker (presence: none) ne devraient pas avoir close_detail seul
   for (const c of contracts) {
     if ((c.worker_rules || {}).presence === 'none') {
       const prefs = c.composition_preferences || [];
-      const hasWide = prefs.includes('wide_worksite') || prefs.includes('contextual_overview');
+      const hasWide = prefs.some(p => ['wide_worksite', 'contextual_overview'].includes(resolveComposition(p)));
       ok(hasWide,
         `RTG-C10: [${c.service_key}] presence=none → au moins une composition large (wide/contextual)`);
     }
@@ -348,8 +353,8 @@ export function runRoofContractsTests() {
     'RTG-C12: canonical_source correcte');
   ok(RTG_META.version >= 1,
     `RTG-C12: version >= 1 (got ${RTG_META.version})`);
-  ok(RTG_META.contract_count === 19,
-    `RTG-C12: contract_count === 19 (got ${RTG_META.contract_count})`);
+  ok(RTG_META.contract_count === 20,
+    `RTG-C12: contract_count === 20 (got ${RTG_META.contract_count})`);
   ok(RTG_META.service_count === 39,
     `RTG-C12: service_count === 39 (got ${RTG_META.service_count})`);
   ok(keys.length === RTG_META.contract_count,

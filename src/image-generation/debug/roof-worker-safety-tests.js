@@ -1,7 +1,7 @@
 /**
- * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS60
+ * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS64
  * Worker safety, elevated access, and 2-worker crew rules for roof and gutter clusters.
- * Includes deterministic micro-test route verification (RS52–RS60).
+ * Includes deterministic micro-test route verification (RS52–RS64).
  * Loaded only when ?imageGenTests=1 is in the URL.
  * No real API calls — all tests are static/structural.
  */
@@ -10,6 +10,7 @@ import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js';
 import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
 import { WORKER_SCENE_RULES } from '../safety/worker-rules.js';
 import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
+import { _applySiteRealism } from '../resolution/service-resolver.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -1043,6 +1044,121 @@ export async function runRoofWorkerSafetyTests() {
     const result = _appendLockedFinalConstraints('TEST PROMPT', mockScene);
     assert(textContainsAny(result, ['smartphone', 'handheld', 'documentary']),
       'Locked prompt must preserve documentary smartphone style after elevated access block is added');
+  });
+
+  // ─── RTG-RS61 : access telemetry survives complete task construction ────────────
+  // Verifies that _access_configuration, _access_configuration_source, and
+  // _access_configuration_randomized propagate from the picked scenario through
+  // _applySiteRealism to the final task object — not merely present on raw metadata.
+
+  runTest('RTG-RS61', 'Access telemetry survives complete task construction via _applySiteRealism', () => {
+    const antiScene = {
+      _matched_key: 'nettoyage_toiture',
+      _matched_service: 'Traitement anti-mousse toiture',
+      state_level: 'encours',
+    };
+    const antiResult = JSON.parse(_applySiteRealism(JSON.stringify(antiScene), 0));
+    assert(antiResult._access_configuration === 'SCAFFOLD',
+      `Anti-mousse encours: _applySiteRealism must produce _access_configuration=SCAFFOLD, got: ${antiResult._access_configuration}`);
+    assert(antiResult._access_configuration_source === 'state_lock',
+      `Anti-mousse encours: _access_configuration_source must be 'state_lock', got: ${antiResult._access_configuration_source}`);
+    assert(antiResult._access_configuration_randomized === false,
+      `Anti-mousse encours: _access_configuration_randomized must be false, got: ${antiResult._access_configuration_randomized}`);
+
+    const hydroScene = {
+      _matched_key: 'nettoyage_toiture',
+      _matched_service: 'Traitement hydrofuge toiture',
+      state_level: 'encours',
+    };
+    const hydroResult = JSON.parse(_applySiteRealism(JSON.stringify(hydroScene), 0));
+    assert(hydroResult._access_configuration === 'MEWP',
+      `Hydrofuge encours: _applySiteRealism must produce _access_configuration=MEWP, got: ${hydroResult._access_configuration}`);
+    assert(hydroResult._access_configuration_source === 'state_lock',
+      `Hydrofuge encours: _access_configuration_source must be 'state_lock', got: ${hydroResult._access_configuration_source}`);
+    assert(hydroResult._access_configuration_randomized === false,
+      `Hydrofuge encours: _access_configuration_randomized must be false, got: ${hydroResult._access_configuration_randomized}`);
+  });
+
+  // ─── RTG-RS62 : state-lock selection survives complete task construction ────────
+  // Verifies that the resolver picks from the state-locked pool (not the full targeted pool)
+  // when _state_for matches state_level — proven via pool size, not just output field.
+
+  runTest('RTG-RS62', 'State-lock selection survives complete task construction — pool is restricted to 1', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const svcLower = svc => (svc || '').toLowerCase();
+
+    const antiTargeted = scenarios.filter(s => s._for && new RegExp(s._for, 'i').test(svcLower('traitement anti-mousse toiture')));
+    const antiStateLocked = antiTargeted.filter(s => {
+      if (!s._state_for) return false;
+      return Array.isArray(s._state_for) ? s._state_for.includes('encours') : s._state_for === 'encours';
+    });
+    assert(antiTargeted.length >= 2, `Anti-mousse targeted pool must have ≥2 scenarios (MEWP + SCAFFOLD), got ${antiTargeted.length}`);
+    assert(antiStateLocked.length === 1, `Anti-mousse encours stateLocked pool must have exactly 1 scenario, got ${antiStateLocked.length}`);
+    assert(antiStateLocked[0]._access_configuration === 'SCAFFOLD', `The 1 state-locked anti-mousse scenario must be SCAFFOLD`);
+
+    const hydroTargeted = scenarios.filter(s => s._for && new RegExp(s._for, 'i').test(svcLower('traitement hydrofuge toiture')));
+    const hydroStateLocked = hydroTargeted.filter(s => {
+      if (!s._state_for) return false;
+      return Array.isArray(s._state_for) ? s._state_for.includes('encours') : s._state_for === 'encours';
+    });
+    assert(hydroTargeted.length >= 4, `Hydrofuge targeted pool must have ≥4 scenarios (MEWP + 3×LADDER), got ${hydroTargeted.length}`);
+    assert(hydroStateLocked.length === 1, `Hydrofuge encours stateLocked pool must have exactly 1 scenario, got ${hydroStateLocked.length}`);
+    assert(hydroStateLocked[0]._access_configuration === 'MEWP', `The 1 state-locked hydrofuge scenario must be MEWP`);
+  });
+
+  // ─── RTG-RS63 : each route has exactly one eligible encours scenario ───────────
+
+  runTest('RTG-RS63', 'Anti-moss and hydrofuge each have exactly one eligible encours scenario', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+    const antiEncours = scenarios.filter(s =>
+      s._for && /anti.mousse/i.test(s._for) &&
+      (Array.isArray(s._state_for) ? s._state_for.includes('encours') : s._state_for === 'encours')
+    );
+    const hydroEncours = scenarios.filter(s =>
+      s._for && /hydrofuge/i.test(s._for) &&
+      (Array.isArray(s._state_for) ? s._state_for.includes('encours') : s._state_for === 'encours')
+    );
+    assert(antiEncours.length === 1,
+      `Anti-mousse must have exactly 1 eligible encours scenario, got ${antiEncours.length}`);
+    assert(hydroEncours.length === 1,
+      `Hydrofuge must have exactly 1 eligible encours scenario, got ${hydroEncours.length}`);
+    assert(antiEncours[0]._access_configuration === 'SCAFFOLD',
+      `The anti-mousse encours scenario must be SCAFFOLD, got: ${antiEncours[0]._access_configuration}`);
+    assert(hydroEncours[0]._access_configuration === 'MEWP',
+      `The hydrofuge encours scenario must be MEWP, got: ${hydroEncours[0]._access_configuration}`);
+  });
+
+  // ─── RTG-RS64 : no ladder scenario can reach either encours micro-test route ───
+
+  runTest('RTG-RS64', 'No LADDER_AND_SECURED_ROOF_LADDER scenario can reach either encours micro-test route', () => {
+    const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
+
+    const antiStateLocked = scenarios.filter(s =>
+      s._for && /anti.mousse/i.test(s._for) &&
+      (Array.isArray(s._state_for) ? s._state_for.includes('encours') : s._state_for === 'encours')
+    );
+    const antiLadder = antiStateLocked.filter(s => s._access_configuration === 'LADDER_AND_SECURED_ROOF_LADDER');
+    assert(antiLadder.length === 0,
+      `Anti-mousse encours state-locked pool must have 0 LADDER scenarios, got ${antiLadder.length}`);
+
+    const hydroStateLocked = scenarios.filter(s =>
+      s._for && /hydrofuge/i.test(s._for) &&
+      (Array.isArray(s._state_for) ? s._state_for.includes('encours') : s._state_for === 'encours')
+    );
+    const hydroLadder = hydroStateLocked.filter(s => s._access_configuration === 'LADDER_AND_SECURED_ROOF_LADDER');
+    assert(hydroLadder.length === 0,
+      `Hydrofuge encours state-locked pool must have 0 LADDER scenarios, got ${hydroLadder.length}`);
+
+    const antiResult = JSON.parse(_applySiteRealism(JSON.stringify({
+      _matched_key: 'nettoyage_toiture', _matched_service: 'Traitement anti-mousse toiture', state_level: 'encours',
+    }), 0));
+    const hydroResult = JSON.parse(_applySiteRealism(JSON.stringify({
+      _matched_key: 'nettoyage_toiture', _matched_service: 'Traitement hydrofuge toiture', state_level: 'encours',
+    }), 0));
+    assert(antiResult._access_configuration !== 'LADDER_AND_SECURED_ROOF_LADDER',
+      `_applySiteRealism anti-mousse encours must NOT produce LADDER, got: ${antiResult._access_configuration}`);
+    assert(hydroResult._access_configuration !== 'LADDER_AND_SECURED_ROOF_LADDER',
+      `_applySiteRealism hydrofuge encours must NOT produce LADDER, got: ${hydroResult._access_configuration}`);
   });
 
   // ─── summary ──────────────────────────────────────────────────────────────────
