@@ -248,10 +248,29 @@ export async function runAutomotiveBreakdownTests() {
         `outOfTraffic=${w2OutOfTraffic}, outOfWinch=${w2OutOfWinch}`));
   }
 
+  // AUTO-V18: exterior automotive camera field must not trigger indoor-camera validator
+  {
+    const { buildDallePromptV2 } = await import('../prompt/scene-builder.js');
+    const { _validateScene }     = await import('../prompt/scene-builder.js');
+    const testServices = [
+      { metier: 'depannage_auto', travaux: 'Démarrage batterie',    etat: 'encours', nb: 1, ville: 'Paris', fiche: '', contexte: 'maison', meteo: 'auto', images: [] },
+      { metier: 'depannage_auto', travaux: 'Changement de roue',    etat: 'encours', nb: 1, ville: 'Paris', fiche: '', contexte: 'maison', meteo: 'auto', images: [] },
+      { metier: 'depannage_auto', travaux: 'Remorquage',            etat: 'encours', nb: 1, ville: 'Paris', fiche: '', contexte: 'maison', meteo: 'auto', images: [] },
+      { metier: 'depannage_auto', travaux: 'Ouverture de véhicule', etat: 'encours', nb: 1, ville: 'Paris', fiche: '', contexte: 'maison', meteo: 'auto', images: [] },
+    ];
+    const v18Failures = testServices.flatMap(row => {
+      const issues = _validateScene(buildDallePromptV2(row));
+      return issues.map(i => `${row.travaux}: ${i}`);
+    });
+    const ok = v18Failures.length === 0;
+    results.push(ok ? _pass('AUTO-V18: 4 automotive exterior camera fields pass _validateScene (no indoor false-positive)') :
+      _fail('AUTO-V18: camera field triggers indoor-camera validator', v18Failures.join('; ')));
+  }
+
   // ─── Summary ────────────────────────────────────────────────────────────────
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);
-  console.log(`[AUTO-V] ${passed}/${results.length} passed`);  // expected 17/17
+  console.log(`[AUTO-V] ${passed}/${results.length} passed`);  // expected 18/18
   if (failed.length) {
     console.group('[AUTO-V] Failures:');
     failed.forEach(r => console.warn(`  FAIL: ${r.label} — ${r.msg}`));

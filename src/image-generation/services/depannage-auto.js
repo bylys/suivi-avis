@@ -38,7 +38,7 @@ export const WORK_SCENES_DEPANNAGE_AUTO = {
     secteur:           'breakdown technician',
     variation_setting: 'roadside',
     hasWorkers:        true,
-    camera:            'standing 3–5 m from the car, eye level, showing vehicle and roadside context — client smartphone shot from roadside, pavement, or adjacent parked vehicle; never from under the car, from the tow truck deck, or inside the winch cable trajectory',
+    camera:            'standing 3–5 m from the car, eye level, showing vehicle and roadside context — client smartphone shot from roadside, pavement, or adjacent parked vehicle; camera must remain outside the path of the winch cable and outside the vehicle movement corridor; never from under the car or from the tow truck deck',
     materials:  ['warning triangle on pavement', 'jump cables on seat', 'tow straps visible in van'],
     photo_defects: [
       'overexposure from bright sky against dark car bodywork',
