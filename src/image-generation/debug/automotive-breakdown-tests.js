@@ -334,14 +334,14 @@ export async function runAutomotiveBreakdownTests() {
       : _fail('AUTO-V24: cab-chassis-flatbed alignment missing from towing scene', `txt="${remorquageTxt.slice(0,120)}"`));
   }
 
-  // AUTO-V25: winch cable has visible origin and credible attachment point
+  // AUTO-V25: winch is present on the recovery truck (cable may be reeled in during securing phase)
   {
     const remorquageTxt = _allGroupText(SR_AUTO_RAW?.remorquage).toLowerCase();
-    const hasOrigin     = _hasText(remorquageTxt, 'winch mounted', 'winch on the recovery truck', 'mounted winch');
-    const hasAttachment = _hasText(remorquageTxt, 'tow point', 'recovery point', 'attachment point');
+    const hasOrigin     = _hasText(remorquageTxt, 'winch mounted', 'winch on the recovery truck', 'mounted winch', 'winch present', 'winch visible', 'winch at the front');
+    const hasAttachment = _hasText(remorquageTxt, 'tow point', 'recovery point', 'attachment point', 'anchor point', 'flatbed anchor');
     const ok = hasOrigin && hasAttachment;
     results.push(ok
-      ? _pass('AUTO-V25: winch cable has visible origin on truck and credible attachment on vehicle')
+      ? _pass('AUTO-V25: winch present on recovery truck and anchor/attachment point referenced')
       : _fail('AUTO-V25: winch origin or attachment missing from towing scene', `origin=${hasOrigin}, attach=${hasAttachment}`));
   }
 
@@ -397,15 +397,17 @@ export async function runAutomotiveBreakdownTests() {
       : _fail('AUTO-V30: camera winch/movement exclusion missing', `cam="${cam}"`));
   }
 
-  // AUTO-V31: tire-change scene positively states hood is closed
+  // AUTO-V31: tire-change sc1 excludes hood/engine from frame (composition constraint replaces text assertion)
   {
-    const txt = _allGroupText(SR_AUTO_RAW?.crevaison).toLowerCase();
     const sc1 = (SR_AUTO_RAW?.crevaison?.scenarios || [])[0];
     const sc1Text = [sc1?.scene_note || '', sc1?.scene_camera || '', ...(sc1?.chantier_details || [])].join(' ').toLowerCase();
-    const hoodClosed = _hasText(sc1Text, 'hood is fully closed', 'hood fully closed', 'bonnet fully closed', 'hood closed and latched');
-    results.push(hoodClosed
-      ? _pass('AUTO-V31: tire-change positively states vehicle hood is fully closed and latched')
-      : _fail('AUTO-V31: positive hood-closed assertion missing from tire-change scenario 1', `sc1="${sc1Text.slice(0,120)}"`));
+    // New strategy: camera side-on so hood is outside the frame — check either the old text assertion OR the new composition constraint
+    const hoodOutsideFrame = _hasText(sc1Text, 'outside the camera frame', 'completely outside the camera frame', 'hood and engine bay completely outside', 'engine bay completely outside');
+    const hoodClosed       = _hasText(sc1Text, 'hood is fully closed', 'hood fully closed', 'bonnet fully closed', 'hood closed and latched');
+    const ok = hoodOutsideFrame || hoodClosed;
+    results.push(ok
+      ? _pass('AUTO-V31: tire-change sc1 keeps hood/engine outside frame or positively asserts hood closed')
+      : _fail('AUTO-V31: hood-outside-frame or hood-closed assertion missing from tire-change sc1', `sc1="${sc1Text.slice(0,120)}"`));
   }
 
   // AUTO-V32: tire-change has no engine-bay worker in its scene text
@@ -440,38 +442,51 @@ export async function runAutomotiveBreakdownTests() {
       : _fail('AUTO-V34: credible jacking point reference missing from tire-change', `txt="${txt.slice(0,120)}"`));
   }
 
-  // AUTO-V35: towing cable has visible winch origin and towing-eye attachment
-  {
-    const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
-    const txt  = [sc1?.scene_note||'', ...(sc1?.chantier_details||[]), sc1?.scene_framing?.foreground||''].join(' ').toLowerCase();
-    const hasOrigin    = _hasText(txt, 'winch mounted at the front', 'winch visibly mounted', 'winch origin');
-    const hasAttach    = _hasText(txt, 'towing eye', 'tow point', 'front towing eye', 'attachment point');
-    const ok = hasOrigin && hasAttach;
-    results.push(ok
-      ? _pass('AUTO-V35: towing cable has visible winch origin and towing-eye attachment')
-      : _fail('AUTO-V35: winch origin or towing-eye attachment missing from towing scenario 1', `origin=${hasOrigin}, attach=${hasAttach}`));
-  }
-
-  // AUTO-V36: towing has at least two visible tyre restraints (front + rear)
+  // AUTO-V35: towing sc1 references winch on the truck and flatbed anchor points for wheel straps
   {
     const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
     const txt  = [sc1?.scene_note||'', ...(sc1?.chantier_details||[]), sc1?.scene_framing?.foreground||'', ...(sc1?.tools||[])].join(' ').toLowerCase();
-    const hasFrontRear = _hasText(txt, 'front tyre and ratchet strap over rear', 'front-wheel ratchet strap and one rear-wheel', 'front and rear car tyres', 'two visible wheel restraints');
-    results.push(hasFrontRear
-      ? _pass('AUTO-V36: towing requires at least two visible tyre restraints (front + rear)')
-      : _fail('AUTO-V36: front+rear tyre restraints missing from towing scenario 1', `txt="${txt.slice(0,120)}"`));
+    // Securing phase: winch present but reeled in; anchor points are flatbed strap anchors
+    const hasWinch   = _hasText(txt, 'winch mounted at the front', 'winch visibly mounted', 'winch visible at the front', 'winch present at the front');
+    const hasAnchor  = _hasText(txt, 'flatbed anchor point', 'anchor point', 'towing eye', 'tow point');
+    const ok = hasWinch && hasAnchor;
+    results.push(ok
+      ? _pass('AUTO-V35: towing sc1 references winch on truck and flatbed anchor points')
+      : _fail('AUTO-V35: winch or anchor-point reference missing from towing sc1', `winch=${hasWinch}, anchor=${hasAnchor}`));
   }
 
-  // AUTO-V37: towing Worker 2 remains outside cable recoil and vehicle path, not touching cable
+  // AUTO-V36: towing sc1 requires two visible ratchet wheel straps (front + rear)
+  {
+    const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
+    const txt  = [sc1?.scene_note||'', ...(sc1?.chantier_details||[]), sc1?.scene_framing?.foreground||'', ...(sc1?.tools||[])].join(' ').toLowerCase();
+    const hasFrontRear = _hasText(txt,
+      'front tyre and ratchet strap over rear',
+      'front-wheel ratchet strap and one rear-wheel',
+      'front and rear car tyres',
+      'two visible wheel restraints',
+      'two clearly visible ratchet wheel straps',
+      'one front, one rear',
+      'ratchet strap visibly taut over front',
+    );
+    results.push(hasFrontRear
+      ? _pass('AUTO-V36: towing sc1 requires two visible ratchet wheel straps (front + rear)')
+      : _fail('AUTO-V36: front+rear ratchet strap requirement missing from towing sc1', `txt="${txt.slice(0,120)}"`));
+  }
+
+  // AUTO-V37: towing sc1 excludes workers touching cable and positions Worker 2 outside vehicle path
   {
     const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
     const excl = (sc1?.scene_exclude || []).join(' ').toLowerCase();
-    const notTouching = _hasText(excl, 'worker 2 touching the tensioned cable', 'touching the tensioned');
-    const notInPath   = _hasText(excl, 'cable recoil', 'winch cable trajectory', 'worker 2 in the winch cable');
+    // Securing phase: no tensioned cable so "touching" is replaced by "cable held or touched by any worker"
+    const notTouching = _hasText(excl,
+      'worker 2 touching the tensioned cable', 'touching the tensioned',
+      'cable held or touched', 'cable held by any worker',
+    );
+    const notInPath   = _hasText(excl, 'cable recoil', 'winch cable trajectory', 'worker 2 in the winch cable', 'worker 2 in front of the vehicle or in the traffic lane');
     const ok = notTouching && notInPath;
     results.push(ok
-      ? _pass('AUTO-V37: towing Worker 2 excluded from cable recoil and not touching cable')
-      : _fail('AUTO-V37: Worker 2 cable-touch or recoil-zone exclusion missing', `touching=${notTouching}, inPath=${notInPath}`));
+      ? _pass('AUTO-V37: towing sc1 excludes workers touching cable and Worker 2 outside vehicle/cable path')
+      : _fail('AUTO-V37: cable-touch or path exclusion missing from towing sc1', `touching=${notTouching}, inPath=${notInPath}`));
   }
 
   // AUTO-V38: roadside warning triangle is positioned upstream from work area
@@ -531,10 +546,87 @@ export async function runAutomotiveBreakdownTests() {
       : _fail('AUTO-UI2: Générer tout button missing or disabled', `found=${!!btn}, disabled=${btn?.disabled}`));
   }
 
+  // AUTO-V41: tire-change composition excludes front engine area (camera side-on, front not in frame)
+  {
+    const sc1 = (SR_AUTO_RAW?.crevaison?.scenarios || [])[0];
+    const excl = (sc1?.scene_exclude || []).join(' ').toLowerCase();
+    const camTxt = (sc1?.scene_camera || '').toLowerCase();
+    const hasExclFront  = _hasText(excl, 'front of vehicle visible', 'engine bay visible', 'hood visible', 'bonnet visible', 'worker positioned at front');
+    const hasCamSideOn  = _hasText(camTxt, 'side-on', 'front of vehicle', 'front of vehicle and engine bay', 'engine bay deliberately');
+    const ok = hasExclFront && hasCamSideOn;
+    results.push(ok
+      ? _pass('AUTO-V41: tire-change sc1 excludes front/engine area from composition and camera')
+      : _fail('AUTO-V41: front/engine area exclusion or side-on camera missing from tire-change sc1', `exclFront=${hasExclFront}, camSideOn=${hasCamSideOn}`));
+  }
+
+  // AUTO-V42: tire-change sc1 requires exposed hub and visibly compressed jack
+  {
+    const sc1 = (SR_AUTO_RAW?.crevaison?.scenarios || [])[0];
+    const txt  = [sc1?.scene_note||'', ...(sc1?.chantier_details||[]), sc1?.scene_framing?.foreground||''].join(' ').toLowerCase();
+    const hasHub  = _hasText(txt, 'exposed wheel hub', 'exposed hub', 'brake disc', 'open wheel arch');
+    const hasJack = _hasText(txt, 'visibly compressed', 'compressed under', 'jack visibly compressed', 'compressed jack');
+    const ok = hasHub && hasJack;
+    results.push(ok
+      ? _pass('AUTO-V42: tire-change sc1 requires exposed hub and compressed jack')
+      : _fail('AUTO-V42: exposed hub or compressed jack missing from tire-change sc1', `hub=${hasHub}, jack=${hasJack}`));
+  }
+
+  // AUTO-V43: towing sc1 requires bright daytime and explicitly excludes nighttime/dusk
+  {
+    const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
+    const noteTxt = (sc1?.scene_note || '').toLowerCase();
+    const excl    = (sc1?.scene_exclude || []).join(' ').toLowerCase();
+    const hasDaylight = _hasText(noteTxt, 'bright overcast daytime', 'bright overcast', 'overcast daytime');
+    const hasNoNight  = _hasText(excl, 'nighttime scene', 'dusk or dawn', 'artificial emergency lighting');
+    const ok = hasDaylight && hasNoNight;
+    results.push(ok
+      ? _pass('AUTO-V43: towing sc1 requires bright overcast daytime and excludes night/dusk')
+      : _fail('AUTO-V43: daytime requirement or night exclusion missing from towing sc1', `daylight=${hasDaylight}, noNight=${hasNoNight}`));
+  }
+
+  // AUTO-V44: towing sc1 keeps recovered vehicle hood closed
+  {
+    const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
+    const txt  = [sc1?.scene_note||'', ...(sc1?.chantier_details||[])].join(' ').toLowerCase();
+    const excl = (sc1?.scene_exclude || []).join(' ').toLowerCase();
+    const hoodClosed  = _hasText(txt, 'hood fully closed', 'recovered vehicle hood fully closed');
+    const hoodExcl    = _hasText(excl, 'open hood on the recovered vehicle');
+    const ok = hoodClosed && hoodExcl;
+    results.push(ok
+      ? _pass('AUTO-V44: towing sc1 keeps recovered vehicle hood closed')
+      : _fail('AUTO-V44: hood-closed requirement or exclusion missing from towing sc1', `closed=${hoodClosed}, excl=${hoodExcl}`));
+  }
+
+  // AUTO-V45: towing securing scene requires two visible wheel ratchet straps (front + rear)
+  {
+    const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
+    const txt  = [sc1?.scene_note||'', ...(sc1?.chantier_details||[]), ...(sc1?.tools||[]), sc1?.scene_framing?.foreground||''].join(' ').toLowerCase();
+    const excl = (sc1?.scene_exclude || []).join(' ').toLowerCase();
+    const hasTwoStraps   = _hasText(txt, 'two clearly visible ratchet', 'one front, one rear', 'ratchet strap visibly taut over front', 'ratchet strap over front car tyre');
+    const hasFewerExcl   = _hasText(excl, 'fewer than two ratchet', 'fewer than two visible');
+    const ok = hasTwoStraps && hasFewerExcl;
+    results.push(ok
+      ? _pass('AUTO-V45: towing sc1 requires two visible wheel ratchet straps and excludes fewer than two')
+      : _fail('AUTO-V45: two-strap requirement or exclusion missing from towing sc1', `twoStraps=${hasTwoStraps}, fewerExcl=${hasFewerExcl}`));
+  }
+
+  // AUTO-V46: towing securing scene excludes exposed winch cable path
+  {
+    const sc1 = (SR_AUTO_RAW?.remorquage?.scenarios || [])[0];
+    const noteTxt = (sc1?.scene_note || '').toLowerCase();
+    const excl    = (sc1?.scene_exclude || []).join(' ').toLowerCase();
+    const cableReeled  = _hasText(noteTxt, 'cable fully reeled in', 'no tensioned cable crossing');
+    const cableExcl    = _hasText(excl, 'tensioned winch cable crossing', 'loose cable visible beside the vehicle');
+    const ok = cableReeled && cableExcl;
+    results.push(ok
+      ? _pass('AUTO-V46: towing sc1 has winch cable fully reeled in and excludes exposed cable path')
+      : _fail('AUTO-V46: cable-reeled or cable-crossing exclusion missing from towing sc1', `reeled=${cableReeled}, excl=${cableExcl}`));
+  }
+
   // ─── Summary ────────────────────────────────────────────────────────────────
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);
-  console.log(`[AUTO-V] ${passed}/${results.length} passed`);  // expected 40/40
+  console.log(`[AUTO-V] ${passed}/${results.length} passed`);  // expected 46/46
   if (failed.length) {
     console.group('[AUTO-V] Failures:');
     failed.forEach(r => console.warn(`  FAIL: ${r.label} — ${r.msg}`));
