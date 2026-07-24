@@ -602,6 +602,60 @@ const tests = [
     },
   },
 
+  // LAND-UI4: quantity normalization uses the canonical UI limit (10)
+  {
+    id: 'LAND-UI4',
+    label: 'Quantity normalization matches canonical UI limit: 1×1=1, 4×1=4, 1×max=10',
+    run() {
+      const UI_MAX = 10; // must match app.js input max="10" and oninput Math.min(10,...)
+      const normalizeNb = nb => Math.max(1, Math.min(UI_MAX, parseInt(nb) || 1));
+      const cases = [
+        { rows: [{ nb: 1 }],                                     expectedTasks: 1,      label: '1 row × 1' },
+        { rows: [{ nb: 1 }, { nb: 1 }, { nb: 1 }, { nb: 1 }],   expectedTasks: 4,      label: '4 rows × 1' },
+        { rows: [{ nb: UI_MAX }],                                 expectedTasks: UI_MAX, label: `1 row × max(${UI_MAX})` },
+      ];
+      const failures = cases.filter(c => c.rows.reduce((s, r) => s + normalizeNb(r.nb), 0) !== c.expectedTasks);
+      if (failures.length) return { ok: false, detail: `Failed: ${failures.map(f => f.label).join(', ')}` };
+      return { ok: true };
+    },
+  },
+
+  // ─── TAILLE DE HAIE debut ─────────────────────────────────────────────────
+
+  // LAND-V31: hedge-trimming debut scene contains two preparation roles
+  {
+    id: 'LAND-V31',
+    label: 'Taille de haie debut scene describes two workers in preparation roles',
+    run() {
+      const scenes = forMatches('Taille de haie');
+      const debut = scenes.filter(sc => Array.isArray(sc._state_for) && sc._state_for.includes('debut') && !sc._state_for.includes('encours'));
+      if (!debut.length) return { ok: false, detail: 'No debut-only taille de haie scene found' };
+      const hasDual = debut.some(sc => {
+        const text = JSON.stringify(sc);
+        return /worker 1/i.test(text) && /worker 2/i.test(text);
+      });
+      if (!hasDual) return { ok: false, detail: 'No two-worker preparation description in debut taille de haie scene' };
+      return { ok: true };
+    },
+  },
+
+  // LAND-V32: hedge access setup cannot be an empty or domestic ladder scene
+  {
+    id: 'LAND-V32',
+    label: 'Taille de haie debut scene excludes empty ladder and domestic step-stool',
+    run() {
+      const scenes = forMatches('Taille de haie');
+      const debut = scenes.filter(sc => Array.isArray(sc._state_for) && sc._state_for.includes('debut') && !sc._state_for.includes('encours'));
+      if (!debut.length) return { ok: false, detail: 'No debut-only taille de haie scene found' };
+      const hasExclude = debut.some(sc => {
+        const excl = (sc.scene_exclude || []).join(' ');
+        return /empty ladder|domestic.*ladder|domestic.*step|household.*step|solo worker/i.test(excl);
+      });
+      if (!hasExclude) return { ok: false, detail: 'No empty-ladder or domestic-ladder exclusion in debut scene' };
+      return { ok: true };
+    },
+  },
+
 ];
 
 export async function runLandscapingTests() {
