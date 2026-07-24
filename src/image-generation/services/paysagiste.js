@@ -94,7 +94,7 @@ export const WORK_SCENES_PAYSAGISTE = {
 
 export const SITE_REALISM_PAYSAGISTE = {
   paysagiste: {
-    _build_id: 'paysagiste-v3-state-locked-2025-07-24',
+    _build_id: 'paysagiste-v3-state-locked-2026-07-24',
     scenarios: [
       {
         _for:          'creation|plantation|massif|arbre|arbust|rocaille|bosquet|haie.*creation|creation.*haie',
