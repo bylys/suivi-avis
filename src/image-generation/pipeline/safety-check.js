@@ -8,7 +8,7 @@
  * Ne pas modifier avant le cutover validé.
  */
 
-import { SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES } from '../safety/safety-rules.js';
+import { SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } from '../safety/safety-rules.js';
 
 // ─── buildVisionSafetyRequest ─────────────────────────────────────────────────
 // Pure — verbatim params from _checkImageSafety (app.js lines 13689–13701).
@@ -20,7 +20,8 @@ function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount =
   const workerInstruction = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 2)
     ? `\n\nADDITIONAL MANDATORY CHECK — WORKER COUNT: Count the number of clearly visible professional workers in the image (${expectedWorkerCount} expected). You MUST add these fields to your JSON: "expected_worker_count": ${expectedWorkerCount}, "visible_worker_count": <integer you counted>, "worker_count_match": <true if visible_worker_count >= ${expectedWorkerCount}, else false>. If worker_count_match is false, set safe=false, severity="critical", reason="worker_count_mismatch".`
     : '';
-  const serviceGateInstruction = SERVICE_VISUAL_GATE_RULES[matchedService]?.vision_instruction ?? '';
+  const _effectiveService = _SERVICE_GATE_ALIASES[matchedService] || matchedService;
+  const serviceGateInstruction = SERVICE_VISUAL_GATE_RULES[_effectiveService]?.vision_instruction ?? '';
   const prompt = basePrompt + workerInstruction + serviceGateInstruction;
   return {
     url:     'https://api.openai.com/v1/chat/completions',
@@ -64,10 +65,13 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
       };
     }
     // Service visual gate — evaluated after worker count (worker count takes priority)
-    const gate = SERVICE_VISUAL_GATE_RULES[matchedService];
+    const _gateService = _SERVICE_GATE_ALIASES[matchedService] || matchedService;
+    const gate = SERVICE_VISUAL_GATE_RULES[_gateService];
     if (gate) {
       for (const cond of gate.reject_conditions) {
-        if (obj[cond.field] === cond.value) {
+        // not_exactly_true: fail-closed — absent or false both trigger rejection
+        const matches = cond.not_exactly_true ? obj[cond.field] !== true : obj[cond.field] === cond.value;
+        if (matches) {
           return {
             safe: false, severity: 'critical', reason: cond.reason,
             visible_worker_count: obj.visible_worker_count ?? null,

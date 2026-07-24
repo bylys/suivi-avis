@@ -75,16 +75,28 @@ const SAFETY_CHECK_RULES = {
 // Service-specific visual correctness gates applied AFTER the standard safety
 // check. Each entry adds a Vision instruction and a list of reject_conditions.
 // reject_conditions are evaluated in order; first match terminates with that reason.
+// _SERVICE_GATE_ALIASES: normalized user-input variants → canonical gate key.
+// The scene builder sets _matched_service to the raw travaux string, so variants
+// like "taille haie" or "taille-de-haie" would otherwise miss the gate.
+const _SERVICE_GATE_ALIASES = {
+  'taille haie':    'Taille de haie',
+  'taille-de-haie': 'Taille de haie',
+};
+
 const SERVICE_VISUAL_GATE_RULES = {
+  // reject_conditions fields:
+  //   value         : reject if obj[field] === value  (for forbidden true-values)
+  //   not_exactly_true: reject if obj[field] !== true  (fail-closed: absent or false both reject)
   'Taille de haie': {
-    vision_instruction: `\n\nSERVICE VISUAL GATE — HEDGE TRIMMING: This image must show active hedge trimming as the primary action. You MUST add these fields to your JSON: "hedge_visible": <true/false>, "hedge_trimmer_visible": <true/false>, "active_trimming_visible": <true/false>, "worker_on_roof": <true/false>, "roof_work_visible": <true/false>, "service_visual_match": <true if hedge trimming is clearly the primary action, else false>. If worker_on_roof is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If roof_work_visible is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If service_visual_match is false, set safe=false, severity="critical", reason="service_visual_mismatch". If hedge_visible is false, set safe=false, severity="critical", reason="service_visual_mismatch".`,
+    vision_instruction: `\n\nSERVICE VISUAL GATE — HEDGE TRIMMING: This image must show active hedge trimming as the primary action. You MUST add these fields to your JSON: "hedge_visible": <true/false>, "hedge_trimmer_visible": <true/false>, "active_trimming_visible": <true/false>, "worker_on_roof": <true/false>, "roof_work_visible": <true/false>, "service_visual_match": <true if hedge trimming is clearly the primary action, else false>. If worker_on_roof is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If roof_work_visible is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If hedge_visible is not true, set safe=false, severity="critical", reason="service_visual_mismatch". If hedge_trimmer_visible is not true, set safe=false, severity="critical", reason="service_visual_mismatch". If service_visual_match is not true, set safe=false, severity="critical", reason="service_visual_mismatch".`,
     reject_conditions: [
-      { field: 'worker_on_roof',       value: true,  reason: 'forbidden_roof_scene' },
-      { field: 'roof_work_visible',    value: true,  reason: 'forbidden_roof_scene' },
-      { field: 'hedge_visible',        value: false, reason: 'service_visual_mismatch' },
-      { field: 'service_visual_match', value: false, reason: 'service_visual_mismatch' },
+      { field: 'worker_on_roof',        value: true,          reason: 'forbidden_roof_scene' },
+      { field: 'roof_work_visible',     value: true,          reason: 'forbidden_roof_scene' },
+      { field: 'hedge_visible',         not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'hedge_trimmer_visible', not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'service_visual_match',  not_exactly_true: true, reason: 'service_visual_mismatch' },
     ],
   },
 };
 
-export { FORBIDDEN_SAFETY_BY_METIER, _PRE_GEN_SAFETY, SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES };
+export { FORBIDDEN_SAFETY_BY_METIER, _PRE_GEN_SAFETY, SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES };

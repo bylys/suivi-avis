@@ -263,6 +263,195 @@ const tests = [
     },
   },
 
+
+  // ── FAIL-CLOSED tests ────────────────────────────────────────────────────────
+
+  // HEDGE-PROD11: hedge_visible absent → reject (fail-closed)
+  {
+    id: 'HEDGE-PROD11',
+    label: 'Fail-closed: hedge_visible absent → service_visual_mismatch (not safe)',
+    async run() {
+      const safety = await checkImageSafety('MOCK_B64', 'paysagiste', 'mock-key', {
+        fetchImpl: makeMockVisionFetch({
+          safe: true,
+          // hedge_visible intentionally absent
+          hedge_trimmer_visible: true,
+          active_trimming_visible: true,
+          worker_on_roof: false,
+          roof_work_visible: false,
+          service_visual_match: true,
+          visible_worker_count: 2,
+          worker_count_match: true,
+        }),
+        readResponseImpl: readMockImpl,
+        expectedWorkerCount: 2,
+        matchedService: 'Taille de haie',
+      });
+      if (safety.safe !== false)
+        return { ok: false, detail: `Expected safe=false when hedge_visible absent, got safe=${safety.safe}` };
+      if (safety.reason !== 'service_visual_mismatch')
+        return { ok: false, detail: `Expected service_visual_mismatch, got ${safety.reason}` };
+      return { ok: true };
+    },
+  },
+
+  // HEDGE-PROD12: hedge_trimmer_visible absent → reject (fail-closed)
+  {
+    id: 'HEDGE-PROD12',
+    label: 'Fail-closed: hedge_trimmer_visible absent → service_visual_mismatch',
+    async run() {
+      const safety = await checkImageSafety('MOCK_B64', 'paysagiste', 'mock-key', {
+        fetchImpl: makeMockVisionFetch({
+          safe: true,
+          hedge_visible: true,
+          // hedge_trimmer_visible intentionally absent
+          active_trimming_visible: true,
+          worker_on_roof: false,
+          roof_work_visible: false,
+          service_visual_match: true,
+          visible_worker_count: 2,
+          worker_count_match: true,
+        }),
+        readResponseImpl: readMockImpl,
+        expectedWorkerCount: 2,
+        matchedService: 'Taille de haie',
+      });
+      if (safety.safe !== false)
+        return { ok: false, detail: `Expected safe=false when hedge_trimmer_visible absent, got safe=${safety.safe}` };
+      if (safety.reason !== 'service_visual_mismatch')
+        return { ok: false, detail: `Expected service_visual_mismatch, got ${safety.reason}` };
+      return { ok: true };
+    },
+  },
+
+  // HEDGE-PROD13: service_visual_match absent → reject (fail-closed)
+  {
+    id: 'HEDGE-PROD13',
+    label: 'Fail-closed: service_visual_match absent → service_visual_mismatch',
+    async run() {
+      const safety = await checkImageSafety('MOCK_B64', 'paysagiste', 'mock-key', {
+        fetchImpl: makeMockVisionFetch({
+          safe: true,
+          hedge_visible: true,
+          hedge_trimmer_visible: true,
+          active_trimming_visible: true,
+          worker_on_roof: false,
+          roof_work_visible: false,
+          // service_visual_match intentionally absent
+          visible_worker_count: 2,
+          worker_count_match: true,
+        }),
+        readResponseImpl: readMockImpl,
+        expectedWorkerCount: 2,
+        matchedService: 'Taille de haie',
+      });
+      if (safety.safe !== false)
+        return { ok: false, detail: `Expected safe=false when service_visual_match absent, got safe=${safety.safe}` };
+      if (safety.reason !== 'service_visual_mismatch')
+        return { ok: false, detail: `Expected service_visual_mismatch, got ${safety.reason}` };
+      return { ok: true };
+    },
+  },
+
+  // ── SCOPE tests ───────────────────────────────────────────────────────────────
+
+  // HEDGE-PROD14: variant "taille haie" activates the gate
+  {
+    id: 'HEDGE-PROD14',
+    label: 'Scope: variant "taille haie" activates gate (alias → Taille de haie)',
+    async run() {
+      const safety = await checkImageSafety('MOCK_B64', 'paysagiste', 'mock-key', {
+        fetchImpl: makeMockVisionFetch({
+          safe: true,
+          hedge_visible: false, // will trigger gate rejection
+          hedge_trimmer_visible: false,
+          worker_on_roof: false,
+          service_visual_match: false,
+          visible_worker_count: 2,
+          worker_count_match: true,
+        }),
+        readResponseImpl: readMockImpl,
+        expectedWorkerCount: 2,
+        matchedService: 'taille haie',
+      });
+      if (safety.safe !== false)
+        return { ok: false, detail: `Gate did not activate for "taille haie" variant — safe=${safety.safe}` };
+      if (safety.reason !== 'service_visual_mismatch')
+        return { ok: false, detail: `Expected service_visual_mismatch, got ${safety.reason}` };
+      return { ok: true };
+    },
+  },
+
+  // HEDGE-PROD15: variant "taille-de-haie" activates the gate
+  {
+    id: 'HEDGE-PROD15',
+    label: 'Scope: variant "taille-de-haie" activates gate (alias → Taille de haie)',
+    async run() {
+      const safety = await checkImageSafety('MOCK_B64', 'paysagiste', 'mock-key', {
+        fetchImpl: makeMockVisionFetch({
+          safe: true,
+          hedge_visible: false,
+          hedge_trimmer_visible: false,
+          worker_on_roof: false,
+          service_visual_match: false,
+          visible_worker_count: 2,
+          worker_count_match: true,
+        }),
+        readResponseImpl: readMockImpl,
+        expectedWorkerCount: 2,
+        matchedService: 'taille-de-haie',
+      });
+      if (safety.safe !== false)
+        return { ok: false, detail: `Gate did not activate for "taille-de-haie" variant — safe=${safety.safe}` };
+      if (safety.reason !== 'service_visual_mismatch')
+        return { ok: false, detail: `Expected service_visual_mismatch, got ${safety.reason}` };
+      return { ok: true };
+    },
+  },
+
+  // HEDGE-PROD16: "Entretien jardin" does NOT activate the gate — safe=true passes through
+  {
+    id: 'HEDGE-PROD16',
+    label: 'Scope: "Entretien jardin" does not activate the hedge gate',
+    async run() {
+      const safety = await checkImageSafety('MOCK_B64', 'paysagiste', 'mock-key', {
+        fetchImpl: makeMockVisionFetch({
+          safe: true,
+          // No hedge fields — gate must not activate
+          visible_worker_count: 2,
+          worker_count_match: true,
+        }),
+        readResponseImpl: readMockImpl,
+        expectedWorkerCount: 2,
+        matchedService: 'Entretien jardin',
+      });
+      if (safety.safe !== true)
+        return { ok: false, detail: `Gate activated for "Entretien jardin" — safe=${safety.safe}, reason=${safety.reason}` };
+      return { ok: true };
+    },
+  },
+
+  // HEDGE-PROD17: "Nettoyage toiture" (different metier) — gate must not activate for paysagiste rule
+  {
+    id: 'HEDGE-PROD17',
+    label: 'Scope: "Nettoyage toiture" (nettoyage_toiture metier) does not activate the hedge gate',
+    async run() {
+      const safety = await checkImageSafety('MOCK_B64', 'nettoyage_toiture', 'mock-key', {
+        fetchImpl: makeMockVisionFetch({
+          safe: true,
+          visible_worker_count: 2,
+          worker_count_match: true,
+        }),
+        readResponseImpl: readMockImpl,
+        expectedWorkerCount: 2,
+        matchedService: 'Nettoyage toiture',
+      });
+      if (safety.safe !== true)
+        return { ok: false, detail: `Gate activated for "Nettoyage toiture" — safe=${safety.safe}, reason=${safety.reason}` };
+      return { ok: true };
+    },
+  },
+
 ];
 
 // ─── runner ──────────────────────────────────────────────────────────────────
