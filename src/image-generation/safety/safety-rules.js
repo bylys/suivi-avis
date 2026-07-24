@@ -71,4 +71,20 @@ const SAFETY_CHECK_RULES = {
   depannage_auto:       "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: technician on the live carriageway lane with no warning triangle visible; vehicle lifted with no visible axle stand or support; person between the vehicle and traffic; cables crossing the carriageway. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
 };
 
-export { FORBIDDEN_SAFETY_BY_METIER, _PRE_GEN_SAFETY, SAFETY_CHECK_RULES };
+// ─── SERVICE_VISUAL_GATE_RULES ────────────────────────────────────────────────
+// Service-specific visual correctness gates applied AFTER the standard safety
+// check. Each entry adds a Vision instruction and a list of reject_conditions.
+// reject_conditions are evaluated in order; first match terminates with that reason.
+const SERVICE_VISUAL_GATE_RULES = {
+  'Taille de haie': {
+    vision_instruction: `\n\nSERVICE VISUAL GATE — HEDGE TRIMMING: This image must show active hedge trimming as the primary action. You MUST add these fields to your JSON: "hedge_visible": <true/false>, "hedge_trimmer_visible": <true/false>, "active_trimming_visible": <true/false>, "worker_on_roof": <true/false>, "roof_work_visible": <true/false>, "service_visual_match": <true if hedge trimming is clearly the primary action, else false>. If worker_on_roof is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If roof_work_visible is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If service_visual_match is false, set safe=false, severity="critical", reason="service_visual_mismatch". If hedge_visible is false, set safe=false, severity="critical", reason="service_visual_mismatch".`,
+    reject_conditions: [
+      { field: 'worker_on_roof',       value: true,  reason: 'forbidden_roof_scene' },
+      { field: 'roof_work_visible',    value: true,  reason: 'forbidden_roof_scene' },
+      { field: 'hedge_visible',        value: false, reason: 'service_visual_mismatch' },
+      { field: 'service_visual_match', value: false, reason: 'service_visual_mismatch' },
+    ],
+  },
+};
+
+export { FORBIDDEN_SAFETY_BY_METIER, _PRE_GEN_SAFETY, SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES };

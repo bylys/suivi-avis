@@ -88,9 +88,11 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
 
             const _expectedWC = (task._pre_assigned_worker_presence === 'workers' && task._pre_assigned_worker_count >= 2)
               ? task._pre_assigned_worker_count : 0;
-            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC });
+            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service });
             const _safetyReasonCode = safety.checkFailed ? 'check_failed'
-              : (!safety.safe && safety.reason === 'worker_count_mismatch') ? 'worker_count_mismatch'
+              : (!safety.safe && safety.reason === 'worker_count_mismatch')    ? 'worker_count_mismatch'
+              : (!safety.safe && safety.reason === 'forbidden_roof_scene')     ? 'forbidden_roof_scene'
+              : (!safety.safe && safety.reason === 'service_visual_mismatch')  ? 'service_visual_mismatch'
               : (!safety.safe && safety.severity === 'critical') ? 'critical_violation'
               : 'passed';
             console.log('[SAFETY TELEMETRY]', JSON.stringify({
@@ -106,6 +108,9 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               expected_worker_count:  _expectedWC,
               resolved_worker_count:  safety.visible_worker_count ?? null,
               worker_count_source:    'batch_preassignment',
+              hedge_visible:          safety.hedge_visible        ?? null,
+              worker_on_roof:         safety.worker_on_roof       ?? null,
+              service_visual_match:   safety.service_visual_match ?? null,
             }));
 
             if (safety.checkFailed) {
