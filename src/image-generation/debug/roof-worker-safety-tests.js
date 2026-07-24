@@ -667,7 +667,7 @@ export async function runRoofWorkerSafetyTests() {
       _capture_defects_resolved: [],
     };
     const result = _appendLockedFinalConstraints('TEST PROMPT', mockScene);
-    assert(textContains(result, '2 workers'), '2 workers must be mandated in the worker presence block');
+    assert(textContainsAny(result, ['EXACTLY TWO', 'two professional workers', 'Both Worker 1']), '2-worker mandate must be present in the locked prompt');
     assert(textContains(result, 'Worker 1'), 'Worker 1 role description must be present in the crew rule');
     assert(textContains(result, 'Worker 2'), 'Worker 2 role description must be present in the crew rule');
   });
@@ -944,7 +944,7 @@ export async function runRoofWorkerSafetyTests() {
     };
     const result = _appendLockedFinalConstraints('TEST PROMPT', mockScene);
     assert(textContains(result, 'NON-NEGOTIABLE ELEVATED ACCESS'), 'Locked prompt must contain elevated access block');
-    assert(textContains(result, '2 workers'), 'Locked prompt must mandate 2 workers');
+    assert(textContainsAny(result, ['EXACTLY TWO', 'two professional workers', 'Both Worker 1']), 'Locked prompt must mandate 2 workers');
   });
 
   // ─── RTG-RS57 : hydrofuge prompt describes basket worker and ground-control worker ─
@@ -972,7 +972,7 @@ export async function runRoofWorkerSafetyTests() {
     };
     const result = _appendLockedFinalConstraints('TEST PROMPT', mockScene);
     assert(textContains(result, 'NON-NEGOTIABLE ELEVATED ACCESS'), 'Locked prompt must contain elevated access block');
-    assert(textContains(result, '2 workers'), 'Locked prompt must mandate 2 workers');
+    assert(textContainsAny(result, ['EXACTLY TWO', 'two professional workers', 'Both Worker 1']), 'Locked prompt must mandate 2 workers');
   });
 
   // ─── RTG-RS58 : no worker on roof tiles in either micro-test route ────────────

@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-20",
-  "git_commit": "f94ae36380432a6706cb707c9d743999d27e6738",
+  "generated_at": "2026-07-24",
+  "git_commit": "33f12b8",
   "methodology": "Python static analysis of service-catalog.js and services/*.js. Uses _extract_sr_block + brace-depth extraction for SITE_REALISM, checks _for regex against normalize(service_label) with re.search(). ROUTED_TO_SPECIFIC_SCENE requires an actual _for match (or _dispatch=service bucket). Does not execute JS runtime — use window._runServiceCoverageAudit() for runtime verification.",
   "reference_counts": {
     "note": "Correct methodology, bb5fc76 (pre-fix) vs 167b631 (post-fix)",
@@ -1513,9 +1513,9 @@
       "metier": "paysagiste",
       "service_label": "Arrosage automatique",
       "normalized_service": "arrosage automatique",
-      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "no _for match, no fallback scenario",
-      "matched_regex": null,
+      "matched_regex": "arrosage.*auto|automatique.*arros|arrosage automatique|irrigation|arroseur|tuyau.*arros",
       "fallback_used": false,
       "before_fix": null,
       "after_fix": null
@@ -1546,9 +1546,9 @@
       "metier": "paysagiste",
       "service_label": "Entretien jardin",
       "normalized_service": "entretien jardin",
-      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "no _for match, no fallback scenario",
-      "matched_regex": null,
+      "matched_regex": "desherb|nettoy.*jardin|entretien.*jardin|entretien jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage",
       "fallback_used": false,
       "before_fix": null,
       "after_fix": null
@@ -1559,7 +1559,7 @@
       "normalized_service": "desherbage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage",
-      "matched_regex": "desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage",
+      "matched_regex": "desherb|nettoy.*jardin|entretien.*jardin|entretien jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage",
       "fallback_used": false,
       "before_fix": null,
       "after_fix": null
@@ -1568,9 +1568,9 @@
       "metier": "paysagiste",
       "service_label": "Petite maçonnerie paysagère",
       "normalized_service": "petite maconnerie paysagere",
-      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "no _for match, no fallback scenario",
-      "matched_regex": null,
+      "matched_regex": "maconn|maçonn|maconnerie|muret|pas.*japonais|dalle.*jardin|terrasse.*jardin|ouvrage.*jardin|maconnerie.*paysag|petite.*maconn",
       "fallback_used": false,
       "before_fix": null,
       "after_fix": null

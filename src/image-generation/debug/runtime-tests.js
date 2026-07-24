@@ -501,7 +501,7 @@ export async function runRuntimeTests() {
     const t29Failures = [];
     if (!r.includes('NON-NEGOTIABLE'))                t29Failures.push('missing NON-NEGOTIABLE header');
     if (!r.includes('WORKER PRESENCE'))               t29Failures.push('missing WORKER PRESENCE block');
-    if (!/workers must be actively working/i.test(r)) t29Failures.push('WORKER PRESENCE does not mention worker');
+    if (!/EXACTLY TWO VISIBLE PROFESSIONAL WORKERS/i.test(r)) t29Failures.push('WORKER PRESENCE does not contain EXACTLY TWO wording');
     if (!r.includes('wide_worksite'))                 t29Failures.push('missing composition key');
     if (!r.includes('5 to 8 metres'))                 t29Failures.push('missing camera distance');
     if (!r.includes('slightly tilted') && !r.includes('JPEG compression')) t29Failures.push('missing capture defects');
@@ -671,7 +671,7 @@ export async function runRuntimeTests() {
     _assertFinalWorkerConsistency(scW);
     if (scW.no_people !== false) t36Failures.push('T36a: no_people should be false for worker scene');
     const pW = _appendLockedFinalConstraints('[mock]', scW);
-    if (!/One worker must be actively working/i.test(pW)) t36Failures.push('T36a: WORKER PRESENCE missing');
+    if (!/EXACTLY ONE VISIBLE PROFESSIONAL WORKER must be actively working/i.test(pW)) t36Failures.push('T36a: WORKER PRESENCE missing');
     if (/No workers or people visible/i.test(pW))         t36Failures.push('T36a: no-people instruction leaked');
     const scN = { var_workers: 0, var_presence: 'none', no_people: true, composition: 'wide_worksite', _matched_key: 'depannage_auto', triangle_rule: null, _worker_safety_mode: null, _capture_defects_resolved: [{ key: 'jpeg_compression', prompt: 'subtle JPEG compression' }] };
     _assertFinalWorkerConsistency(scN);
