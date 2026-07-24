@@ -9,6 +9,8 @@ export const WORK_SCENES_PAYSAGISTE = {
     category:         'paysagiste',
     priority:         2,
     service_keywords: [
+      { phrase: 'petite maconnerie paysagere', score: 13 },
+      { phrase: 'maconnerie paysagere',        score: 13 },
       { phrase: 'entretien jardin',       score: 13 },
       { phrase: 'creation jardin',        score: 13 },
       { phrase: 'taille de haie',         score: 13 },

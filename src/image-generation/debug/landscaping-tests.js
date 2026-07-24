@@ -1035,6 +1035,81 @@ const prodTests = [
     },
   },
 
+  // LAND-PROD16: Petite maçonnerie paysagère + metier=paysagiste → _matched_key = paysagiste
+  {
+    id: 'LAND-PROD16',
+    label: 'Petite maçonnerie paysagère + metier=paysagiste → _matched_key = paysagiste',
+    run() {
+      const task = buildTaskForService('Petite maçonnerie paysagère', 'encours');
+      const base = task._planBase;
+      if (base._matched_key !== 'paysagiste') return { ok: false, detail: `_matched_key="${base._matched_key}" (expected "paysagiste")` };
+      return { ok: true, detail: `_matched_key=paysagiste score=${base._match_score}` };
+    },
+  },
+
+  // LAND-PROD17: Petite maçonnerie paysagère encours → state_lock_used + build_id
+  {
+    id: 'LAND-PROD17',
+    label: 'Petite maçonnerie paysagère encours → site_realism_build_id + state_lock_used=true + pool_size=1',
+    run() {
+      const task = buildTaskForService('Petite maçonnerie paysagère', 'encours');
+      const so = JSON.parse(task.jsonScene);
+      so._pre_assigned_composition  = 'medium_intervention';
+      so._pre_assigned_vehicle      = 'absent';
+      so._capture_defects_resolved  = [];
+      so._pre_assigned_worker_count = 2;
+      const realist = JSON.parse(_applySiteRealism(JSON.stringify(so), 0));
+      if (!realist._state_lock_used) return { ok: false, detail: `_state_lock_used=false` };
+      if (realist._state_lock_pool_size !== 1) return { ok: false, detail: `pool_size=${realist._state_lock_pool_size} (expected 1)` };
+      const buildId = realist._site_realism_build_id || '';
+      if (!buildId.includes('paysagiste')) return { ok: false, detail: `_site_realism_build_id="${buildId}" (expected paysagiste-v3-state-locked-*)` };
+      const stateFor = realist._selected_scenario_state_for || '';
+      if (!String(stateFor).includes('encours')) return { ok: false, detail: `_selected_scenario_state_for="${stateFor}" does not contain encours` };
+      return { ok: true, detail: `pool_size=1 build_id=${buildId} state_for=${stateFor}` };
+    },
+  },
+
+  // LAND-PROD18: Petite maçonnerie paysagère encours → scénario blocs/mortier
+  {
+    id: 'LAND-PROD18',
+    label: 'Petite maçonnerie paysagère encours → picks wall/bloc+mortier scenario',
+    run() {
+      const task = buildTaskForService('Petite maçonnerie paysagère', 'encours');
+      const so = JSON.parse(task.jsonScene);
+      so._pre_assigned_composition  = 'medium_intervention';
+      so._pre_assigned_vehicle      = 'absent';
+      so._capture_defects_resolved  = [];
+      so._pre_assigned_worker_count = 2;
+      const realist = JSON.parse(_applySiteRealism(JSON.stringify(so), 0));
+      const note = (realist.work_type || '').toLowerCase();
+      if (!/mortar|block|parpaing|muret|mortier|raised bed|garden wall|maconn|stone/.test(note)) {
+        return { ok: false, detail: `work_type="${realist.work_type}" — does not match masonry wall/bloc scenario` };
+      }
+      return { ok: true, detail: `work_type="${realist.work_type.slice(0, 80)}..."` };
+    },
+  },
+
+  // LAND-PROD19: général maçonnerie services → reste dans le métier maçonnerie (non-régression)
+  {
+    id: 'LAND-PROD19',
+    label: 'General masonry services remain routed to maçonnerie métier (no paysagiste capture)',
+    run() {
+      const masonServices = [
+        'Construction mur en parpaings',
+        'Réparation mur extérieur',
+        'Rejointoiement façade',
+      ];
+      const failures = [];
+      for (const svc of masonServices) {
+        const row = { travaux: svc, etat: 'encours', nb: 1, ville: 'Lyon', meteo: 'auto', contexte: 'maison' };
+        const base = JSON.parse(buildDallePromptV2(row));
+        if (base._matched_key === 'paysagiste') failures.push(`"${svc}" → _matched_key=paysagiste`);
+      }
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true, detail: `all ${masonServices.length} general masonry services remain outside paysagiste` };
+    },
+  },
+
   // LAND-PROD11: finger not forced outside scope for paysagiste/arrosage
   {
     id: 'LAND-PROD11',
