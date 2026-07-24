@@ -410,8 +410,18 @@ const WORKER_SCENE_RULES = {
     ],
   },
   paysagiste: {
-    min_workers_when_visible: 2,
+    min_workers_when_visible: 1,
     max_workers: 2,
+    service_worker_minimums: {
+      paysagiste_taille_haie:      2,
+      paysagiste_plantation_haie:  2,
+      paysagiste_plantation_arbre: 2,
+      paysagiste_gazon_rouleau:    2,
+      paysagiste_creation:         2,
+      paysagiste_irrigation:       2,
+      paysagiste_maconnerie:       2,
+      paysagiste_bordures:         2,
+    },
     actions: [
       'planting a shrub in the prepared bed and backfilling around the root ball',
       'laying turf rolls across the prepared subgrade and tamping the edges',

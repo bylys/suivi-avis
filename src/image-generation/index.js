@@ -270,7 +270,7 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests] = await Promise.all([
     import('./debug/runtime-tests.js?v=10'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
@@ -288,6 +288,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/cov-fix-scenes-tests.js'),
     import('./debug/arborist-scenes-tests.js'),
     import('./debug/automotive-breakdown-tests.js'),
+    import('./debug/landscaping-tests.js'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();
@@ -312,6 +313,7 @@ if (_params.get('imageGenTests') === '1') {
   window._runCovFixScenesTests                          = covFixTests.runCovFixScenesTests;
   window._runArboristScenesTests                        = arboristScenesTests.runArboristScenesTests;
   window._runAutomotiveBreakdownTests                   = automotiveTests.runAutomotiveBreakdownTests;
+  window._runLandscapingTests                           = landscapingTests.runLandscapingTests;
   console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofContractsTests(), _runRoofClusterScenesTests(), _runRoofPRTests(), _runRoofWorkerSafetyTests(), _runServiceResolverStateLockTests(), _runRoofCoveringWaterproofingValidationTests(), _runCovFixScenesTests(), _runArboristScenesTests()');
 }
 

@@ -38,14 +38,14 @@ export const WORK_SCENES_PAYSAGISTE = {
     setting:    'exterior',
     secteur:           'landscaper',
     variation_setting: 'garden',
-    hasWorkers:        false,
+    hasWorkers:        true,
     camera:            'standing in the garden, 4–6 m from the work area, wide view showing garden context',
     materials:  ['topsoil bags', 'mulch', 'plant pots', 'turf rolls'],
     photo_defects: [
       'dappled shade causing uneven exposure across the garden',
       'slight lens flare from low afternoon sun between trees',
     ],
-    exclusions: ['lawnmowers', 'hedge trimmers', 'tools', 'workers', 'people'],
+    exclusions: [],
     states: {
       debut: {
         framing: {
@@ -192,7 +192,7 @@ export const SITE_REALISM_PAYSAGISTE = {
         ],
       },
       {
-        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        _for:          'desherb|nettoy.*jardin|entretien.*jardin|entretien jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
         scene_note:    'garden weeding or vegetation clearance in progress — weeds being removed from beds or paths, cleared patch beside still-overgrown area',
         scene_camera:  'crouching low near a bed or path, framing the active weeding zone — bare cleared soil beside the remaining overgrowth',
         scene_framing: {
@@ -477,7 +477,7 @@ export const SITE_REALISM_PAYSAGISTE = {
 
       // --- désherbage (3 additional) ---
       {
-        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        _for:          'desherb|nettoy.*jardin|entretien.*jardin|entretien jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
         scene_note:    'knapsack sprayer in use — chemical weed treatment being applied to a gravel path or paved area between plants',
         scene_camera:  'standing behind the sprayer, framing the spray lance directing chemical onto the target weeds',
         scene_framing: {
@@ -502,7 +502,7 @@ export const SITE_REALISM_PAYSAGISTE = {
         ],
       },
       {
-        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        _for:          'desherb|nettoy.*jardin|entretien.*jardin|entretien jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
         scene_note:    'tap-root weed extraction — dandelion or deep-rooted weed being pulled by a long tap-root extractor tool, intact root beside the hole',
         scene_camera:  'crouching on the lawn, framing the tap-root extractor tool in the soil with the extracted root beside the hole',
         scene_framing: {
@@ -526,7 +526,7 @@ export const SITE_REALISM_PAYSAGISTE = {
         ],
       },
       {
-        _for:          'desherb|nettoy.*jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
+        _for:          'desherb|nettoy.*jardin|entretien.*jardin|entretien jardin|debroussaill|mauvaise.*herbe|sarclage|desherbage',
         scene_note:    'post-treatment clearance — wilted and dying weeds being raked up from the bed after chemical treatment, debris going into sacks',
         scene_camera:  'crouching low at the bed, framing the wilted weed plants being raked into a pile for removal',
         scene_framing: {
@@ -548,6 +548,165 @@ export const SITE_REALISM_PAYSAGISTE = {
           'wilted yellow weeds clearly dead from the treatment — limp on the soil',
           'rake gathering them into a pile for bagging',
           'bare soil visible on the cleared section — treatment effective',
+        ],
+      },
+
+      // --- arrosage automatique (LAND-IRRIGATION) ---
+      {
+        _for:          'arrosage.*auto|automatique.*arros|arrosage automatique|irrigation|arroseur|tuyau.*arros',
+        scene_note:    'automatic irrigation installation in progress — trench open in the lawn, irrigation pipe being laid, pop-up sprinkler head being fitted into the riser — two workers: Worker 1 in the trench fitting the pipe connectors, Worker 2 feeding pipe from the reel along the trench edge',
+        scene_camera:  'standing at the lawn edge 3–5 m away, framing the open trench, the pipe reel, and both workers in their respective positions',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'open trench in the lawn — clean cut edges, irrigation pipe laid in the bottom, loose soil beside the trench edge',
+          midground:  'Worker 1 crouching in or beside the trench fitting a push-fit pipe connector — Worker 2 feeding pipe from a reel along the trench',
+          background: 'garden lawn and boundary fence or wall, house facade visible',
+        },
+        scene_debris:  'excavated lawn plugs and soil beside the trench, empty push-fit connector packaging on the ground',
+        scene_exclude: [
+          'finished garden with no trench visible',
+          'water hose without trench',
+          'solo worker with no colleague visible',
+          'hedge trimmer',
+          'turf rolls',
+        ],
+        tools: [
+          'irrigation pipe reel on the ground at the trench edge, pipe feeding into the trench',
+          'pipe cutter beside the reel',
+          'push-fit T-connector or elbow fitting in Worker 1s hands at the pipe joint',
+          'pop-up sprinkler head on the ground beside the riser position',
+        ],
+        protections: [
+          'gardening gloves on both workers',
+          'flat board on the lawn beside the trench to avoid edge collapse',
+        ],
+        chantier_details: [
+          'open trench cut cleanly into the lawn — straight line with clean vertical edges',
+          'irrigation pipe laid flat in the trench bottom, push-fit connectors at junctions',
+          'pop-up sprinkler head set into its riser beside the trench — not yet backfilled',
+          'two workers with distinct roles: Worker 1 fitting pipe, Worker 2 feeding pipe from the reel',
+        ],
+      },
+      {
+        _for:          'arrosage.*auto|automatique.*arros|arrosage automatique|irrigation|arroseur|tuyau.*arros',
+        scene_note:    'irrigation controller box being mounted and wired — control unit fixed to the garage or house wall, zone wiring being connected inside the box, solenoid valves on the ground awaiting installation',
+        scene_camera:  'standing 2–3 m from the wall, framing the controller box on the wall and the worker making connections inside it',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'irrigation controller box open on the wall, worker connecting zone wiring inside — screwdriver in hand',
+          midground:  'solenoid valve manifold on the ground below the controller, irrigation pipe stubs from the wall',
+          background: 'garage or house wall, adjacent garden visible',
+        },
+        scene_debris:  'wire off-cuts and connector packaging on the ground below the controller box',
+        scene_exclude: ['trench open in lawn', 'turf rolls', 'hedge trimmer'],
+        tools: [
+          'irrigation controller box open on the wall — zone wiring connections visible inside',
+          'screwdriver in workers hand at the terminal block',
+          'solenoid valve manifold with pipe stubs on the ground below',
+        ],
+        protections: [
+          'insulated screwdriver for low-voltage wiring',
+        ],
+        chantier_details: [
+          'irrigation controller box mounted on wall — cover open, zone terminals visible',
+          'multi-zone solenoid valve manifold on the ground with pipe connections',
+          'zone wiring colour-coded and labelled at the terminal block',
+        ],
+      },
+      {
+        _for:          'arrosage.*auto|automatique.*arros|arrosage automatique|irrigation|arroseur|tuyau.*arros',
+        scene_note:    'system commissioning — sprinkler heads being tested zone by zone, pop-up heads active on the lawn with water arcs visible, worker monitoring each head for coverage and alignment',
+        scene_camera:  'standing at the garden edge, framing the active sprinkler arc over the lawn with the worker crouching beside one head to adjust',
+        scene_framing: {
+          work_pct:   55,
+          foreground: 'pop-up sprinkler head active — water arc spraying across the lawn surface, worker crouching to adjust the arc stop',
+          midground:  'lawn with several active pop-up heads spraying in their zones, wet grass shining',
+          background: 'garden boundary and planting beds at the lawn edge, house facade beyond',
+        },
+        scene_debris:  'small tool bag on the dry grass beside the worker',
+        scene_exclude: ['open trench', 'dry lawn without active sprinklers', 'hedge trimmer'],
+        tools: [
+          'flat-blade screwdriver in workers hand at the pop-up head arc adjustment screw',
+          'tool bag on the dry grass beside the worker',
+        ],
+        protections: [],
+        chantier_details: [
+          'pop-up sprinkler head extended and active — water arc clearly visible',
+          'worker crouching beside one head adjusting the arc stop screw',
+          'multiple heads active simultaneously across the lawn zones',
+        ],
+      },
+
+      // --- petite maçonnerie paysagère (LAND-LANDSCAPE-CONSTRUCTION) ---
+      {
+        _for:          'maconn|maçonn|maconnerie|muret|pas.*japonais|dalle.*jardin|terrasse.*jardin|ouvrage.*jardin|maconnerie.*paysag|petite.*maconn',
+        scene_note:    'low garden wall or raised bed being built — natural stone or concrete block courses being laid with mortar, two workers: Worker 1 laying blocks and trowelling mortar, Worker 2 mixing mortar in a trough and passing stones — lightweight garden-scale work, not heavy construction',
+        scene_camera:  'standing in the garden 3–5 m from the wall being built, framing both workers and the emerging course of stone',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'Worker 1 placing a natural stone or concrete block on a fresh mortar bed, trowel in hand — mortar squeezing out at the joint',
+          midground:  'low wall or raised bed in progress — 2–4 courses laid, top course being set — Worker 2 mixing mortar at the trough beside the wall',
+          background: 'garden lawn or planting bed behind the wall, garden fence or house wall beyond',
+        },
+        scene_debris:  'mortar mix splashes on the ground beside the trough, stone off-cuts on the garden soil',
+        scene_exclude: [
+          'large construction crane or heavy machinery',
+          'concrete shuttering for a slab',
+          'full house foundation work',
+          'industrial scaffolding',
+          'hedge trimmer',
+          'turf rolls',
+          'solo worker with no colleague visible',
+        ],
+        tools: [
+          'pointing trowel in Worker 1s hand, mortar on the blade',
+          'rubber mallet beside the last block for tapping to level',
+          'mortar mixing trough beside Worker 2 with a mixing paddle or hoe',
+          'spirit level on the top course checking level',
+        ],
+        protections: [
+          'safety gloves on both workers',
+          'gardening kneeling pad beside Worker 1 at the wall base',
+        ],
+        chantier_details: [
+          'low garden wall or raised bed — 2–4 courses of natural stone or concrete block, lightweight garden scale',
+          'mortar bed on the top course ready for the next stone',
+          'mortar squeezing from the joint between the last two blocks',
+          'spirit level on the top course — wall straight and level',
+          'two workers with distinct roles: Worker 1 laying blocks, Worker 2 mixing mortar',
+        ],
+      },
+      {
+        _for:          'maconn|maçonn|maconnerie|muret|pas.*japonais|dalle.*jardin|terrasse.*jardin|ouvrage.*jardin|maconnerie.*paysag|petite.*maconn',
+        scene_note:    'Japanese stepping stones or garden dalles being set — flat stone or concrete slabs being positioned in a bed of sharp sand or gravel, two workers setting and levelling each slab, spirit level in use',
+        scene_camera:  'standing beside the path, framing the slab being positioned and levelled, garden context visible around the path line',
+        scene_framing: {
+          work_pct:   60,
+          foreground: 'flat stone slab on a sharp sand bed, spirit level on top — Worker 1 tapping the edge with a rubber mallet to adjust level',
+          midground:  'stepping stone path partially laid — some slabs set and levelled, next position prepared in the sand',
+          background: 'garden lawn or gravel bed beside the path, planting borders visible',
+        },
+        scene_debris:  'sharp sand spill at the prepared slab position, empty sand bag on the ground',
+        scene_exclude: [
+          'large construction machinery',
+          'mortar mixing for stepping stones',
+          'hedge trimmer',
+          'turf rolls',
+        ],
+        tools: [
+          'rubber mallet in Worker 1s hand tapping the slab to level',
+          'spirit level on the slab top surface',
+          'hand brush on the ground for brushing excess sand from the slab surface',
+          'sharp sand bag open at the prepared slab position',
+        ],
+        protections: [
+          'safety gloves beside the slab',
+        ],
+        chantier_details: [
+          'flat stepping stone or garden dalle on a sharp sand bed — set and levelled',
+          'spirit level on the stone confirming level in both directions',
+          'stepping stone path partially complete — set stones beside prepared sand positions',
+          'sharp sand bed visible at the next slab position, not yet occupied',
         ],
       },
 

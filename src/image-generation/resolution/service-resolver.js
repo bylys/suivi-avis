@@ -39,6 +39,15 @@ function _serviceGroup(matchedService) {
   if (/crevaison|roue|pneu/.test(s))                                                return 'crevaison';
   if (/remorquage|remorque|transport|treuil|enlevement.*vehicule|enlevement.*voiture/.test(s)) return 'remorquage';
   if (/ouverture|ouvert|cles.*enferm|deverrouillage|verrouillage/.test(s))          return 'ouverture';
+  // Paysagiste — 2-worker service buckets
+  if (/taille.*haie|haie.*taille|coupe.*haie/.test(s))                              return 'paysagiste_taille_haie';
+  if (/plantation.*haie|haie.*plantation/.test(s))                                  return 'paysagiste_plantation_haie';
+  if (/plantation.*arbre|arbre.*plantation/.test(s))                                return 'paysagiste_plantation_arbre';
+  if (/pose.*gazon|gazon.*rouleau|rouleau.*gazon/.test(s))                          return 'paysagiste_gazon_rouleau';
+  if (/creation.*jardin|jardin.*creation|amenagement.*ext|amenagement.*paysag|amenagement.*jard/.test(s)) return 'paysagiste_creation';
+  if (/arrosage.*auto|automatique.*arros|irrigation/.test(s))                       return 'paysagiste_irrigation';
+  if (/maconn|maçonn|muret|pas.*japonais|dalle.*jardin/.test(s))                   return 'paysagiste_maconnerie';
+  if (/^bordures?$|^bordures? /.test(s))                                            return 'paysagiste_bordures';
   return 'default';
 }
 
