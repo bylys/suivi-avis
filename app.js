@@ -3228,16 +3228,26 @@ function removeImgRow(id) {
 function updateImgRow(id, field, value) {
   const row = _imgRows.find(r => r.id === id);
   if (!row) return;
+  // When metier changes, reset dependent fields to coherent defaults
+  if (field === 'metier' && row.metier !== value) {
+    row.travaux  = '';
+    row.contexte = (CONTEXTE_BY_METIER[value] || CONTEXTE_OPTIONS)[0].value;
+  }
   row[field] = value;
   const card = document.querySelector(`.img-plan-card[data-rowid="${id}"]`);
   if (card) {
     if (field === 'etat') {
+      // Lightweight update: toggle pills and refresh analyse only
       card.querySelectorAll('.img-etat-pill').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.etat === value);
       });
+      const analyseEl = card.querySelector('.img-plan-analyse');
+      if (analyseEl) analyseEl.innerHTML = window._renderImgAnalyse?.(row) ?? '';
+    } else {
+      // Full card re-render so visible form fields match _imgRows exactly
+      const idx = _imgRows.findIndex(r => r.id === id);
+      card.outerHTML = _renderImgCard(row, idx);
     }
-    const analyseEl = card.querySelector('.img-plan-analyse');
-    if (analyseEl) analyseEl.innerHTML = window._renderImgAnalyse?.(row) ?? '';
   }
   updateCostEstimate();
 }

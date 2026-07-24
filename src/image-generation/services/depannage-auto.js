@@ -354,6 +354,7 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
           ],
         },
       ],
+      validated_visual_route: true,  // Démarrage batterie encours — validated batch 2026-07-24, do not alter
       scene_note: 'roadside breakdown — battery failure, jump-start or booster in progress beside a stalled vehicle; primary action is always a booster pack or jump cables connected to the battery, never a multimeter alone',
       tools: [
         'jump-start cable set draped over the open bonnet edge',
@@ -385,16 +386,16 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
     crevaison: {
       scenarios: [
         {
-          scene_note:    'full wheel change in progress — Worker 1 fitting the spare tyre at the jacked wheel arch; Worker 2 standing at a safe lateral distance behind the vehicle, monitoring traffic and managing the warning cone placement — both in high-visibility vests',
-          scene_camera:  'crouching at the wheel arch level, framing the raised wheel gap and the spare tyre being aligned with the hub — Worker 2 visible in the background at roadside, not in the traffic lane',
+          scene_note:    'full wheel change in progress — THE VEHICLE HOOD IS FULLY CLOSED AND LATCHED. No technician is positioned near the engine bay. No engine diagnosis or battery work is occurring. Both workers are exclusively involved in the wheel replacement or roadside safety. Worker 1 kneeling beside the exposed wheel hub installing or removing the wheel; Worker 2 standing laterally behind the vehicle preparing the spare wheel or managing cones and the warning triangle — both in high-visibility vests',
+          scene_camera:  'crouching at the wheel arch level, framing the raised wheel gap and the exposed hub or brake disc — spare wheel on the ground nearby — Worker 2 visible in the background at roadside, not in the traffic lane',
           scene_framing: {
             work_pct:   70,
-            foreground: 'spare wheel being aligned with the hub, lug wrench on the ground beside it',
-            midground:  'hydraulic jack under the vehicle sill, vehicle body raised — gap clearly visible',
-            background: 'flat tyre leaning against the car body, Worker 2 in high-visibility vest lateral to the vehicle on the pavement side',
+            foreground: 'exposed wheel hub or brake disc visible at the raised wheel arch — one wheel clearly removed; lug wrench and wheel nuts on the ground beside the open hub',
+            midground:  'hydraulic jack placed under a credible reinforced jacking point, vehicle body visibly raised — gap clearly visible; spare wheel positioned flat or upright on the ground nearby',
+            background: 'flat tyre leaning against the car body, Worker 2 in high-visibility vest lateral to the vehicle on the pavement side — hood fully closed and latched throughout',
           },
           scene_debris:  'wheel nuts grouped on the ground beside the removed tyre, gravel disturbed around the jack base',
-          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open', 'engine inspection', 'mixed battery and tire intervention', 'Worker 2 performing unrelated mechanical work near the engine bay', 'compressor or pressure gauge placed beside tyre with no active repair', 'equipment arranged for a photo', 'worker lying under the vehicle supported only by a small jack', 'person under the vehicle', 'Worker 2 standing in front of the vehicle', 'Worker 2 in the traffic lane', 'Worker 2 beneath the jacked sill or in the wheel gap zone', 'jack placed under door sill incorrectly or under body panel', 'vehicle tilted impossibly', 'floating wheel'],
+          scene_exclude: ['jump cables', 'battery booster', 'tow strap', 'door wedge', 'bonnet open', 'open hood', 'engine inspection', 'mixed battery and tire intervention', 'Worker 2 performing unrelated mechanical work near the engine bay', 'Worker 2 at the engine bay or under the bonnet', 'compressor or pressure gauge placed beside tyre with no active repair', 'equipment arranged for a photo', 'worker lying under the vehicle supported only by a small jack', 'person under the vehicle', 'Worker 2 standing in front of the vehicle', 'Worker 2 in the traffic lane', 'Worker 2 beneath the jacked sill or in the wheel gap zone', 'jack placed under door sill incorrectly or under body panel', 'vehicle tilted impossibly', 'floating wheel with no exposed hub', 'car resting normally on all four wheels with no visible jack or lift', 'wheel being carried with no exposed hub or lifted vehicle'],
           tools: [
             'hydraulic jack raised under the vehicle sill',
             'lug wrench on the ground beside the spare wheel',
@@ -407,9 +408,16 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
             'warning cone placed on the road behind the vehicle',
           ],
           chantier_details: [
+            'vehicle hood fully closed and latched — engine bay not visible, not accessible',
+            'exposed wheel hub or brake disc clearly visible at the raised wheel arch — one wheel fully removed',
+            'vehicle visibly raised — sill gap clearly visible above the jack saddle',
+            'professional hydraulic jack placed under a credible reinforced manufacturer jacking point',
+            'spare wheel positioned flat or upright on the ground near the open hub',
+            'wheel nuts and wheel wrench positioned credibly near the active wheel',
+            'Worker 1 kneeling or crouching beside the exposed hub — hands on the wheel or wrench',
+            'Worker 2 standing laterally behind or beside the vehicle — managing cones or preparing the spare wheel',
             'flat tyre leaning against the car body beside the open wheel arch',
             'wheel nuts grouped on the ground near the spare',
-            'jack raised with the wheel gap clearly visible',
             'warning triangle placed further back on the road',
             'Worker 2 visible in high-visibility vest at a safe lateral distance, outside the traffic lane',
           ],
@@ -676,13 +684,13 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
     remorquage: {
       scenarios: [
         {
-          scene_note:    'vehicle recovery by one complete integrated flatbed recovery truck — truck cab, chassis and flatbed deck physically connected as a single vehicle aligned on one longitudinal axis; tilting flatbed platform attached to the recovery truck chassis, not a separate trailer; stalled car centered and secured on the deck; Worker 1 operating the winch controls at the rear of the recovery truck; Worker 2 guiding from a safe lateral position with hand signals; camera framing shows truck cab, continuous chassis, flatbed, recovered vehicle, winch cable or restraints, and both workers simultaneously',
-          scene_camera:  'standing at a diagonal behind and beside the integrated recovery truck, framing the full vehicle from cab through chassis to flatbed deck with the stalled car secured on top — Worker 2 visible laterally on the pavement side, outside the winch cable path',
+          scene_note:    'DAYLIGHT vehicle recovery by one complete integrated flatbed recovery truck — truck cab, chassis and flatbed deck physically connected as a single vehicle aligned on one longitudinal axis; tilting flatbed platform attached to the recovery truck chassis, not a separate trailer; stalled car centered and secured on the deck with hood closed; winch visibly mounted at the front of the flatbed, one continuous tensioned steel cable following a straight understandable path to a credible front towing eye on the recovered vehicle — attachment point clearly visible; one front-wheel ratchet strap and one rear-wheel ratchet strap visible over tyre tread, both connected to flatbed anchor points; Worker 1 operating the winch or flatbed control panel; Worker 2 standing laterally beside the truck, outside the cable recoil line and outside the vehicle movement path, not touching the tensioned cable; bright daylight or overcast daylight so cable, attachment point and straps are clearly readable',
+          scene_camera:  'standing at a diagonal beside the integrated recovery truck in DAYLIGHT, framing the full vehicle from cab through continuous chassis to flatbed deck with the stalled car secured on top — daylight allows clear visibility of winch cable path, towing eye attachment, and ratchet straps; Worker 2 visible laterally, outside the winch cable path',
           scene_framing: {
             work_pct:   70,
-            foreground: 'flatbed ramp lowered or recovering car on deck — ratchet straps over car tyres, winch cable running from mounted winch to vehicle tow point',
-            midground:  'stalled car centered on the flatbed deck, wheel chocks visible, Worker 1 at winch controls at the rear of the truck',
-            background: 'truck cab visible ahead, continuous chassis connecting cab to flatbed — Worker 2 in high-visibility vest lateral to the scene, outside winch cable line',
+            foreground: 'ratchet wheel straps over front and rear car tyres on the flatbed deck — at least two visible restraints with straps passing over tyre tread; winch cable visible running straight from winch origin to vehicle front towing eye',
+            midground:  'stalled car centered on the flatbed deck, hood closed, wheel chocks visible; Worker 1 at winch or flatbed controls; winch cable attachment at front towing eye clearly visible in daylight',
+            background: 'truck cab visible ahead, continuous chassis connecting cab to flatbed in daylight — Worker 2 in high-visibility vest lateral to the scene, outside winch cable recoil line, one hand raised for guidance signal',
           },
           scene_debris:  'ratchet strap carry bag on the road beside the truck, wheel chock near the car tyre on the deck',
           scene_exclude: [
@@ -694,15 +702,20 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
             'jump cables', 'battery booster', 'door wedge', 'spare tyre',
             'winch cable with no visible origin on the recovery truck',
             'winch cable with no visible attachment point on the recovered vehicle',
-            'cable crossing through bodywork or floating freely',
+            'cable crossing the side of the vehicle or attached near a rear wheel without explanation',
+            'cable floating across the platform or held directly by a worker',
+            'multiple contradictory cable paths',
             'unsecured vehicle on the deck with no ratchet straps or wheel restraints',
+            'open hood on the recovered vehicle',
+            'nighttime scene — daylight is mandatory for this scenario',
             'Worker 2 in front of the vehicle during winch cable tensioning',
             'Worker 2 in the winch cable trajectory or between vehicles',
-            'Worker 2 directly behind the moving vehicle',
+            'Worker 2 touching the tensioned cable',
+            'Worker 2 directly beside a moving wheel',
           ],
           tools: [
-            'winch mounted on the recovery truck, continuous cable running to vehicle front tow point',
-            'ratchet straps over car tyres securing the vehicle to the flatbed deck',
+            'winch mounted at the front of the flatbed, continuous tensioned steel cable running straight to vehicle front tow point',
+            'ratchet straps over front and rear car tyres securing the vehicle to the flatbed deck — two visible wheel restraints',
             'wheel chocks wedged against car tyres on the deck',
           ],
           protections: [
@@ -712,12 +725,14 @@ export const SITE_REALISM_DEPANNAGE_AUTO = {
             'warning cone placed on the road behind the recovery truck',
           ],
           chantier_details: [
-            'one complete integrated flatbed recovery truck — cab, chassis and flatbed deck aligned on a single longitudinal axis',
+            'one complete integrated flatbed recovery truck — cab, chassis and flatbed deck aligned on a single longitudinal axis in daylight',
             'tilting flatbed platform visibly attached to the recovery truck chassis — not a separate trailer',
-            'winch cable continuous from winch mounted on truck to tow point at vehicle front bumper',
-            'ratchet straps over car tyres securing the recovered vehicle to the flatbed — at least two visible wheel restraints',
+            'winch visibly mounted at the front of the flatbed — one continuous tensioned steel cable following a straight path to the vehicle front towing eye',
+            'towing eye attachment point visible at the vehicle front bumper in daylight lighting',
+            'ratchet strap over front tyre and ratchet strap over rear tyre — both visible on deck, passing over tyre tread and connected to flatbed anchor points',
+            'recovered vehicle hood closed — no engine bay visible',
             'wheel chock visible against car tyre on the deck',
-            'Worker 2 visible in high-visibility vest at a lateral safe position, hand raised for guidance signal — outside winch cable trajectory',
+            'Worker 2 visible in high-visibility vest at a lateral safe position, hand raised for guidance signal — outside winch cable recoil line, not touching the tensioned cable',
           ],
         },
         {
