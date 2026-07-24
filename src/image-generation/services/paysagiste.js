@@ -362,7 +362,7 @@ export const SITE_REALISM_PAYSAGISTE = {
       {
         _for:          'gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse',
         scene_note:    'freshly laid turf being rolled — flat lawn roller being pushed across the newly laid strips to press the root contact and seams',
-        _state_for:    ['encours', 'semifinal'],
+        _state_for:    ['semifinal'],
         scene_camera:  'standing at the end of the lawn, framing the lawn roller being pushed across the turf strips',
         scene_framing: {
           work_pct:   55,
@@ -452,7 +452,7 @@ export const SITE_REALISM_PAYSAGISTE = {
       {
         _for:          'taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie',
         scene_note:    'hedge top trimming from working platform — flat top of hedge being trimmed, clippings falling on both sides',
-        _state_for:    ['encours', 'semifinal'],
+        _state_for:    ['semifinal'],
         scene_camera:  'side view at hedge top level, framing the trimmer working along the flat top with clippings falling',
         scene_framing: {
           work_pct:   65,
@@ -623,29 +623,30 @@ export const SITE_REALISM_PAYSAGISTE = {
       },
       {
         _for:          'arrosage.*auto|automatique.*arros|arrosage automatique|irrigation|arroseur|tuyau.*arros',
-        scene_note:    'irrigation controller box being mounted and wired — control unit fixed to the garage or house wall, zone wiring being connected inside the box, solenoid valves on the ground awaiting installation',
-        _state_for:    ['debut', 'encours', 'semifinal'],
-        scene_camera:  'standing 2–3 m from the wall, framing the controller box on the wall and the worker making connections inside it',
+        scene_note:    'irrigation controller box being finalised and commissioned — Worker 1 at the open controller box on the garage or house wall completing the zone wiring connections, Worker 2 crouching in the garden beside one of the solenoid valves, verifying its operation during the final zone test',
+        _state_for:    ['semifinal'],
+        scene_camera:  'standing 3–4 m from the wall, framing Worker 1 at the controller box and Worker 2 visible in the garden beside the valve manifold',
         scene_framing: {
           work_pct:   55,
-          foreground: 'irrigation controller box open on the wall, worker connecting zone wiring inside — screwdriver in hand',
-          midground:  'solenoid valve manifold on the ground below the controller, irrigation pipe stubs from the wall',
-          background: 'garage or house wall, adjacent garden visible',
+          foreground: 'irrigation controller box open on the wall, Worker 1 connecting zone wiring inside — screwdriver in hand',
+          midground:  'Worker 2 crouching in the garden beside the solenoid valve manifold, checking valve operation — zone wiring run along the wall',
+          background: 'garage or house wall, garden and planting beds beyond',
         },
         scene_debris:  'wire off-cuts and connector packaging on the ground below the controller box',
-        scene_exclude: ['trench open in lawn', 'turf rolls', 'hedge trimmer'],
+        scene_exclude: ['trench open in lawn', 'turf rolls', 'hedge trimmer', 'solo worker with no colleague visible'],
         tools: [
           'irrigation controller box open on the wall — zone wiring connections visible inside',
-          'screwdriver in workers hand at the terminal block',
-          'solenoid valve manifold with pipe stubs on the ground below',
+          'insulated screwdriver in Worker 1s hand at the terminal block',
+          'solenoid valve manifold with pipe stubs on the ground beside Worker 2',
         ],
         protections: [
           'insulated screwdriver for low-voltage wiring',
         ],
         chantier_details: [
           'irrigation controller box mounted on wall — cover open, zone terminals visible',
-          'multi-zone solenoid valve manifold on the ground with pipe connections',
+          'multi-zone solenoid valve manifold beside Worker 2 — zone being verified open and closed',
           'zone wiring colour-coded and labelled at the terminal block',
+          'two workers with distinct roles: Worker 1 wiring the controller, Worker 2 verifying solenoid valve operation in the garden',
         ],
       },
       {
@@ -722,7 +723,7 @@ export const SITE_REALISM_PAYSAGISTE = {
       {
         _for:          'maconn|maçonn|maconnerie|muret|pas.*japonais|dalle.*jardin|terrasse.*jardin|ouvrage.*jardin|maconnerie.*paysag|petite.*maconn',
         scene_note:    'Japanese stepping stones or garden dalles being set — flat stone or concrete slabs being positioned in a bed of sharp sand or gravel, two workers setting and levelling each slab, spirit level in use',
-        _state_for:    ['debut', 'encours'],
+        _state_for:    ['debut'],
         scene_camera:  'standing beside the path, framing the slab being positioned and levelled, garden context visible around the path line',
         scene_framing: {
           work_pct:   60,

@@ -955,6 +955,86 @@ const prodTests = [
     },
   },
 
+  // LAND-PROD12: irrigation encours pool size = 1 (unique route after fix)
+  {
+    id: 'LAND-PROD12',
+    label: 'Arrosage automatique encours has exactly 1 state-locked scenario',
+    run() {
+      const task = buildTaskForService('Arrosage automatique', 'encours');
+      const so = JSON.parse(task.jsonScene);
+      so._pre_assigned_composition  = 'medium_intervention';
+      so._pre_assigned_vehicle      = 'absent';
+      so._capture_defects_resolved  = [];
+      so._pre_assigned_worker_count = 2;
+      const realist = JSON.parse(_applySiteRealism(JSON.stringify(so), 0));
+      if (!realist._state_lock_used) return { ok: false, detail: `_state_lock_used=false` };
+      if (realist._state_lock_pool_size !== 1) return { ok: false, detail: `pool_size=${realist._state_lock_pool_size} (expected 1)` };
+      const stateFor = realist._selected_scenario_state_for || '';
+      if (!String(stateFor).includes('encours')) return { ok: false, detail: `_selected_scenario_state_for="${stateFor}" does not contain encours` };
+      return { ok: true, detail: `pool_size=1 state_for=${stateFor}` };
+    },
+  },
+
+  // LAND-PROD13: masonry encours pool size = 1 (unique route after fix)
+  {
+    id: 'LAND-PROD13',
+    label: 'Petite maçonnerie paysagère encours has exactly 1 state-locked scenario',
+    run() {
+      const task = buildTaskForService('Petite maçonnerie paysagère', 'encours');
+      const so = JSON.parse(task.jsonScene);
+      so._pre_assigned_composition  = 'medium_intervention';
+      so._pre_assigned_vehicle      = 'absent';
+      so._capture_defects_resolved  = [];
+      so._pre_assigned_worker_count = 2;
+      const realist = JSON.parse(_applySiteRealism(JSON.stringify(so), 0));
+      if (!realist._state_lock_used) return { ok: false, detail: `_state_lock_used=false` };
+      if (realist._state_lock_pool_size !== 1) return { ok: false, detail: `pool_size=${realist._state_lock_pool_size} (expected 1)` };
+      const stateFor = realist._selected_scenario_state_for || '';
+      if (!String(stateFor).includes('encours')) return { ok: false, detail: `_selected_scenario_state_for="${stateFor}" does not contain encours` };
+      return { ok: true, detail: `pool_size=1 state_for=${stateFor}` };
+    },
+  },
+
+  // LAND-PROD14: hedge encours pool size = 1 (unique route after fix)
+  {
+    id: 'LAND-PROD14',
+    label: 'Taille de haie encours has exactly 1 state-locked scenario',
+    run() {
+      const task = buildTaskForService('Taille de haie', 'encours');
+      const so = JSON.parse(task.jsonScene);
+      so._pre_assigned_composition  = 'medium_intervention';
+      so._pre_assigned_vehicle      = 'absent';
+      so._capture_defects_resolved  = [];
+      so._pre_assigned_worker_count = 2;
+      const realist = JSON.parse(_applySiteRealism(JSON.stringify(so), 0));
+      if (!realist._state_lock_used) return { ok: false, detail: `_state_lock_used=false` };
+      if (realist._state_lock_pool_size !== 1) return { ok: false, detail: `pool_size=${realist._state_lock_pool_size} (expected 1)` };
+      const stateFor = realist._selected_scenario_state_for || '';
+      if (!String(stateFor).includes('encours')) return { ok: false, detail: `_selected_scenario_state_for="${stateFor}" does not contain encours` };
+      return { ok: true, detail: `pool_size=1 state_for=${stateFor}` };
+    },
+  },
+
+  // LAND-PROD15: rolled turf encours pool size = 1 (unique route after fix)
+  {
+    id: 'LAND-PROD15',
+    label: 'Gazon en rouleau encours has exactly 1 state-locked scenario',
+    run() {
+      const task = buildTaskForService('Gazon en rouleau', 'encours');
+      const so = JSON.parse(task.jsonScene);
+      so._pre_assigned_composition  = 'medium_intervention';
+      so._pre_assigned_vehicle      = 'absent';
+      so._capture_defects_resolved  = [];
+      so._pre_assigned_worker_count = 2;
+      const realist = JSON.parse(_applySiteRealism(JSON.stringify(so), 0));
+      if (!realist._state_lock_used) return { ok: false, detail: `_state_lock_used=false` };
+      if (realist._state_lock_pool_size !== 1) return { ok: false, detail: `pool_size=${realist._state_lock_pool_size} (expected 1)` };
+      const stateFor = realist._selected_scenario_state_for || '';
+      if (!String(stateFor).includes('encours')) return { ok: false, detail: `_selected_scenario_state_for="${stateFor}" does not contain encours` };
+      return { ok: true, detail: `pool_size=1 state_for=${stateFor}` };
+    },
+  },
+
   // LAND-PROD11: finger not forced outside scope for paysagiste/arrosage
   {
     id: 'LAND-PROD11',
