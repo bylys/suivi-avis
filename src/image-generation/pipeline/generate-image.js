@@ -50,7 +50,18 @@ function buildImageGenerationRequest(prompt, apiKey) {
 async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl }) {
   const { jsonScene, presencePlan, i, slug, _planBase } = task;
   const realistScene   = _applySiteRealism(jsonScene, i);
-  const variedScene    = _applyVariation(realistScene, i, presencePlan[i]);
+
+  // Inject _pre_assigned_worker_count BEFORE _applyVariation so the count
+  // is available at scene-resolver line 153 and takes the batch_preassignment branch.
+  // Without this, _applyVariation reads undefined → falls to 'rolled' → var_workers=1.
+  let _realistWithPlan = realistScene;
+  try {
+    const _rs = JSON.parse(realistScene);
+    _rs._pre_assigned_worker_count = task._pre_assigned_worker_count;
+    _realistWithPlan = JSON.stringify(_rs);
+  } catch {}
+
+  const variedScene    = _applyVariation(_realistWithPlan, i, presencePlan[i]);
 
   _assertTaskHasBatchPlan(task);
 
@@ -99,10 +110,28 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
 
   const _finalSceneObj = JSON.parse(finalScene);
   _assertFinalWorkerConsistency(_finalSceneObj);
+
+  // Preflight guard: when a worker count is pre-assigned, var_workers must match
+  // before the Images API is called. Divergence here means the pipeline would
+  // generate an image with the wrong worker count — the safety gate would reject
+  // it and every retry would fail the same way. Fail fast with no network call.
+  const _plannedWC = Number(task._pre_assigned_worker_count);
+  const _promptWC  = _finalSceneObj.var_workers ?? 0;
+  if (
+    _finalSceneObj.var_presence === 'workers' &&
+    Number.isInteger(_plannedWC) && _plannedWC >= 1 &&
+    _promptWC !== _plannedWC
+  ) {
+    const _pfErr = new Error('preflight_worker_count_mismatch');
+    _pfErr._isPreflight = true;
+    _pfErr._plannedWC   = _plannedWC;
+    _pfErr._promptWC    = _promptWC;
+    throw _pfErr;
+  }
+
   const prompt = _appendLockedFinalConstraints(_gptPrompt, _finalSceneObj);
 
   const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
-  const _reqWorkerCount = _finalSceneObj.var_workers ?? 0;
   const _reqWorkerSource = _finalSceneObj._worker_count_source || 'rolled';
   const _fingerSelected = (_finalSceneObj.photo_defects || []).some(d => /finger|thumb/i.test(d));
   state.counters.imageCalls++;
@@ -110,7 +139,8 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
   console.log('[IMAGE REQUEST]', JSON.stringify({
     runId, taskId: task.taskId, metier: _planBase._matched_key, service: _planBase._matched_service,
     imageIndex: i, imageAttempt: task.imageAttempt, reason,
-    expected_worker_count:  _reqWorkerCount,
+    planned_worker_count:   Number.isInteger(_plannedWC) ? _plannedWC : null,
+    prompt_worker_count:    _promptWC,
     worker_count_source:    _reqWorkerSource,
     state_lock_used:        _finalSceneObj._state_lock_used ?? null,
     site_realism_build_id:  _finalSceneObj._site_realism_build_id || null,

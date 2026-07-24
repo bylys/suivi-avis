@@ -53,6 +53,21 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
         try {
           imageResult = await generateImageOnly(task, apiKey, state.runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl });
         } catch(e) {
+          if (e._isPreflight) {
+            // Preflight divergence: no Images call was made, no retry is useful.
+            task.status = IMAGE_TASK_STATUS.FAILED;
+            task.error  = `preflight_worker_count_mismatch (planned=${e._plannedWC} prompt=${e._promptWC})`;
+            console.warn(`[PREFLIGHT BLOCK] taskId=${task.taskId} service=${task._planBase?._matched_service} planned=${e._plannedWC} prompt=${e._promptWC} — 0 Images calls, 0 retries`);
+            return;
+          }
+          console.log('[IMAGE RETRY TELEMETRY]', JSON.stringify({
+            taskId: task.taskId,
+            image_attempt: imageAttempt,
+            original_task_worker_count: task._pre_assigned_worker_count ?? null,
+            retry_task_worker_count: task._pre_assigned_worker_count ?? null,
+            worker_count_source: 'batch_preassignment',
+            error: e.message,
+          }));
           task.error = e.message;
           task._imageRetryReason = 'retry_image_error';
           if (imageAttempt === MAX_IMAGE_ATTEMPTS) { task.status = IMAGE_TASK_STATUS.FAILED; return; }
