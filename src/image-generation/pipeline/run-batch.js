@@ -71,19 +71,26 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             state.imageCallLog.push({ type: 'safety', runId: state.runId, taskId: task.taskId, imageAttempt, safetyAttempt });
             console.log(`[SAFETY REQUEST] runId=${state.runId} taskId=${task.taskId} imageAttempt=${imageAttempt} safetyAttempt=${safetyAttempt}`);
 
-            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl });
+            const _expectedWC = (task._pre_assigned_worker_presence === 'workers' && task._pre_assigned_worker_count >= 2)
+              ? task._pre_assigned_worker_count : 0;
+            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC });
+            const _safetyReasonCode = safety.checkFailed ? 'check_failed'
+              : (!safety.safe && safety.reason === 'worker_count_mismatch') ? 'worker_count_mismatch'
+              : (!safety.safe && safety.severity === 'critical') ? 'critical_violation'
+              : 'passed';
             console.log('[SAFETY TELEMETRY]', JSON.stringify({
-              taskId:             task.taskId,
-              service:            task._planBase._matched_service,
+              taskId:               task.taskId,
+              service:              task._planBase._matched_service,
               imageAttempt,
               safetyAttempt,
-              safety_rule_id:     task._planBase._matched_key,
-              safety_reason_code: safety.checkFailed ? 'check_failed'
-                                : (!safety.safe && safety.severity === 'critical') ? 'critical_violation'
-                                : 'passed',
-              safety_result:      safety.checkFailed ? 'check_failed'
-                                : (!safety.safe && safety.severity === 'critical') ? 'reject'
-                                : 'pass',
+              safety_rule_id:       task._planBase._matched_key,
+              safety_reason_code:   _safetyReasonCode,
+              safety_result:        safety.checkFailed ? 'check_failed'
+                                  : (!safety.safe && safety.severity === 'critical') ? 'reject'
+                                  : 'pass',
+              expected_worker_count:  _expectedWC,
+              resolved_worker_count:  safety.visible_worker_count ?? null,
+              worker_count_source:    'batch_preassignment',
             }));
 
             if (safety.checkFailed) {

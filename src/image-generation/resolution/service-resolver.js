@@ -82,8 +82,12 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (!s._state_for) return false;
           return Array.isArray(s._state_for) ? s._state_for.includes(obj.state_level) : s._state_for === obj.state_level;
         });
-        const pool      = stateLocked.length ? stateLocked : (targeted.length ? targeted : fallback);
+        const _stateLockUsed = stateLocked.length > 0;
+        const pool      = _stateLockUsed ? stateLocked : (targeted.length ? targeted : fallback);
         const picked    = pool.length ? _pick(pool, 1, scenSeed)[0] : null;
+        obj._state_lock_used      = _stateLockUsed;
+        obj._state_lock_pool_size = pool.length;
+        if (realismRaw._build_id) obj._site_realism_build_id = realismRaw._build_id;
         if (picked) {
           realism = Object.assign({}, realism, picked);
           if (realism.scene_camera)  obj.camera_position = realism.scene_camera;
@@ -100,6 +104,8 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism._access_configuration !== undefined)            obj._access_configuration            = realism._access_configuration;
           if (realism._access_configuration_source !== undefined)     obj._access_configuration_source     = realism._access_configuration_source;
           if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
+          obj._selected_scenario_state_for = picked._state_for || null;
+          obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
         }
       }
     }

@@ -30,7 +30,9 @@ function _appendLockedFinalConstraints(prompt, scene) {
   const scenePresence = scene.var_presence || 'none';
   const hasWorkers    = sceneWorkers > 0 || scenePresence === 'workers';
   const workerBlock   = hasWorkers
-    ? `${sceneWorkers > 1 ? sceneWorkers + ' workers' : 'One worker'} must be actively working and clearly visible in the frame.`
+    ? sceneWorkers >= 2
+      ? `EXACTLY TWO VISIBLE PROFESSIONAL WORKERS.\nBoth Worker 1 and Worker 2 must be clearly visible in the final image.\nThey must perform two distinct, service-relevant roles.\nA one-worker image is invalid.`
+      : `EXACTLY ONE VISIBLE PROFESSIONAL WORKER must be actively working and clearly visible in the frame.`
     : 'No workers or people visible in this specific image. Frame the scene to show work evidence, tools, or surroundings — no human figures.';
 
   // REQUIRED SAFETY (PPE when workers are visible)

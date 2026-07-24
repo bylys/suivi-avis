@@ -658,12 +658,339 @@ const tests = [
 
 ];
 
+// ─── LAND-PROD production-path imports ───────────────────────────────────────
+// bust=prodtest forces fresh load of modified modules for deterministic test results.
+// SITE_REALISM is imported without bust to test the actual production registry instance.
+const { _applySiteRealism }          = await import('../resolution/service-resolver.js?bust=prodtest');
+const { _applyVariation }            = await import('../resolution/scene-resolver.js?bust=prodtest');
+const { buildDallePromptV2 }         = await import('../prompt/scene-builder.js?bust=prodtest');
+const { _buildPresencePlan }         = await import('../safety/worker-validator.js?bust=prodtest');
+const { _planGlobalBatch }           = await import('../planning/batch-planner.js?bust=prodtest');
+const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=prodtest');
+const { buildVisionSafetyRequest }   = await import('../pipeline/safety-check.js?bust=prodtest');
+const { _hashSeed }                  = await import('../utils/deterministic.js?bust=prodtest');
+const { SITE_REALISM }               = await import('../services/index.js');
+
+// ─── LAND-PROD helpers ────────────────────────────────────────────────────────
+
+function makeRow(travaux, etat = 'encours', nb = 1) {
+  return { metier: 'paysagiste', travaux, etat, nb, ville: 'Lyon', meteo: 'auto', contexte: 'maison' };
+}
+
+function buildTaskForService(svc, etat = 'encours') {
+  const row      = makeRow(svc, etat);
+  const jsonScene = buildDallePromptV2(row);
+  const base     = JSON.parse(jsonScene);
+  const planSeed = _hashSeed(`${base._matched_key || ''}${base._matched_service || ''}plan`);
+  const presencePlan = _buildPresencePlan(1, base.state_level, base._matched_key, planSeed);
+  const task = {
+    taskId: 1, row, i: 0, nb: 1, jsonScene, presencePlan, slug: svc,
+    _planBase: Object.assign({}, base),
+    status: 'pending', imageAttempt: 1,
+  };
+  return task;
+}
+
+function applyFullPipeline(task, workerPresence = 'workers', workerCount = null) {
+  task._pre_assigned_composition  = 'medium_intervention';
+  task._pre_assigned_vehicle      = 'absent';
+  task._capture_defects_resolved  = [];
+  task._pre_assigned_worker_presence = workerPresence;
+  task._pre_assigned_worker_count    = workerCount != null ? workerCount : (workerPresence === 'workers' ? 2 : 0);
+
+  let sceneStr = task.jsonScene;
+  // Inject pre-assigned values (mirrors generate-image.js lines 59-64)
+  const so = JSON.parse(sceneStr);
+  so._pre_assigned_composition   = task._pre_assigned_composition;
+  so._pre_assigned_vehicle       = task._pre_assigned_vehicle;
+  so._capture_defects_resolved   = task._capture_defects_resolved;
+  so._pre_assigned_worker_count  = task._pre_assigned_worker_count;
+  sceneStr = JSON.stringify(so);
+
+  const realistScene = _applySiteRealism(sceneStr, 0);
+  const variedScene  = _applyVariation(realistScene, 0, task._pre_assigned_worker_presence);
+  return { realistScene, variedScene, finalObj: JSON.parse(variedScene) };
+}
+
+const PROD_SERVICES_2W = [
+  'Arrosage automatique',
+  'Petite maçonnerie paysagère',
+  'Taille de haie',
+  'Gazon en rouleau',
+];
+
+const prodTests = [
+
+  // LAND-PROD1: encours state normalization
+  {
+    id: 'LAND-PROD1',
+    label: 'encours state is normalized to state_level="encours" in scene JSON',
+    run() {
+      const cases = [
+        { etat: 'encours',  expected: 'encours' },
+        { etat: 'en cours', expected: 'encours' },
+        { etat: 'ENCOURS',  expected: 'encours' },
+      ];
+      const failures = [];
+      for (const c of cases) {
+        const row = makeRow('Arrosage automatique', c.etat);
+        const scene = JSON.parse(buildDallePromptV2(row));
+        if (scene.state_level !== c.expected) {
+          failures.push(`etat="${c.etat}" → state_level="${scene.state_level}" (expected "${c.expected}")`);
+        }
+      }
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD2: state-lock uses PRODUCTION module — check site_realism_build_id
+  {
+    id: 'LAND-PROD2',
+    label: 'Production SITE_REALISM.paysagiste carries _build_id fingerprint',
+    run() {
+      const prod = SITE_REALISM['paysagiste'];
+      if (!prod) return { ok: false, detail: 'SITE_REALISM.paysagiste missing' };
+      if (!prod._build_id) return { ok: false, detail: '_build_id missing from production SITE_REALISM.paysagiste' };
+      if (!prod._build_id.includes('state-locked')) return { ok: false, detail: `_build_id does not contain "state-locked": ${prod._build_id}` };
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD3: state-locked scenario survives task construction for 4 failing services
+  {
+    id: 'LAND-PROD3',
+    label: 'STATE_LOCKED pool used for 4 two-worker encours services after full pipeline',
+    run() {
+      const failures = [];
+      for (const svc of PROD_SERVICES_2W) {
+        const task = buildTaskForService(svc, 'encours');
+        task._pre_assigned_composition = 'medium_intervention';
+        task._pre_assigned_vehicle     = 'absent';
+        task._capture_defects_resolved = [];
+        task._pre_assigned_worker_count = 2;
+
+        const so = JSON.parse(task.jsonScene);
+        so._pre_assigned_composition  = task._pre_assigned_composition;
+        so._pre_assigned_vehicle      = task._pre_assigned_vehicle;
+        so._capture_defects_resolved  = task._capture_defects_resolved;
+        so._pre_assigned_worker_count = task._pre_assigned_worker_count;
+
+        const realistStr = _applySiteRealism(JSON.stringify(so), 0);
+        const realist    = JSON.parse(realistStr);
+
+        if (!realist._state_lock_used) {
+          failures.push(`${svc}: _state_lock_used=false (pool_size=${realist._state_lock_pool_size})`);
+        }
+        if (!(realist._state_lock_pool_size >= 1)) {
+          failures.push(`${svc}: state_lock_pool_size < 1`);
+        }
+      }
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD4: _pre_assigned_worker_count propagates into var_workers after _applyVariation
+  {
+    id: 'LAND-PROD4',
+    label: '_pre_assigned_worker_count=2 → var_workers=2 after _applyVariation when presence=workers',
+    run() {
+      const failures = [];
+      for (const svc of PROD_SERVICES_2W) {
+        const task   = buildTaskForService(svc, 'encours');
+        const result = applyFullPipeline(task, 'workers', 2);
+        const { finalObj } = result;
+
+        if (finalObj.var_workers !== 2) {
+          failures.push(`${svc}: var_workers=${finalObj.var_workers} (expected 2)`);
+        }
+        if (finalObj._worker_count_source !== 'batch_preassignment') {
+          failures.push(`${svc}: _worker_count_source="${finalObj._worker_count_source}" (expected "batch_preassignment")`);
+        }
+      }
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD5: locked prompt contains exact worker count wording
+  {
+    id: 'LAND-PROD5',
+    label: 'Locked prompt contains "EXACTLY TWO" when var_workers=2, "EXACTLY ONE" when var_workers=1',
+    run() {
+      const failures = [];
+
+      // Two-worker case
+      const task2 = buildTaskForService('Arrosage automatique', 'encours');
+      const { finalObj: obj2 } = applyFullPipeline(task2, 'workers', 2);
+      const prompt2 = _appendLockedFinalConstraints('test prompt', obj2);
+      if (!prompt2.includes('EXACTLY TWO VISIBLE PROFESSIONAL WORKERS')) {
+        failures.push('var_workers=2: "EXACTLY TWO VISIBLE PROFESSIONAL WORKERS" not found in locked prompt');
+      }
+      if (!prompt2.includes('Both Worker 1 and Worker 2 must be clearly visible')) {
+        failures.push('var_workers=2: "Both Worker 1 and Worker 2" clause missing');
+      }
+      if (!prompt2.includes('A one-worker image is invalid')) {
+        failures.push('var_workers=2: "A one-worker image is invalid" clause missing');
+      }
+
+      // One-worker case
+      const task1 = buildTaskForService('Entretien jardin', 'encours');
+      const { finalObj: obj1 } = applyFullPipeline(task1, 'workers', 1);
+      const prompt1 = _appendLockedFinalConstraints('test prompt', obj1);
+      if (!prompt1.includes('EXACTLY ONE VISIBLE PROFESSIONAL WORKER')) {
+        failures.push('var_workers=1: "EXACTLY ONE VISIBLE PROFESSIONAL WORKER" not found in locked prompt');
+      }
+
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD6: Vision buildVisionSafetyRequest includes worker count instruction when expectedWorkerCount>=2
+  {
+    id: 'LAND-PROD6',
+    label: 'buildVisionSafetyRequest includes WORKER COUNT instruction when expectedWorkerCount=2',
+    run() {
+      const req = buildVisionSafetyRequest('paysagiste', 'FAKE_B64', 'sk-fake', 2);
+      if (!req) return { ok: false, detail: 'buildVisionSafetyRequest returned null for paysagiste' };
+      const bodyObj = JSON.parse(req.body);
+      const textMsg = bodyObj.messages?.[0]?.content?.find(c => c.type === 'text')?.text || '';
+      if (!textMsg.includes('WORKER COUNT')) {
+        return { ok: false, detail: 'Vision prompt missing WORKER COUNT instruction' };
+      }
+      if (!textMsg.includes('visible_worker_count')) {
+        return { ok: false, detail: 'Vision prompt missing visible_worker_count field instruction' };
+      }
+      if (!textMsg.includes('worker_count_mismatch')) {
+        return { ok: false, detail: 'Vision prompt missing worker_count_mismatch rejection instruction' };
+      }
+      // No worker count instruction when expectedWorkerCount=0
+      const req0 = buildVisionSafetyRequest('paysagiste', 'FAKE_B64', 'sk-fake', 0);
+      const body0 = JSON.parse(req0.body);
+      const text0 = body0.messages?.[0]?.content?.find(c => c.type === 'text')?.text || '';
+      if (text0.includes('WORKER COUNT')) {
+        return { ok: false, detail: 'Vision prompt incorrectly includes WORKER COUNT when expectedWorkerCount=0' };
+      }
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD7: single-worker route stays at 1
+  {
+    id: 'LAND-PROD7',
+    label: '_pre_assigned_worker_count=1 → var_workers=1 (single-worker route unaffected)',
+    run() {
+      const task = buildTaskForService('Entretien jardin', 'encours');
+      const { finalObj } = applyFullPipeline(task, 'workers', 1);
+      if (finalObj.var_workers !== 1) {
+        return { ok: false, detail: `var_workers=${finalObj.var_workers} (expected 1)` };
+      }
+      if (finalObj._worker_count_source !== 'batch_preassignment') {
+        return { ok: false, detail: `_worker_count_source="${finalObj._worker_count_source}" (expected batch_preassignment)` };
+      }
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD8: none/indirect presence → var_workers stays 0 even with _pre_assigned_worker_count=2
+  {
+    id: 'LAND-PROD8',
+    label: 'presence=none/indirect → var_workers=0 even when _pre_assigned_worker_count=2',
+    run() {
+      const failures = [];
+      for (const presence of ['none', 'indirect']) {
+        const task = buildTaskForService('Arrosage automatique', 'encours');
+        const { finalObj } = applyFullPipeline(task, presence, 2);
+        if (finalObj.var_workers !== 0) {
+          failures.push(`presence=${presence}: var_workers=${finalObj.var_workers} (expected 0)`);
+        }
+      }
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD9: retry preserves worker count (_pre_assigned_worker_count stable on task)
+  {
+    id: 'LAND-PROD9',
+    label: 'task._pre_assigned_worker_count is stable across retry (not modified by pipeline)',
+    run() {
+      const task = buildTaskForService('Arrosage automatique', 'encours');
+      task._pre_assigned_composition  = 'medium_intervention';
+      task._pre_assigned_vehicle      = 'absent';
+      task._capture_defects_resolved  = [];
+      task._pre_assigned_worker_presence = 'workers';
+      task._pre_assigned_worker_count    = 2;
+
+      const countBefore = task._pre_assigned_worker_count;
+      // Simulate first pass
+      applyFullPipeline(task, 'workers', 2);
+      const countAfter = task._pre_assigned_worker_count;
+
+      if (countBefore !== 2) return { ok: false, detail: `_pre_assigned_worker_count before: ${countBefore}` };
+      if (countAfter  !== 2) return { ok: false, detail: `_pre_assigned_worker_count after: ${countAfter}` };
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD10: module fingerprint is reachable through SITE_REALISM and _applySiteRealism
+  {
+    id: 'LAND-PROD10',
+    label: '_site_realism_build_id injected into scene by _applySiteRealism for paysagiste',
+    run() {
+      const task = buildTaskForService('Arrosage automatique', 'encours');
+      const so = JSON.parse(task.jsonScene);
+      so._pre_assigned_worker_count = 2;
+      const realistStr = _applySiteRealism(JSON.stringify(so), 0);
+      const realist    = JSON.parse(realistStr);
+      if (!realist._site_realism_build_id) {
+        return { ok: false, detail: '_site_realism_build_id not injected into scene by _applySiteRealism' };
+      }
+      if (!realist._site_realism_build_id.includes('state-locked')) {
+        return { ok: false, detail: `_site_realism_build_id does not contain "state-locked": ${realist._site_realism_build_id}` };
+      }
+      return { ok: true };
+    },
+  },
+
+  // LAND-PROD11: finger not forced outside scope for paysagiste/arrosage
+  {
+    id: 'LAND-PROD11',
+    label: 'Paysagiste has no forced-finger rule — finger comes only from 5% rare camera defect pool',
+    run() {
+      // The CAMERA_DEFECTS_LIB.rare pool in service-resolver.js contains "finger" as one of 6 options,
+      // selected at ~5% (1/20 hash). No paysagiste-specific finger forcing rule exists.
+      // We verify this by checking 20 deterministic calls — at most ~5% should have finger.
+      let fingerCount = 0;
+      for (let idx = 0; idx < 40; idx++) {
+        const task = buildTaskForService('Arrosage automatique', 'encours');
+        const so = JSON.parse(task.jsonScene);
+        so._pre_assigned_worker_count = 2;
+        const realistStr = _applySiteRealism(JSON.stringify(so), idx);
+        const realist = JSON.parse(realistStr);
+        const hasFingerInDefects = (realist.photo_defects || []).some(d => /finger|thumb/i.test(d));
+        if (hasFingerInDefects) fingerCount++;
+      }
+      // Over 40 deterministic calls, a 5% rate means ~2 expected. Reject only if ALL have finger (forced).
+      if (fingerCount > 8) {
+        return { ok: false, detail: `finger_scope appears forced: ${fingerCount}/40 images have finger (expected ≤ 8 at 5% rate)` };
+      }
+      return { ok: true, detail: `finger appeared in ${fingerCount}/40 calls (within 5% rare probability)` };
+    },
+  },
+
+];
+
 export async function runLandscapingTests() {
   let passed = 0;
   let failed = 0;
   const results = [];
 
-  for (const test of tests) {
+  const allTests = [...tests, ...prodTests];
+
+  for (const test of allTests) {
     let result;
     try {
       result = test.run();
@@ -680,6 +1007,10 @@ export async function runLandscapingTests() {
     results.push({ ...test, ...result });
   }
 
-  console.log(`\n--- LAND-V: ${passed}/${tests.length} passed${failed ? ` — ${failed} FAILED` : ' ✅'} ---`);
-  return { passed, failed, total: tests.length, results };
+  const vTotal     = tests.length;
+  const vPassed    = results.filter(r => !r.id.startsWith('LAND-PROD') && r.ok).length;
+  const prodTotal  = prodTests.length;
+  const prodPassed = results.filter(r => r.id.startsWith('LAND-PROD') && r.ok).length;
+  console.log(`\n--- LAND (V+UI): ${vPassed}/${vTotal}${vPassed < vTotal ? ' FAILED ❌' : ' ✅'} | LAND-PROD: ${prodPassed}/${prodTotal}${prodPassed < prodTotal ? ' FAILED ❌' : ' ✅'} | Total: ${passed}/${allTests.length}${failed ? ` — ${failed} FAILED` : ' ✅'} ---`);
+  return { passed, failed, total: allTests.length, results };
 }

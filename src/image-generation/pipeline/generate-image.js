@@ -57,9 +57,10 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
   let _sceneForResolve = variedScene;
   try {
     const _so = JSON.parse(_sceneForResolve);
-    _so._pre_assigned_composition = task._pre_assigned_composition;
-    _so._pre_assigned_vehicle     = task._pre_assigned_vehicle;
-    _so._capture_defects_resolved = task._capture_defects_resolved;
+    _so._pre_assigned_composition   = task._pre_assigned_composition;
+    _so._pre_assigned_vehicle       = task._pre_assigned_vehicle;
+    _so._capture_defects_resolved   = task._capture_defects_resolved;
+    _so._pre_assigned_worker_count  = task._pre_assigned_worker_count;
     _sceneForResolve = JSON.stringify(_so);
   } catch {}
 
@@ -101,9 +102,22 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
   const prompt = _appendLockedFinalConstraints(_gptPrompt, _finalSceneObj);
 
   const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
+  const _reqWorkerCount = _finalSceneObj.var_workers ?? 0;
+  const _reqWorkerSource = _finalSceneObj._worker_count_source || 'rolled';
+  const _fingerSelected = (_finalSceneObj.photo_defects || []).some(d => /finger|thumb/i.test(d));
   state.counters.imageCalls++;
   state.imageCallLog.push({ type: 'image', runId, taskId: task.taskId, metier: _planBase._matched_key, service: _planBase._matched_service, imageIndex: i, imageAttempt: task.imageAttempt, reason });
-  console.log(`[IMAGE REQUEST] runId=${runId} taskId=${task.taskId} metier=${_planBase._matched_key} service=${_planBase._matched_service} imageIndex=${i} imageAttempt=${task.imageAttempt} reason=${reason}`);
+  console.log('[IMAGE REQUEST]', JSON.stringify({
+    runId, taskId: task.taskId, metier: _planBase._matched_key, service: _planBase._matched_service,
+    imageIndex: i, imageAttempt: task.imageAttempt, reason,
+    expected_worker_count:  _reqWorkerCount,
+    worker_count_source:    _reqWorkerSource,
+    state_lock_used:        _finalSceneObj._state_lock_used ?? null,
+    site_realism_build_id:  _finalSceneObj._site_realism_build_id || null,
+    finger_scope_active:    false,
+    finger_allowed:         _fingerSelected,
+    selected_capture_defects: _finalSceneObj.photo_defects || [],
+  }));
 
   const req = buildImageGenerationRequest(prompt, apiKey);
   let parsed;

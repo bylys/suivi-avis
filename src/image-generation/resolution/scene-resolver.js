@@ -150,7 +150,14 @@ function _applyVariation(jsonStr, imageIndex, presenceOverride) {
     const _cSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}count${imageIndex}`);
     const _dSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}desc${imageIndex}`);
     const _minW = (_wRules?.min_workers_when_visible) || 1;
-    obj.var_workers     = Math.max(_minW, (_cSeed % 100) < 65 ? 1 : Math.min(2, _maxW));
+    const _assignedCount = Number(obj._pre_assigned_worker_count);
+    if (Number.isInteger(_assignedCount) && _assignedCount >= 1) {
+      obj.var_workers          = Math.min(_assignedCount, _maxW);
+      obj._worker_count_source = 'batch_preassignment';
+    } else {
+      obj.var_workers          = Math.max(_minW, (_cSeed % 100) < 65 ? 1 : Math.min(2, _maxW));
+      obj._worker_count_source = 'rolled';
+    }
     obj.no_people       = false;
     obj.var_worker_desc = _buildWorkerDesc(obj._matched_key, obj.var_workers, _dSeed);
     // Worker detail debug fields (aligned with _dSeed for determinism)
