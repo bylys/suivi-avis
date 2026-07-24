@@ -195,12 +195,16 @@ export async function runRuntimeTests() {
     else fail('T8', `domicile=${domTri} garage=${garTri} autoroute=${autoTri}`);
   } catch (e) { fail('T8', e.message); }
 
-  // T9: WORKER_SCENE_RULES min_workers_when_visible ≥ 2
+  // T9: WORKER_SCENE_RULES min_workers_when_visible ≥ 2 (paysagiste uses service_worker_minimums)
   try {
-    const targets = ['élagage','abattage','vitrier','paysagiste','terrassement','débarras'];
-    const bad     = targets.filter(k => (WORKER_SCENE_RULES[k]?.min_workers_when_visible || 0) < 2);
-    if (!bad.length) pass('T9: min_workers_when_visible ≥ 2 for 6 métiers');
-    else fail('T9', `missing or < 2: ${JSON.stringify(bad)}`);
+    const globalTargets = ['élagage','abattage','vitrier','terrassement','débarras'];
+    const bad = globalTargets.filter(k => (WORKER_SCENE_RULES[k]?.min_workers_when_visible || 0) < 2);
+    // paysagiste uses min_workers_when_visible=1 (global) + service_worker_minimums for 8 two-worker buckets
+    const swm = WORKER_SCENE_RULES['paysagiste']?.service_worker_minimums || {};
+    const requiredBuckets = ['paysagiste_taille_haie','paysagiste_plantation_haie','paysagiste_plantation_arbre','paysagiste_gazon_rouleau','paysagiste_creation','paysagiste_irrigation','paysagiste_maconnerie','paysagiste_bordures'];
+    const badBuckets = requiredBuckets.filter(b => (swm[b] || 0) < 2);
+    if (!bad.length && !badBuckets.length) pass('T9: min_workers_when_visible ≥ 2 for 5 métiers + paysagiste service_worker_minimums ≥ 2 for 8 buckets');
+    else fail('T9', `global missing: ${JSON.stringify(bad)} | paysagiste buckets missing: ${JSON.stringify(badBuckets)}`);
   } catch (e) { fail('T9', e.message); }
 
   // T10: aire_repos → location=aire_repos, triangle=forbidden_if_safely_parked

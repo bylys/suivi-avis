@@ -75,7 +75,7 @@ async function _modGenerateAll() {
   for (const row of rows) {
     row.status = 'running';
     row.images = [];
-    const nb = parseInt(row.nb) || 1;
+    const nb = Math.max(1, Math.min(10, parseInt(row.nb) || 1));
 
     const jsonScene   = buildDallePromptV2(row);
     const sceneIssues = _validateScene(jsonScene);
