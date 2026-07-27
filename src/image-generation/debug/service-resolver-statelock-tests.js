@@ -5,7 +5,7 @@
  * No real API calls — all tests are static/structural.
  */
 
-import { SITE_REALISM_ROOF } from '../services/roof.js?v=4';
+import { SITE_REALISM_ROOF } from '../services/roof.js?v=5';
 import { _applySiteRealism } from '../resolution/service-resolver.js?v=2';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

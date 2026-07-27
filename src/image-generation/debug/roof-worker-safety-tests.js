@@ -1,15 +1,15 @@
 /**
- * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS64
+ * debug/roof-worker-safety-tests.js — RTG-RS1 to RTG-RS66
  * Worker safety, elevated access, and 2-worker crew rules for roof and gutter clusters.
  * Includes deterministic micro-test route verification (RS52–RS64).
  * Loaded only when ?imageGenTests=1 is in the URL.
  * No real API calls — all tests are static/structural.
  */
 
-import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=4';
-import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=2';
-import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=2';
-import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js?v=lc2';
+import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=5';
+import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=3';
+import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=3';
+import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js?v=lc3';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

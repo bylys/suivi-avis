@@ -6,9 +6,9 @@
  * 0 appel API réel. Chargé uniquement en mode ?imageGenTests=1.
  */
 
-import { WORK_SCENES_ROOF as WORK_SCENES, SITE_REALISM_ROOF as SITE_REALISM } from '../services/roof.js?v=4';
-import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=2';
-import { FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=2';
+import { WORK_SCENES_ROOF as WORK_SCENES, SITE_REALISM_ROOF as SITE_REALISM } from '../services/roof.js?v=5';
+import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=3';
+import { FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=3';
 
 // ─── Harness ──────────────────────────────────────────────────────────────────
 

@@ -86,8 +86,9 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             state.imageCallLog.push({ type: 'safety', runId: state.runId, taskId: task.taskId, imageAttempt, safetyAttempt });
             console.log(`[SAFETY REQUEST] runId=${state.runId} taskId=${task.taskId} imageAttempt=${imageAttempt} safetyAttempt=${safetyAttempt}`);
 
-            const _expectedWC = (task._pre_assigned_worker_presence === 'workers' && task._pre_assigned_worker_count >= 2)
-              ? task._pre_assigned_worker_count : 0;
+            const _assignedWC  = Number(task._pre_assigned_worker_count);
+            const _expectedWC  = (task._pre_assigned_worker_presence === 'workers' && Number.isInteger(_assignedWC) && _assignedWC >= 1)
+              ? _assignedWC : 0;
             const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service });
             const _safetyReasonCode = safety.checkFailed ? 'check_failed'
               : (!safety.safe && safety.reason === 'worker_count_mismatch')    ? 'worker_count_mismatch'

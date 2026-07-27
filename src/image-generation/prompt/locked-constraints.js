@@ -77,19 +77,36 @@ function _appendLockedFinalConstraints(prompt, scene) {
       forbidden:   'clean uncracked glass being handled without any fracture pattern — indistinguishable from any other glazing job; loose glass fragments scattered on the floor — laminated glass must stay in one piece; any hand, arm or suction cup appearing to pass through or merge with the glass surface; glass panel as a flat vertical wall between camera and workers; metallic spacer bar at the glass edge; insulating sealed cavity between panes',
     },
   };
+  const _svcLower  = (scene._matched_service || '').toLowerCase();
+
   // SERVICE ACTION LOCK — service-specific action mandate + forbidden content
   // Applied for non-interior services where GPT-Image may generate a wrong scene type.
+  // Gutter cleaning/unblocking detected by _svcLower pattern (covers all phrase variants).
+  const _isGutterCleaning   = /nettoyage.*gouttieres?|curage.*gouttieres?|entretien.*gouttieres?/i.test(_svcLower);
+  const _isGutterUnblocking = /debouchage.*gouttieres?/i.test(_svcLower);
+  const _isGutter = _isGutterCleaning || _isGutterUnblocking;
+
+  const _gutterWorkerBlock = sceneWorkers >= 2
+    ? `EXACTLY TWO VISIBLE PROFESSIONAL WORKERS.\nWorker 1 is at gutter height on the ladder, actively removing debris from the gutter trough.\nWorker 2 is on the ground beside the ladder base, holding the debris container, passing tools or assisting safely.\nBoth workers must be simultaneously visible with distinct roles.`
+    : `EXACTLY ONE VISIBLE PROFESSIONAL WORKER is actively cleaning the gutter.\nWorker 1 is on the ladder at gutter height, removing leaves, moss or debris with a scoop, brush or gloved hand.\nA debris collection container (bucket or bag) must be visible.\nThe absence of a second worker is acceptable.`;
+
+  const _gutterUnblockingExtra = _isGutterUnblocking
+    ? `\nThe action must show a flexible rod, compact clearing tool or hand tool inserted at the gutter/downpipe junction — not simple leaf removal.`
+    : '';
+
   const _SVC_ACTION_LOCK = {
     'Taille de haie': {
       action:    `ACTIVE HEDGE TRIMMING IN PROGRESS.\nEXACTLY TWO VISIBLE PROFESSIONAL LANDSCAPING WORKERS.\nWorker 1 actively operates a hedge trimmer against the hedge.\nWorker 2 collects fresh cuttings laterally, clearly away from the moving blades.\nA hedge and an active hedge trimmer must both be clearly visible.\nThe primary action must be hedge trimming.`,
       forbidden: `NO ROOF WORK.\nNO WORKER ON A ROOF.\nNO ROOF LADDER.\nNO ROOF TILES.\nNO ROOF REPAIR.\nNO GUTTER WORK.\nNO SCAFFOLDING FOR ROOF ACCESS.\nNO BLOWER-ONLY OR CLEANUP-ONLY SCENE.`,
     },
   };
-  const svcActionLock = _SVC_ACTION_LOCK[scene._matched_service || ''] || null;
+  const svcActionLock = _isGutter ? {
+    action: `GUTTER ${_isGutterUnblocking ? 'UNBLOCKING' : 'CLEANING'} IN PROGRESS — INDIVIDUAL HOUSE.\n${_gutterWorkerBlock}${_gutterUnblockingExtra}\nThe gutter trough must be clearly visible.\nLeaves, moss or debris must be visible in or beside the gutter.\nA professional extension ladder or professional A-frame ladder must be visible.\nA small scoop, bucket, bag or gloved cleaning action must be visible.`,
+    forbidden: `NO WORKER ON THE ROOF.\nNO ROOF CLEANING.\nNO ROOF REPAIR.\nNO GUTTER REPLACEMENT.\nNO GENERIC LADDER INSPECTION.\nNO WORKER MERELY LOOKING AT THE FACADE.\nNO PRESSURE WASHER.\nNO GROUND-LEVEL-ONLY OPERATION WITH NO LADDER.`,
+  } : _SVC_ACTION_LOCK[scene._matched_service || ''] || null;
 
   const isInterior = (scene.setting === 'interior');
   const svcLock    = _SVC_SURFACE_LOCK[scene._matched_service || ''] || null;
-  const _svcLower  = (scene._matched_service || '').toLowerCase();
   const isTreatmentService = /anti.mousse|hydrofuge/.test(_svcLower);
 
   return `${prompt}

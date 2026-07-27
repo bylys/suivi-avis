@@ -17,7 +17,7 @@ import { SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } 
 function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount = 0, matchedService = '') {
   const basePrompt = SAFETY_CHECK_RULES[matchedKey];
   if (!basePrompt) return null;
-  const workerInstruction = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 2)
+  const workerInstruction = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 1)
     ? `\n\nADDITIONAL MANDATORY CHECK — WORKER COUNT: Count the number of clearly visible professional workers in the image (${expectedWorkerCount} expected). You MUST add these fields to your JSON: "expected_worker_count": ${expectedWorkerCount}, "visible_worker_count": <integer you counted>, "worker_count_match": <true if visible_worker_count >= ${expectedWorkerCount}, else false>. If worker_count_match is false, set safe=false, severity="critical", reason="worker_count_mismatch".`
     : '';
   const _effectiveService = _SERVICE_GATE_ALIASES[matchedService] || matchedService;
@@ -56,7 +56,7 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
     let obj;
     try { obj = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return { safe: null, checkFailed: true, reason: 'JSON parse error' }; }
     if (obj?.safe == null) return { safe: null, checkFailed: true, reason: 'missing safe field' };
-    const workerCountMismatch = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 2) && obj.worker_count_match === false;
+    const workerCountMismatch = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 1) && obj.worker_count_match === false;
     if (workerCountMismatch) {
       return {
         safe: false, severity: 'critical', reason: 'worker_count_mismatch',
@@ -74,23 +74,39 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
         if (matches) {
           return {
             safe: false, severity: 'critical', reason: cond.reason,
-            visible_worker_count: obj.visible_worker_count ?? null,
-            hedge_visible:        obj.hedge_visible        ?? null,
-            worker_on_roof:       obj.worker_on_roof       ?? null,
-            service_visual_match: obj.service_visual_match ?? null,
+            visible_worker_count:          obj.visible_worker_count          ?? null,
+            hedge_visible:                 obj.hedge_visible                 ?? null,
+            worker_on_roof:                obj.worker_on_roof                ?? null,
+            service_visual_match:          obj.service_visual_match          ?? null,
+            gutter_visible:                obj.gutter_visible                ?? null,
+            cleaning_action_visible:       obj.cleaning_action_visible       ?? null,
+            professional_ladder_visible:   obj.professional_ladder_visible   ?? null,
+            ladder_stable:                 obj.ladder_stable                 ?? null,
+            worker_in_mewp_basket_visible: obj.worker_in_mewp_basket_visible ?? null,
+            ground_worker_visible:         obj.ground_worker_visible         ?? null,
+            workers_spatially_separated:   obj.workers_spatially_separated   ?? null,
+            treatment_application_visible: obj.treatment_application_visible ?? null,
           };
         }
       }
     }
     return {
-      safe:                obj.safe,
-      severity:            obj.severity || 'ok',
-      reason:              obj.reason   || '',
-      visible_worker_count: obj.visible_worker_count ?? null,
-      worker_count_match:   obj.worker_count_match   ?? null,
-      hedge_visible:        obj.hedge_visible        ?? null,
-      worker_on_roof:       obj.worker_on_roof       ?? null,
-      service_visual_match: obj.service_visual_match ?? null,
+      safe:                          obj.safe,
+      severity:                      obj.severity || 'ok',
+      reason:                        obj.reason   || '',
+      visible_worker_count:          obj.visible_worker_count          ?? null,
+      worker_count_match:            obj.worker_count_match            ?? null,
+      hedge_visible:                 obj.hedge_visible                 ?? null,
+      worker_on_roof:                obj.worker_on_roof                ?? null,
+      service_visual_match:          obj.service_visual_match          ?? null,
+      gutter_visible:                obj.gutter_visible                ?? null,
+      cleaning_action_visible:       obj.cleaning_action_visible       ?? null,
+      professional_ladder_visible:   obj.professional_ladder_visible   ?? null,
+      ladder_stable:                 obj.ladder_stable                 ?? null,
+      worker_in_mewp_basket_visible: obj.worker_in_mewp_basket_visible ?? null,
+      ground_worker_visible:         obj.ground_worker_visible         ?? null,
+      workers_spatially_separated:   obj.workers_spatially_separated   ?? null,
+      treatment_application_visible: obj.treatment_application_visible ?? null,
     };
   } catch(e) { return { safe: null, checkFailed: true, reason: e.message }; }
 }
