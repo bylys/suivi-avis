@@ -6,7 +6,9 @@
  * 0 appel API réel. Chargé uniquement en mode ?imageGenTests=1.
  */
 
-import { WORK_SCENES, SITE_REALISM } from '../services/index.js?v=2';
+import { WORK_SCENES_ROOF as WORK_SCENES, SITE_REALISM_ROOF as SITE_REALISM } from '../services/roof.js?v=4';
+import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=2';
+import { FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=2';
 
 // ─── Harness ──────────────────────────────────────────────────────────────────
 
@@ -136,7 +138,7 @@ function roofMaint3() {
   }
 }
 
-// ─── ROOF-MAINT4 — gouttières encours → MEWP state_lock pool_size = 1 ───────
+// ─── ROOF-MAINT4 — gouttières encours → EXTENSION_LADDER_WITH_STANDOFF state_lock pool_size = 1 ───
 
 function roofMaint4() {
   const LABEL = 'ROOF-MAINT4';
@@ -150,20 +152,21 @@ function roofMaint4() {
 
   if (matches.length > 0) {
     const sc = matches[0];
-    ok(sc._access_configuration === 'MEWP',
-      `${LABEL}: _access_configuration === MEWP (got ${sc._access_configuration})`);
+    ok(sc._access_configuration === 'EXTENSION_LADDER_WITH_STANDOFF',
+      `${LABEL}: _access_configuration === EXTENSION_LADDER_WITH_STANDOFF (got ${sc._access_configuration})`);
     ok(sc._access_configuration_source === 'state_lock',
       `${LABEL}: _access_configuration_source === state_lock (got ${sc._access_configuration_source})`);
 
     const excl = (sc.scene_exclude || []).join(' ').toLowerCase();
-    ok(excl.includes('ladder') && (excl.includes('primary work platform') || excl.includes('primary working platform') || excl.includes('this mewp route')),
-      `${LABEL}: scene_exclude contient interdiction ladder comme poste de travail principal`);
-    ok(excl.includes('single worker') || excl.includes('alone'),
-      `${LABEL}: scene_exclude contient interdiction worker seul`);
+    ok(excl.includes('mewp') || excl.includes('scaffold') || excl.includes('nacelle'),
+      `${LABEL}: scene_exclude contient interdiction MEWP/scaffold pour cette route échelle`);
+    ok(excl.includes('second worker') || excl.includes('artificially added'),
+      `${LABEL}: scene_exclude contient interdiction second worker artificially added`);
 
-    const fg = (sc.scene_framing?.foreground || '').toLowerCase();
-    ok(!fg.includes('directly under the mewp basket') || fg.includes('not directly'),
-      `${LABEL}: Worker 2 n'est pas directement sous la nacelle`);
+    const tools = (sc.tools || []).join(' ').toLowerCase();
+    const note  = (sc.scene_note || '').toLowerCase();
+    ok(tools.includes('standoff') || note.includes('standoff'),
+      `${LABEL}: scénario nettoyage encours référence le stabilisateur standoff`);
   }
 }
 
@@ -449,31 +452,197 @@ function roofMaint14() {
     `${LABEL}: aucun scénario SCAFFOLD anti-mousse actif dans le pool (got ${activeScaffold.length})`);
 }
 
-// ─── ROOF-MAINT15 — gouttières MEWP state_lock toutes séquences ──────────────
+// ─── ROOF-MAINT15 — gouttières state_lock toutes séquences ──────────────────
+// Nettoyage/débouchage → EXTENSION_LADDER_WITH_STANDOFF (1 worker)
+// Remplacement → MEWP (2 workers)
 
 function roofMaint15() {
   const LABEL = 'ROOF-MAINT15';
   const states = ['debut', 'encours', 'semifinal', 'final'];
-  const groups = [
+
+  // nettoyage + débouchage → EXTENSION_LADDER_WITH_STANDOFF
+  const ladderGroups = [
     { label: 'nettoyage', norm: _norm('nettoyage gouttières') },
     { label: 'debouchage', norm: _norm('débouchage gouttières') },
-    { label: 'remplacement', norm: _norm('remplacement gouttières') },
   ];
-
-  for (const { label, norm } of groups) {
+  for (const { label, norm } of ladderGroups) {
     for (const state of states) {
       const matches = matchScenarios('nettoyage_gouttieres', norm, state);
       ok(matches.length === 1,
         `${LABEL}: gouttières [${label}] state=${state} → pool_size=1 (got ${matches.length})`);
       if (matches.length > 0) {
         const sc = matches[0];
-        ok(sc._access_configuration === 'MEWP',
-          `${LABEL}: gouttières [${label}] state=${state} → MEWP (got ${sc._access_configuration})`);
+        ok(sc._access_configuration === 'EXTENSION_LADDER_WITH_STANDOFF',
+          `${LABEL}: gouttières [${label}] state=${state} → EXTENSION_LADDER_WITH_STANDOFF (got ${sc._access_configuration})`);
         ok(sc._access_configuration_source === 'state_lock',
           `${LABEL}: gouttières [${label}] state=${state} → state_lock (got ${sc._access_configuration_source})`);
       }
     }
   }
+
+  // remplacement → MEWP (unchanged)
+  for (const state of states) {
+    const matches = matchScenarios('nettoyage_gouttieres', _norm('remplacement gouttières'), state);
+    ok(matches.length === 1,
+      `${LABEL}: gouttières [remplacement] state=${state} → pool_size=1 (got ${matches.length})`);
+    if (matches.length > 0) {
+      const sc = matches[0];
+      ok(sc._access_configuration === 'MEWP',
+        `${LABEL}: gouttières [remplacement] state=${state} → MEWP (got ${sc._access_configuration})`);
+      ok(sc._access_configuration_source === 'state_lock',
+        `${LABEL}: gouttières [remplacement] state=${state} → state_lock (got ${sc._access_configuration_source})`);
+    }
+  }
+}
+
+// ─── ROOF-MAINT-G : Gouttières — extension ladder with standoff, 1 worker ─────
+
+function textContainsAny(str, terms) {
+  const s = (str || '').toLowerCase();
+  return terms.some(t => s.includes(t.toLowerCase()));
+}
+
+function roofMaintG1() {
+  console.group('ROOF-MAINT-G1 — Nettoyage gouttières encours utilise une échelle avec stabilisateur');
+  const sr = SITE_REALISM['nettoyage_gouttieres'];
+  const scenarios = (sr?.scenarios || []).filter(s =>
+    s._for && /nettoy|entretien|curag|debris|feuill/.test(s._for) && s._state_for === 'encours'
+  );
+  ok(scenarios.length >= 1, 'ROOF-MAINT-G1-A: au moins 1 scénario nettoyage gouttières encours', `got ${scenarios.length}`);
+  for (const sc of scenarios) {
+    const tools = (sc.tools || []).join(' ').toLowerCase();
+    const note  = (sc.scene_note || '').toLowerCase();
+    const hasLadder   = textContainsAny(tools + ' ' + note, ['extension ladder', 'standoff', 'ladder with standoff']);
+    const hasStandoff = textContainsAny(tools + ' ' + note, ['standoff']);
+    ok(hasLadder,   `ROOF-MAINT-G1-B: scénario nettoyage encours doit référencer une extension ladder`, tools.slice(0, 100));
+    ok(hasStandoff, `ROOF-MAINT-G1-C: scénario nettoyage encours doit avoir un stabilisateur (standoff)`, tools.slice(0, 100));
+    ok(sc._access_configuration === 'EXTENSION_LADDER_WITH_STANDOFF',
+      `ROOF-MAINT-G1-D: _access_configuration doit être EXTENSION_LADDER_WITH_STANDOFF, got: ${sc._access_configuration}`);
+  }
+  console.groupEnd();
+}
+
+function roofMaintG2() {
+  console.group('ROOF-MAINT-G2 — Nettoyage gouttières encours exige exactement 1 worker');
+  const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
+  ok(rules.min_workers_when_visible === 1,
+    `ROOF-MAINT-G2-A: min_workers_when_visible doit être 1, got: ${rules.min_workers_when_visible}`);
+  const svcMins = rules.service_worker_minimums || {};
+  ok(svcMins.remplacement_gouttieres === 2, `ROOF-MAINT-G2-B: service_worker_minimums.remplacement_gouttieres doit être 2`);
+  ok(svcMins.pose_gouttieres === 2, `ROOF-MAINT-G2-C: service_worker_minimums.pose_gouttieres doit être 2`);
+  const sr = SITE_REALISM['nettoyage_gouttieres'];
+  const scenarios = (sr?.scenarios || []).filter(s =>
+    s._for && /nettoy|entretien|curag|debris|feuill|deboucha|bouchon|obstruct/.test(s._for) && s._state_for === 'encours'
+  );
+  for (const sc of scenarios) {
+    const excludes = (sc.scene_exclude || []).join(' ').toLowerCase();
+    ok(textContainsAny(excludes, ['second worker', 'artificially added']),
+      `ROOF-MAINT-G2-D: scénario "${sc._for}" encours doit interdire second worker artificially added`);
+  }
+  console.groupEnd();
+}
+
+function roofMaintG3() {
+  console.group('ROOF-MAINT-G3 — Échelle ne repose jamais sur la gouttière');
+  const forbidden = FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres || [];
+  ok(
+    forbidden.some(f => f.toLowerCase().includes('gutter channel') || f.toLowerCase().includes('gutter') && f.toLowerCase().includes('ladder')),
+    'ROOF-MAINT-G3-A: FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres doit interdire échelle contre gouttière'
+  );
+  const workerForbidden = (WORKER_SCENE_RULES.nettoyage_gouttieres?.forbidden || []).join(' ').toLowerCase();
+  ok(textContainsAny(workerForbidden, ['gutter channel', 'gutter trough']),
+    'ROOF-MAINT-G3-B: WORKER_SCENE_RULES.nettoyage_gouttieres.forbidden doit interdire échelle dans/contre la gouttière');
+  const sr = SITE_REALISM['nettoyage_gouttieres'];
+  const scenarios = (sr?.scenarios || []).filter(s => s._for);
+  for (const sc of scenarios) {
+    const tools = (sc.tools || []).join(' ').toLowerCase();
+    const excludes = (sc.scene_exclude || []).join(' ').toLowerCase();
+    const combined = tools + ' ' + excludes;
+    if (textContainsAny(combined, ['ladder'])) {
+      ok(!textContainsAny(tools, ['ladder resting on the gutter', 'ladder against the gutter', 'ladder on the gutter']),
+        `ROOF-MAINT-G3-C: scénario "${sc._for}" outils ne doivent pas décrire une échelle reposant sur la gouttière`);
+    }
+  }
+  console.groupEnd();
+}
+
+function roofMaintG4() {
+  console.group('ROOF-MAINT-G4 — Worker ne monte jamais sur le toit (nettoyage/débouchage)');
+  const sr = SITE_REALISM['nettoyage_gouttieres'];
+  const scenarios = (sr?.scenarios || []).filter(s =>
+    s._for && /nettoy|entretien|curag|debris|feuill|deboucha|bouchon|obstruct/.test(s._for)
+  );
+  for (const sc of scenarios) {
+    const note    = (sc.scene_note || '').toLowerCase();
+    const midground = (sc.scene_framing?.midground || '').toLowerCase();
+    const excludes  = (sc.scene_exclude || []).join(' ').toLowerCase();
+    ok(!textContainsAny(note + ' ' + midground, ['worker on roof', 'standing on the roof', 'on the tiles']),
+      `ROOF-MAINT-G4-A: scénario "${sc._for}" ne doit pas décrire worker sur le toit`);
+    ok(textContainsAny(excludes, ['worker on roof', 'roof']) || !textContainsAny(note, ['roof']),
+      `ROOF-MAINT-G4-B: scénario "${sc._for}" doit exclure worker on roof (ou ne pas le mentionner)`);
+  }
+  console.groupEnd();
+}
+
+function roofMaintG5() {
+  console.group('ROOF-MAINT-G5 — Débouchage conserve une action spécifique avec tige/clearing tool');
+  const sr = SITE_REALISM['nettoyage_gouttieres'];
+  const debouchageScenarios = (sr?.scenarios || []).filter(s =>
+    s._for && /deboucha|bouchon|obstruct/.test(s._for) && s._state_for === 'encours'
+  );
+  ok(debouchageScenarios.length >= 1, 'ROOF-MAINT-G5-A: au moins 1 scénario débouchage encours', `got ${debouchageScenarios.length}`);
+  for (const sc of debouchageScenarios) {
+    const tools  = (sc.tools || []).join(' ').toLowerCase();
+    const note   = (sc.scene_note || '').toLowerCase();
+    const combined = tools + ' ' + note;
+    ok(textContainsAny(combined, ['rod', 'flexible', 'clearing tool', 'drain', 'junction']),
+      `ROOF-MAINT-G5-B: scénario débouchage "${sc._for}" doit référencer une tige, tool flexible, ou action à la jonction`);
+    ok(!textContainsAny(combined, ['simple leaf removal', 'removing leaves only', 'leaf removal only']),
+      `ROOF-MAINT-G5-C: scénario débouchage "${sc._for}" ne doit pas décrire un simple retrait de feuilles`);
+  }
+  console.groupEnd();
+}
+
+function roofMaintG6() {
+  console.group('ROOF-MAINT-G6 — Remplacement et pose gouttières conservent 2 workers');
+  const sr = SITE_REALISM['nettoyage_gouttieres'];
+  const remplacScenarios = (sr?.scenarios || []).filter(s =>
+    s._for && /remplace|pose|install|neuf|nouveau/.test(s._for)
+  );
+  ok(remplacScenarios.length >= 1, 'ROOF-MAINT-G6-A: au moins 1 scénario remplacement/pose', `got ${remplacScenarios.length}`);
+  for (const sc of remplacScenarios) {
+    const note    = (sc.scene_note || '').toLowerCase();
+    const details = (sc.chantier_details || []).join(' ').toLowerCase();
+    ok(textContainsAny(note + ' ' + details, ['worker 1', 'worker 2', 'two professionals']),
+      `ROOF-MAINT-G6-B: scénario remplacement/pose "${sc._for}" doit décrire 2 workers`);
+  }
+  const svcMins = WORKER_SCENE_RULES.nettoyage_gouttieres?.service_worker_minimums || {};
+  ok(svcMins.remplacement_gouttieres === 2, 'ROOF-MAINT-G6-C: service_worker_minimums.remplacement_gouttieres === 2');
+  ok(svcMins.pose_gouttieres === 2, 'ROOF-MAINT-G6-D: service_worker_minimums.pose_gouttieres === 2');
+  console.groupEnd();
+}
+
+function roofMaintG7() {
+  console.group('ROOF-MAINT-G7 — Aucune nacelle (MEWP) sur nettoyage/entretien/débouchage ordinaires');
+  const sr = SITE_REALISM['nettoyage_gouttieres'];
+  const noMewpScenarios = (sr?.scenarios || []).filter(s =>
+    s._for && /nettoy|entretien|curag|debris|feuill|deboucha|bouchon|obstruct/.test(s._for)
+  );
+  for (const sc of noMewpScenarios) {
+    ok(sc._access_configuration !== 'MEWP',
+      `ROOF-MAINT-G7-A: scénario "${sc._for}" (state:${sc._state_for||'none'}) _access_configuration ne doit pas être MEWP`);
+    const tools = (sc.tools || []).join(' ').toLowerCase();
+    const note  = (sc.scene_note || '').toLowerCase();
+    ok(!textContainsAny(tools + ' ' + note, ['mewp boom', 'mewp basket', 'mewp wheeled', 'mewp with extending', 'nacelle']),
+      `ROOF-MAINT-G7-B: scénario nettoyage/débouchage "${sc._for}" ne doit pas décrire une nacelle MEWP`);
+  }
+  // Remplacement/pose may still use MEWP
+  const remplacScenarios = (sr?.scenarios || []).filter(s =>
+    s._for && /remplace|pose|install|neuf|nouveau/.test(s._for)
+  );
+  ok(remplacScenarios.some(s => s._access_configuration === 'MEWP'),
+    'ROOF-MAINT-G7-C: au moins 1 scénario remplacement/pose doit conserver MEWP comme access_configuration');
+  console.groupEnd();
 }
 
 // ─── Run all ──────────────────────────────────────────────────────────────────
@@ -496,6 +665,13 @@ export async function _runRoofMaintenanceMewpTests() {
   roofMaint13();
   roofMaint14();
   roofMaint15();
+  roofMaintG1();
+  roofMaintG2();
+  roofMaintG3();
+  roofMaintG4();
+  roofMaintG5();
+  roofMaintG6();
+  roofMaintG7();
 
   console.log(`\nROOF-MAINT Results: ${_pass} passed, ${_fail} failed`);
   if (_fail === 0) {

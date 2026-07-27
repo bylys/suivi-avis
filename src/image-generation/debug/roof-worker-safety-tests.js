@@ -6,9 +6,9 @@
  * No real API calls — all tests are static/structural.
  */
 
-import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=2';
-import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
-import { WORKER_SCENE_RULES } from '../safety/worker-rules.js';
+import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=4';
+import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=2';
+import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=2';
 import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
 
@@ -451,42 +451,51 @@ export async function runRoofWorkerSafetyTests() {
     });
   });
 
-  // ─── RTG-RS28 : active gutter scenes resolve to at least two workers ───────────
+  // ─── RTG-RS28 : nettoyage/débouchage use 1 worker; remplacement/pose use 2 ──────
 
-  runTest('RTG-RS28', 'Active gutter scenes resolve to at least two visible workers', () => {
-    // Policy layer
+  runTest('RTG-RS28', 'Nettoyage/débouchage gutter scenes use 1 worker; remplacement/pose use 2', () => {
     const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
-    assert(rules.min_workers_when_visible === 2, 'WORKER_SCENE_RULES.nettoyage_gouttieres.min_workers_when_visible must be 2');
-    assert(rules.max_workers >= 2, 'WORKER_SCENE_RULES.nettoyage_gouttieres.max_workers must be >= 2');
-    // Resolved scene layer — every active scenario must mention two workers
-    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    // Base minimum is 1 for nettoyage/débouchage
+    assert(rules.min_workers_when_visible === 1, 'WORKER_SCENE_RULES.nettoyage_gouttieres.min_workers_when_visible must be 1 (nettoyage/débouchage use extension ladder, 1 worker)');
+    // service_worker_minimums must enforce 2 for remplacement and pose
+    assert(rules.service_worker_minimums?.remplacement_gouttieres === 2,
+      'service_worker_minimums.remplacement_gouttieres must be 2');
+    assert(rules.service_worker_minimums?.pose_gouttieres === 2,
+      'service_worker_minimums.pose_gouttieres must be 2');
+    // Nettoyage/débouchage scenarios must NOT add a second worker
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || [])
+      .filter(s => !s._disabled && s._for && /nettoy|entretien|curag|debris|feuill|deboucha|bouchon|obstruct/.test(s._for));
     activeScenarios.forEach(sc => {
+      const excludes = (sc.scene_exclude || []).join(' ').toLowerCase();
+      const hasForbidSecondWorker = textContainsAny(excludes, ['second worker', 'artificially added']);
+      assert(hasForbidSecondWorker, `Nettoyage/débouchage scenario "${sc._for}" scene_exclude must forbid second worker artificially added`);
+    });
+    // Remplacement/pose scenarios must still reference two workers
+    const remplacScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || [])
+      .filter(s => s._for && /remplace|pose|install|neuf|nouveau/.test(s._for));
+    assert(remplacScenarios.length >= 1, 'At least 1 remplacement/pose scenario must exist');
+    remplacScenarios.forEach(sc => {
       const note = (sc.scene_note || '').toLowerCase();
       const hasTwoWorkers = textContainsAny(note, ['worker 1', 'worker 2', 'two professionals']);
-      assert(hasTwoWorkers, `Gutter scenario "${sc._for}" scene_note must describe two workers (Worker 1, Worker 2, or two professionals)`);
+      assert(hasTwoWorkers, `Remplacement/pose scenario "${sc._for}" must still describe two workers`);
     });
   });
 
-  // ─── RTG-RS29 : both gutter workers receive distinct resolved roles ────────────
+  // ─── RTG-RS29 : nettoyage/débouchage worker role is clearly defined ───────────
 
-  runTest('RTG-RS29', 'Both gutter workers have distinct resolved roles', () => {
-    // Policy layer
+  runTest('RTG-RS29', 'Nettoyage/débouchage gutter scenarios have a clearly defined single-worker role', () => {
     const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
     const actionsStr = (rules.actions || []).join(' ').toLowerCase();
-    const hasWorker1 = textContains(actionsStr, 'worker 1');
-    const hasWorker2 = textContains(actionsStr, 'worker 2');
-    assert(hasWorker1 && hasWorker2, 'WORKER_SCENE_RULES.nettoyage_gouttieres.actions must define distinct Worker 1 and Worker 2 roles');
-    // Resolved scene layer — each scenario must describe both workers with distinct roles
-    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
-    activeScenarios.forEach(sc => {
+    const hasWorkerAction = textContainsAny(actionsStr, ['worker scooping', 'worker cleaning', 'worker inserting']);
+    assert(hasWorkerAction, 'WORKER_SCENE_RULES.nettoyage_gouttieres.actions must define the single worker role (scooping, cleaning, inserting)');
+    // Resolved scene layer — each nettoyage/débouchage scenario must describe the worker action
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || [])
+      .filter(s => s._for && /nettoy|entretien|curag|debris|feuill|deboucha|bouchon|obstruct/.test(s._for));
+    const groundStates = ['debut', 'final'];
+    activeScenarios.filter(s => !groundStates.includes(s._state_for)).forEach(sc => {
       const note = (sc.scene_note || '').toLowerCase();
-      const details = (sc.chantier_details || []).join(' ').toLowerCase();
-      const combined = note + ' ' + details;
-      const hasDistinctRoles = (
-        (textContains(combined, 'worker 1') && textContains(combined, 'worker 2')) ||
-        (textContains(combined, 'two professionals') && textContains(combined, 'distinct'))
-      );
-      assert(hasDistinctRoles, `Gutter scenario "${sc._for}" must describe Worker 1 and Worker 2 with distinct roles`);
+      const hasLadder = textContainsAny(note, ['ladder', 'standoff', 'échelle']);
+      assert(hasLadder, `Gutter scenario "${sc._for}" (state:${sc._state_for||'none'}) scene_note must reference ladder/standoff`);
     });
   });
 

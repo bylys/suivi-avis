@@ -280,10 +280,10 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/vitrier-contracts-tests.js'),
     import('./debug/vitrier-scenes-tests.js?v=7'),
     import('./debug/roof-waterproofing-gutter-contracts-tests.js?v=1'),
-    import('./debug/roof-cluster-scenes-tests.js?v=4'),
-    import('./debug/roof-cluster-pr-tests.js?v=4'),
-    import('./debug/roof-worker-safety-tests.js?v=5'),
-    import('./debug/service-resolver-statelock-tests.js?v=2'),
+    import('./debug/roof-cluster-scenes-tests.js?v=5'),
+    import('./debug/roof-cluster-pr-tests.js?v=5'),
+    import('./debug/roof-worker-safety-tests.js?v=7'),
+    import('./debug/service-resolver-statelock-tests.js?v=4'),
     import('./debug/roof-covering-waterproofing-validation-tests.js?v=3'),
     import('./debug/cov-fix-scenes-tests.js'),
     import('./debug/arborist-scenes-tests.js'),
@@ -291,7 +291,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/landscaping-tests.js'),
     import('./debug/worker-propagation-tests.js'),
     import('./debug/hedge-tests.js'),
-    import('./debug/roof-maintenance-mewp-tests.js'),
+    import('./debug/roof-maintenance-mewp-tests.js?v=4'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();
