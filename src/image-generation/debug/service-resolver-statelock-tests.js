@@ -5,7 +5,7 @@
  * No real API calls — all tests are static/structural.
  */
 
-import { SITE_REALISM_ROOF } from '../services/roof.js';
+import { SITE_REALISM_ROOF } from '../services/roof.js?v=2';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -61,8 +61,8 @@ export async function runServiceResolverStateLockTests() {
   runTest('SR-SL1', 'A scenario with _state_for matching state_level is preferred', () => {
     const antiScene = JSON.stringify({ _matched_key: 'nettoyage_toiture', _matched_service: 'Traitement anti-mousse toiture', state_level: 'encours' });
     const result = JSON.parse(_applySiteRealism(antiScene, 0));
-    assert(result._access_configuration === 'SCAFFOLD',
-      `Anti-mousse encours: expected SCAFFOLD (state-locked), got: ${result._access_configuration}`);
+    assert(result._access_configuration === 'MEWP',
+      `Anti-mousse encours: expected MEWP (state-locked), got: ${result._access_configuration}`);
     assert(result._access_configuration_source === 'state_lock',
       `Anti-mousse encours: expected source=state_lock, got: ${result._access_configuration_source}`);
   });
@@ -72,8 +72,8 @@ export async function runServiceResolverStateLockTests() {
   runTest('SR-SL2', 'A scenario with _state_for not matching state_level is excluded from the state-lock pool', () => {
     const { targeted, stateLocked } = applyStateLockFilter(scenarios, 'traitement anti-mousse toiture', 'debut');
     assert(targeted.length >= 2, `Anti-mousse must have ≥2 targeted scenarios, got ${targeted.length}`);
-    assert(stateLocked.length === 0,
-      `For state_level=debut, stateLocked must be empty (SCAFFOLD has _state_for=encours), got ${stateLocked.length}`);
+    assert(stateLocked.length >= 1,
+      `For state_level=debut, stateLocked must contain the MEWP debut scenario (migration complete), got ${stateLocked.length}`);
   });
 
   // ─── SR-SL3 : absent _state_for falls back to full targeted pool ──────────────
@@ -144,9 +144,9 @@ export async function runServiceResolverStateLockTests() {
     const r0 = JSON.parse(_applySiteRealism(antiScene0, 0));
     const r1 = JSON.parse(_applySiteRealism(antiScene1, 1));
     const r7 = JSON.parse(_applySiteRealism(antiScene0, 7));
-    assert(r0._access_configuration === 'SCAFFOLD', `imageIndex=0 must resolve to SCAFFOLD`);
-    assert(r1._access_configuration === 'SCAFFOLD', `imageIndex=1 must resolve to SCAFFOLD`);
-    assert(r7._access_configuration === 'SCAFFOLD', `imageIndex=7 must resolve to SCAFFOLD`);
+    assert(r0._access_configuration === 'MEWP', `imageIndex=0 must resolve to MEWP`);
+    assert(r1._access_configuration === 'MEWP', `imageIndex=1 must resolve to MEWP`);
+    assert(r7._access_configuration === 'MEWP', `imageIndex=7 must resolve to MEWP`);
   });
 
   // ─── SR-SL8 : non-locked scenarios remain available for non-matching states ────
@@ -184,7 +184,7 @@ export async function runServiceResolverStateLockTests() {
   runTest('SR-SL10', 'Access telemetry propagation does not overwrite camera_position, exclude, or work_type', () => {
     const antiScene = JSON.stringify({ _matched_key: 'nettoyage_toiture', _matched_service: 'Traitement anti-mousse toiture', state_level: 'encours' });
     const result = JSON.parse(_applySiteRealism(antiScene, 0));
-    assert(result._access_configuration === 'SCAFFOLD', 'Telemetry must be propagated');
+    assert(result._access_configuration === 'MEWP', 'Telemetry must be propagated');
     assert(typeof result.camera_position === 'string' && result.camera_position.length > 0,
       'camera_position must be set by scenario scene_camera — not overwritten by telemetry');
     assert(Array.isArray(result.exclude) && result.exclude.length > 0,
@@ -196,10 +196,11 @@ export async function runServiceResolverStateLockTests() {
   // ─── SR-SL11 : telemetry fields absent when scenario does not provide them ────
 
   runTest('SR-SL11', '_access_configuration is absent from output when scenario has no such field', () => {
-    const nettoyageScene = JSON.stringify({ _matched_key: 'nettoyage_toiture', _matched_service: 'Nettoyage toiture', state_level: 'encours' });
-    const result = JSON.parse(_applySiteRealism(nettoyageScene, 0));
-    assert(result._access_configuration === undefined,
-      `Nettoyage toiture (no _access_configuration on scenario) must not have _access_configuration in output, got: ${result._access_configuration}`);
+    // démoussage debut and final are ground-inspection states — no elevated access, _access_configuration absent from scenario
+    const demouDebut = JSON.stringify({ _matched_key: 'nettoyage_toiture', _matched_service: 'Démoussage toiture', state_level: 'debut' });
+    const result = JSON.parse(_applySiteRealism(demouDebut, 0));
+    assert(result._access_configuration === undefined || result._access_configuration === null,
+      `Démoussage debut (no _access_configuration on ground-inspection scenario) must not have _access_configuration in output, got: ${result._access_configuration}`);
   });
 
   // ─── SR-SL12 : function does not mutate the source SITE_REALISM data ──────────

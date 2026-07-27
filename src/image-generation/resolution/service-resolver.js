@@ -76,8 +76,8 @@ function _applySiteRealism(jsonStr, imageIndex) {
       const svc = (obj._matched_service || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (!trigger || new RegExp(trigger).test(svc)) {
         const scenSeed = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}`);
-        const targeted  = realism.scenarios.filter(s => s._for && new RegExp(s._for, 'i').test(svc));
-        const fallback  = realism.scenarios.filter(s => !s._for);
+        const targeted  = realism.scenarios.filter(s => !s._disabled && s._for && new RegExp(s._for, 'i').test(svc));
+        const fallback  = realism.scenarios.filter(s => !s._disabled && !s._for);
         const stateLocked = targeted.filter(s => {
           if (!s._state_for) return false;
           return Array.isArray(s._state_for) ? s._state_for.includes(obj.state_level) : s._state_for === obj.state_level;

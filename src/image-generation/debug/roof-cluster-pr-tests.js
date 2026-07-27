@@ -275,11 +275,13 @@ function pr8() {
       tools.includes('standoff') || tools.includes('telescopic') || tools.includes('platform') ||
       tools.includes('plateforme') || tools.includes('scaffold') || tools.includes('echafaudage') ||
       tools.includes('ground level') || tools.includes('au sol') ||
+      tools.includes('mewp') || tools.includes('nacelle') ||
       note.includes('standoff') || note.includes('ground level') ||
       note.includes('telescopic') || note.includes('from the ground') ||
       note.includes('depuis le sol') || note.includes('upstairs window') ||
-      note.includes('fenetre') || note.includes('balcon');
-    ok(hasAcceptableAccess, `RTG-PR8-B: scénario gouttières "${sc._for}" utilise un accès sécurisé (standoff/sol/plateforme/fenêtre)`, tools.slice(0, 100));
+      note.includes('fenetre') || note.includes('balcon') ||
+      note.includes('mewp') || note.includes('nacelle');
+    ok(hasAcceptableAccess, `RTG-PR8-B: scénario gouttières "${sc._for}" utilise un accès sécurisé (standoff/sol/plateforme/fenêtre/MEWP)`, tools.slice(0, 100));
   }
   console.groupEnd();
 }

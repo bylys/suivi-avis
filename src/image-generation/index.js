@@ -270,7 +270,7 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests] = await Promise.all([
     import('./debug/runtime-tests.js?v=10'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
@@ -280,10 +280,10 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/vitrier-contracts-tests.js'),
     import('./debug/vitrier-scenes-tests.js?v=7'),
     import('./debug/roof-waterproofing-gutter-contracts-tests.js?v=1'),
-    import('./debug/roof-cluster-scenes-tests.js?v=3'),
-    import('./debug/roof-cluster-pr-tests.js?v=3'),
-    import('./debug/roof-worker-safety-tests.js?v=3'),
-    import('./debug/service-resolver-statelock-tests.js?v=1'),
+    import('./debug/roof-cluster-scenes-tests.js?v=4'),
+    import('./debug/roof-cluster-pr-tests.js?v=4'),
+    import('./debug/roof-worker-safety-tests.js?v=5'),
+    import('./debug/service-resolver-statelock-tests.js?v=2'),
     import('./debug/roof-covering-waterproofing-validation-tests.js?v=3'),
     import('./debug/cov-fix-scenes-tests.js'),
     import('./debug/arborist-scenes-tests.js'),
@@ -291,6 +291,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/landscaping-tests.js'),
     import('./debug/worker-propagation-tests.js'),
     import('./debug/hedge-tests.js'),
+    import('./debug/roof-maintenance-mewp-tests.js'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();
@@ -318,7 +319,8 @@ if (_params.get('imageGenTests') === '1') {
   window._runLandscapingTests                           = landscapingTests.runLandscapingTests;
   window._runWorkerPropTests                            = workerPropTests._runWorkerPropTests;
   window._runHedgeTests                                 = hedgeTests._runHedgeTests;
-  console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofContractsTests(), _runRoofClusterScenesTests(), _runRoofPRTests(), _runRoofWorkerSafetyTests(), _runServiceResolverStateLockTests(), _runRoofCoveringWaterproofingValidationTests(), _runCovFixScenesTests(), _runArboristScenesTests()');
+  window._runRoofMaintenanceMewpTests                   = roofMaintenanceMewpTests._runRoofMaintenanceMewpTests;
+  console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofContractsTests(), _runRoofClusterScenesTests(), _runRoofPRTests(), _runRoofWorkerSafetyTests(), _runServiceResolverStateLockTests(), _runRoofCoveringWaterproofingValidationTests(), _runCovFixScenesTests(), _runArboristScenesTests(), _runRoofMaintenanceMewpTests()');
 }
 
 console.info('[IMAGE MODULE 7C] Modular API active and ready');

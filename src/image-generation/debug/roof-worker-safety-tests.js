@@ -6,7 +6,7 @@
  * No real API calls — all tests are static/structural.
  */
 
-import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js';
+import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=2';
 import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js';
 import { WORKER_SCENE_RULES } from '../safety/worker-rules.js';
 import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
@@ -344,14 +344,17 @@ export async function runRoofWorkerSafetyTests() {
       textContainsAny(f, ['ground-level gutter', 'telescopic ground pole', 'ground level', 'ground-level downpipe'])
     );
     assert(hasGroundForbidden, 'FORBIDDEN_SAFETY_BY_METIER.nettoyage_gouttieres must forbid ground-level gutter work');
-    // Resolved scene layer — no active scenario description should say both workers are at ground level
+    // Resolved scene layer — active-work scenarios (encours/semifinal) must not place both workers at ground level.
+    // debut and final are intentionally ground-only states (MEWP inspection before/after lift).
     const allScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []);
-    const activeScenarios = allScenarios.filter(s => s._for);
-    activeScenarios.forEach(sc => {
+    const activeWorkScenarios = allScenarios.filter(s =>
+      s._for && s._state_for !== 'debut' && s._state_for !== 'final'
+    );
+    activeWorkScenarios.forEach(sc => {
       const note = (sc.scene_note || '').toLowerCase();
       const details = (sc.chantier_details || []).join(' ').toLowerCase();
       const hasBothGroundLevel = (textContains(note, 'both workers at ground level') || textContains(details, 'both workers at ground level') || textContains(note, 'two professionals at ground level') || textContains(details, 'two professionals at ground level'));
-      assert(!hasBothGroundLevel, `Gutter scenario "${sc._for}" must not describe both workers at ground level for active work`);
+      assert(!hasBothGroundLevel, `Gutter scenario "${sc._for}" (state:${sc._state_for||'none'}) must not describe both workers at ground level for active work`);
     });
   });
 
@@ -419,15 +422,32 @@ export async function runRoofWorkerSafetyTests() {
       textContainsAny(f, ['directly against the gutter', 'gutter channel'])
     );
     assert(hasWorkerForbidden, 'WORKER_SCENE_RULES.nettoyage_gouttieres.forbidden must forbid ladder against gutter');
-    // Resolved scene layer — every scenario must exclude ladder-on-gutter contact
-    // (broad match: any exclude entry that mentions both "ladder" and "gutter"/"channel")
-    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    // Resolved scene layer — ladder-only scenarios must exclude ladder-on-gutter contact.
+    // MEWP state_locked scenarios don't use a ladder as the primary work platform; they
+    // must instead exclude "ladder as primary work platform" (which they do).
+    // debut/final are ground-inspection states (no access equipment at height) — skip ladder checks for those.
+    // encours/semifinal MEWP scenarios must forbid ladder as primary work platform.
+    // Legacy (no _state_for) ladder scenarios must forbid ladder-on-gutter contact.
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s =>
+      s._for && s._state_for !== 'debut' && s._state_for !== 'final'
+    );
     activeScenarios.forEach(sc => {
-      const hasLadderOnGutterExclusion = (sc.scene_exclude || []).some(e => {
-        const el = e.toLowerCase();
-        return el.includes('ladder') && (el.includes('gutter') || el.includes('channel'));
-      });
-      assert(hasLadderOnGutterExclusion, `Gutter scenario "${sc._for}" scene_exclude must contain an entry forbidding ladder contact with the gutter or channel`);
+      const isMewpScenario = sc._access_configuration === 'MEWP';
+      const excl = (sc.scene_exclude || []).join(' ').toLowerCase();
+      if (isMewpScenario) {
+        // MEWP scenarios must exclude ladder as primary work platform
+        const hasMewpLadderExclusion = excl.includes('ladder') && (
+          excl.includes('primary work platform') || excl.includes('primary working platform') || excl.includes('this mewp route')
+        );
+        assert(hasMewpLadderExclusion, `MEWP gutter scenario "${sc._for}" (state:${sc._state_for||'none'}) scene_exclude must forbid ladder as primary work platform`);
+      } else {
+        // Legacy ladder scenarios must exclude ladder-on-gutter contact
+        const hasLadderOnGutterExclusion = (sc.scene_exclude || []).some(e => {
+          const el = e.toLowerCase();
+          return el.includes('ladder') && (el.includes('gutter') || el.includes('channel'));
+        });
+        assert(hasLadderOnGutterExclusion, `Gutter scenario "${sc._for}" scene_exclude must contain an entry forbidding ladder contact with the gutter or channel`);
+      }
     });
   });
 
@@ -481,16 +501,19 @@ export async function runRoofWorkerSafetyTests() {
       'directly below', 'falling-debris zone', 'falling debris', 'falling-object zone'
     ]);
     assert(hasDebrisForbidden, 'nettoyage_gouttieres must forbid Worker 2 below falling-debris zone in forbidden or safety_required');
-    // Resolved scene layer — scenarios describing Worker 2 at the ladder base must not put them in the debris zone
-    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
+    // Resolved scene layer — elevated-access scenarios (encours/semifinal) must place Worker 2
+    // outside the falling-debris zone. debut/final are ground states where no debris falls.
+    const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s =>
+      s._for && s._state_for !== 'debut' && s._state_for !== 'final'
+    );
     activeScenarios.forEach(sc => {
       const foreground = (sc.scene_framing?.foreground || '').toLowerCase();
       const note = (sc.scene_note || '').toLowerCase();
       const combined = foreground + ' ' + note;
       const hasWorker2 = textContains(combined, 'worker 2');
       if (hasWorker2) {
-        const outsideDebris = textContainsAny(combined, ['outside the falling', 'not directly below', 'beside worker', 'outside the zone', 'away from']);
-        assert(outsideDebris, `Gutter scenario "${sc._for}" must place Worker 2 outside the falling-debris zone`);
+        const outsideDebris = textContainsAny(combined, ['outside the falling', 'not directly below', 'beside worker', 'outside the zone', 'away from', 'outside the drop zone']);
+        assert(outsideDebris, `Gutter scenario "${sc._for}" (state:${sc._state_for||'none'}) must place Worker 2 outside the falling-debris zone`);
       }
     });
   });
@@ -550,16 +573,20 @@ export async function runRoofWorkerSafetyTests() {
       const note = (sc.scene_note || '').toLowerCase();
       const midground = (sc.scene_framing?.midground || '').toLowerCase();
       const combined = tools + ' ' + note + ' ' + midground;
-      // Must have elevated access
-      const hasElevatedAccess = textContainsAny(combined, ['ladder', 'standoff', 'scaffold', 'mewp']);
-      assert(hasElevatedAccess, `Débouchage scenario "${sc._for}" must reference elevated access (ladder/standoff/scaffold/MEWP) — ground-only work is forbidden`);
-      // Must not say both workers are at ground level for active rod work
-      const hasBothGroundActive = textContains(combined, 'both workers at ground level') || textContains(combined, 'two professionals at ground level');
-      assert(!hasBothGroundActive, `Débouchage scenario "${sc._for}" must not place both workers at ground level for active clearance`);
-      // Must exclude ground-level downpipe feeding
-      const excludes = (sc.scene_exclude || []).join(' ').toLowerCase();
-      const hasForbiddenGroundPipe = textContainsAny(excludes, ['crouching at the downpipe base', 'ground-level downpipe', 'worker at the downpipe base as the only']);
-      assert(hasForbiddenGroundPipe, `Débouchage scenario "${sc._for}" scene_exclude must forbid worker crouching at the downpipe base for active clearance`);
+      // debut/final are intentional ground-inspection states — only check elevated access for encours/semifinal
+      const isGroundState = sc._state_for === 'debut' || sc._state_for === 'final';
+      if (!isGroundState) {
+        // Active states (encours/semifinal) must have elevated access
+        const hasElevatedAccess = textContainsAny(combined, ['ladder', 'standoff', 'scaffold', 'mewp']);
+        assert(hasElevatedAccess, `Débouchage scenario "${sc._for}" (state:${sc._state_for||'none'}) must reference elevated access — ground-only work is forbidden in active states`);
+        // Must not say both workers are at ground level for active rod work
+        const hasBothGroundActive = textContains(combined, 'both workers at ground level') || textContains(combined, 'two professionals at ground level');
+        assert(!hasBothGroundActive, `Débouchage scenario "${sc._for}" (state:${sc._state_for||'none'}) must not place both workers at ground level for active clearance`);
+        // Must exclude ground-level downpipe feeding
+        const excludes = (sc.scene_exclude || []).join(' ').toLowerCase();
+        const hasForbiddenGroundPipe = textContainsAny(excludes, ['crouching at the downpipe base', 'ground-level downpipe', 'worker at the downpipe base as the only']);
+        assert(hasForbiddenGroundPipe, `Débouchage scenario "${sc._for}" (state:${sc._state_for||'none'}) scene_exclude must forbid worker crouching at the downpipe base`);
+      }
     });
   });
 
@@ -616,15 +643,18 @@ export async function runRoofWorkerSafetyTests() {
   // ─── RTG-RS37 : no anti-moss worker freely stands on roof tiles ───────────────
 
   runTest('RTG-RS37', 'No anti-moss worker freely stands on roof tiles', () => {
+    // debut/final are ground states (workers at ground level, not near tiles) — only
+    // check elevated-access scenarios (encours/semifinal) for tile-access exclusions.
     const antiScenarios = (SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [])
-      .filter(s => s._for && /anti.mousse/i.test(s._for));
+      .filter(s => s._for && /anti.mousse/i.test(s._for) &&
+        s._state_for !== 'debut' && s._state_for !== 'final');
     antiScenarios.forEach(sc => {
       const excludes = (sc.scene_exclude || []).join(' ').toLowerCase();
       const forbidsFree = textContainsAny(excludes, [
         'freely standing', 'stepping out of the basket onto', 'stepping from the scaffold onto',
         'worker freely standing on mossy tiles', 'freely on mossy'
       ]);
-      assert(forbidsFree, `Anti-mousse scenario scene_exclude must forbid worker freely standing on mossy tiles`);
+      assert(forbidsFree, `Anti-mousse scenario (state:${sc._state_for||'none'}) scene_exclude must forbid worker freely standing on mossy tiles`);
     });
   });
 
@@ -877,12 +907,13 @@ export async function runRoofWorkerSafetyTests() {
 
   // ─── RTG-RS52 : anti-mousse encours resolves to SCAFFOLD ──────────────────────
 
-  runTest('RTG-RS52', 'Anti-moss encours maison_individuelle resolves deterministically to SCAFFOLD', () => {
+  runTest('RTG-RS52', 'Anti-moss encours maison_individuelle resolves deterministically to MEWP', () => {
+    // SCAFFOLD variant is _disabled: true — anti-mousse encours now resolves to MEWP (state_lock).
     const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
     const resolved = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
     assert(resolved, 'A state-locked scenario must exist for anti-mousse + encours');
-    assert(resolved._access_configuration === 'SCAFFOLD',
-      `Anti-moss encours must resolve to SCAFFOLD, got: ${resolved._access_configuration}`);
+    assert(resolved._access_configuration === 'MEWP',
+      `Anti-moss encours must resolve to MEWP, got: ${resolved._access_configuration}`);
   });
 
   // ─── RTG-RS53 : hydrofuge encours resolves to MEWP ───────────────────────────
@@ -921,7 +952,8 @@ export async function runRoofWorkerSafetyTests() {
 
   // ─── RTG-RS56 : anti-moss prompt describes two distinct scaffold workers ───────
 
-  runTest('RTG-RS56', 'Anti-moss locked_final_prompt describes two distinct scaffold workers', () => {
+  runTest('RTG-RS56', 'Anti-moss locked_final_prompt describes two distinct MEWP workers', () => {
+    // SCAFFOLD variant is _disabled: true — anti-mousse encours now uses MEWP basket (not scaffold platform).
     const scenarios = SITE_REALISM_ROOF.nettoyage_toiture?.scenarios || [];
     const resolved = _resolveEncoursMicroTestScenario(scenarios, 'traitement anti-mousse toiture', 'encours');
     assert(resolved, 'Anti-moss encours scenario must exist');
@@ -933,10 +965,10 @@ export async function runRoofWorkerSafetyTests() {
     ].join(' ').toLowerCase();
     assert(textContains(combined, 'worker 1'), 'Anti-moss encours must describe Worker 1');
     assert(textContains(combined, 'worker 2'), 'Anti-moss encours must describe Worker 2');
-    assert(textContainsAny(combined, ['scaffold platform', 'upper platform', 'guardrailed platform', 'scaffold upper']),
-      'Anti-moss encours must describe Worker 1 on scaffold platform with guardrails');
-    assert(textContainsAny(combined, ['lower scaffold', 'scaffold base', 'scaffold base managing', 'lower level']),
-      'Anti-moss encours must describe Worker 2 at lower scaffold level or base');
+    assert(textContainsAny(combined, ['inside the basket', 'completely inside', 'fully inside', 'mewp basket']),
+      'Anti-moss encours must describe Worker 1 inside the MEWP basket with guardrails');
+    assert(textContainsAny(combined, ['beside the mewp base', 'mewp base', 'ground level', 'beside the mewp']),
+      'Anti-moss encours must describe Worker 2 beside the MEWP base at ground level');
     const mockScene = {
       var_workers: 2, var_presence: 'workers', _matched_key: 'nettoyage_toiture',
       _matched_service: 'Traitement anti-mousse toiture', composition: 'medium_intervention',
@@ -1058,8 +1090,8 @@ export async function runRoofWorkerSafetyTests() {
       state_level: 'encours',
     };
     const antiResult = JSON.parse(_applySiteRealism(JSON.stringify(antiScene), 0));
-    assert(antiResult._access_configuration === 'SCAFFOLD',
-      `Anti-mousse encours: _applySiteRealism must produce _access_configuration=SCAFFOLD, got: ${antiResult._access_configuration}`);
+    assert(antiResult._access_configuration === 'MEWP',
+      `Anti-mousse encours: _applySiteRealism must produce _access_configuration=MEWP (SCAFFOLD is _disabled), got: ${antiResult._access_configuration}`);
     assert(antiResult._access_configuration_source === 'state_lock',
       `Anti-mousse encours: _access_configuration_source must be 'state_lock', got: ${antiResult._access_configuration_source}`);
     assert(antiResult._access_configuration_randomized === false,
@@ -1092,9 +1124,10 @@ export async function runRoofWorkerSafetyTests() {
       if (!s._state_for) return false;
       return Array.isArray(s._state_for) ? s._state_for.includes('encours') : s._state_for === 'encours';
     });
-    assert(antiTargeted.length >= 2, `Anti-mousse targeted pool must have ≥2 scenarios (MEWP + SCAFFOLD), got ${antiTargeted.length}`);
+    // SCAFFOLD is _disabled: true — anti-mousse targeted pool now has 4 active scenarios (debut/encours/semifinal/final MEWP).
+    assert(antiTargeted.length >= 1, `Anti-mousse targeted pool must have ≥1 active scenario, got ${antiTargeted.length}`);
     assert(antiStateLocked.length === 1, `Anti-mousse encours stateLocked pool must have exactly 1 scenario, got ${antiStateLocked.length}`);
-    assert(antiStateLocked[0]._access_configuration === 'SCAFFOLD', `The 1 state-locked anti-mousse scenario must be SCAFFOLD`);
+    assert(antiStateLocked[0]._access_configuration === 'MEWP', `The 1 state-locked anti-mousse encours scenario must be MEWP (SCAFFOLD is _disabled), got: ${antiStateLocked[0]._access_configuration}`);
 
     const hydroTargeted = scenarios.filter(s => s._for && new RegExp(s._for, 'i').test(svcLower('traitement hydrofuge toiture')));
     const hydroStateLocked = hydroTargeted.filter(s => {
@@ -1122,8 +1155,9 @@ export async function runRoofWorkerSafetyTests() {
       `Anti-mousse must have exactly 1 eligible encours scenario, got ${antiEncours.length}`);
     assert(hydroEncours.length === 1,
       `Hydrofuge must have exactly 1 eligible encours scenario, got ${hydroEncours.length}`);
-    assert(antiEncours[0]._access_configuration === 'SCAFFOLD',
-      `The anti-mousse encours scenario must be SCAFFOLD, got: ${antiEncours[0]._access_configuration}`);
+    // SCAFFOLD is _disabled: true and has no _state_for — only the MEWP scenario has _state_for='encours'
+    assert(antiEncours[0]._access_configuration === 'MEWP',
+      `The anti-mousse encours scenario must be MEWP (SCAFFOLD is _disabled), got: ${antiEncours[0]._access_configuration}`);
     assert(hydroEncours[0]._access_configuration === 'MEWP',
       `The hydrofuge encours scenario must be MEWP, got: ${hydroEncours[0]._access_configuration}`);
   });
