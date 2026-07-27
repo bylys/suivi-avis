@@ -125,6 +125,9 @@ const WORKER_SCENE_RULES = {
       'improvised access — household chair, milk crate, stacked buckets or domestic stepladder used as a step',
       'ground-level gutter vacuum or telescopic pole as the only access method for active gutter cleaning',
       'worker crouching at the downpipe base as the primary access method for active downpipe clearance',
+      'ladder foot resting inside or directly against the gutter channel as a support point',
+      'worker or second worker standing directly below the falling-debris zone while debris is being extracted overhead',
+      'ground-level downpipe unblocking with no ladder — worker crouching at the downpipe base as the primary access method',
     ],
     presence_indirect: [
       'extending ladder leaning against the house wall — gutter scoop resting in the trough at the top, no one climbing',

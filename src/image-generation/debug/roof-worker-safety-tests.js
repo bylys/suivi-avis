@@ -384,26 +384,43 @@ export async function runRoofWorkerSafetyTests() {
     });
   });
 
-  // ─── RTG-RS26 : gutter ladders always include a visible standoff (policy + resolved) ──
+  // ─── RTG-RS26 : gutter ladders use extension ladder or A-frame; standoff no longer required ──
+  // Updated doctrine (patch d1ff266): standoff is optional — extension ladder against wall and
+  // professional A-frame are both accepted. Standoff is no longer a mandatory reject criterion.
 
-  runTest('RTG-RS26', 'Gutter ladders always include a visible standoff', () => {
-    // Policy layer
+  runTest('RTG-RS26', 'Gutter ladders use extension or A-frame ladder; standoff is optional not mandatory', () => {
+    // Policy layer — access must reference at least two accepted ladder types
     const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
     const accessStr = (rules.access || []).join(' ').toLowerCase();
-    assert(textContains(accessStr, 'standoff'), 'WORKER_SCENE_RULES.nettoyage_gouttieres.access must reference standoff');
-    const safetyStr = (rules.safety_required || []).join(' ').toLowerCase();
-    assert(textContains(safetyStr, 'standoff'), 'WORKER_SCENE_RULES.nettoyage_gouttieres.safety_required must reference standoff');
-    const toolsStr = (SITE_REALISM_ROOF.nettoyage_gouttieres?.tools || []).join(' ').toLowerCase();
-    assert(textContains(toolsStr, 'standoff'), 'SITE_REALISM_ROOF.nettoyage_gouttieres.tools must reference standoff stabiliser');
-    // Resolved scene layer — each active scenario with ladder must reference standoff
+    assert(
+      textContainsAny(accessStr, ['extension ladder', 'extending ladder']),
+      'WORKER_SCENE_RULES.nettoyage_gouttieres.access must reference extension ladder'
+    );
+    assert(
+      textContainsAny(accessStr, ['a-frame', 'a frame', 'double ladder', 'self-supporting']),
+      'WORKER_SCENE_RULES.nettoyage_gouttieres.access must reference A-frame / self-supporting ladder'
+    );
+    // Standoff must NOT be the only accepted access — A-frame is explicitly allowed now
+    const forbiddenStr = (rules.forbidden || []).join(' ').toLowerCase();
+    assert(
+      !textContains(forbiddenStr, 'ladder without standoff'),
+      'WORKER_SCENE_RULES.nettoyage_gouttieres.forbidden must NOT make standoff mandatory (old doctrine removed)'
+    );
+    // Safety gate must not reject for absence of standoff
+    const gateRule = SAFETY_CHECK_RULES.nettoyage_gouttieres || '';
+    assert(
+      textContainsAny(gateRule, ['do not reject for', 'standoff']),
+      'SAFETY_CHECK_RULES.nettoyage_gouttieres must explicitly state standoff is not a rejection criterion'
+    );
+    // Resolved scene layer — each active scenario with a ladder must reference extension or A-frame or MEWP
     const activeScenarios = (SITE_REALISM_ROOF.nettoyage_gouttieres?.scenarios || []).filter(s => s._for);
     activeScenarios.forEach(sc => {
       const tools = (sc.tools || []).join(' ').toLowerCase();
-      const note = (sc.scene_note || '').toLowerCase();
+      const note  = (sc.scene_note || '').toLowerCase();
       const hasLadder = textContains(tools + note, 'ladder');
       if (hasLadder) {
-        const hasStandoff = textContainsAny(tools + note, ['standoff', 'scaffold', 'mewp']);
-        assert(hasStandoff, `Gutter scenario "${sc._for}" has a ladder but no standoff/scaffold/MEWP reference`);
+        const hasValidAccess = textContainsAny(tools + note, ['extension ladder', 'extending ladder', 'a-frame', 'standoff', 'scaffold', 'mewp']);
+        assert(hasValidAccess, `Gutter scenario "${sc._for}" has a ladder but no valid access reference (extension/A-frame/scaffold/MEWP)`);
       }
     });
   });
