@@ -9,7 +9,7 @@
 import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=4';
 import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=2';
 import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=2';
-import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js';
+import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js?v=lc1';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────

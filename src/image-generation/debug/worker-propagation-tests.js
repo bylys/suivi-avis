@@ -13,7 +13,7 @@ const { _applyVariation }               = await import('../resolution/scene-reso
 const { _resolveLocationAndComposition }= await import('../resolution/location-resolver.js?bust=wpt1');
 const { _validateWorkerScene, _assertFinalWorkerConsistency, _assertTaskHasBatchPlan }
                                         = await import('../safety/worker-validator.js?bust=wpt1');
-const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=wpt1');
+const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=wpt2');
 const { generateImageOnly }             = await import('../pipeline/generate-image.js?bust=wpt1');
 const { _hashSeed }                     = await import('../utils/deterministic.js?bust=wpt1');
 const { runImageBatch }                 = await import('../pipeline/run-batch.js?bust=wpt1');

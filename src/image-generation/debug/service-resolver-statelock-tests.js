@@ -6,7 +6,7 @@
  */
 
 import { SITE_REALISM_ROOF } from '../services/roof.js?v=4';
-import { _applySiteRealism } from '../resolution/service-resolver.js';
+import { _applySiteRealism } from '../resolution/service-resolver.js?v=2';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 

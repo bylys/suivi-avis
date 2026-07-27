@@ -9,7 +9,7 @@ const { buildDallePromptV2 }            = await import('../prompt/scene-builder.
 const { _buildPresencePlan }            = await import('../safety/worker-validator.js?bust=hp1');
 const { _applySiteRealism }             = await import('../resolution/service-resolver.js?bust=hp1');
 const { _applyVariation }               = await import('../resolution/scene-resolver.js?bust=hp1');
-const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=hp1');
+const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=hp2');
 const { checkImageSafety }              = await import('../pipeline/safety-check.js?bust=hp1');
 const { _hashSeed }                     = await import('../utils/deterministic.js?bust=hp1');
 

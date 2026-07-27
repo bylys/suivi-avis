@@ -48,9 +48,11 @@ function _serviceGroup(matchedService) {
   if (/arrosage.*auto|automatique.*arros|irrigation/.test(s))                       return 'paysagiste_irrigation';
   if (/maconn|maçonn|muret|pas.*japonais|dalle.*jardin/.test(s))                   return 'paysagiste_maconnerie';
   if (/^bordures?$|^bordures? /.test(s))                                            return 'paysagiste_bordures';
-  // Gouttières — 2-worker service buckets
+  // Gouttières — bucket routing (order matters: remplac/pose checked before generic nettoy)
   if (/remplac.*gouttier|gouttier.*remplac/.test(s))                               return 'remplacement_gouttieres';
   if (/pose.*gouttier|installa.*gouttier/.test(s))                                 return 'pose_gouttieres';
+  if (/deboucha.*gouttier|bouchon.*gouttier|obstruct.*gouttier/.test(s))           return 'debouchage_gouttieres';
+  if (/nettoy.*gouttier|entretien.*gouttier|curage.*gouttier/.test(s))             return 'nettoyage_gouttieres';
   return 'default';
 }
 

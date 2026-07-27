@@ -22,7 +22,7 @@ import { _planGlobalBatch, _rebalanceGlobalBatchPlan }   from '../planning/batch
 import { _planBatchWorkerPresence }                      from '../planning/worker-planner.js';
 import { _selectCaptureDefects }                         from '../planning/capture-defect-planner.js';
 import { _validateCompleteBatchPlan, _assertTaskHasBatchPlan } from '../validation/batch-validator.js';
-import { _appendLockedFinalConstraints }                 from '../prompt/locked-constraints.js';
+import { _appendLockedFinalConstraints }                 from '../prompt/locked-constraints.js?v=lc1';
 import { buildDallePromptV2 }                            from '../prompt/scene-builder.js';
 import { _hashSeed }                                     from '../utils/deterministic.js';
 import { WORK_SCENES }                                   from '../services/index.js';

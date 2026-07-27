@@ -153,7 +153,7 @@ A worker freely standing on pitched tiles without visible protection is a critic
 A backpack sprayer, shoulder straps, ordinary jacket, or unconnected harness must NEVER be interpreted as fall protection.
 The harness and lifeline must visibly connect to a plausible anchor.
 No safety line may be attached to: gutter, chimney cap, antenna, skylight, unsecured ladder, or decorative roof element.` : ''}
-${isCrewMetier && hasWorkers ? `
+${isCrewMetier && sceneWorkers >= 2 ? `
 NON-NEGOTIABLE ACTIVE CREW RULE:
 For active roof and gutter work (debut, encours, semifinal state), show at least two visible professional workers with distinct and physically credible roles.
 Worker 1: performs the roof or gutter intervention from secured elevated access.
