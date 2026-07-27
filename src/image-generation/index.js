@@ -271,26 +271,26 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
   const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests] = await Promise.all([
-    import('./debug/runtime-tests.js?v=11'),
+    import('./debug/runtime-tests.js?v=12'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
     import('./debug/service-coverage-audit.js?v=4'),
     import('./debug/carrelage-contracts-tests.js'),
     import('./debug/carrelage-scenes-tests.js?v=21'),
     import('./debug/vitrier-contracts-tests.js'),
-    import('./debug/vitrier-scenes-tests.js?v=8'),
+    import('./debug/vitrier-scenes-tests.js?v=9'),
     import('./debug/roof-waterproofing-gutter-contracts-tests.js?v=1'),
     import('./debug/roof-cluster-scenes-tests.js?v=5'),
     import('./debug/roof-cluster-pr-tests.js?v=5'),
-    import('./debug/roof-worker-safety-tests.js?v=8'),
+    import('./debug/roof-worker-safety-tests.js?v=9'),
     import('./debug/service-resolver-statelock-tests.js?v=5'),
     import('./debug/roof-covering-waterproofing-validation-tests.js?v=3'),
     import('./debug/cov-fix-scenes-tests.js'),
     import('./debug/arborist-scenes-tests.js'),
     import('./debug/automotive-breakdown-tests.js'),
-    import('./debug/landscaping-tests.js?v=1'),
-    import('./debug/worker-propagation-tests.js?v=1'),
-    import('./debug/hedge-tests.js?v=1'),
+    import('./debug/landscaping-tests.js?v=2'),
+    import('./debug/worker-propagation-tests.js?v=2'),
+    import('./debug/hedge-tests.js?v=2'),
     import('./debug/roof-maintenance-mewp-tests.js?v=4'),
   ]);
   window._runImageGenerationTests = async () => {

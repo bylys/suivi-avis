@@ -666,7 +666,7 @@ const { _applyVariation }            = await import('../resolution/scene-resolve
 const { buildDallePromptV2 }         = await import('../prompt/scene-builder.js?bust=prodtest');
 const { _buildPresencePlan }         = await import('../safety/worker-validator.js?bust=prodtest');
 const { _planGlobalBatch }           = await import('../planning/batch-planner.js?bust=prodtest');
-const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=prodtest2');
+const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=prodtest3');
 const { buildVisionSafetyRequest }   = await import('../pipeline/safety-check.js?bust=prodtest');
 const { _hashSeed }                  = await import('../utils/deterministic.js?bust=prodtest');
 const { SITE_REALISM }               = await import('../services/index.js');

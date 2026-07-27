@@ -9,7 +9,7 @@
 import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=4';
 import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=2';
 import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=2';
-import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js?v=lc1';
+import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js?v=lc2';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -1202,6 +1202,36 @@ export async function runRoofWorkerSafetyTests() {
       `_applySiteRealism anti-mousse encours must NOT produce LADDER, got: ${antiResult._access_configuration}`);
     assert(hydroResult._access_configuration !== 'LADDER_AND_SECURED_ROOF_LADDER',
       `_applySiteRealism hydrofuge encours must NOT produce LADDER, got: ${hydroResult._access_configuration}`);
+  });
+
+  // ─── RTG-RS65 : anti-mousse debut → ELEVATED ACCESS block suppressed ──────────
+
+  runTest('RTG-RS65', 'Anti-mousse debut state: ELEVATED ACCESS block suppressed (workers at ground, MEWP not deployed)', () => {
+    const mockDebutScene = {
+      var_workers: 2, var_presence: 'workers', _matched_key: 'nettoyage_toiture',
+      _matched_service: 'Traitement anti-mousse toiture', state_level: 'debut',
+      composition: 'medium_intervention', _capture_defects_resolved: [],
+    };
+    const result = _appendLockedFinalConstraints('TEST PROMPT', mockDebutScene);
+    assert(!textContains(result, 'NON-NEGOTIABLE ELEVATED ACCESS'),
+      'ELEVATED ACCESS block must NOT fire for anti-mousse debut (workers at ground level, MEWP not deployed)');
+    assert(textContainsAny(result, ['EXACTLY TWO', 'two professional workers', 'Both Worker 1']),
+      'Two-worker crew mandate must still be present for debut anti-mousse');
+  });
+
+  // ─── RTG-RS66 : anti-mousse final → ELEVATED ACCESS block suppressed ──────────
+
+  runTest('RTG-RS66', 'Anti-mousse final state: ELEVATED ACCESS block suppressed (workers at ground, MEWP packed)', () => {
+    const mockFinalScene = {
+      var_workers: 2, var_presence: 'workers', _matched_key: 'nettoyage_toiture',
+      _matched_service: 'Traitement anti-mousse toiture', state_level: 'final',
+      composition: 'medium_intervention', _capture_defects_resolved: [],
+    };
+    const result = _appendLockedFinalConstraints('TEST PROMPT', mockFinalScene);
+    assert(!textContains(result, 'NON-NEGOTIABLE ELEVATED ACCESS'),
+      'ELEVATED ACCESS block must NOT fire for anti-mousse final (workers at ground level, MEWP packed)');
+    assert(textContainsAny(result, ['EXACTLY TWO', 'two professional workers', 'Both Worker 1']),
+      'Two-worker crew mandate must still be present for final anti-mousse');
   });
 
   // ─── summary ──────────────────────────────────────────────────────────────────

@@ -160,7 +160,7 @@ Worker 1: performs the roof or gutter intervention from secured elevated access.
 Worker 2: manages hose, tools or debris collection, or supervises the access zone from a safe position — must NOT be standing directly below the falling-object zone.
 The second worker must not replace required access or fall-protection equipment.
 Forbidden: two identical workers performing the same gesture; two workers freely standing on pitched tiles; second worker posing for the camera; second worker standing directly below falling debris.` : ''}
-${isTreatmentService && hasWorkers ? `
+${isTreatmentService && hasWorkers && scene.state_level !== 'debut' && scene.state_level !== 'final' ? `
 NON-NEGOTIABLE ELEVATED ACCESS:
 The roof treatment must be performed from one complete elevated-access system:
 1. MEWP basket with guardrails and visible boom — Worker 1 completely inside the basket, NOT on roof tiles,

@@ -8,7 +8,7 @@ import { WORK_SCENES_VITRIER, SITE_REALISM_VITRIER } from '../services/vitrier.j
 import { WORK_SCENES, SITE_REALISM }                from '../services/index.js';
 import { _applySiteRealism }                         from '../resolution/service-resolver.js?v=1';
 import { _applyVariation }                           from '../resolution/scene-resolver.js?v=1';
-import { _appendLockedFinalConstraints }             from '../prompt/locked-constraints.js?v=lc1';
+import { _appendLockedFinalConstraints }             from '../prompt/locked-constraints.js?v=lc2';
 import { SAFETY_CHECK_RULES }                        from '../safety/safety-rules.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
