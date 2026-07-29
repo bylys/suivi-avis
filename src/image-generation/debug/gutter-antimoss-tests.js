@@ -6,8 +6,8 @@
  */
 
 const { buildVisionSafetyRequest, checkImageSafety } = await import('../pipeline/safety-check.js?bust=ga2');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, FORBIDDEN_SAFETY_BY_METIER } = await import('../safety/safety-rules.js?bust=ga2');
-const { WORKER_SCENE_RULES } = await import('../safety/worker-rules.js?bust=ga2');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, FORBIDDEN_SAFETY_BY_METIER } = await import('../safety/safety-rules.js?bust=ga3');
+const { WORKER_SCENE_RULES } = await import('../safety/worker-rules.js?bust=ga3');
 const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=ga2');
 const { _selectCaptureDefects } = await import('../planning/capture-defect-planner.js?bust=ga2');
 
