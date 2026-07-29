@@ -5,10 +5,12 @@
  */
 
 import { _hashSeed, _pick } from '../utils/deterministic.js';
-import { WORKER_SCENE_RULES } from './worker-rules.js';
+import { WORKER_SCENE_RULES, _resolveWorkerRule } from './worker-rules.js';
 
-function _buildWorkerDesc(key, n, seed) {
-  const rules = WORKER_SCENE_RULES[key];
+// resolvedRule is optional: when provided (e.g. from scene-resolver after visual_family dispatch)
+// it takes precedence over the generic WORKER_SCENE_RULES lookup.
+function _buildWorkerDesc(key, n, seed, resolvedRule) {
+  const rules = resolvedRule || WORKER_SCENE_RULES[key];
   if (!rules) return 'tradesperson in work clothes naturally at work — seen from behind or in profile, never posing or looking at the camera';
   const action  = _pick(rules.actions,  1, seed + 11)[0] || 'working on the job';
   const posture = _pick(rules.postures, 1, seed + 13)[0] || 'seen from behind or in profile';
@@ -37,7 +39,7 @@ function _validateWorkerScene(jsonStr) {
 
   const issues = [];
   const fixed  = Object.assign({}, obj);
-  const rules  = WORKER_SCENE_RULES[fixed._matched_key];
+  const rules  = _resolveWorkerRule(fixed._matched_key, fixed._resolved_visual_family || null);
 
   if (!rules) {
     issues.push('missing_dedicated_rules');
@@ -64,7 +66,7 @@ function _validateWorkerScene(jsonStr) {
   if (_descHasForbidden((fixed.var_worker_desc || '').toLowerCase())) {
     issues.push('forbidden_action_in_desc');
     fixed.var_worker_desc = _buildWorkerDesc(fixed._matched_key, fixed.var_workers,
-      _hashSeed(`${fixed._matched_key}${fixed._matched_service || ''}regen1`));
+      _hashSeed(`${fixed._matched_key}${fixed._matched_service || ''}regen1`), rules);
   }
 
   // 4. Check safety terms in description — attempt regen
@@ -73,7 +75,7 @@ function _validateWorkerScene(jsonStr) {
   if (_descMissesSafety((fixed.var_worker_desc || '').toLowerCase())) {
     issues.push('missing_safety_mention');
     fixed.var_worker_desc = _buildWorkerDesc(fixed._matched_key, fixed.var_workers,
-      _hashSeed(`${fixed._matched_key}${fixed._matched_service || ''}regen2`));
+      _hashSeed(`${fixed._matched_key}${fixed._matched_service || ''}regen2`), rules);
   }
 
   // 5. Final check: if description still fails safety after 2 regen attempts → fallback to none

@@ -7,7 +7,7 @@
  */
 
 import { WORK_SCENES } from '../services/index.js';
-import { WORKER_SCENE_RULES } from '../safety/worker-rules.js';
+import { WORKER_SCENE_RULES, _resolveWorkerRule } from '../safety/worker-rules.js';
 import { _buildWorkerDesc } from '../safety/worker-validator.js';
 import { _hashSeed, _pick } from '../utils/deterministic.js';
 
@@ -133,19 +133,24 @@ function _applyVariation(jsonStr, imageIndex, presenceOverride) {
                      : workerRoll < (_pd.none + _pd.workers) ? 'workers'
                      : 'indirect');
 
+  // _visual_family is stamped onto obj by service-resolver when a scenario is picked.
+  // Works for all dispatch contexts (maison, immeuble, commerce, …) and survives retries.
+  const _visualFamily  = obj._visual_family || null;
+  const _effectiveRule = _resolveWorkerRule(obj._matched_key, _visualFamily);
+
   if (obj.var_presence === 'none') {
     obj.var_workers = 0;
     obj.no_people   = true;
   } else if (obj.var_presence === 'indirect') {
     obj.var_workers = 0;
     obj.no_people   = true;
-    const _iRules = WORKER_SCENE_RULES[obj._matched_key];
+    const _iRules = _effectiveRule;
     const _iSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}indirect${imageIndex}`);
     obj.var_indirect_presence = _iRules
       ? (_pick(_iRules.presence_indirect, 1, _iSeed)[0] || null)
       : null;
   } else {
-    const _wRules = WORKER_SCENE_RULES[obj._matched_key];
+    const _wRules = _effectiveRule;
     const _maxW   = _wRules ? _wRules.max_workers : 2;
     const _cSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}count${imageIndex}`);
     const _dSeed  = _hashSeed(`${obj._matched_key || ''}${obj._matched_service || ''}desc${imageIndex}`);
@@ -159,13 +164,14 @@ function _applyVariation(jsonStr, imageIndex, presenceOverride) {
       obj._worker_count_source = 'rolled';
     }
     obj.no_people       = false;
-    obj.var_worker_desc = _buildWorkerDesc(obj._matched_key, obj.var_workers, _dSeed);
+    obj.var_worker_desc = _buildWorkerDesc(obj._matched_key, obj.var_workers, _dSeed, _wRules);
     // Worker detail debug fields (aligned with _dSeed for determinism)
     if (_wRules) {
       obj._worker_action      = _pick(_wRules.actions, 1, _dSeed + 11)[0] || null;
       obj._worker_access_mode = _pick(_wRules.access,  1, _dSeed + 17)[0] || null;
       obj._worker_safety_mode = (_wRules.safety_required || []).slice(0, 1).join(', ') || null;
     }
+    if (_visualFamily) obj._resolved_visual_family = _visualFamily;
   }
 
   // For customer/neighbor authors, override var_camera with a matching perspective pool

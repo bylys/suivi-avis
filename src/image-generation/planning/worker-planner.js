@@ -18,6 +18,11 @@ function _planBatchWorkerPresence(group, seed) {
   const wRules  = WORKER_SCENE_RULES?.[metier] || {};
   const minWImg = rules.minimum_worker_images_per_active_batch ?? 1;
   let   minW    = wRules.min_workers_when_visible || 1;
+  // State-level minimum: e.g. etancheite encours/semifinal require 2 workers
+  if (wRules.state_worker_minimums) {
+    const stateMin = wRules.state_worker_minimums[group[0]?._planBase?.state_level];
+    if (typeof stateMin === 'number' && stateMin > minW) minW = stateMin;
+  }
   // Service-level minimum: e.g. depannage_auto crevaison/remorquage require 2 workers
   if (wRules.service_worker_minimums) {
     const svcRaw    = group[0]?._planBase?._matched_service || '';
