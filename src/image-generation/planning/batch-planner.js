@@ -41,7 +41,7 @@ function _planGlobalBatch(tasks, runSeed) {
 
       task._pre_assigned_composition   = comp;
       task._pre_assigned_vehicle       = pv;
-      task._capture_defects_resolved   = _selectCaptureDefects(gi, n, _hashSeed(`defect|${groupKey}|${gSeed}|${gi}`));
+      task._capture_defects_resolved   = _selectCaptureDefects(gi, n, _hashSeed(`defect|${groupKey}|${gSeed}|${gi}`), metier, task._planBase._matched_service);
       task._batch_plan_id              = `plan_${groupKey}_${gSeed}_${gi}`;
       task._batch_run_seed             = String(runSeed);
     }

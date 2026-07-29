@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT      = Path(__file__).resolve().parent.parent
 AUDIT_JSON = ROOT / 'docs' / 'service-coverage-audit.json'
-BASELINE_COMMIT = '5378893'
+BASELINE_COMMIT = 'a3613a2'
 COMPARED_FIELDS = ['routing_coverage', 'matched_regex', 'fallback_used', 'service_group']
 
 def load_baseline():

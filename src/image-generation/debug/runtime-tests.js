@@ -1,5 +1,5 @@
 /**
- * debug/runtime-tests.js — Phase 7B
+ * debug/runtime-tests.js — Phase 7B.1
  * Harness autonome : utilise uniquement les modules src/image-generation/ et le bridge GMB.
  * Pas d'import depuis app.js. Pas d'appel réseau réel.
  *
@@ -22,7 +22,7 @@ import { _planGlobalBatch, _rebalanceGlobalBatchPlan }   from '../planning/batch
 import { _planBatchWorkerPresence }                      from '../planning/worker-planner.js';
 import { _selectCaptureDefects }                         from '../planning/capture-defect-planner.js';
 import { _validateCompleteBatchPlan, _assertTaskHasBatchPlan } from '../validation/batch-validator.js';
-import { _appendLockedFinalConstraints }                 from '../prompt/locked-constraints.js';
+import { _appendLockedFinalConstraints }                 from '../prompt/locked-constraints.js?v=lc4';
 import { buildDallePromptV2 }                            from '../prompt/scene-builder.js';
 import { _hashSeed }                                     from '../utils/deterministic.js';
 import { WORK_SCENES }                                   from '../services/index.js';
@@ -195,12 +195,16 @@ export async function runRuntimeTests() {
     else fail('T8', `domicile=${domTri} garage=${garTri} autoroute=${autoTri}`);
   } catch (e) { fail('T8', e.message); }
 
-  // T9: WORKER_SCENE_RULES min_workers_when_visible ≥ 2
+  // T9: WORKER_SCENE_RULES min_workers_when_visible ≥ 2 (paysagiste uses service_worker_minimums)
   try {
-    const targets = ['élagage','abattage','vitrier','paysagiste','terrassement','débarras'];
-    const bad     = targets.filter(k => (WORKER_SCENE_RULES[k]?.min_workers_when_visible || 0) < 2);
-    if (!bad.length) pass('T9: min_workers_when_visible ≥ 2 for 6 métiers');
-    else fail('T9', `missing or < 2: ${JSON.stringify(bad)}`);
+    const globalTargets = ['élagage','abattage','vitrier','terrassement','débarras'];
+    const bad = globalTargets.filter(k => (WORKER_SCENE_RULES[k]?.min_workers_when_visible || 0) < 2);
+    // paysagiste uses min_workers_when_visible=1 (global) + service_worker_minimums for 8 two-worker buckets
+    const swm = WORKER_SCENE_RULES['paysagiste']?.service_worker_minimums || {};
+    const requiredBuckets = ['paysagiste_taille_haie','paysagiste_plantation_haie','paysagiste_plantation_arbre','paysagiste_gazon_rouleau','paysagiste_creation','paysagiste_irrigation','paysagiste_maconnerie','paysagiste_bordures'];
+    const badBuckets = requiredBuckets.filter(b => (swm[b] || 0) < 2);
+    if (!bad.length && !badBuckets.length) pass('T9: min_workers_when_visible ≥ 2 for 5 métiers + paysagiste service_worker_minimums ≥ 2 for 8 buckets');
+    else fail('T9', `global missing: ${JSON.stringify(bad)} | paysagiste buckets missing: ${JSON.stringify(badBuckets)}`);
   } catch (e) { fail('T9', e.message); }
 
   // T10: aire_repos → location=aire_repos, triangle=forbidden_if_safely_parked
@@ -497,7 +501,7 @@ export async function runRuntimeTests() {
     const t29Failures = [];
     if (!r.includes('NON-NEGOTIABLE'))                t29Failures.push('missing NON-NEGOTIABLE header');
     if (!r.includes('WORKER PRESENCE'))               t29Failures.push('missing WORKER PRESENCE block');
-    if (!/workers must be actively working/i.test(r)) t29Failures.push('WORKER PRESENCE does not mention worker');
+    if (!/EXACTLY TWO VISIBLE PROFESSIONAL WORKERS/i.test(r)) t29Failures.push('WORKER PRESENCE does not contain EXACTLY TWO wording');
     if (!r.includes('wide_worksite'))                 t29Failures.push('missing composition key');
     if (!r.includes('5 to 8 metres'))                 t29Failures.push('missing camera distance');
     if (!r.includes('slightly tilted') && !r.includes('JPEG compression')) t29Failures.push('missing capture defects');
@@ -667,7 +671,7 @@ export async function runRuntimeTests() {
     _assertFinalWorkerConsistency(scW);
     if (scW.no_people !== false) t36Failures.push('T36a: no_people should be false for worker scene');
     const pW = _appendLockedFinalConstraints('[mock]', scW);
-    if (!/One worker must be actively working/i.test(pW)) t36Failures.push('T36a: WORKER PRESENCE missing');
+    if (!/EXACTLY ONE VISIBLE PROFESSIONAL WORKER must be actively working/i.test(pW)) t36Failures.push('T36a: WORKER PRESENCE missing');
     if (/No workers or people visible/i.test(pW))         t36Failures.push('T36a: no-people instruction leaked');
     const scN = { var_workers: 0, var_presence: 'none', no_people: true, composition: 'wide_worksite', _matched_key: 'depannage_auto', triangle_rule: null, _worker_safety_mode: null, _capture_defects_resolved: [{ key: 'jpeg_compression', prompt: 'subtle JPEG compression' }] };
     _assertFinalWorkerConsistency(scN);
@@ -704,12 +708,12 @@ export async function runRuntimeTests() {
   // T40: buildDallePromptV2 stable — 8 snapshot hashes
   try {
     const REF = [
-      { id:'toiture-nettoyage',       metier:'toiture',        travaux:'nettoyage gouttières',      contexte:'maison',      etat:'encours', ville:'Paris', refHash:2455936913 },
-      { id:'toiture-tuiles',          metier:'toiture',        travaux:'Remplacement de tuiles',     contexte:'maison',      etat:'encours', ville:'Paris', refHash:2385610455 },
+      { id:'toiture-nettoyage',       metier:'toiture',        travaux:'nettoyage gouttières',      contexte:'maison',      etat:'encours', ville:'Paris', refHash:942692532  },
+      { id:'toiture-tuiles',          metier:'toiture',        travaux:'Remplacement de tuiles',     contexte:'maison',      etat:'encours', ville:'Paris', refHash:3750579066 },
       { id:'plomberie-debouchage',     metier:'plomberie',      travaux:'Débouchage canalisation',    contexte:'appartement', etat:'encours', ville:'Paris', refHash:3244601226 },
       { id:'plomberie-fuite',         metier:'plomberie',      travaux:"Fuite d'eau",                contexte:'maison',      etat:'debut',   ville:'Paris', refHash:1259829227 },
       { id:'electricite-normes',      metier:'électricité',    travaux:'Mise aux normes électrique', contexte:'appartement', etat:'encours', ville:'Paris', refHash:3653194414 },
-      { id:'depannage-auto-batterie', metier:'depannage_auto', travaux:'batterie à plat',            contexte:'domicile',    etat:'encours', ville:'Paris', refHash:919780194  },
+      { id:'depannage-auto-batterie', metier:'depannage_auto', travaux:'batterie à plat',            contexte:'domicile',    etat:'encours', ville:'Paris', refHash:1357303756 },
       { id:'peinture-interieure',     metier:'peinture',       travaux:'Peinture intérieure',        contexte:'appartement', etat:'encours', ville:'Paris', refHash:3792538061 },
       { id:'maconnerie-enduit',       metier:'maçonnerie',     travaux:'Réfection enduit façade',    contexte:'maison',      etat:'encours', ville:'Paris', refHash:1460650968 },
     ];

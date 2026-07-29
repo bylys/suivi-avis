@@ -1,80 +1,12 @@
 /**
  * finishing.js — Phase 2 shadow copy (source active : app.js)
- * Copie stricte de WORK_SCENES {vitrier, débarras}
- * et SITE_REALISM {vitrier, 'débarras'}.
+ * WORK_SCENES {débarras} et SITE_REALISM {'débarras'}.
  * La clé 'carrelage' a été déplacée dans services/carrelage.js.
+ * La clé 'vitrier' a été déplacée dans services/vitrier.js.
  * Ne pas modifier avant le cutover validé.
  */
 
 export const WORK_SCENES_FINISHING = {
-  vitrier: {
-    category:         'vitrier',
-    priority:         3,
-    service_keywords: [
-      { phrase: 'remplacement vitre', score: 13 },
-      { phrase: 'vitre cassee',       score: 13 },
-      { phrase: 'double vitrage',     score: 12 },
-      { phrase: 'miroiterie',         score: 11 },
-      { phrase: 'vitrerie',           score: 10 },
-      { phrase: 'vitrier',            score: 10 },
-      { phrase: 'vitrine',            score: 9  },
-      { phrase: 'vitr',               score: 5  },
-    ],
-    exclude_if: [],
-    intro:      'window glass replacement at a residential property',
-    setting:    'exterior',
-    secteur:    'glazier',
-    hasWorkers: false,
-    camera:     'standing 2–3 m from the window, straight-on view, eye level',
-    materials:  ['glass pane against wall', 'glazing putty', 'window spacers', 'protective corner pieces'],
-    photo_defects: [
-      'glass reflection causing an overexposed bright patch in the frame centre',
-      'chromatic aberration on the sharp window frame edge',
-    ],
-    exclusions: ['suction cups in use', 'workers', 'people', 'broken glass shards'],
-    states: {
-      debut: {
-        framing: {
-          work_pct:   40,
-          foreground: 'old window frame with glass partially removed — bare frame sections exposed, putty being chipped away',
-          midground:  'window opening in the facade, old glass still in place on the upper section',
-          background: 'house facade, brick or rendered wall',
-        },
-        debris:      'old putty flakes and small glass chips at the window base — minimal and tidy',
-        description: 'Work just started. Frame being prepared. Old glass or putty being removed.',
-      },
-      encours: {
-        framing: {
-          work_pct:   55,
-          foreground: 'new glass pane positioned in frame, spacers visible at edges, putty being applied',
-          midground:  'window partially assembled — new glass in position, sealant bead at frame junction',
-          background: 'house facade',
-        },
-        debris:      'putty scraps and spacer packaging near the window base',
-        description: 'Glass replacement underway. New pane being positioned and sealed into the frame.',
-      },
-      semifinal: {
-        framing: {
-          work_pct:   60,
-          foreground: 'glass fully in place, sealant bead being smoothed around the frame perimeter',
-          midground:  'complete glass panel in frame, sealant line visible but not yet dry',
-          background: 'house facade',
-        },
-        debris:      'sealant packaging and a small putty knife near the window',
-        description: 'New glass in. Sealant being applied and smoothed around the edges. Nearly finished.',
-      },
-      final: {
-        framing: {
-          work_pct:   65,
-          foreground: 'clean new window — clear glass, neat sealant bead, clean painted frame',
-          midground:  'full window view — glass reflecting surroundings cleanly, frame in good condition',
-          background: 'house facade, garden or pavement, sky visible in glass reflection',
-        },
-        debris:      'none — window clean, installation finished',
-        description: 'Window replacement complete. Clear glass, clean frame, neat sealant. Professional result.',
-      },
-    },
-  },
 
   débarras: {
     category:         'débarras',
@@ -152,26 +84,6 @@ export const WORK_SCENES_FINISHING = {
 };
 
 export const SITE_REALISM_FINISHING = {
-  vitrier: {
-    tools: [
-      'suction cup lifting handle resting on the windowsill',
-      'glass cutter resting beside the scored glass piece on the floor',
-      'putty knife resting on the ledge beside the window frame',
-      'caulk gun on the floor near the frame base',
-      'plastic glazing bead strip on the floor beside the opening',
-    ],
-    protections: [
-      'protective rubber mat on the windowsill to prevent glass scratching',
-      'cardboard sheet on the floor directly below the window opening',
-    ],
-    chantier_details: [
-      'glass offcut resting against the wall at the base near the window',
-      'strip of old putty or sealant on the floor from the removed pane',
-      'caulk bead residue visible on the frame edge',
-      'small plastic shim wedge near the base of the installed glass',
-      'empty silicone tube beside the caulk gun on the floor',
-    ],
-  },
 
   'débarras': {
     tools: [

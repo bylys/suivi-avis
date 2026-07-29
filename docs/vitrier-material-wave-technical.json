@@ -1,0 +1,133 @@
+{
+  "_note": "Forensic technical evidence — Vague matériau vitrier (DV / feuilleté). No API keys, no auth headers, no base64.",
+  "run_meta": {
+    "date": "2026-07-20",
+    "branch": "feat/vitrier-visual-contracts",
+    "model_image": "gpt-image-2",
+    "model_rewriter": "gpt-4.1",
+    "concurrency": 1,
+    "use_prompt_builder": false,
+    "total_tasks": 2,
+    "total_image_api_calls": 3,
+    "total_vision_calls": 3,
+    "notes": "imageCalls and visionCalls are global cumulative counters per run, NOT per-task. Per-task values reconstructed from imageAttempt/safetyAttempt log fields."
+  },
+  "tasks": [
+    {
+      "taskId": 1,
+      "service": "Vitrage sécurité feuilleté",
+      "contexte": "appartement",
+      "evaluation": "PARTIAL",
+      "evaluation_reason": "Vue frontale — ouvriers face à la fenêtre avec ventouses. Bord feuilleté invisible hors cadre. Aucun intercalaire PVB identifiable. Indistinguable d'un remplacement DV ou brisé.",
+      "batch_plan": {
+        "composition": "medium_intervention",
+        "composition_desc": "medium shot showing the worker and immediate work area — activity readable, surroundings partially visible, 1–3 m from the main subject",
+        "vehicle": "absent",
+        "workers": "workers"
+      },
+      "telemetry": {
+        "imageAttempts": 1,
+        "safetyAttempts": 1,
+        "safety_result": "PASS",
+        "safety_rule_id": null,
+        "safety_reason_code": null,
+        "imageCalls_cumulative_at_log": 1,
+        "visionCalls_cumulative_at_log": 1,
+        "imageCalls_cumulative_note": "Per-task = 1 (cumulative shown in log was 2 due to 4x console duplication from page reloads — actual single-event value = 1)"
+      },
+      "constraint_loss_trace": {
+        "scene_camera_in_interior_variant": "three-quarter oblique angle — 2 m back, laminated glass edge facing the camera",
+        "framing_applied": "INTERIOR_SCENE_BASE (painting — canvas drop cloth, paint tray)",
+        "framing_expected": "laminated glass edge with PVB interlayer in foreground at oblique angle",
+        "framing_loss_cause": "interior_variant.scene_framing not read by service-resolver.js interior_variant block (missing line)",
+        "composition_desc_applied": "medium shot showing worker and immediate work area, 1–3 m",
+        "composition_desc_loss_cause": "medium_intervention description has no oblique mention; GPT-4.1 uses composition_desc as CAMERA COMPOSITION priority 1",
+        "locked_constraints_entry": "absent — no _SVC_SURFACE_LOCK for 'Vitrage sécurité feuilleté'"
+      }
+    },
+    {
+      "taskId": 2,
+      "service": "Remplacement double vitrage",
+      "contexte": "appartement",
+      "evaluation": "PARTIAL",
+      "evaluation_reason": "Vue légèrement latérale (~10°), 2 ouvriers, baie vitrée aluminium, radiateur. Tranche IGU non lisible. Spacer bar absent. Aucune cavité scellée visible. Indistinguable d'un remplacement fenêtre standard.",
+      "batch_plan": {
+        "composition": "medium_intervention",
+        "composition_desc": "medium shot showing the worker and immediate work area — activity readable, surroundings partially visible, 1–3 m from the main subject",
+        "vehicle": "absent",
+        "workers": "workers"
+      },
+      "attempt_1": {
+        "imageAttempt": 1,
+        "safetyAttempt": 1,
+        "safety_result": "critical_violation",
+        "safety_rule_id": "bare_hand_large_glass",
+        "safety_reason_code": "worker_bare_hand_on_glass_pane",
+        "safety_reason_detail": "Vision gate detected bare hand(s) in contact with large glass pane — cut-resistant gloves not visible on glass-handling hands",
+        "action": "image discarded, regenerated"
+      },
+      "attempt_2": {
+        "imageAttempt": 2,
+        "safetyAttempt": 2,
+        "safety_result": "PASS",
+        "safety_rule_id": null,
+        "safety_reason_code": null
+      },
+      "telemetry": {
+        "imageAttempts": 2,
+        "safetyAttempts": 2,
+        "final_safety_result": "PASS",
+        "imageCalls_cumulative_at_log": 3,
+        "visionCalls_cumulative_at_log": 3,
+        "imageCalls_cumulative_note": "Per-task = 2 (1 rejected + 1 pass). Cumulative shown in log was 3/3 after this task; log showed 4x due to page reloads — actual value per event = 3 total run."
+      },
+      "constraint_loss_trace": {
+        "scene_camera_in_interior_variant": "standing inside the apartment room at a three-quarter oblique angle — 2 m back, IGU edge and spacer bar facing the camera",
+        "framing_applied": "INTERIOR_SCENE_BASE (painting — canvas drop cloth, paint tray)",
+        "framing_expected": "IGU edge with metallic spacer bar and sealed cavity in foreground at 30–45° oblique angle",
+        "framing_loss_cause": "interior_variant.scene_framing not read by service-resolver.js interior_variant block (missing line)",
+        "composition_desc_applied": "medium shot showing worker and immediate work area, 1–3 m",
+        "composition_desc_loss_cause": "medium_intervention description has no oblique mention; GPT-4.1 uses composition_desc as CAMERA COMPOSITION priority 1",
+        "locked_constraints_entry": "absent — no _SVC_SURFACE_LOCK for 'Remplacement double vitrage'"
+      }
+    }
+  ],
+  "root_cause_summary": {
+    "cause_1": {
+      "file": "src/image-generation/resolution/service-resolver.js",
+      "location": "interior_variant block (lines 93–104)",
+      "description": "scene_framing field in interior_variant was not read. The line 'if (_intVariant.scene_framing) obj.framing = _intVariant.scene_framing' was missing. INTERIOR_SCENE_BASE.framing (painting foreground) propagated to all interior vitrier scenes.",
+      "fix": "Added the missing line after 'if (_intVariant.scene_camera) obj.camera_position = _intVariant.scene_camera'"
+    },
+    "cause_2": {
+      "file": "src/image-generation/config/compositions.js",
+      "location": "medium_intervention.description",
+      "description": "composition_desc for medium_intervention is 'medium shot showing the worker and immediate work area — 1–3 m'. No oblique angle. GPT-4.1 uses composition_desc as its highest-priority CAMERA COMPOSITION signal, overriding camera_position.",
+      "fix": "Added scene_framing.foreground (with oblique angle) to interior_variant of both DV and feuilleté, and added NON-NEGOTIABLE locked constraints. Composition description not changed (would affect all métiers)."
+    },
+    "cause_3": {
+      "file": "src/image-generation/prompt/locked-constraints.js",
+      "location": "_SVC_SURFACE_LOCK",
+      "description": "No entries for 'Remplacement double vitrage' or 'Vitrage sécurité feuilleté'. The NON-NEGOTIABLE section (added AFTER GPT-4.1 rewrite) had no material-specific camera or evidence requirements for these services.",
+      "fix": "Added _SVC_SURFACE_LOCK entries with must_have (oblique 30–45°, material evidence) and forbidden (frontal, cross-contamination signs)"
+    }
+  },
+  "fixes_applied": [
+    {
+      "file": "src/image-generation/resolution/service-resolver.js",
+      "change": "1 line: if (_intVariant.scene_framing) obj.framing = _intVariant.scene_framing"
+    },
+    {
+      "file": "src/image-generation/services/vitrier.js",
+      "change": "scene_framing added to interior_variant of scenarios 2 (DV) and 7 (feuilleté)"
+    },
+    {
+      "file": "src/image-generation/prompt/locked-constraints.js",
+      "change": "_SVC_SURFACE_LOCK entries added for 'Remplacement double vitrage' and 'Vitrage sécurité feuilleté'"
+    },
+    {
+      "file": "src/image-generation/debug/vitrier-scenes-tests.js",
+      "change": "VM1–VM12 tests added; import for _appendLockedFinalConstraints added"
+    }
+  ]
+}

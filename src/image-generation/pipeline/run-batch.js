@@ -53,6 +53,21 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
         try {
           imageResult = await generateImageOnly(task, apiKey, state.runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl });
         } catch(e) {
+          if (e._isPreflight) {
+            // Preflight divergence: no Images call was made, no retry is useful.
+            task.status = IMAGE_TASK_STATUS.FAILED;
+            task.error  = `preflight_worker_count_mismatch (planned=${e._plannedWC} prompt=${e._promptWC})`;
+            console.warn(`[PREFLIGHT BLOCK] taskId=${task.taskId} service=${task._planBase?._matched_service} planned=${e._plannedWC} prompt=${e._promptWC} — 0 Images calls, 0 retries`);
+            return;
+          }
+          console.log('[IMAGE RETRY TELEMETRY]', JSON.stringify({
+            taskId: task.taskId,
+            image_attempt: imageAttempt,
+            original_task_worker_count: task._pre_assigned_worker_count ?? null,
+            retry_task_worker_count: task._pre_assigned_worker_count ?? null,
+            worker_count_source: 'batch_preassignment',
+            error: e.message,
+          }));
           task.error = e.message;
           task._imageRetryReason = 'retry_image_error';
           if (imageAttempt === MAX_IMAGE_ATTEMPTS) { task.status = IMAGE_TASK_STATUS.FAILED; return; }
@@ -71,7 +86,33 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             state.imageCallLog.push({ type: 'safety', runId: state.runId, taskId: task.taskId, imageAttempt, safetyAttempt });
             console.log(`[SAFETY REQUEST] runId=${state.runId} taskId=${task.taskId} imageAttempt=${imageAttempt} safetyAttempt=${safetyAttempt}`);
 
-            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl });
+            const _assignedWC  = Number(task._pre_assigned_worker_count);
+            const _expectedWC  = (task._pre_assigned_worker_presence === 'workers' && Number.isInteger(_assignedWC) && _assignedWC >= 1)
+              ? _assignedWC : 0;
+            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service });
+            const _safetyReasonCode = safety.checkFailed ? 'check_failed'
+              : (!safety.safe && safety.reason === 'worker_count_mismatch')    ? 'worker_count_mismatch'
+              : (!safety.safe && safety.reason === 'forbidden_roof_scene')     ? 'forbidden_roof_scene'
+              : (!safety.safe && safety.reason === 'service_visual_mismatch')  ? 'service_visual_mismatch'
+              : (!safety.safe && safety.severity === 'critical') ? 'critical_violation'
+              : 'passed';
+            console.log('[SAFETY TELEMETRY]', JSON.stringify({
+              taskId:               task.taskId,
+              service:              task._planBase._matched_service,
+              imageAttempt,
+              safetyAttempt,
+              safety_rule_id:       task._planBase._matched_key,
+              safety_reason_code:   _safetyReasonCode,
+              safety_result:        safety.checkFailed ? 'check_failed'
+                                  : (!safety.safe && safety.severity === 'critical') ? 'reject'
+                                  : 'pass',
+              expected_worker_count:  _expectedWC,
+              resolved_worker_count:  safety.visible_worker_count ?? null,
+              worker_count_source:    'batch_preassignment',
+              hedge_visible:          safety.hedge_visible        ?? null,
+              worker_on_roof:         safety.worker_on_roof       ?? null,
+              service_visual_match:   safety.service_visual_match ?? null,
+            }));
 
             if (safety.checkFailed) {
               if (safetyAttempt < MAX_SAFETY_ATTEMPTS_PER_IMAGE) {

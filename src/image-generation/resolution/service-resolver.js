@@ -39,6 +39,20 @@ function _serviceGroup(matchedService) {
   if (/crevaison|roue|pneu/.test(s))                                                return 'crevaison';
   if (/remorquage|remorque|transport|treuil|enlevement.*vehicule|enlevement.*voiture/.test(s)) return 'remorquage';
   if (/ouverture|ouvert|cles.*enferm|deverrouillage|verrouillage/.test(s))          return 'ouverture';
+  // Paysagiste — 2-worker service buckets
+  if (/taille.*haie|haie.*taille|coupe.*haie/.test(s))                              return 'paysagiste_taille_haie';
+  if (/plantation.*haie|haie.*plantation/.test(s))                                  return 'paysagiste_plantation_haie';
+  if (/plantation.*arbre|arbre.*plantation/.test(s))                                return 'paysagiste_plantation_arbre';
+  if (/pose.*gazon|gazon.*rouleau|rouleau.*gazon/.test(s))                          return 'paysagiste_gazon_rouleau';
+  if (/creation.*jardin|jardin.*creation|amenagement.*ext|amenagement.*paysag|amenagement.*jard/.test(s)) return 'paysagiste_creation';
+  if (/arrosage.*auto|automatique.*arros|irrigation/.test(s))                       return 'paysagiste_irrigation';
+  if (/maconn|maçonn|muret|pas.*japonais|dalle.*jardin/.test(s))                   return 'paysagiste_maconnerie';
+  if (/^bordures?$|^bordures? /.test(s))                                            return 'paysagiste_bordures';
+  // Gouttières — bucket routing (order matters: remplac/pose checked before generic nettoy)
+  if (/remplac.*gouttier|gouttier.*remplac/.test(s))                               return 'remplacement_gouttieres';
+  if (/pose.*gouttier|installa.*gouttier/.test(s))                                 return 'pose_gouttieres';
+  if (/deboucha.*gouttier|bouchon.*gouttier|obstruct.*gouttier/.test(s))           return 'debouchage_gouttieres';
+  if (/nettoy.*gouttier|entretien.*gouttier|curage.*gouttier/.test(s))             return 'nettoyage_gouttieres';
   return 'default';
 }
 
@@ -61,15 +75,24 @@ function _applySiteRealism(jsonStr, imageIndex) {
       realism = realismRaw[obj.contexte] || realismRaw.default || null;
     }
     // Level 3: scenario pool — seed-pick by sub-service trigger
+    let _intVariant = null;
     if (realism && Array.isArray(realism.scenarios)) {
       const trigger = realism._trigger_service;
       const svc = (obj._matched_service || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (!trigger || new RegExp(trigger).test(svc)) {
         const scenSeed = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}`);
-        const targeted  = realism.scenarios.filter(s => s._for && new RegExp(s._for, 'i').test(svc));
-        const fallback  = realism.scenarios.filter(s => !s._for);
-        const pool      = targeted.length ? targeted : fallback;
+        const targeted  = realism.scenarios.filter(s => !s._disabled && s._for && new RegExp(s._for, 'i').test(svc));
+        const fallback  = realism.scenarios.filter(s => !s._disabled && !s._for);
+        const stateLocked = targeted.filter(s => {
+          if (!s._state_for) return false;
+          return Array.isArray(s._state_for) ? s._state_for.includes(obj.state_level) : s._state_for === obj.state_level;
+        });
+        const _stateLockUsed = stateLocked.length > 0;
+        const pool      = _stateLockUsed ? stateLocked : (targeted.length ? targeted : fallback);
         const picked    = pool.length ? _pick(pool, 1, scenSeed)[0] : null;
+        obj._state_lock_used      = _stateLockUsed;
+        obj._state_lock_pool_size = pool.length;
+        if (realismRaw._build_id) obj._site_realism_build_id = realismRaw._build_id;
         if (picked) {
           realism = Object.assign({}, realism, picked);
           if (realism.scene_camera)  obj.camera_position = realism.scene_camera;
@@ -82,11 +105,31 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (Array.isArray(realism.location_must_have)) obj.location_must_have = realism.location_must_have;
           if (Array.isArray(realism.location_forbidden)) obj.location_forbidden = realism.location_forbidden;
           if (realism.scene_contexte)                    obj.contexte           = realism.scene_contexte;
+          _intVariant = picked.interior_variant || null;
+          if (realism._access_configuration !== undefined)            obj._access_configuration            = realism._access_configuration;
+          if (realism._access_configuration_source !== undefined)     obj._access_configuration_source     = realism._access_configuration_source;
+          if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
+          obj._selected_scenario_state_for = picked._state_for || null;
+          obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
         }
       }
     }
     // Inject context-specific description into work_type for PromptBuilder
     if (realism && realism.scene_note) obj.work_type = realism.scene_note;
+    // Apply interior variant when contexte is appartement and scenario defines one
+    if (_intVariant && /^(appartement|studio)$/.test(obj.contexte || '')) {
+      if (_intVariant.scene_note)           obj.work_type           = _intVariant.scene_note;
+      if (_intVariant.scene_camera)         obj.camera_position     = _intVariant.scene_camera;
+      if (_intVariant.scene_framing)        obj.framing             = _intVariant.scene_framing;
+      if (_intVariant.setting)              obj.setting             = _intVariant.setting;
+      if (Array.isArray(_intVariant.location_must_have)) obj.location_must_have = _intVariant.location_must_have;
+      if (Array.isArray(_intVariant.location_forbidden)) obj.location_forbidden = _intVariant.location_forbidden;
+      realism = Object.assign({}, realism, {
+        tools:            _intVariant.tools            || realism?.tools,
+        protections:      _intVariant.protections      || realism?.protections,
+        chantier_details: _intVariant.chantier_details || realism?.chantier_details,
+      });
+    }
   }
 
   // Camera defects — drawn from global library (2 common, rare at ~5%)
