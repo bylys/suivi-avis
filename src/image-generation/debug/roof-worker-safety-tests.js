@@ -7,8 +7,8 @@
  */
 
 import { WORK_SCENES_ROOF, SITE_REALISM_ROOF } from '../services/roof.js?v=5';
-import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=4';
-import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=3';
+import { SAFETY_CHECK_RULES, _PRE_GEN_SAFETY, FORBIDDEN_SAFETY_BY_METIER } from '../safety/safety-rules.js?v=5';
+import { WORKER_SCENE_RULES } from '../safety/worker-rules.js?v=4';
 import { _appendLockedFinalConstraints } from '../prompt/locked-constraints.js?v=lc4';
 import { _applySiteRealism } from '../resolution/service-resolver.js';
 

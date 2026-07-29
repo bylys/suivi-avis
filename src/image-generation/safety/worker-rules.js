@@ -87,6 +87,44 @@ const WORKER_SCENE_RULES = {
       'protective tarp at the eave with moss runoff, ladder and standoff visible beside the wall — no workers on roof',
     ],
   },
+  charpente: {
+    min_workers_when_visible: 2,
+    max_workers: 2,
+    actions: [
+      'positioning and securing a fermette onto the wall plates at ridge height from a scaffold platform',
+      'nailing battens from a scaffold platform using a nail gun',
+      'steadying a structural timber element while a second worker bolts or nails it',
+      'operating a MEWP basket at ridge level for a localised external structural repair',
+    ],
+    postures: [
+      'standing on a scaffold platform at the working height with both hands on the timber — back to camera',
+      'kneeling on the scaffold board to check the alignment of the ridge board — in profile',
+      'standing in a MEWP basket at canopy or ridge level, both hands on the structural element — in profile',
+      'crouching on the scaffold to measure the rafter spacing with a tape measure — back to camera',
+    ],
+    access: [
+      'scaffold platform at the working level — primary access for all structural carpentry work',
+      'mobile elevated work platform (MEWP) for localised inspection or small external fix only',
+    ],
+    safety_required: [
+      'stable scaffold platform with guardrails and toe boards when working above 2 m',
+      'safety helmet on all workers at height',
+      'heavy structural elements handled by two workers simultaneously',
+    ],
+    forbidden: [
+      'hooked roof ladder used as the primary working platform for structural carpentry',
+      'worker balancing on exposed rafters, battens or purlins without a stable scaffold platform',
+      'single worker carrying or positioning heavy structural timber alone',
+      'unsupported structural timber element suspended above a worker',
+      'worker positioned directly below a suspended or freshly cut structural element',
+    ],
+    presence_indirect: [
+      'scaffold platform at mid-span with fresh timber battens on the planks — no worker visible',
+      'MEWP parked beside the gable wall, basket retracted — no operator in cab',
+      'ridge board secured at the apex with temporary nail — scaffold boards below, no carpenter visible',
+    ],
+  },
+
   nettoyage_gouttieres: {
     min_workers_when_visible: 1,
     max_workers: 2,

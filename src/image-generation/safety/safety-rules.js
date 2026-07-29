@@ -14,6 +14,7 @@ const FORBIDDEN_SAFETY_BY_METIER = {
     'No ground-level roof application using a telescopic lance from the garden',
   ],
   nettoyage_toiture:    [
+    'No worker freely standing on pitched roof tiles without visible fall protection and secured access equipment',
     'No worker on pitched roof without visible secured access equipment (roof ladder, scaffold or MEWP)',
     'No worker on pitched roof without visible fall protection (connected harness and credible anchor)',
     'No worker on wet or moss-covered tiles without connected fall arrest',
@@ -33,6 +34,12 @@ const FORBIDDEN_SAFETY_BY_METIER = {
     'No ladder foot resting inside the gutter trough or on the gutter channel edge as a support point',
     'No hooked roof ladder, ridge hook, or rope or lifeline crossing the roof tiles',
     'No part of the access ladder extending up the roof slope toward the ridge',
+  ],
+  charpente:      [
+    'No hooked roof ladder used as the primary working platform for structural carpentry',
+    'No worker balancing on exposed rafters, battens or purlins without a stable scaffold platform',
+    'No single worker carrying or positioning heavy structural timber alone',
+    'No unsupported structural timber element suspended above a worker',
   ],
   elagage:        ['No arborist in a tree without a visible climbing harness'],
   abattage:       ['No person standing in the fall zone of a tree being felled'],
@@ -61,6 +68,7 @@ const SAFETY_CHECK_RULES = {
   nettoyage_gouttieres: "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: worker standing on or walking along the gutter trough; worker standing on the highest rung of the ladder; worker reaching far sideways past their centre of gravity with no stable contact point; ladder placed on visibly sloped, soft or irregular ground with feet clearly sliding; ladder clearly too short to reach the gutter; improvised access using household furniture. Do not reject for: ladder leaning against a wall or facade without a standoff stabiliser; absence of standoff arms, tie straps or wall anchors; one worker only; ladder visually close to the gutter but not resting inside the trough; professional A-frame ladder in stable freestanding position. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   etancheite:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person balanced on parapet coping; open-flame torch near a loose membrane edge; roll blocking the only roof access hatch; person within 2 m of flat roof edge with no harness. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   ravalement:           "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person leaning out past scaffold guardrail over the void; scaffold platform above 2 m with no guardrail; unsupported plank bridging two scaffold frames. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
+  charpente:            "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: hooked roof ladder used as the primary working platform for structural carpentry work instead of scaffold or MEWP; worker standing or balancing on exposed rafters, battens or purlins without a stable scaffold platform; single worker carrying or positioning heavy structural timber alone; worker positioned directly below a suspended or unsupported structural element. Do not reject for scaffold platform or MEWP basket access. Do not reject for two workers handling a structural element together. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   // peinture — skipped: indoor low-risk, forbidden[] covers edge cases
   // nettoyage — skipped: ground-level, low visual safety signal
   // carrelage — skipped: floor-level, blade guard already in prompt rules
@@ -85,6 +93,25 @@ const _SERVICE_GATE_ALIASES = {
   // Hedge trimming
   'taille haie':    'Taille de haie',
   'taille-de-haie': 'Taille de haie',
+  // Roof repair / localized work — hooked roof ladder gate
+  'reparation toiture':      'Réparation toiture',
+  'reparation tuile':        'Réparation toiture',
+  'reparation tuiles':       'Réparation toiture',
+  'remplacement tuiles':     'Réparation toiture',
+  'remplacement tuile':      'Réparation toiture',
+  'reparation ardoise':      'Réparation toiture',
+  'reparation ardoises':     'Réparation toiture',
+  'remplacement ardoises':   'Réparation toiture',
+  'reparation fuite toiture': 'Réparation toiture',
+  'reparation fuite':        'Réparation toiture',
+  'faitage':                 'Réparation toiture',
+  'faitier':                 'Réparation toiture',
+  'faitiere':                'Réparation toiture',
+  'solin':                   'Réparation toiture',
+  'zinguerie':               'Réparation toiture',
+  'reparation velux':        'Réparation toiture',
+  'noue':                    'Réparation toiture',
+  'rive':                    'Réparation toiture',
   // Gutter cleaning (nettoyage / entretien / curage)
   'nettoyage gouttieres':  'Nettoyage gouttières',
   'nettoyage gouttiere':   'Nettoyage gouttières',
@@ -104,6 +131,18 @@ const SERVICE_VISUAL_GATE_RULES = {
   // reject_conditions fields:
   //   value         : reject if obj[field] === value  (for forbidden true-values)
   //   not_exactly_true: reject if obj[field] !== true  (fail-closed: absent or false both reject)
+  'Réparation toiture': {
+    vision_instruction: `\n\nSERVICE VISUAL GATE — ROOF REPAIR (HOOKED ROOF LADDER): This image must show a localized pitched-roof repair performed from a secured hooked roof ladder. You MUST add these fields to your JSON: "hooked_roof_ladder_visible": <true/false — a professional hooked roof ladder is visible lying flat on the roof slope>, "ridge_hooks_visible": <true/false — the ridge hooks are visibly secured over the ridge>, "roof_ladder_stable": <true/false — the ladder lies flat and stable on the roof slope>, "worker_remains_on_ladder": <true/false — Worker 1 remains on the ladder rungs and does not stand freely on the tiles>, "worker_standing_freely_on_roof": <true/false — any worker stands freely on the pitched tile surface without ladder or platform support>, "connected_harness_visible": <true/false — a fall-arrest harness visibly connected to a credible anchor is visible on Worker 1>, "second_worker_visible": <true/false — a second professional worker is clearly visible in the frame>, "second_worker_outside_drop_zone": <true/false — the second worker is laterally offset from the repair zone and not directly below the falling-debris path>, "service_visual_match": <true if a localized roof repair action is clearly the primary activity, else false>. If worker_standing_freely_on_roof is true: set safe=false, severity="critical", reason="forbidden_roof_scene". If hooked_roof_ladder_visible is not true: set safe=false, severity="critical", reason="access_violation". If ridge_hooks_visible is not true: set safe=false, severity="critical", reason="access_violation". If connected_harness_visible is not true: set safe=false, severity="critical", reason="critical_violation". If second_worker_visible is not true: set safe=false, severity="critical", reason="worker_count_mismatch". If second_worker_outside_drop_zone is not true: set safe=false, severity="critical", reason="critical_violation".`,
+    reject_conditions: [
+      { field: 'worker_standing_freely_on_roof',  value: true,            reason: 'forbidden_roof_scene'  },
+      { field: 'hooked_roof_ladder_visible',       not_exactly_true: true, reason: 'access_violation'      },
+      { field: 'ridge_hooks_visible',              not_exactly_true: true, reason: 'access_violation'      },
+      { field: 'connected_harness_visible',        not_exactly_true: true, reason: 'critical_violation'    },
+      { field: 'second_worker_visible',            not_exactly_true: true, reason: 'worker_count_mismatch' },
+      { field: 'second_worker_outside_drop_zone',  not_exactly_true: true, reason: 'critical_violation'    },
+    ],
+  },
+
   'Taille de haie': {
     vision_instruction: `\n\nSERVICE VISUAL GATE — HEDGE TRIMMING: This image must show active hedge trimming as the primary action. You MUST add these fields to your JSON: "hedge_visible": <true/false>, "hedge_trimmer_visible": <true/false>, "active_trimming_visible": <true/false>, "worker_on_roof": <true/false>, "roof_work_visible": <true/false>, "service_visual_match": <true if hedge trimming is clearly the primary action, else false>. If worker_on_roof is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If roof_work_visible is true, set safe=false, severity="critical", reason="forbidden_roof_scene". If hedge_visible is not true, set safe=false, severity="critical", reason="service_visual_mismatch". If hedge_trimmer_visible is not true, set safe=false, severity="critical", reason="service_visual_mismatch". If service_visual_match is not true, set safe=false, severity="critical", reason="service_visual_mismatch".`,
     reject_conditions: [
