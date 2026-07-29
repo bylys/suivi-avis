@@ -1,14 +1,15 @@
 /**
- * debug/gutter-antimoss-tests.js — ONE-WORKER, GUTTER-V, ANTIMOSS-V test suites
+ * debug/gutter-antimoss-tests.js — ONE-WORKER, GUTTER-V, ANTIMOSS-V, GUTTER-POLISH test suites
  * Validates: 1-worker _expectedWC propagation, gutter Vision gate pass/fail conditions,
- * anti-mousse two-worker MEWP gate pass/fail conditions.
+ * anti-mousse two-worker MEWP gate pass/fail conditions, gutter visual polish constraints.
  * 0 real Images / Vision / rewriter calls — all mocked.
  */
 
-const { buildVisionSafetyRequest, checkImageSafety } = await import('../pipeline/safety-check.js?bust=ga1');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=ga1');
-const { WORKER_SCENE_RULES } = await import('../safety/worker-rules.js?bust=ga1');
-const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=ga1');
+const { buildVisionSafetyRequest, checkImageSafety } = await import('../pipeline/safety-check.js?bust=ga2');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, FORBIDDEN_SAFETY_BY_METIER } = await import('../safety/safety-rules.js?bust=ga2');
+const { WORKER_SCENE_RULES } = await import('../safety/worker-rules.js?bust=ga2');
+const { _appendLockedFinalConstraints } = await import('../prompt/locked-constraints.js?bust=ga2');
+const { _selectCaptureDefects } = await import('../planning/capture-defect-planner.js?bust=ga2');
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -376,6 +377,137 @@ const tests = [
       if (final_.includes('NON-NEGOTIABLE ELEVATED ACCESS'))
         failures.push('final: ELEVATED ACCESS block must NOT be present');
 
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // ─── GUTTER-POLISH: visual polish constraints ──────────────────────────────
+
+  // shared mock scene for POLISH tests
+  // (defined inline per test to avoid shared-state issues)
+
+  // GUTTER-POLISH1: locked prompt contains "just above gutter height"
+  {
+    id: 'GUTTER-POLISH1',
+    label: 'Locked prompt: ladder stops just above gutter height (not up the roof)',
+    run() {
+      const scene = { var_workers: 1, var_presence: 'workers', _matched_key: 'nettoyage_gouttieres', _matched_service: 'nettoyage gouttieres', state_level: 'encours', composition: 'medium_intervention', _capture_defects_resolved: [] };
+      const result = _appendLockedFinalConstraints('TEST PROMPT', scene);
+      if (!result.toLowerCase().includes('just above gutter height'))
+        return { ok: false, detail: '"just above gutter height" not found in locked prompt' };
+      return { ok: true };
+    },
+  },
+
+  // GUTTER-POLISH2: locked prompt forbids ladder extending up the roof slope
+  {
+    id: 'GUTTER-POLISH2',
+    label: 'Locked prompt: ladder cannot extend up the roof slope',
+    run() {
+      const scene = { var_workers: 1, var_presence: 'workers', _matched_key: 'nettoyage_gouttieres', _matched_service: 'nettoyage gouttieres', state_level: 'encours', composition: 'medium_intervention', _capture_defects_resolved: [] };
+      const result = _appendLockedFinalConstraints('TEST PROMPT', scene);
+      const lower = result.toLowerCase();
+      if (!lower.includes('roof slope'))
+        return { ok: false, detail: '"roof slope" constraint not found in locked prompt' };
+      if (!lower.includes('ladder extending') && !lower.includes('extends up the roof'))
+        return { ok: false, detail: 'ladder-up-roof-slope prohibition not found in locked prompt' };
+      return { ok: true };
+    },
+  },
+
+  // GUTTER-POLISH3: locked prompt forbids roof ladder and ridge hook
+  {
+    id: 'GUTTER-POLISH3',
+    label: 'Locked prompt: roof ladder and ridge hook are forbidden',
+    run() {
+      const scene = { var_workers: 1, var_presence: 'workers', _matched_key: 'nettoyage_gouttieres', _matched_service: 'nettoyage gouttieres', state_level: 'encours', composition: 'medium_intervention', _capture_defects_resolved: [] };
+      const result = _appendLockedFinalConstraints('TEST PROMPT', scene);
+      const lower = result.toLowerCase();
+      const failures = [];
+      if (!lower.includes('roof ladder')) failures.push('"roof ladder" prohibition missing');
+      if (!lower.includes('ridge hook'))  failures.push('"ridge hook" prohibition missing');
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // GUTTER-POLISH4: locked prompt forbids rope or lifeline crossing roof
+  {
+    id: 'GUTTER-POLISH4',
+    label: 'Locked prompt: rope or lifeline across roof is forbidden',
+    run() {
+      const scene = { var_workers: 1, var_presence: 'workers', _matched_key: 'nettoyage_gouttieres', _matched_service: 'nettoyage gouttieres', state_level: 'encours', composition: 'medium_intervention', _capture_defects_resolved: [] };
+      const result = _appendLockedFinalConstraints('TEST PROMPT', scene);
+      const lower = result.toLowerCase();
+      const failures = [];
+      if (!lower.includes('rope'))     failures.push('"rope" prohibition missing');
+      if (!lower.includes('lifeline')) failures.push('"lifeline" prohibition missing');
+      if (failures.length) return { ok: false, detail: failures.join('; ') };
+      return { ok: true };
+    },
+  },
+
+  // GUTTER-POLISH5: locked prompt keeps worker at gutter level
+  {
+    id: 'GUTTER-POLISH5',
+    label: 'Locked prompt: worker remains at gutter level and does not access roof',
+    run() {
+      const scene = { var_workers: 1, var_presence: 'workers', _matched_key: 'nettoyage_gouttieres', _matched_service: 'nettoyage gouttieres', state_level: 'encours', composition: 'medium_intervention', _capture_defects_resolved: [] };
+      const result = _appendLockedFinalConstraints('TEST PROMPT', scene);
+      const lower = result.toLowerCase();
+      if (!lower.includes('gutter level'))
+        return { ok: false, detail: '"gutter level" constraint not found in locked prompt' };
+      return { ok: true };
+    },
+  },
+
+  // GUTTER-POLISH6: locked prompt requires ladder base and ground visible
+  {
+    id: 'GUTTER-POLISH6',
+    label: 'Locked prompt: complete ladder base and stable ground must remain visible',
+    run() {
+      const scene = { var_workers: 1, var_presence: 'workers', _matched_key: 'nettoyage_gouttieres', _matched_service: 'nettoyage gouttieres', state_level: 'encours', composition: 'medium_intervention', _capture_defects_resolved: [] };
+      const result = _appendLockedFinalConstraints('TEST PROMPT', scene);
+      const lower = result.toLowerCase();
+      if (!lower.includes('ladder base'))
+        return { ok: false, detail: '"ladder base" constraint not found in locked prompt' };
+      return { ok: true };
+    },
+  },
+
+  // GUTTER-POLISH7: finger defect completely disabled for nettoyage_gouttieres
+  {
+    id: 'GUTTER-POLISH7',
+    label: '_selectCaptureDefects never returns finger_edge for nettoyage_gouttieres',
+    run() {
+      for (let i = 0; i < 30; i++) {
+        const defects = _selectCaptureDefects(i, 30, 42, 'nettoyage_gouttieres', 'nettoyage gouttieres');
+        if (defects.some(d => d.key === 'finger_edge'))
+          return { ok: false, detail: `finger_edge returned at batchIndex=${i}` };
+      }
+      return { ok: true };
+    },
+  },
+
+  // GUTTER-POLISH8: existing valid access variants still accepted (no regression)
+  {
+    id: 'GUTTER-POLISH8',
+    label: 'Extension ladder and A-frame variants still listed in WORKER_SCENE_RULES.access',
+    run() {
+      const rules = WORKER_SCENE_RULES.nettoyage_gouttieres;
+      if (!rules) return { ok: false, detail: 'WORKER_SCENE_RULES.nettoyage_gouttieres not found' };
+      const accessStr = (rules.access || []).join(' ').toLowerCase();
+      const failures = [];
+      if (!accessStr.includes('extension ladder') && !accessStr.includes('extending ladder'))
+        failures.push('extension ladder not found in access');
+      if (!accessStr.includes('a-frame') && !accessStr.includes('a frame'))
+        failures.push('A-frame not found in access');
+      // Locked prompt must NOT mandate standoff as required
+      const scene = { var_workers: 1, var_presence: 'workers', _matched_key: 'nettoyage_gouttieres', _matched_service: 'nettoyage gouttieres', state_level: 'encours', composition: 'medium_intervention', _capture_defects_resolved: [] };
+      const locked = _appendLockedFinalConstraints('TEST PROMPT', scene);
+      if (locked.includes('STANDOFF REQUIRED') || locked.includes('standoff mandatory'))
+        failures.push('standoff incorrectly mandated in locked prompt');
       if (failures.length) return { ok: false, detail: failures.join('; ') };
       return { ok: true };
     },

@@ -31,6 +31,8 @@ const FORBIDDEN_SAFETY_BY_METIER = {
     'No ground-level gutter vacuum or telescopic pole as the only access method for active gutter cleaning',
     'No worker crouching at the downpipe base as the primary access method for active downpipe clearance',
     'No ladder foot resting inside the gutter trough or on the gutter channel edge as a support point',
+    'No hooked roof ladder, ridge hook, or rope or lifeline crossing the roof tiles',
+    'No part of the access ladder extending up the roof slope toward the ridge',
   ],
   elagage:        ['No arborist in a tree without a visible climbing harness'],
   abattage:       ['No person standing in the fall zone of a tree being felled'],

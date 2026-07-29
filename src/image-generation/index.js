@@ -292,7 +292,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/worker-propagation-tests.js?v=2'),
     import('./debug/hedge-tests.js?v=2'),
     import('./debug/roof-maintenance-mewp-tests.js?v=4'),
-    import('./debug/gutter-antimoss-tests.js?v=1'),
+    import('./debug/gutter-antimoss-tests.js?v=2'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();

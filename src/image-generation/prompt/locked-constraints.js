@@ -101,8 +101,8 @@ function _appendLockedFinalConstraints(prompt, scene) {
     },
   };
   const svcActionLock = _isGutter ? {
-    action: `GUTTER ${_isGutterUnblocking ? 'UNBLOCKING' : 'CLEANING'} IN PROGRESS — INDIVIDUAL HOUSE.\n${_gutterWorkerBlock}${_gutterUnblockingExtra}\nThe gutter trough must be clearly visible.\nLeaves, moss or debris must be visible in or beside the gutter.\nA professional extension ladder or professional A-frame ladder must be visible.\nA small scoop, bucket, bag or gloved cleaning action must be visible.`,
-    forbidden: `NO WORKER ON THE ROOF.\nNO ROOF CLEANING.\nNO ROOF REPAIR.\nNO GUTTER REPLACEMENT.\nNO GENERIC LADDER INSPECTION.\nNO WORKER MERELY LOOKING AT THE FACADE.\nNO PRESSURE WASHER.\nNO GROUND-LEVEL-ONLY OPERATION WITH NO LADDER.`,
+    action: `GUTTER ${_isGutterUnblocking ? 'UNBLOCKING' : 'CLEANING'} IN PROGRESS — INDIVIDUAL HOUSE.\n${_gutterWorkerBlock}${_gutterUnblockingExtra}\nThe gutter trough must be clearly visible.\nLeaves, moss or debris must be visible in or beside the gutter.\nA professional extension ladder or professional A-frame ladder must be visible.\nA small scoop, bucket, bag or gloved cleaning action must be visible.\nTHE LADDER IS ONLY FOR ACCESSING THE GUTTER.\nThe ladder stops just above gutter height — no part of the ladder extends up the roof slope.\nThe worker remains at gutter level and does not access the roof.\nThe complete ladder base and stable ground must remain visible in the frame.`,
+    forbidden: `NO WORKER ON THE ROOF.\nNO ROOF CLEANING.\nNO ROOF REPAIR.\nNO GUTTER REPLACEMENT.\nNO GENERIC LADDER INSPECTION.\nNO WORKER MERELY LOOKING AT THE FACADE.\nNO PRESSURE WASHER.\nNO GROUND-LEVEL-ONLY OPERATION WITH NO LADDER.\nNO ROOF LADDER, RIDGE HOOK OR HOOKED ROOF LADDER.\nNO ROPE OR LIFELINE CROSSING ROOF TILES.\nNO LADDER EXTENDING TOWARD THE ROOF RIDGE.\nNO WORKER ABOVE GUTTER LEVEL ON THE ROOF SLOPE.\nNO WORKER TRANSITIONING ONTO THE ROOF.\nNO LARGE FINGERTIP OBSCURING THE FOREGROUND.\nNO CROPPED OR HIDDEN LADDER BASE.`,
   } : _SVC_ACTION_LOCK[scene._matched_service || ''] || null;
 
   const isInterior = (scene.setting === 'interior');
