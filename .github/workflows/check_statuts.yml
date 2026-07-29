@@ -1,0 +1,30 @@
+name: Vérification automatique statuts avis
+
+on:
+  schedule:
+    # Chaque nuit à 1h00 heure de Paris (UTC+2 en été = 23h UTC)
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Vérifier statuts avis orange
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer Playwright et dépendances
+        run: |
+          pip install playwright
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Vérifier et mettre à jour les statuts
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scripts/check_statuts.py
