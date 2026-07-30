@@ -781,20 +781,29 @@ function rcw47() {
 // ─── RCW-48: Nettoyage final states have Worker 1/2 with inspection/cleanup ───
 
 function rcw48() {
-  const checks = ['nettoyage_toiture', 'nettoyage_gouttieres'];
-  for (const key of checks) {
-    const final = WORK_SCENES[key]?.states?.final;
-    ok(final != null, `RCW-48: WORK_SCENES.${key}.states.final exists`);
-    const framing = final?.framing ?? {};
-    const allText = Object.values(framing).join(' ');
-    ok(_hasWorker(allText, 1) && _hasWorker(allText, 2),
-      `RCW-48: WORK_SCENES.${key}.states.final has Worker 1 AND Worker 2`);
-    const lowered = allText.toLowerCase();
-    const hasCleanup = lowered.includes('inspect') || lowered.includes('check') || lowered.includes('pack') || lowered.includes('gather');
-    ok(hasCleanup,
-      `RCW-48: WORK_SCENES.${key}.states.final.framing has inspection/cleanup role`,
-      `excerpt: ${lowered.slice(0, 100)}`);
-  }
+  // nettoyage_toiture: two-worker service — requires Worker 1 AND Worker 2
+  const toitFinal = WORK_SCENES.nettoyage_toiture?.states?.final;
+  ok(toitFinal != null, 'RCW-48: WORK_SCENES.nettoyage_toiture.states.final exists');
+  const toitText = Object.values(toitFinal?.framing ?? {}).join(' ');
+  ok(_hasWorker(toitText, 1) && _hasWorker(toitText, 2),
+    'RCW-48: WORK_SCENES.nettoyage_toiture.states.final has Worker 1 AND Worker 2');
+  const toitLow = toitText.toLowerCase();
+  ok(toitLow.includes('inspect') || toitLow.includes('check') || toitLow.includes('pack') || toitLow.includes('gather'),
+    'RCW-48: WORK_SCENES.nettoyage_toiture.states.final.framing has inspection/cleanup role',
+    `excerpt: ${toitLow.slice(0, 100)}`);
+
+  // nettoyage_gouttieres: validated mono-worker service — 1 or 2 workers allowed at final state.
+  // Scene uses generic "worker" (not "Worker 1"/"Worker 2") — that is correct by doctrine.
+  // Pose/Remplacement de gouttières (separate service) still requires 2 workers.
+  const goutFinal = WORK_SCENES.nettoyage_gouttieres?.states?.final;
+  ok(goutFinal != null, 'RCW-48: WORK_SCENES.nettoyage_gouttieres.states.final exists');
+  const goutText = Object.values(goutFinal?.framing ?? {}).join(' ');
+  const goutLow = goutText.toLowerCase();
+  ok(goutLow.includes('worker'),
+    'RCW-48: WORK_SCENES.nettoyage_gouttieres.states.final describes at least one worker (mono-worker doctrine)');
+  ok(goutLow.includes('inspect') || goutLow.includes('check') || goutLow.includes('pack') || goutLow.includes('gather') || goutLow.includes('clear'),
+    'RCW-48: WORK_SCENES.nettoyage_gouttieres.states.final.framing has inspection/cleanup role',
+    `excerpt: ${goutLow.slice(0, 100)}`);
 }
 
 // ─── RCW-49: WORK_SCENES.etancheite.states.final has Worker 1 AND Worker 2 ────

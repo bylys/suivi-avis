@@ -487,6 +487,41 @@ export async function runEtancheiteGateTests() {
     assert(_SERVICE_GATE_ALIASES['anti-mousse']              === 'Traitement anti-mousse toiture', 'anti-mousse alias must be unchanged');
   });
 
+  // ─── Gate routing: Terrasse vs Toit-terrasse isolation ──────────────────────
+  runTest('ETCH-GATE32', 'Étanchéité terrasse and Étanchéité toit-terrasse resolve to distinct gates and never cross', () => {
+    // "étanchéité terrasse" (raw travaux with accents) → resolveAlias → Étanchéité terrasse
+    const gTerrasse     = resolveAlias('étanchéité terrasse');
+    // "étanchéité toit terrasse" (no hyphen, common DB variant) → resolveAlias → Étanchéité toit-terrasse
+    const gToitTerrasse = resolveAlias('étanchéité toit terrasse');
+
+    assert(gTerrasse     === 'Étanchéité terrasse',       `'étanchéité terrasse' must resolve to 'Étanchéité terrasse', got '${gTerrasse}'`);
+    assert(gToitTerrasse === 'Étanchéité toit-terrasse',  `'étanchéité toit terrasse' must resolve to 'Étanchéité toit-terrasse', got '${gToitTerrasse}'`);
+    assert(gTerrasse !== gToitTerrasse,                   'The two gates must not be the same key');
+
+    // Verify both gates actually exist in SERVICE_VISUAL_GATE_RULES
+    assert(!!SERVICE_VISUAL_GATE_RULES[gTerrasse],     `Gate '${gTerrasse}' must exist in SERVICE_VISUAL_GATE_RULES`);
+    assert(!!SERVICE_VISUAL_GATE_RULES[gToitTerrasse], `Gate '${gToitTerrasse}' must exist in SERVICE_VISUAL_GATE_RULES`);
+  });
+
+  runTest('ETCH-GATE33', 'Pipeline normalization: raw accented travaux strings resolve to correct gates', () => {
+    // Simulates the _normalizeForGate + alias path used by safety-check.js
+    function pipelineResolve(raw) {
+      const norm = raw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['']/g, "'");
+      return _SERVICE_GATE_ALIASES[norm] || null;
+    }
+
+    // "Étanchéité terrasse" (capitalized, with accent) → normalized → alias → Étanchéité terrasse
+    assert(pipelineResolve('Étanchéité terrasse')        === 'Étanchéité terrasse',       'capitalized Étanchéité terrasse must resolve correctly');
+    // "Étanchéité toit terrasse" (no hyphen) → Étanchéité toit-terrasse
+    assert(pipelineResolve('Étanchéité toit terrasse')   === 'Étanchéité toit-terrasse',  'Étanchéité toit terrasse (no hyphen) must resolve correctly');
+    // raw lowercase with accent
+    assert(pipelineResolve('étanchéité terrasse')        === 'Étanchéité terrasse',       'lowercase étanchéité terrasse must resolve correctly');
+    // apostrophe form
+    assert(pipelineResolve("réfection d'étanchéité")     === 'Étanchéité toit-terrasse',  "réfection d'étanchéité must resolve to toit-terrasse");
+    // Cross-check: "étanchéité terrasse" must NOT resolve to toit-terrasse
+    assert(pipelineResolve('étanchéité terrasse')        !== 'Étanchéité toit-terrasse',  'étanchéité terrasse must NOT resolve to toit-terrasse');
+  });
+
   // ─── Inclinée — 3 access architecture acceptance tests ───────────────────────
   runTest('ETCH-GATE29', 'Inclinée: MEWP acceptance — basket guardrails, no harness, no ridge hooks → accepted', () => {
     // Vision: worker inside MEWP basket, basket guardrails visible.
