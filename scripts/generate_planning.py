@@ -273,7 +273,7 @@ def main():
     planning_rows = []
     for i, a in enumerate(assignations):
         operateur = OPERATEURS[i % len(OPERATEURS)]
-        gologin_id = create_gologin_profile(a['gmail'], a['ville']) if GOLOGIN_TOKEN else None
+        gologin_id = None  # GoLogin désactivé pour l'instant
         row = {
             'date': today_str,
             'fiche_nom': a['fiche_nom'],
