@@ -19,6 +19,7 @@ import { _assertTaskHasBatchPlan }        from '../validation/batch-validator.js
 import { PromptBuilder, _USE_PROMPT_BUILDER } from '../prompt/prompt-builder.js';
 import { _appendLockedFinalConstraints }  from '../prompt/locked-constraints.js';
 import { _sanitizeSceneForPrompt, _validateInteriorPayload } from './prompt-scene-sanitizer.js';
+import { SERVICE_VISUAL_MISMATCH_RETRY } from '../safety/safety-rules.js';
 
 // ─── buildImageGenerationRequest ─────────────────────────────────────────────
 // Pure — verbatim params from app.js lines 13802–13806.
@@ -131,9 +132,24 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
 
   const prompt = _appendLockedFinalConstraints(_gptPrompt, _finalSceneObj);
 
+  // Append service-specific retry note on upstand/mismatch regenerations
+  const _MISMATCH_RETRY_CODES = new Set([
+    'service_visual_mismatch',
+    'missing_horizontal_membrane',
+    'missing_vertical_upstand',
+    'missing_upstand_treatment',
+  ]);
+  const _isMismatchRetry = task._imageRetryReason === 'regenerate_after_safety_reject'
+    && _MISMATCH_RETRY_CODES.has(task.error);
+  const _retryNote = _isMismatchRetry
+    ? (SERVICE_VISUAL_MISMATCH_RETRY[_planBase._matched_service] || '')
+    : '';
+  const _finalPrompt = _retryNote ? `${prompt}\n\n${_retryNote}` : prompt;
+
   const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
   const _reqWorkerSource = _finalSceneObj._worker_count_source || 'rolled';
   const _fingerSelected = (_finalSceneObj.photo_defects || []).some(d => /finger|thumb/i.test(d));
+  const _retryReinforcementKey = _isMismatchRetry && _retryNote ? _planBase._matched_service : null;
   state.counters.imageCalls++;
   state.imageCallLog.push({ type: 'image', runId, taskId: task.taskId, metier: _planBase._matched_key, service: _planBase._matched_service, imageIndex: i, imageAttempt: task.imageAttempt, reason });
   console.log('[IMAGE REQUEST]', JSON.stringify({
@@ -145,11 +161,13 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
     state_lock_used:        _finalSceneObj._state_lock_used ?? null,
     site_realism_build_id:  _finalSceneObj._site_realism_build_id || null,
     finger_scope_active:    false,
+    retry_reinforcement_key:     _retryReinforcementKey,
+    retry_reinforcement_applied: _retryReinforcementKey !== null,
     finger_allowed:         _fingerSelected,
     selected_capture_defects: _finalSceneObj.photo_defects || [],
   }));
 
-  const req = buildImageGenerationRequest(prompt, apiKey);
+  const req = buildImageGenerationRequest(_finalPrompt, apiKey);
   let parsed;
   {
     const rawResp = await fetchImpl(req.url, { method: 'POST', headers: req.headers, body: req.body }, req.timeout);

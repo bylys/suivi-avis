@@ -91,11 +91,23 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               ? _assignedWC : 0;
             const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service });
             const _safetyReasonCode = safety.checkFailed ? 'check_failed'
-              : (!safety.safe && safety.reason === 'worker_count_mismatch')    ? 'worker_count_mismatch'
-              : (!safety.safe && safety.reason === 'forbidden_roof_scene')     ? 'forbidden_roof_scene'
-              : (!safety.safe && safety.reason === 'service_visual_mismatch')  ? 'service_visual_mismatch'
+              : (!safety.safe && safety.reason === 'worker_count_mismatch')         ? 'worker_count_mismatch'
+              : (!safety.safe && safety.reason === 'forbidden_roof_scene')          ? 'forbidden_roof_scene'
+              : (!safety.safe && safety.reason === 'missing_horizontal_membrane')   ? 'missing_horizontal_membrane'
+              : (!safety.safe && safety.reason === 'missing_vertical_upstand')      ? 'missing_vertical_upstand'
+              : (!safety.safe && safety.reason === 'missing_upstand_treatment')     ? 'missing_upstand_treatment'
+              : (!safety.safe && safety.reason === 'service_visual_mismatch')       ? 'service_visual_mismatch'
               : (!safety.safe && safety.severity === 'critical') ? 'critical_violation'
               : 'passed';
+            // Store rejected acrotère images for debug inspection
+            const _isAcrotere = task._planBase._matched_service === 'Étanchéité acrotère';
+            if (_isAcrotere && imageResult?.b64 && _safetyReasonCode !== 'passed') {
+              if (!globalThis._acrotereRejectedImages) globalThis._acrotereRejectedImages = [];
+              globalThis._acrotereRejectedImages.push({
+                attempt: imageAttempt, safetyAttempt, reason: _safetyReasonCode,
+                src: `data:image/jpeg;base64,${imageResult.b64}`,
+              });
+            }
             console.log('[SAFETY TELEMETRY]', JSON.stringify({
               taskId:               task.taskId,
               service:              task._planBase._matched_service,
@@ -106,12 +118,21 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               safety_result:        safety.checkFailed ? 'check_failed'
                                   : (!safety.safe && safety.severity === 'critical') ? 'reject'
                                   : 'pass',
-              expected_worker_count:  _expectedWC,
-              resolved_worker_count:  safety.visible_worker_count ?? null,
-              worker_count_source:    'batch_preassignment',
-              hedge_visible:          safety.hedge_visible        ?? null,
-              worker_on_roof:         safety.worker_on_roof       ?? null,
-              service_visual_match:   safety.service_visual_match ?? null,
+              vision_reported_safe:           safety.vision_reported_safe          ?? null,
+              vision_reported_reason:         safety.vision_reported_reason        ?? null,
+              computed_generic_worker_match:  safety.computed_generic_worker_match ?? null,
+              computed_final_safe:            safety.computed_final_safe           ?? null,
+              computed_final_reason:          safety.computed_final_reason         ?? null,
+              expected_worker_count:          _expectedWC,
+              resolved_worker_count:          safety.visible_worker_count          ?? null,
+              worker_count_source:            'batch_preassignment',
+              hedge_visible:                  safety.hedge_visible                 ?? null,
+              worker_on_roof:                 safety.worker_on_roof                ?? null,
+              service_visual_match:           safety.service_visual_match          ?? null,
+              horizontal_membrane_visible:    safety.horizontal_membrane_visible   ?? null,
+              vertical_upstand_visible:       safety.vertical_upstand_visible      ?? null,
+              upstand_treatment_visible:      safety.upstand_treatment_visible     ?? null,
+              first_failed_gate_field:        safety.first_failed_gate_field       ?? null,
             }));
 
             if (safety.checkFailed) {

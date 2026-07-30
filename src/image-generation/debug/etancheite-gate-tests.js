@@ -1,12 +1,12 @@
 /**
- * debug/etancheite-gate-tests.js — ETCH-GATE1 to ETCH-GATE31
+ * debug/etancheite-gate-tests.js — ETCH-GATE1 to ETCH-GATE50
  * Service visual gate tests for the étanchéité cluster.
  * Verifies reject_conditions logic, alias routing, and worker count comparisons.
  * No real API calls — all tests are static/structural.
  * Loaded only when ?imageGenTests=1 is in the URL.
  */
 
-import { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } from '../safety/safety-rules.js';
+import { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SERVICE_VISUAL_MISMATCH_RETRY } from '../safety/safety-rules.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -34,6 +34,37 @@ function resolveAlias(rawService) {
     .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/['']/g, "'");
   return _SERVICE_GATE_ALIASES[normalized] || null;
+}
+
+// Simulate the full A→B→C decision logic (no network) for tests ETCH-GATE45–50.
+// Mirrors checkImageSafety: recomputes worker counts from numbers, runs gate.
+function evalFullSafety(visionObj, expectedWorkerCount, gateKey) {
+  const _visibleWC  = typeof visionObj.visible_worker_count === 'number' ? visionObj.visible_worker_count : null;
+  const _expectedWC = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 1) ? expectedWorkerCount : null;
+  const _computedWorkerMatch       = (_visibleWC !== null && _expectedWC !== null) ? (_visibleWC >= _expectedWC) : null;
+  const _computedWorkerMatchesPlan = (_visibleWC !== null && _expectedWC !== null) ? (_visibleWC === _expectedWC) : null;
+  const gate = SERVICE_VISUAL_GATE_RULES[gateKey];
+  // A1: generic worker count (computed from numbers)
+  if (_expectedWC !== null && _computedWorkerMatch === false) {
+    return { safe: false, reason: 'worker_count_mismatch', computed_generic_worker_match: _computedWorkerMatch, computed_final_safe: false, computed_final_reason: 'worker_count_mismatch', first_failed_gate_field: null };
+  }
+  // A2: dangerous safety violation
+  if (visionObj.dangerous_safety_violation === true) {
+    return { safe: false, reason: 'critical_violation', computed_generic_worker_match: _computedWorkerMatch, computed_final_safe: false, computed_final_reason: 'critical_violation', first_failed_gate_field: null };
+  }
+  // B: gate conditions (worker_count_matches_plan uses computed value, not Vision boolean)
+  if (gate) {
+    for (const cond of gate.reject_conditions) {
+      const _fieldVal = cond.field === 'worker_count_matches_plan' ? _computedWorkerMatchesPlan : visionObj[cond.field];
+      const matches = cond.not_exactly_true ? _fieldVal !== true : _fieldVal === cond.value;
+      if (matches) {
+        return { safe: false, reason: cond.reason, computed_generic_worker_match: _computedWorkerMatch, computed_final_safe: false, computed_final_reason: cond.reason, first_failed_gate_field: cond.field };
+      }
+    }
+    // C: all pass — override Vision's autonomous safe=false
+    return { safe: true, reason: 'passed', vision_reported_safe: visionObj.safe, computed_generic_worker_match: _computedWorkerMatch, computed_final_safe: true, computed_final_reason: 'passed', first_failed_gate_field: null };
+  }
+  return { safe: visionObj.safe, reason: visionObj.reason || '', computed_generic_worker_match: _computedWorkerMatch, computed_final_safe: visionObj.safe, computed_final_reason: visionObj.reason || '', first_failed_gate_field: null };
 }
 
 // ─── test runner ──────────────────────────────────────────────────────────────
@@ -339,6 +370,138 @@ export async function runEtancheiteGateTests() {
       physically_coherent_rooftop_access: true,
     });
     assert(!r.rejected, `Expected accept (no vehicle, coherent access), got reject: ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE38', 'Acrotère: rejected — horizontal membrane absent', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       false,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(r.rejected, 'Expected reject for horizontal_membrane_visible=false');
+    assert(r.reason === 'missing_horizontal_membrane', `Expected missing_horizontal_membrane, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE39', 'Acrotère: rejected — vertical upstand absent', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          false,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(r.rejected, 'Expected reject for vertical_upstand_visible=false');
+    assert(r.reason === 'missing_vertical_upstand', `Expected missing_vertical_upstand, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE40', 'Acrotère: rejected — upstand treatment absent', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         false,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(r.rejected, 'Expected reject for upstand_treatment_visible=false');
+    assert(r.reason === 'missing_upstand_treatment', `Expected missing_upstand_treatment, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE42', 'Acrotère order: horizontal=false → missing_horizontal_membrane (not vertical or treatment)', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       false,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(r.rejected, 'Expected reject');
+    assert(r.reason === 'missing_horizontal_membrane', `Expected missing_horizontal_membrane, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE43', 'Acrotère order: vertical=false → missing_vertical_upstand (not treatment)', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          false,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(r.rejected, 'Expected reject');
+    assert(r.reason === 'missing_vertical_upstand', `Expected missing_vertical_upstand, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE44', 'Acrotère order: treatment=false → missing_upstand_treatment', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         false,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(r.rejected, 'Expected reject');
+    assert(r.reason === 'missing_upstand_treatment', `Expected missing_upstand_treatment, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE41', 'Acrotère: accepted — all upstand markers present', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(!r.rejected, `Expected accept (all upstand markers present), got reject: ${r.reason}`);
   });
 
   // ─── Terrasse plain-pied ─────────────────────────────────────────────────────
@@ -672,6 +835,107 @@ export async function runEtancheiteGateTests() {
     const r = evalGate(gateKey, visionResult);
     assert(!r.rejected,
       `End-to-end pipeline path must accept valid scene, got reject: ${r.reason}`);
+  });
+
+  // ─── Full A→B→C safety logic (ETCH-GATE45–50) ───────────────────────────────
+
+  runTest('ETCH-GATE45', 'Acrotère full-safety: Vision safe=false autonomous → overridden to safe=true when all gates pass (rule C)', () => {
+    const r = evalFullSafety({
+      safe: false, reason: 'service_visual_mismatch', // Vision contradiction
+      visible_worker_count: 2,
+      worker_on_parapet_coping: false, pitched_roof_visible: false,
+      flat_roof_visible: true, parapet_visible: true,
+      horizontal_membrane_visible: true, vertical_upstand_visible: true, upstand_treatment_visible: true,
+      service_visual_match: true,
+      vehicle_on_rooftop: false, vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    }, 2, 'Étanchéité acrotère');
+    assert(r.safe === true, `Expected safe=true (gate C overrides Vision), got safe=${r.safe} reason=${r.reason}`);
+    assert(r.reason === 'passed', `Expected reason='passed', got '${r.reason}'`);
+    assert(r.computed_final_safe === true, 'computed_final_safe must be true');
+    assert(r.vision_reported_safe === false, 'vision_reported_safe must reflect Vision raw value');
+  });
+
+  runTest('ETCH-GATE46', 'Acrotère full-safety: computed worker generic fails (visible=1, expected=2) → A-phase worker_count_mismatch', () => {
+    const r = evalFullSafety({
+      safe: false, reason: 'worker_count_mismatch',
+      visible_worker_count: 1,
+      worker_count_match: true, worker_count_matches_plan: true, // Vision lies
+      worker_on_parapet_coping: false, pitched_roof_visible: false,
+      flat_roof_visible: true, parapet_visible: true,
+      horizontal_membrane_visible: true, vertical_upstand_visible: true, upstand_treatment_visible: true,
+      service_visual_match: true,
+      vehicle_on_rooftop: false, vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    }, 2, 'Étanchéité acrotère');
+    assert(r.safe === false, 'Expected safe=false (worker count A-phase)');
+    assert(r.reason === 'worker_count_mismatch', `Expected worker_count_mismatch, got '${r.reason}'`);
+    assert(r.first_failed_gate_field === null, 'A-phase rejection has no gate field');
+    assert(r.computed_generic_worker_match === false, 'computed_generic_worker_match must be false');
+  });
+
+  runTest('ETCH-GATE47', 'Acrotère full-safety: contradictory Vision booleans (match=false) overridden by computed numbers (visible=2, expected=2) → pass', () => {
+    const r = evalFullSafety({
+      safe: false, reason: 'worker_count_mismatch',
+      visible_worker_count: 2,
+      worker_count_match: false,        // Vision lie — ignored
+      worker_count_matches_plan: false, // Vision lie — recomputed from numbers
+      worker_on_parapet_coping: false, pitched_roof_visible: false,
+      flat_roof_visible: true, parapet_visible: true,
+      horizontal_membrane_visible: true, vertical_upstand_visible: true, upstand_treatment_visible: true,
+      service_visual_match: true,
+      vehicle_on_rooftop: false, vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    }, 2, 'Étanchéité acrotère');
+    assert(r.computed_generic_worker_match === true, 'computed_generic_worker_match must be true (2>=2)');
+    assert(r.safe === true, `Expected safe=true (computed overrides Vision booleans), got safe=${r.safe} reason=${r.reason}`);
+    assert(r.reason === 'passed', `Expected reason='passed', got '${r.reason}'`);
+  });
+
+  runTest('ETCH-GATE48', 'Acrotère full-safety: vertical_upstand_visible=false → B-phase missing_vertical_upstand', () => {
+    const r = evalFullSafety({
+      safe: true, visible_worker_count: 2,
+      worker_on_parapet_coping: false, pitched_roof_visible: false,
+      flat_roof_visible: true, parapet_visible: true,
+      horizontal_membrane_visible: true, vertical_upstand_visible: false, // absent
+      upstand_treatment_visible: true,
+      service_visual_match: true,
+      vehicle_on_rooftop: false, vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    }, 2, 'Étanchéité acrotère');
+    assert(r.safe === false, 'Expected safe=false');
+    assert(r.reason === 'missing_vertical_upstand', `Expected missing_vertical_upstand, got '${r.reason}'`);
+    assert(r.first_failed_gate_field === 'vertical_upstand_visible', `Expected first_failed_gate_field='vertical_upstand_visible', got '${r.first_failed_gate_field}'`);
+  });
+
+  runTest('ETCH-GATE49', 'Retry codes: Acrotère has retry text; worker_count_mismatch NOT in upstand retry set', () => {
+    const retryText = SERVICE_VISUAL_MISMATCH_RETRY['Étanchéité acrotère'];
+    assert(typeof retryText === 'string' && retryText.length > 0,
+      'SERVICE_VISUAL_MISMATCH_RETRY must have non-empty string for Étanchéité acrotère');
+    const ACROTERE_RETRY_CODES = new Set([
+      'service_visual_mismatch', 'missing_horizontal_membrane',
+      'missing_vertical_upstand', 'missing_upstand_treatment',
+    ]);
+    assert(!ACROTERE_RETRY_CODES.has('worker_count_mismatch'), 'worker_count_mismatch must NOT be in Acrotère retry set');
+    assert(ACROTERE_RETRY_CODES.has('missing_horizontal_membrane'), 'missing_horizontal_membrane must be in retry set');
+    assert(ACROTERE_RETRY_CODES.has('missing_vertical_upstand'),    'missing_vertical_upstand must be in retry set');
+    assert(ACROTERE_RETRY_CODES.has('missing_upstand_treatment'),   'missing_upstand_treatment must be in retry set');
+  });
+
+  runTest('ETCH-GATE50', 'Acrotère full-safety: vehicle_on_rooftop=true rejects critical_violation even when all upstand markers pass', () => {
+    const r = evalFullSafety({
+      safe: true, visible_worker_count: 2,
+      worker_on_parapet_coping: false, pitched_roof_visible: false,
+      flat_roof_visible: true, parapet_visible: true,
+      horizontal_membrane_visible: true, vertical_upstand_visible: true, upstand_treatment_visible: true,
+      service_visual_match: true,
+      vehicle_on_rooftop: true, // vehicle present — must reject
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    }, 2, 'Étanchéité acrotère');
+    assert(r.safe === false, 'Expected safe=false (vehicle_on_rooftop=true)');
+    assert(r.reason === 'critical_violation', `Expected critical_violation, got '${r.reason}'`);
+    assert(r.first_failed_gate_field === 'vehicle_on_rooftop', `Expected first_failed_gate_field='vehicle_on_rooftop', got '${r.first_failed_gate_field}'`);
   });
 
   // ─── Summary ─────────────────────────────────────────────────────────────────
