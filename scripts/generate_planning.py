@@ -13,10 +13,12 @@ from datetime import date
 from collections import defaultdict, Counter
 import random
 
-SB_URL      = os.environ["SUPABASE_URL"]
-SB_KEY      = os.environ["SUPABASE_KEY"]
+SB_URL        = os.environ["SUPABASE_URL"]
+SB_KEY        = os.environ["SUPABASE_KEY"]
 SLACK_WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL", "")
 GOLOGIN_TOKEN = os.environ.get("GOLOGIN_TOKEN", "")
+OXYLABS_USER  = os.environ.get("OXYLABS_USER", "")   # ex: customer-AssistantGMB_3svai-cc-fr
+OXYLABS_PASS  = os.environ.get("OXYLABS_PASS", "")
 
 # Slack webhooks par opérateur (optionnel — ajouter comme secrets GitHub)
 SLACK_OPERATEURS = {
@@ -106,20 +108,50 @@ def get_gologin_folder_id():
         print(f"GoLogin folders erreur : {e}")
     return None
 
+def normalize_city_for_proxy(ville):
+    """Normalise le nom de ville pour l'URL Oxylabs (minuscules, sans accents, tirets)."""
+    import unicodedata
+    ville = unicodedata.normalize('NFD', ville)
+    ville = ''.join(c for c in ville if unicodedata.category(c) != 'Mn')
+    ville = ville.lower().strip()
+    ville = ville.replace(' ', '-').replace("'", '-').replace('_', '-')
+    # Supprimer les doubles tirets
+    while '--' in ville:
+        ville = ville.replace('--', '-')
+    return ville
+
+def build_oxylabs_username(ville):
+    """Construit le username Oxylabs avec ville et session ID aléatoire."""
+    city_slug = normalize_city_for_proxy(ville)
+    sessid = ''.join([str(random.randint(0, 9)) for _ in range(12)])
+    return f"{OXYLABS_USER}-city-{city_slug}-sessid-{sessid}-sesstime-1440"
+
 def create_gologin_profile(gmail, ville):
     if not GOLOGIN_TOKEN:
         return None
     folder_id = get_gologin_folder_id()
+
+    proxy_config = {"mode": "none"}
+    if OXYLABS_USER and OXYLABS_PASS:
+        proxy_config = {
+            "mode": "socks5",
+            "host": "pr.oxylabs.io",
+            "port": 7777,
+            "username": build_oxylabs_username(ville),
+            "password": OXYLABS_PASS,
+        }
+
     payload = {
         "name": f"GMB_{gmail.split('@')[0]}_{date.today().isoformat()}",
         "os": "win",
         "navigator": {"language": "fr-FR", "userAgent": "auto"},
-        "proxy": {"mode": "none"},
+        "proxy": proxy_config,
         "notes": {"notes": f"Ville: {ville} | Gmail: {gmail}"},
         "googleServices": True,
     }
     if folder_id:
         payload["folderId"] = folder_id
+
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
         "https://api.gologin.com/browser",
@@ -132,7 +164,9 @@ def create_gologin_profile(gmail, ville):
     try:
         with urllib.request.urlopen(req) as r:
             resp = json.loads(r.read())
-            return resp.get("id")
+            profile_id = resp.get("id")
+            print(f"  GoLogin profil créé : {profile_id} | proxy ville={normalize_city_for_proxy(ville)}")
+            return profile_id
     except Exception as e:
         print(f"  GoLogin erreur pour {gmail}: {e}")
         return None
@@ -273,7 +307,7 @@ def main():
     planning_rows = []
     for i, a in enumerate(assignations):
         operateur = OPERATEURS[i % len(OPERATEURS)]
-        gologin_id = None  # GoLogin désactivé pour l'instant
+        gologin_id = create_gologin_profile(a['gmail'], a['ville']) if GOLOGIN_TOKEN else None
         row = {
             'date': today_str,
             'fiche_nom': a['fiche_nom'],
