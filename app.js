@@ -1072,8 +1072,7 @@ function buildAvisRow(a, rappelsDus, aVerif) {
       </select>
     </td>
     <td data-label="Rappel">${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
-    <td data-label="Photo" style="text-align:center">${a.photo ? '📷' : ''}</td>
-    <td data-label="Lien" style="text-align:center">${a.lien ? `<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
+    <td data-label="Photo/Lien" class="td-photo-lien">${a.photo ? '📷' : ''}${a.lien ? `&nbsp;<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
     <td data-label="Avis" class="col-texte">${a.texte || ''}</td>
     <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
   </tr>`;
