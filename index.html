@@ -391,13 +391,13 @@
   <section id="tab-planning" class="tab-content hidden">
     <h2>📋 Planning du jour</h2>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-      <input type="date" id="planning-date" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px" />
-      <select id="planning-operateur" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
+      <input type="date" id="planning-date" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px" />
+      <select id="planning-operateur" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
         <option value="">Tous les opérateurs</option>
         <option value="Kevin">Kevin</option>
         <option value="Fifaliana">Fifaliana</option>
       </select>
-      <select id="planning-statut-filter" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
+      <select id="planning-statut-filter" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
         <option value="">Tous les statuts</option>
         <option value="pending">En attente</option>
         <option value="generated">Généré</option>
