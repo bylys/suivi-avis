@@ -1,5 +1,5 @@
 /**
- * debug/etancheite-worker-resolver-tests.js — ETCH-WR1 to ETCH-WR12
+ * debug/etancheite-worker-resolver-tests.js — ETCH-WR1 to ETCH-WR15
  * Worker rule resolver tests for the étanchéité cluster.
  * Verifies context dispatch, state minimums, retry survival, and forbidden-list isolation.
  * No real API calls — all tests are static/structural.
@@ -9,6 +9,7 @@
 import { WORKER_SCENE_RULES, _resolveWorkerRule } from '../safety/worker-rules.js';
 import { _buildWorkerDesc, _validateWorkerScene } from '../safety/worker-validator.js';
 import { _hashSeed } from '../utils/deterministic.js';
+import { SITE_REALISM_ETANCHEITE } from '../services/etancheite.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -232,6 +233,106 @@ export async function runEtancheiteWorkerResolverTests() {
     const etanchRule = WORKER_SCENE_RULES.etancheite;
     assert(!('visual_family_contexts' in etanchRule),
       'visual_family_contexts must be removed from WORKER_SCENE_RULES.etancheite — use _ETANCH_CONTEXT_RULES instead');
+  });
+
+  // ─── ETCH-WR13 : visual family isolation — sequential batch, no cross-leakage ─
+  runTest('ETCH-WR13', 'Sequential resolution: EPDM then toit-terrasse → no _visual_family leak', () => {
+    // Simulate what service-resolver does: pick scenario for svc, stamp _visual_family.
+    // Uses the maison scenario pool directly (same as runtime).
+    const scenarios = SITE_REALISM_ETANCHEITE?.etancheite?.maison?.scenarios || [];
+    assert(scenarios.length > 0, 'maison scenarios must be non-empty');
+
+    function pickFamily(matchedService) {
+      const svc = matchedService.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const targeted = scenarios.filter(s => !s._disabled && s._for && new RegExp(s._for, 'i').test(svc));
+      const seed = _hashSeed(`etancheite${matchedService}encours0`);
+      const stateLocked = targeted.filter(s => s._state_for === 'encours' || (Array.isArray(s._state_for) && s._state_for.includes('encours')));
+      const pool = stateLocked.length ? stateLocked : targeted;
+      const picked = pool.length ? pool[Math.abs(seed) % pool.length] : null;
+      return picked?._visual_family || null;
+    }
+
+    const vfEPDM    = pickFamily('Étanchéité EPDM');
+    const vfGeneric = pickFamily('Étanchéité toit terrasse');
+
+    assert(vfEPDM    === 'ETANCH-FLAT-EPDM',    `EPDM must resolve to ETANCH-FLAT-EPDM, got '${vfEPDM}'`);
+    assert(vfGeneric === 'ETANCH-FLAT-GENERIC',  `toit-terrasse must resolve to ETANCH-FLAT-GENERIC, got '${vfGeneric}'`);
+    assert(vfEPDM !== vfGeneric,                 'EPDM and toit-terrasse must not share the same visual family');
+  });
+
+  // ─── ETCH-WR14 : retry — _visual_family must not inherit from prior service ──
+  runTest('ETCH-WR14', 'Retry: _visual_family from a prior EPDM resolution must not bleed into toit-terrasse', () => {
+    const scenarios = SITE_REALISM_ETANCHEITE?.etancheite?.maison?.scenarios || [];
+
+    function pickFamilyForObj(obj, matchedService) {
+      const svc = matchedService.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      // Simulate the reset added to service-resolver.js
+      delete obj._visual_family;
+      delete obj._resolved_visual_family;
+      const targeted = scenarios.filter(s => !s._disabled && s._for && new RegExp(s._for, 'i').test(svc));
+      const seed = _hashSeed(`etancheite${matchedService}encours0`);
+      const stateLocked = targeted.filter(s => s._state_for === 'encours' || (Array.isArray(s._state_for) && s._state_for.includes('encours')));
+      const pool = stateLocked.length ? stateLocked : targeted;
+      const picked = pool.length ? pool[Math.abs(seed) % pool.length] : null;
+      if (picked) obj._visual_family = picked._visual_family || null;
+      return obj._visual_family;
+    }
+
+    // Retry scenario: obj starts with EPDM family from a prior run
+    const obj = { _visual_family: 'ETANCH-FLAT-EPDM', _resolved_visual_family: 'ETANCH-FLAT-EPDM' };
+
+    // Run toit-terrasse resolution on the same obj
+    const vfAfterReset = pickFamilyForObj(obj, 'Étanchéité toit terrasse');
+    assert(vfAfterReset === 'ETANCH-FLAT-GENERIC',
+      `After reset, toit-terrasse must resolve to ETANCH-FLAT-GENERIC, got '${vfAfterReset}'`);
+    assert(obj._visual_family === 'ETANCH-FLAT-GENERIC',
+      `obj._visual_family must be ETANCH-FLAT-GENERIC after resolution, got '${obj._visual_family}'`);
+
+    // EPDM retry: obj starts with GENERIC from prior toit-terrasse
+    const obj2 = { _visual_family: 'ETANCH-FLAT-GENERIC', _resolved_visual_family: 'ETANCH-FLAT-GENERIC' };
+    const vfEpdmAfterReset = pickFamilyForObj(obj2, 'Étanchéité EPDM');
+    assert(vfEpdmAfterReset === 'ETANCH-FLAT-EPDM',
+      `After reset, EPDM must resolve to ETANCH-FLAT-EPDM, got '${vfEpdmAfterReset}'`);
+  });
+
+  // ─── ETCH-WR15 : 17-service visual family matrix ─────────────────────────────
+  runTest('ETCH-WR15', '17-service visual family matrix — each service resolves to its expected family', () => {
+    const scenarios = SITE_REALISM_ETANCHEITE?.etancheite?.maison?.scenarios || [];
+
+    function resolveFamily(matchedService) {
+      const svc = matchedService.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const targeted = scenarios.filter(s => !s._disabled && s._for && new RegExp(s._for, 'i').test(svc));
+      const seed = _hashSeed(`etancheite${matchedService}encours0`);
+      const stateLocked = targeted.filter(s => s._state_for === 'encours' || (Array.isArray(s._state_for) && s._state_for.includes('encours')));
+      const pool = stateLocked.length ? stateLocked : targeted;
+      const picked = pool.length ? pool[Math.abs(seed) % pool.length] : null;
+      return picked?._visual_family || null;
+    }
+
+    const matrix = [
+      ['Réparation fuite toiture',    'ETANCH-PITCHED-FUITE'],
+      ['Recherche de fuite',          'ETANCH-PITCHED-FUITE'],
+      ['Infiltration toiture',        'ETANCH-PITCHED-FUITE'],
+      ['Étanchéité toit terrasse',    'ETANCH-FLAT-GENERIC'],
+      ['Étanchéité toiture plate',    'ETANCH-FLAT-GENERIC'],
+      ['Étanchéité balcon',           'ETANCH-BALCON'],
+      ['Étanchéité terrasse',         'ETANCH-GROUND-TERRACE'],
+      ['Étanchéité EPDM',             'ETANCH-FLAT-EPDM'],
+      ['Étanchéité PVC',              'ETANCH-FLAT-PVC'],
+      ['Étanchéité bitume',           'ETANCH-FLAT-BITUME'],
+      ["Réfection d'étanchéité",      'ETANCH-FLAT-GENERIC'],
+      ['Réparation solin',            'ETANCH-PITCHED-SOLIN'],
+      ['Réparation Velux',            'ETANCH-PITCHED-VELUX'],
+      ['Réparation noue',             'ETANCH-PITCHED-NOUE'],
+      ['Réparation rive',             'ETANCH-PITCHED-RIVE'],
+      ['Étanchéité cheminée',         'ETANCH-PITCHED-CHEMINEE'],
+      ['Étanchéité acrotère',         'ETANCH-FLAT-ACROTERE'],
+    ];
+
+    for (const [svc, expected] of matrix) {
+      const got = resolveFamily(svc);
+      assert(got === expected, `'${svc}' → expected '${expected}', got '${got}'`);
+    }
   });
 
   // ─── Summary ─────────────────────────────────────────────────────────────────

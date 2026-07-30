@@ -7,6 +7,34 @@
 import { SITE_REALISM } from '../services/index.js';
 import { _hashSeed, _pick } from '../utils/deterministic.js';
 
+// Deterministic fallback: derives _visual_family from the normalized service string
+// when a picked scenario has no _visual_family (or when no scenario was picked at all).
+// Matches the same regex patterns used in etancheite.js _for fields.
+// Only active for metier=etancheite; other metiers return null.
+const _ETANCH_VF_FALLBACK_MAP = [
+  [/epdm/,                                                               'ETANCH-FLAT-EPDM'],
+  [/pvc/,                                                                'ETANCH-FLAT-PVC'],
+  [/bitume|bitumine/,                                                    'ETANCH-FLAT-BITUME'],
+  [/^etancheite terrasse$/,                                              'ETANCH-GROUND-TERRACE'],
+  [/balcon/,                                                             'ETANCH-BALCON'],
+  [/acrotere/,                                                           'ETANCH-FLAT-ACROTERE'],
+  [/cheminee/,                                                           'ETANCH-PITCHED-CHEMINEE'],
+  [/fuite|infiltration|recherche.*fuite/,                                'ETANCH-PITCHED-FUITE'],
+  [/solin|faitage/,                                                      'ETANCH-PITCHED-SOLIN'],
+  [/velux|lucarne|fenetre.*toit|chassis.*toit/,                          'ETANCH-PITCHED-VELUX'],
+  [/noue|vallee|jonction.*pente/,                                        'ETANCH-PITCHED-NOUE'],
+  [/raccord.*mur|jonction.*mur|mur.*toit|solin.*mur/,                   'ETANCH-PITCHED-RACCORD'],
+  [/rive|gable|debord.*toit|arretier/,                                   'ETANCH-PITCHED-RIVE'],
+  [/tuile|ardoise|remplacement.*tuile|tuile.*cass/,                      'ETANCH-PITCHED-TUILE'],
+  [/etancheite.*toit|toiture.*plate|impermeabilisation|refection.*etanch/, 'ETANCH-FLAT-GENERIC'],
+];
+function _etanchVfFallback(svc) {
+  for (const [re, vf] of _ETANCH_VF_FALLBACK_MAP) {
+    if (re.test(svc)) return vf;
+  }
+  return 'ETANCH-FLAT-GENERIC';
+}
+
 const CAMERA_DEFECTS_LIB = {
   common: [
     'slight horizon tilt of 2–3°, phone not perfectly level',
@@ -80,6 +108,12 @@ function _applySiteRealism(jsonStr, imageIndex) {
       const trigger = realism._trigger_service;
       const svc = (obj._matched_service || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       if (!trigger || new RegExp(trigger).test(svc)) {
+        // Clear derived scenario fields before every new pick to prevent leakage between
+        // services in the same batch or across retries when the incoming obj already has
+        // _visual_family from a prior resolution.
+        delete obj._visual_family;
+        delete obj._resolved_visual_family;
+
         const scenSeed = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}`);
         const targeted  = realism.scenarios.filter(s => !s._disabled && s._for && new RegExp(s._for, 'i').test(svc));
         const fallback  = realism.scenarios.filter(s => !s._disabled && !s._for);
@@ -111,7 +145,12 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
           obj._selected_scenario_state_for = picked._state_for || null;
           obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
-          if (picked._visual_family) obj._visual_family = picked._visual_family;
+          // Always stamp _visual_family — never silently inherit an old value.
+          // Fall back to a deterministic service-derived family when the scenario
+          // doesn't declare one (guards against future scenarios missing the field).
+          obj._visual_family = picked._visual_family
+            || (sceneKey === 'etancheite' ? _etanchVfFallback(svc) : null)
+            || null;
         }
       }
     }
