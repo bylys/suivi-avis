@@ -597,10 +597,27 @@ datalist { display: none; }
   .inline-form { flex-direction: column; align-items: stretch; }
   .inline-form input { width: 100%; }
 
-  /* Table → scroll horizontal */
-  #liste-avis { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .avis-table { min-width: 650px; font-size: 0.8rem; }
-  .avis-table th, .avis-table td { padding: 0.4rem 0.6rem; }
+  /* Table → cards mobiles */
+  #liste-avis { overflow-x: unset; }
+  .avis-table thead { display: none; }
+  .avis-table, .avis-table tbody, .avis-table tr { display: block; width: 100%; }
+  .avis-table tr {
+    display: flex; flex-direction: column; gap: 0.4rem;
+    background: #1e293b; border-radius: 12px; padding: 0.9rem 1rem;
+    margin-bottom: 0.6rem; border: 1px solid #334155;
+  }
+  .avis-table tr.avis-orange { border-color: #fbbf24; background: #1c1708; }
+  .avis-table td { display: flex; align-items: center; gap: 0.5rem; padding: 0; border: none; white-space: normal; font-size: 0.85rem; }
+  .avis-table td::before { content: attr(data-label); font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; min-width: 60px; flex-shrink: 0; }
+  .avis-table td.col-texte { max-width: 100%; font-size: 0.8rem; }
+  .avis-table td:empty, .avis-table td.td-hide { display: none; }
+  /* Statut prend toute la largeur sur mobile */
+  .statut-inline { width: 100%; font-size: 0.85rem; }
+  /* Rappel badge en haut de la card */
+  .avis-rappel { font-size: 0.72rem; }
+  /* delete btn aligné à droite */
+  .avis-table td:last-child { justify-content: flex-end; }
+  .avis-table td:last-child::before { display: none; }
 
   /* Top table */
   .top-table { min-width: 400px; }

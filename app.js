@@ -1056,25 +1056,25 @@ function buildAvisRow(a, rappelsDus, aVerif) {
   const st = STATUT_LABELS[a.statut] || { label: a.statut || '–', color: '#999' };
   const needsVerif = aVerif.includes(a.id);
   const verifLabel = needsVerif ? rappelsDus.find(d => d.avis.id === a.id)?.label : null;
-  return `<tr class="${needsVerif ? 'avis-a-verifier' : ''}">
-    <td class="avis-date">
+  return `<tr class="${needsVerif ? 'avis-a-verifier avis-orange' : ''}">
+    <td data-label="Date" class="avis-date">
       <input type="date" class="date-inline" value="${a.date}" onchange="updateDate('${a.id}', this.value)" />
     </td>
-    <td><span class="avis-fiche">${a.fiche_nom}</span></td>
-    <td style="color:#94a3b8;font-size:0.85rem;">${a.operateur || '–'}</td>
-    <td class="avis-auteur">${a.auteur}</td>
-    <td class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
-    <td>
+    <td data-label="Fiche"><span class="avis-fiche">${a.fiche_nom}</span></td>
+    <td data-label="Opér." style="color:#94a3b8;font-size:0.85rem;">${a.operateur || '–'}</td>
+    <td data-label="Gmail" class="avis-auteur">${a.auteur}</td>
+    <td data-label="Note" class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
+    <td data-label="Statut">
       <select class="statut-inline" onchange="updateStatut('${a.id}', this.value)" style="border-color:${st.color};color:${st.color}">
         ${Object.entries(STATUT_LABELS).map(([k,v]) =>
           `<option value="${k}" ${a.statut===k?'selected':''} style="color:${v.color}">${v.label}</option>`
         ).join('')}
       </select>
     </td>
-    <td>${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
-    <td style="text-align:center">${a.photo ? '📷' : ''}</td>
-    <td style="text-align:center">${a.lien ? `<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
-    <td class="col-texte">${a.texte || ''}</td>
+    <td data-label="Rappel">${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
+    <td data-label="Photo" style="text-align:center">${a.photo ? '📷' : ''}</td>
+    <td data-label="Lien" style="text-align:center">${a.lien ? `<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
+    <td data-label="Avis" class="col-texte">${a.texte || ''}</td>
     <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
   </tr>`;
 }
