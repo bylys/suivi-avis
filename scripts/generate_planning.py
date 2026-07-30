@@ -79,9 +79,37 @@ def sb_delete(table, filter_):
 
 # ── GoLogin helper ────────────────────────────────────────────────────────────
 
+GOLOGIN_FOLDER_NAME = "VA TEAM"
+_gologin_folder_id = None
+
+def get_gologin_folder_id():
+    global _gologin_folder_id
+    if _gologin_folder_id:
+        return _gologin_folder_id
+    try:
+        req = urllib.request.Request(
+            "https://api.gologin.com/folders",
+            headers={"Authorization": f"Bearer {GOLOGIN_TOKEN}"}
+        )
+        with urllib.request.urlopen(req) as r:
+            folders = json.loads(r.read())
+        # folders peut être une liste ou un dict avec une clé
+        if isinstance(folders, dict):
+            folders = folders.get("folders", folders.get("data", []))
+        for f in folders:
+            if f.get("name", "").strip().lower() == GOLOGIN_FOLDER_NAME.lower():
+                _gologin_folder_id = f.get("id") or f.get("_id")
+                print(f"Dossier GoLogin '{GOLOGIN_FOLDER_NAME}' trouvé : {_gologin_folder_id}")
+                return _gologin_folder_id
+        print(f"Dossier '{GOLOGIN_FOLDER_NAME}' non trouvé — profils créés sans dossier")
+    except Exception as e:
+        print(f"GoLogin folders erreur : {e}")
+    return None
+
 def create_gologin_profile(gmail, ville):
     if not GOLOGIN_TOKEN:
         return None
+    folder_id = get_gologin_folder_id()
     payload = {
         "name": f"GMB_{gmail.split('@')[0]}_{date.today().isoformat()}",
         "os": "win",
@@ -90,6 +118,8 @@ def create_gologin_profile(gmail, ville):
         "notes": {"notes": f"Ville: {ville} | Gmail: {gmail}"},
         "googleServices": True,
     }
+    if folder_id:
+        payload["folderId"] = folder_id
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
         "https://api.gologin.com/browser",
