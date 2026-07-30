@@ -19,7 +19,7 @@ import { _assertTaskHasBatchPlan }        from '../validation/batch-validator.js
 import { PromptBuilder, _USE_PROMPT_BUILDER } from '../prompt/prompt-builder.js';
 import { _appendLockedFinalConstraints }  from '../prompt/locked-constraints.js';
 import { _sanitizeSceneForPrompt, _validateInteriorPayload } from './prompt-scene-sanitizer.js';
-import { SERVICE_VISUAL_MISMATCH_RETRY } from '../safety/safety-rules.js';
+import { SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY } from '../safety/safety-rules.js';
 
 // ─── buildImageGenerationRequest ─────────────────────────────────────────────
 // Pure — verbatim params from app.js lines 13802–13806.
@@ -144,11 +144,23 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
   const _retryNote = _isMismatchRetry
     ? (SERVICE_VISUAL_MISMATCH_RETRY[_planBase._matched_service] || '')
     : '';
-  const _finalPrompt = _retryNote ? `${prompt}\n\n${_retryNote}` : prompt;
+
+  // Solin/faitage safety retry injection
+  const _SOLIN_SAFETY_SERVICES = new Set(['Réparation solin', 'Réfection faîtage', 'Remplacement solin', 'Faîtage']);
+  const _isSolinSafetyRetry = task._imageRetryReason === 'regenerate_after_safety_reject'
+    && _SOLIN_SAFETY_SERVICES.has(_planBase._matched_service)
+    && !!task.error
+    && !!SOLIN_SAFETY_RETRY[task.error];
+  const _solinRetryNote = _isSolinSafetyRetry ? SOLIN_SAFETY_RETRY[task.error] : '';
+
+  const _activeRetryNote = _retryNote || _solinRetryNote;
+  const _finalPrompt = _activeRetryNote ? `${prompt}\n\n${_activeRetryNote}` : prompt;
 
   const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
   const _reqWorkerSource = _finalSceneObj._worker_count_source || 'rolled';
-  const _retryReinforcementKey = _isMismatchRetry && _retryNote ? _planBase._matched_service : null;
+  const _retryReinforcementKey = (_isMismatchRetry && _retryNote)
+    ? _planBase._matched_service
+    : (_isSolinSafetyRetry ? `${_planBase._matched_service}:${task.error}` : null);
   const _captureDefects    = _finalSceneObj._capture_defects_resolved || [];
   const _captureDefectKeys = _captureDefects.map(d => d.key);
   const _opticalSelected   = _captureDefects.some(d => d.source === 'optical');

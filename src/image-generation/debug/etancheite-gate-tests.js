@@ -1,12 +1,12 @@
 /**
- * debug/etancheite-gate-tests.js — ETCH-GATE1 to ETCH-GATE50
+ * debug/etancheite-gate-tests.js — ETCH-GATE1 to ETCH-GATE68
  * Service visual gate tests for the étanchéité cluster.
  * Verifies reject_conditions logic, alias routing, and worker count comparisons.
  * No real API calls — all tests are static/structural.
  * Loaded only when ?imageGenTests=1 is in the URL.
  */
 
-import { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SERVICE_VISUAL_MISMATCH_RETRY } from '../safety/safety-rules.js';
+import { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY } from '../safety/safety-rules.js';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -590,8 +590,12 @@ export async function runEtancheiteGateTests() {
       worker_on_ladder_rungs:                 true,
       worker_fall_protection_adequate:        true,   // harness connected + on rungs
       worker_freely_standing_on_pitched_roof: false,
+      roof_ladder_on_same_roof_plane_as_worker: true,
       worker_directly_below_drop_zone:        false,
       loose_materials_on_slope:               false,
+      large_missing_tile_area:                false,
+      bare_underlay_visible:                  false,
+      roof_covering_continuous:               true,
       service_specific_action_visible:        true,
       second_worker_visible:                  true,
       worker_count_matches_plan:              true,
@@ -607,8 +611,12 @@ export async function runEtancheiteGateTests() {
       worker_on_ladder_rungs:                 true,   // waived when MEWP
       worker_fall_protection_adequate:        true,   // basket guardrails adequate
       worker_freely_standing_on_pitched_roof: false,
+      roof_ladder_on_same_roof_plane_as_worker: true, // waived for MEWP per vision_instruction
       worker_directly_below_drop_zone:        false,
       loose_materials_on_slope:               false,
+      large_missing_tile_area:                false,
+      bare_underlay_visible:                  false,
+      roof_covering_continuous:               true,
       service_specific_action_visible:        true,
       second_worker_visible:                  true,
       worker_count_matches_plan:              true,
@@ -635,16 +643,20 @@ export async function runEtancheiteGateTests() {
 
   runTest('ETCH-GATE23', 'Inclinée: rejected — Worker 2 in drop zone', () => {
     const r = evalGate('Étanchéité inclinée', {
-      safe_access_visible:                    true,
-      access_type:                            'HOOKED_ROOF_LADDER',
-      ridge_hooks_visible:                    true,
-      worker_fall_protection_adequate:        true,
-      worker_freely_standing_on_pitched_roof: false,
-      worker_directly_below_drop_zone:        true,
-      loose_materials_on_slope:               false,
-      service_specific_action_visible:        true,
-      second_worker_visible:                  true,
-      worker_count_matches_plan:              true,
+      safe_access_visible:                      true,
+      access_type:                              'HOOKED_ROOF_LADDER',
+      ridge_hooks_visible:                      true,
+      worker_fall_protection_adequate:          true,
+      worker_freely_standing_on_pitched_roof:   false,
+      roof_ladder_on_same_roof_plane_as_worker: true,
+      worker_directly_below_drop_zone:          true,
+      loose_materials_on_slope:                 false,
+      large_missing_tile_area:                  false,
+      bare_underlay_visible:                    false,
+      roof_covering_continuous:                 true,
+      service_specific_action_visible:          true,
+      second_worker_visible:                    true,
+      worker_count_matches_plan:                true,
     });
     assert(r.rejected, 'Expected reject for Worker 2 in drop zone');
     assert(r.reason === 'critical_violation', `Expected critical_violation, got ${r.reason}`);
@@ -775,8 +787,12 @@ export async function runEtancheiteGateTests() {
       worker_on_ladder_rungs:                 false,  // not applicable for MEWP
       worker_fall_protection_adequate:        true,   // basket guardrails satisfy this
       worker_freely_standing_on_pitched_roof: false,
+      roof_ladder_on_same_roof_plane_as_worker: true, // waived for MEWP
       worker_directly_below_drop_zone:        false,
       loose_materials_on_slope:               false,
+      large_missing_tile_area:                false,
+      bare_underlay_visible:                  false,
+      roof_covering_continuous:               true,
       service_specific_action_visible:        true,
       second_worker_visible:                  true,
       worker_count_matches_plan:              true,
@@ -795,8 +811,12 @@ export async function runEtancheiteGateTests() {
       worker_on_ladder_rungs:                 false,  // not applicable for scaffold
       worker_fall_protection_adequate:        true,   // scaffold guardrails satisfy this
       worker_freely_standing_on_pitched_roof: false,
+      roof_ladder_on_same_roof_plane_as_worker: true, // waived for SCAFFOLD
       worker_directly_below_drop_zone:        false,
       loose_materials_on_slope:               false,
+      large_missing_tile_area:                false,
+      bare_underlay_visible:                  false,
+      roof_covering_continuous:               true,
       service_specific_action_visible:        true,
       second_worker_visible:                  true,
       worker_count_matches_plan:              true,
@@ -825,8 +845,12 @@ export async function runEtancheiteGateTests() {
       worker_on_ladder_rungs:                 true,
       worker_fall_protection_adequate:        true,
       worker_freely_standing_on_pitched_roof: false,
+      roof_ladder_on_same_roof_plane_as_worker: true,
       worker_directly_below_drop_zone:        false,
       loose_materials_on_slope:               false,
+      large_missing_tile_area:                false,
+      bare_underlay_visible:                  false,
+      roof_covering_continuous:               true,
       service_specific_action_visible:        true,
       second_worker_visible:                  true,
       worker_count_matches_plan:              true,   // var_workers=2, visible=2 → match
@@ -936,6 +960,199 @@ export async function runEtancheiteGateTests() {
     assert(r.safe === false, 'Expected safe=false (vehicle_on_rooftop=true)');
     assert(r.reason === 'critical_violation', `Expected critical_violation, got '${r.reason}'`);
     assert(r.first_failed_gate_field === 'vehicle_on_rooftop', `Expected first_failed_gate_field='vehicle_on_rooftop', got '${r.first_failed_gate_field}'`);
+  });
+
+  // ─── ETCH-GATE51–57 : SOLIN_SAFETY_RETRY structural + content tests ──────────
+  runTest('ETCH-GATE51', 'SOLIN_SAFETY_RETRY is a non-null object', () => {
+    assert(typeof SOLIN_SAFETY_RETRY === 'object' && SOLIN_SAFETY_RETRY !== null, 'SOLIN_SAFETY_RETRY must be a non-null object');
+  });
+
+  runTest('ETCH-GATE52', 'SOLIN_SAFETY_RETRY has key "access_violation"', () => {
+    assert(Object.prototype.hasOwnProperty.call(SOLIN_SAFETY_RETRY, 'access_violation'), 'SOLIN_SAFETY_RETRY must have key "access_violation"');
+    assert(typeof SOLIN_SAFETY_RETRY['access_violation'] === 'string' && SOLIN_SAFETY_RETRY['access_violation'].length > 0, '"access_violation" entry must be a non-empty string');
+  });
+
+  runTest('ETCH-GATE53', 'SOLIN_SAFETY_RETRY has key "forbidden_roof_scene"', () => {
+    assert(Object.prototype.hasOwnProperty.call(SOLIN_SAFETY_RETRY, 'forbidden_roof_scene'), 'SOLIN_SAFETY_RETRY must have key "forbidden_roof_scene"');
+    assert(typeof SOLIN_SAFETY_RETRY['forbidden_roof_scene'] === 'string' && SOLIN_SAFETY_RETRY['forbidden_roof_scene'].length > 0, '"forbidden_roof_scene" entry must be a non-empty string');
+  });
+
+  runTest('ETCH-GATE54', 'SOLIN_SAFETY_RETRY has key "worker_count_mismatch"', () => {
+    assert(Object.prototype.hasOwnProperty.call(SOLIN_SAFETY_RETRY, 'worker_count_mismatch'), 'SOLIN_SAFETY_RETRY must have key "worker_count_mismatch"');
+    assert(typeof SOLIN_SAFETY_RETRY['worker_count_mismatch'] === 'string' && SOLIN_SAFETY_RETRY['worker_count_mismatch'].length > 0, '"worker_count_mismatch" entry must be a non-empty string');
+  });
+
+  runTest('ETCH-GATE55', 'access_violation note mentions facade ladder AND hooked roof ladder AND ridge', () => {
+    const note = SOLIN_SAFETY_RETRY['access_violation'];
+    assert(/facade/i.test(note), 'access_violation note must mention facade ladder');
+    assert(/hooked roof ladder/i.test(note), 'access_violation note must mention "hooked roof ladder"');
+    assert(/ridge/i.test(note), 'access_violation note must mention ridge');
+  });
+
+  runTest('ETCH-GATE56', 'forbidden_roof_scene note says worker stays on rungs — no harness requirement', () => {
+    const note = SOLIN_SAFETY_RETRY['forbidden_roof_scene'];
+    assert(/rungs/i.test(note), 'forbidden_roof_scene note must mention ladder rungs');
+    assert(!/connected.*harness|harness.*connected/i.test(note), 'forbidden_roof_scene note must NOT require connected harness');
+  });
+
+  runTest('ETCH-GATE57', 'worker_count_mismatch note preserves both ladders and solin action', () => {
+    const note = SOLIN_SAFETY_RETRY['worker_count_mismatch'];
+    assert(/hooked roof ladder/i.test(note), 'worker_count_mismatch note must preserve "hooked roof ladder"');
+    assert(/facade/i.test(note), 'worker_count_mismatch note must preserve facade ladder reference');
+    assert(/solin/i.test(note), 'worker_count_mismatch note must preserve solin action reference');
+  });
+
+  // ─── ETCH-GATE58–64 : Étanchéité inclinée gate — FACADE+HOOKED route ─────────
+  runTest('ETCH-GATE58', 'Étanchéité inclinée: FACADE+HOOKED route accepted — no harness required', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof:   false,
+      safe_access_visible:                      true,
+      roof_ladder_on_same_roof_plane_as_worker: true,
+      worker_fall_protection_adequate:          true,
+      worker_directly_below_drop_zone:          false,
+      loose_materials_on_slope:                 false,
+      large_missing_tile_area:                  false,
+      bare_underlay_visible:                    false,
+      roof_covering_continuous:                 true,
+      service_specific_action_visible:          true,
+      worker_count_matches_plan:                true,
+    });
+    assert(!r.rejected, `Expected accept (FACADE+HOOKED no harness), got reject: ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE59', 'Étanchéité inclinée: worker_freely_standing=true → forbidden_roof_scene', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof: true,
+      safe_access_visible:                   true,
+      worker_fall_protection_adequate:        true,
+      worker_directly_below_drop_zone:        false,
+      loose_materials_on_slope:               false,
+      service_specific_action_visible:        true,
+      worker_count_matches_plan:              true,
+    });
+    assert(r.rejected, 'Expected reject for worker freely standing');
+    assert(r.reason === 'forbidden_roof_scene', `Expected forbidden_roof_scene, got '${r.reason}'`);
+  });
+
+  runTest('ETCH-GATE60', 'Étanchéité inclinée: safe_access_visible=false → access_violation', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof: false,
+      safe_access_visible:                   false,
+      worker_fall_protection_adequate:        true,
+      worker_directly_below_drop_zone:        false,
+      loose_materials_on_slope:               false,
+      service_specific_action_visible:        true,
+      worker_count_matches_plan:              true,
+    });
+    assert(r.rejected, 'Expected reject for no safe access');
+    assert(r.reason === 'access_violation', `Expected access_violation, got '${r.reason}'`);
+  });
+
+  runTest('ETCH-GATE61', 'Étanchéité inclinée: worker_fall_protection_adequate=false → critical_violation', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof:   false,
+      safe_access_visible:                      true,
+      roof_ladder_on_same_roof_plane_as_worker: true,  // must be true so critical_violation fires first
+      worker_fall_protection_adequate:          false,
+      worker_directly_below_drop_zone:          false,
+      loose_materials_on_slope:                 false,
+      large_missing_tile_area:                  false,
+      bare_underlay_visible:                    false,
+      roof_covering_continuous:                 true,
+      service_specific_action_visible:          true,
+      worker_count_matches_plan:                true,
+    });
+    assert(r.rejected, 'Expected reject for inadequate fall protection');
+    assert(r.reason === 'critical_violation', `Expected critical_violation, got '${r.reason}'`);
+  });
+
+  runTest('ETCH-GATE62', 'Étanchéité inclinée: vision_instruction contains FACADE_LADDER_AND_HOOKED_ROOF_LADDER', () => {
+    const gate = SERVICE_VISUAL_GATE_RULES['Étanchéité inclinée'];
+    assert(gate, 'Gate must exist');
+    assert(/FACADE_LADDER_AND_HOOKED_ROOF_LADDER/i.test(gate.vision_instruction), 'vision_instruction must mention FACADE_LADDER_AND_HOOKED_ROOF_LADDER access type');
+  });
+
+  runTest('ETCH-GATE63', 'Étanchéité inclinée: vision_instruction states harness NOT required for two-ladder route', () => {
+    const instr = SERVICE_VISUAL_GATE_RULES['Étanchéité inclinée'].vision_instruction;
+    assert(/fall-arrest harness.*NOT required.*two-ladder|NOT required.*FACADE_LADDER_AND_HOOKED/i.test(instr), 'vision_instruction must state harness NOT required for two-ladder route');
+  });
+
+  runTest('ETCH-GATE64', 'Étanchéité inclinée: vision_instruction contains facade_access_ladder_visible field definition', () => {
+    const instr = SERVICE_VISUAL_GATE_RULES['Étanchéité inclinée'].vision_instruction;
+    assert(/facade_access_ladder_visible/i.test(instr), 'vision_instruction must define facade_access_ladder_visible field');
+  });
+
+  // ─── ETCH-GATE65–68: new roof coverage / ladder-plane reject conditions ───────
+  runTest('ETCH-GATE65', 'Inclinée: roof_ladder_on_same_roof_plane_as_worker=false → access_violation', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof:   false,
+      safe_access_visible:                      true,
+      roof_ladder_on_same_roof_plane_as_worker: false,  // ladder on wrong slope
+      worker_fall_protection_adequate:          true,
+      worker_directly_below_drop_zone:          false,
+      loose_materials_on_slope:                 false,
+      large_missing_tile_area:                  false,
+      bare_underlay_visible:                    false,
+      roof_covering_continuous:                 true,
+      service_specific_action_visible:          true,
+      worker_count_matches_plan:                true,
+    });
+    assert(r.rejected, 'Expected reject when roof ladder is on a different slope');
+    assert(r.reason === 'access_violation', `Expected access_violation, got '${r.reason}'`);
+  });
+
+  runTest('ETCH-GATE66', 'Inclinée: large_missing_tile_area=true → service_visual_mismatch', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof:   false,
+      safe_access_visible:                      true,
+      roof_ladder_on_same_roof_plane_as_worker: true,
+      worker_fall_protection_adequate:          true,
+      worker_directly_below_drop_zone:          false,
+      loose_materials_on_slope:                 false,
+      large_missing_tile_area:                  true,   // large section of tiles missing
+      bare_underlay_visible:                    false,
+      roof_covering_continuous:                 true,
+      service_specific_action_visible:          true,
+      worker_count_matches_plan:                true,
+    });
+    assert(r.rejected, 'Expected reject when large missing-tile area visible');
+    assert(r.reason === 'service_visual_mismatch', `Expected service_visual_mismatch, got '${r.reason}'`);
+  });
+
+  runTest('ETCH-GATE67', 'Inclinée: bare_underlay_visible=true → service_visual_mismatch', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof:   false,
+      safe_access_visible:                      true,
+      roof_ladder_on_same_roof_plane_as_worker: true,
+      worker_fall_protection_adequate:          true,
+      worker_directly_below_drop_zone:          false,
+      loose_materials_on_slope:                 false,
+      large_missing_tile_area:                  false,
+      bare_underlay_visible:                    true,   // bare membrane exposed on slope
+      roof_covering_continuous:                 true,
+      service_specific_action_visible:          true,
+      worker_count_matches_plan:                true,
+    });
+    assert(r.rejected, 'Expected reject when bare underlay visible on slope');
+    assert(r.reason === 'service_visual_mismatch', `Expected service_visual_mismatch, got '${r.reason}'`);
+  });
+
+  runTest('ETCH-GATE68', 'Inclinée: roof_covering_continuous=false → service_visual_mismatch', () => {
+    const r = evalGate('Étanchéité inclinée', {
+      worker_freely_standing_on_pitched_roof:   false,
+      safe_access_visible:                      true,
+      roof_ladder_on_same_roof_plane_as_worker: true,
+      worker_fall_protection_adequate:          true,
+      worker_directly_below_drop_zone:          false,
+      loose_materials_on_slope:                 false,
+      large_missing_tile_area:                  false,
+      bare_underlay_visible:                    false,
+      roof_covering_continuous:                 false,  // roof not fully tiled
+      service_specific_action_visible:          true,
+      worker_count_matches_plan:                true,
+    });
+    assert(r.rejected, 'Expected reject when roof covering not continuous');
+    assert(r.reason === 'service_visual_mismatch', `Expected service_visual_mismatch, got '${r.reason}'`);
   });
 
   // ─── Summary ─────────────────────────────────────────────────────────────────

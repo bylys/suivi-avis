@@ -294,7 +294,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/roof-maintenance-mewp-tests.js?v=5'),
     import('./debug/gutter-antimoss-tests.js?v=3'),
     import('./debug/roof-access-tests.js?v=1'),
-    import('./debug/etancheite-gate-tests.js?v=3'),
+    import('./debug/etancheite-gate-tests.js?v=5'),
     import('./debug/etancheite-worker-resolver-tests.js?v=1'),
     import('./debug/capture-defect-distribution-tests.js?v=3'),
   ]);
