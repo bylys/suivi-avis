@@ -205,7 +205,7 @@ export const SITE_REALISM_ETANCHEITE = {
           _state_for:    'final',
           _visual_family:'ETANCH-PITCHED-FUITE',
           pitch_class:   'STEEP_PITCH',
-          scene_note:    'roof leak repair complete — all tiles back in place, hooked ladder still over the ridge, workers at ground level gathering tools and conducting final inspection from below — photo from garden or driveway',
+          scene_note:    'roof leak repair complete — all tiles back in place, hooked ladder still over the ridge — two professionals at ground level: Worker 1 conducting a final visual inspection of the repaired zone from the garden, Worker 2 gathering tools and packing the equipment bag — photo from garden or driveway',
           scene_camera:  'standing in the garden or driveway, 8–12 m from the house, looking up at the fully closed roof surface',
           scene_framing: {
             work_pct:   50,
@@ -637,7 +637,7 @@ export const SITE_REALISM_ETANCHEITE = {
           _state_for:    'final',
           _visual_family:'ETANCH-FLAT-GENERIC',
           pitch_class:   'FLAT_OR_LOW_SLOPE',
-          scene_note:    'flat roof waterproofing complete — full membrane surface finished, workers inspecting seams and drain outlets, tools grouped near the parapet for pack-up — no active laying work in progress — two professionals',
+          scene_note:    'flat roof waterproofing complete — full membrane surface finished, tools grouped near the parapet for pack-up — no active laying work in progress — two professionals: Worker 1 checking seam integrity with a probe roller along the completed surface, Worker 2 inspecting the drain outlet and clearing tools near the parapet',
           scene_camera:  'standing on the flat roof, wide view of the completed membrane surface — parapet walls on all sides, both workers at roof level inspecting',
           scene_framing: {
             work_pct:   40,
@@ -768,7 +768,7 @@ export const SITE_REALISM_ETANCHEITE = {
           _state_for:      'final',
           _visual_family:  'ETANCH-GROUND-TERRACE',
           pitch_class:     'FLAT_OR_LOW_SLOPE',
-          scene_note:      'ground-level terrace waterproofing complete — full slab surface covered, workers inspecting membrane joints and drain outlet, tools grouped near the threshold — no active work in progress — two professionals — no elevated access, no guardrail, no harness',
+          scene_note:      'ground-level terrace waterproofing complete — full slab surface covered, tools grouped near the threshold — no active work in progress — two professionals: Worker 1 checking membrane joints and the drain outlet at the slab surface, Worker 2 grouping tools and packing materials near the door threshold — no elevated access, no guardrail, no harness',
           scene_camera:    'standing at garden level beside the terrace, wide view of the completed membrane surface with the facade and garden as context',
           scene_framing: {
             work_pct:   40,
@@ -908,7 +908,7 @@ export const SITE_REALISM_ETANCHEITE = {
           _state_for:      'final',
           _visual_family:  'ETANCH-BALCON',
           pitch_class:     'FLAT_OR_LOW_SLOPE',
-          scene_note:      'balcony waterproofing complete — compact elevated slab fully sealed, drain outlet clear, railing continuous on all open sides, porte-fenêtre and facade wall as background — workers inspecting joints and grouping tools — no active work in progress — two professionals',
+          scene_note:      'balcony waterproofing complete — compact elevated slab fully sealed, drain outlet clear, railing continuous on all open sides, porte-fenêtre and facade wall as background — no active work in progress — two professionals: Worker 1 checking slab joints and the drain outlet collar, Worker 2 gathering tools and packing materials at the balcony threshold',
           scene_camera:    'stepping back slightly from the doorway to frame the completed balcony — new sealed floor surface, railing perimeter, porte-fenêtre behind',
           scene_framing: {
             work_pct:   40,
@@ -1058,7 +1058,7 @@ export const SITE_REALISM_ETANCHEITE = {
           _state_for:      'final',
           _visual_family:  'ETANCH-FLAT-ACROTERE',
           pitch_class:     'FLAT_OR_LOW_SLOPE',
-          scene_note:      'acrotère waterproofing complete — full perimeter relevé finished, horizontal-to-vertical junction complete on all sides, workers inspecting the upstand and grouping tools — no active work in progress — two professionals',
+          scene_note:      'acrotère waterproofing complete — full perimeter relevé finished, horizontal-to-vertical junction complete on all sides — no active work in progress — two professionals: Worker 1 checking upstand seam quality along the parapet perimeter, Worker 2 grouping tools and clearing the roller and adhesive tin near the access hatch',
           scene_camera:    'crouching on the flat toit-terrasse at the acrotère base, wide angle showing the completed relevé on the parapet face — both workers visible inspecting or packing tools',
           scene_framing: {
             work_pct:   40,
@@ -1188,7 +1188,7 @@ export const SITE_REALISM_ETANCHEITE = {
           _state_for:    'final',
           _visual_family:'ETANCH-PITCHED-CHEMINEE',
           pitch_class:   'STEEP_PITCH',
-          scene_note:    'chimney flashing repair complete — full perimeter flashing or mortar band finished, workers at ground level conducting final inspection from below, hooked ladder still over the ridge — photo from garden',
+          scene_note:    'chimney flashing repair complete — full perimeter flashing or mortar band finished, hooked ladder still over the ridge — two professionals at ground level: Worker 1 conducting a final inspection of the flashing from the garden, Worker 2 packing tools and coiling the lifeline — photo from garden',
           scene_camera:  'standing in the garden, 8–12 m from the house, looking up at the chimney with the completed repair visible on the slope',
           scene_framing: {
             work_pct:   50,
