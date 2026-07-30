@@ -16,11 +16,28 @@ MODE = sys.argv[1] if len(sys.argv) > 1 else "daily"
 
 
 def sb_get(path):
-    req = urllib.request.Request(f"{SB_URL}/rest/v1/{path}")
-    req.add_header("apikey", SB_KEY)
-    req.add_header("Authorization", f"Bearer {SB_KEY}")
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())
+    # Pagination automatique — Supabase plafonne à 1000 lignes par requête
+    base = path.split('?')[0]
+    qs   = path[len(base):]  # inclut le '?' ou vide
+    # Supprimer tout limit= existant dans la query string
+    import re
+    qs = re.sub(r'[&?]limit=\d+', '', qs).lstrip('&')
+    sep = '?' if qs else ''
+    all_rows, offset = [], 0
+    PAGE = 1000
+    while True:
+        off_param = f"&offset={offset}" if offset else ""
+        url = f"{SB_URL}/rest/v1/{base}{sep}{qs}&limit={PAGE}{off_param}" if qs else f"{SB_URL}/rest/v1/{base}?limit={PAGE}{off_param}"
+        req = urllib.request.Request(url)
+        req.add_header("apikey", SB_KEY)
+        req.add_header("Authorization", f"Bearer {SB_KEY}")
+        with urllib.request.urlopen(req) as r:
+            page = json.loads(r.read())
+        all_rows.extend(page)
+        if len(page) < PAGE:
+            break
+        offset += PAGE
+    return all_rows
 
 
 def post_slack(blocks, text_fallback):

@@ -10,6 +10,13 @@
 
 import { SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } from '../safety/safety-rules.js';
 
+// Normalize travaux string before alias lookup — same logic as resolveAlias in gate tests.
+// Alias keys are lowercase + NFD-stripped + smart-quote→ASCII. Raw travaux can arrive with
+// accents and mixed case (e.g. "Étanchéité terrasse"), which would otherwise miss the alias.
+function _normalizeForGate(svc) {
+  return svc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['']/g, "'");
+}
+
 // ─── buildVisionSafetyRequest ─────────────────────────────────────────────────
 // Pure — verbatim params from _checkImageSafety (app.js lines 13689–13701).
 // Returns null if the métier has no safety rule (caller must guard).
@@ -20,7 +27,8 @@ function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount =
   const workerInstruction = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 1)
     ? `\n\nADDITIONAL MANDATORY CHECK — WORKER COUNT: Count the number of clearly visible professional workers in the image (${expectedWorkerCount} expected). You MUST add these fields to your JSON: "expected_worker_count": ${expectedWorkerCount}, "visible_worker_count": <integer you counted>, "worker_count_match": <true if visible_worker_count >= ${expectedWorkerCount}, else false>. If worker_count_match is false, set safe=false, severity="critical", reason="worker_count_mismatch".`
     : '';
-  const _effectiveService = _SERVICE_GATE_ALIASES[matchedService] || matchedService;
+  const _normSvc = _normalizeForGate(matchedService);
+  const _effectiveService = _SERVICE_GATE_ALIASES[_normSvc] || matchedService;
   const serviceGateInstruction = SERVICE_VISUAL_GATE_RULES[_effectiveService]?.vision_instruction ?? '';
   const prompt = basePrompt + workerInstruction + serviceGateInstruction;
   return {
@@ -65,7 +73,8 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
       };
     }
     // Service visual gate — evaluated after worker count (worker count takes priority)
-    const _gateService = _SERVICE_GATE_ALIASES[matchedService] || matchedService;
+    const _normSvc2 = _normalizeForGate(matchedService);
+    const _gateService = _SERVICE_GATE_ALIASES[_normSvc2] || matchedService;
     const gate = SERVICE_VISUAL_GATE_RULES[_gateService];
     if (gate) {
       for (const cond of gate.reject_conditions) {

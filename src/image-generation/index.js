@@ -270,7 +270,7 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests, gutterAntimossTests, roofAccessTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests, gutterAntimossTests, roofAccessTests, etchGateTests, etchWorkerResolverTests] = await Promise.all([
     import('./debug/runtime-tests.js?v=12'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
@@ -294,6 +294,8 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/roof-maintenance-mewp-tests.js?v=5'),
     import('./debug/gutter-antimoss-tests.js?v=3'),
     import('./debug/roof-access-tests.js?v=1'),
+    import('./debug/etancheite-gate-tests.js?v=1'),
+    import('./debug/etancheite-worker-resolver-tests.js?v=1'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();
@@ -324,6 +326,8 @@ if (_params.get('imageGenTests') === '1') {
   window._runRoofMaintenanceMewpTests                   = roofMaintenanceMewpTests._runRoofMaintenanceMewpTests;
   window._runGutterAntimossTests                        = gutterAntimossTests._runGutterAntimossTests;
   window._runRoofAccessTests                            = roofAccessTests._runRoofAccessTests;
+  window._runEtancheiteGateTests                        = etchGateTests.runEtancheiteGateTests;
+  window._runEtancheiteWorkerResolverTests              = etchWorkerResolverTests.runEtancheiteWorkerResolverTests;
   console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofContractsTests(), _runRoofClusterScenesTests(), _runRoofPRTests(), _runRoofWorkerSafetyTests(), _runServiceResolverStateLockTests(), _runRoofCoveringWaterproofingValidationTests(), _runCovFixScenesTests(), _runArboristScenesTests(), _runRoofMaintenanceMewpTests(), _runGutterAntimossTests(), _runRoofAccessTests()');
 }
 

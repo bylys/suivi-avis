@@ -111,6 +111,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
           obj._selected_scenario_state_for = picked._state_for || null;
           obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
+          if (picked._visual_family) obj._visual_family = picked._visual_family;
         }
       }
     }

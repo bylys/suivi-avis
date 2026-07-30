@@ -174,28 +174,67 @@ const WORKER_SCENE_RULES = {
     ],
   },
   etancheite: {
+    min_workers_when_visible: 1,
     max_workers: 2,
+    state_worker_minimums: { encours: 2, semifinal: 2 },
     actions: [
-      'rolling out an EPDM membrane across the flat roof surface',
-      'welding the membrane lap joint with a hot air gun',
-      'applying bitumen primer to the prepared deck with a mop roller',
+      // flat roof contexts
+      'rolling out the waterproofing membrane across the flat roof surface and pressing the lap seam with a seam roller',
+      'pressing the relevé upstand strip onto the parapet or acrotère face with a rubber roller',
+      'inspecting the completed membrane seam and drain outlet collar at the parapet edge',
+      // pitched roof contexts
+      'Worker 1 on the rungs of a hooked roof ladder at the localized repair zone applying patch material — Worker 2 laterally offset at ground level outside the drop zone',
+      'Worker 1 pressing the flashing strip at the chimney base from a hooked roof ladder — Worker 2 at ladder base steadying and supplying materials',
+      // balcon context
+      'pressing the waterproofing membrane strip at the porte-fenêtre sill junction on the compact elevated balcony floor',
+      // terrasse de plain-pied context
+      'applying waterproofing membrane across the ground-level concrete slab near the facade wall and door threshold',
     ],
     postures: [
-      'crouching on the flat roof surface, both hands pressing the membrane edge — back to camera',
-      'standing at the parapet inner face applying sealant at the upstand — in profile',
-      'kneeling at the lap joint, hot air gun in hand — back to camera',
+      // flat roof contexts
+      'crouching on the flat roof surface, both hands pressing the membrane edge — back to camera, parapet wall visible on all sides',
+      'standing at the parapet inner face applying sealant at the upstand — in profile, no open unprotected edge visible',
+      'kneeling at the membrane lap joint with a seam roller — back to camera, parapet on all sides',
+      // pitched roof contexts
+      'Worker 1 on the rungs of a secured hooked roof ladder at the repair zone, both hands on the work — in profile, fall-arrest harness lanyard leading to ridge anchor above',
+      'Worker 2 standing laterally offset at ground level outside the falling-object zone, managing lifeline — back to camera',
+      // balcon context
+      'crouching on the compact elevated balcony floor pressing membrane at the sill junction — back to camera, continuous railing visible on all open sides',
+      'Worker 2 positioned inside the porte-fenêtre opening steadying membrane roll — back to camera, protected by the doorframe',
+      // terrasse de plain-pied context
+      'crouching at garden level on the concrete slab applying membrane strip at the facade threshold — back to camera, no elevated position',
     ],
-    access: ['flat roof access via internal hatch or external scaffold stair'],
-    safety_required: ['safety harness clipped to a parapet anchor when working within 2 m of the edge', 'protective goggles when using hot air gun'],
+    access: [
+      'flat roof access via internal hatch or secure external stair — not via hooked roof ladder',
+      'hooked roof ladder over the ridge for pitched roof repair access — Worker 1 on the rungs, not standing freely on tiles',
+      'mobile elevated work platform (MEWP) for flat or pitched roof staging when terrain permits',
+      'scaffold platform at eave level for pitched roof perimeter or chimney work',
+      'ground-level access for terrasse de plain-pied — no elevated access, no harness required',
+      'porte-fenêtre opening for compact balcony access — Worker 2 inside the doorway or protected threshold zone',
+    ],
+    safety_required: [
+      'fall-arrest harness with lanyard visibly connected to a certified ridge anchor — Worker 1 on pitched roof only',
+      'continuous parapet wall or guardrail providing edge protection — flat roof and balcon contexts',
+      'hooked roof ladder clearly hooked over the ridge for pitched access — Worker 1 on the rungs, not standing freely on tiles',
+      'Worker 2 laterally offset outside the falling-object zone for pitched repair — never directly below the active repair zone',
+    ],
     forbidden: [
-      'person balanced on the parapet coping',
-      'open-flame torch near a loose membrane edge',
-      'membrane roll blocking the only roof access hatch',
+      'single worker performing work alone on any etancheite task',
+      'worker standing freely on steep pitched tiles without visible fall protection or secured access equipment',
+      'worker standing on top of or leaning over the parapet coping or balcony railing',
+      'worker suspended outside the building without certified access equipment',
+      'Worker 2 standing directly below the active pitched roof repair zone — lateral offset position required',
+      'membrane roll placed across the only flat roof access hatch opening',
+      'hooked roof ladder propped against the facade as flat roof access — use internal hatch or external stair',
     ],
     presence_indirect: [
-      'EPDM roll partially unrolled across the flat roof deck — no one on the roof',
-      'hot air gun resting on the parapet coping between welds — power cable trailing to hatch',
-      'adhesive drum open beside the unrolled membrane — mop roller resting across the drum top',
+      'membrane roll partially unrolled across the flat roof deck — seam roller resting at the active lap, no operator on the roof',
+      'hot air gun resting on the parapet inner face between welds — power cable trailing to hatch — no operator',
+      'adhesive drum open beside the unrolled membrane on the flat roof — mop roller resting across the drum top',
+      'hooked roof ladder over the ridge with fall-arrest harness lanyard attached to ridge anchor — no operator, repair tools in a clipped bucket on the ladder rungs',
+      'tile lifter wedge under a displaced tile at the compact pitched repair zone — safety bag and membrane offcuts at ground level at the wall base, outside the fall zone',
+      'membrane roll and primer tin on the compact balcony floor beside the drain outlet — no operator',
+      'primer brush and membrane strip beside the door threshold on the ground-level terrasse slab — no operator',
     ],
   },
   ravalement: {
@@ -538,4 +577,152 @@ const WORKER_SCENE_RULES = {
   },
 };
 
-export { WORKER_SCENE_RULES };
+// ─── Etancheite context-specific rule sets ────────────────────────────────────
+// Keyed by _visual_family group prefix: FLAT / PITCHED / BALCON / GROUND_TERRACE
+const _ETANCH_CONTEXT_RULES = {
+  FLAT: {
+    min_workers_when_visible: 1,
+    max_workers: 2,
+    state_worker_minimums: { encours: 2, semifinal: 2 },
+    actions: [
+      'rolling out the waterproofing membrane across the flat roof surface and pressing the lap seam with a seam roller',
+      'pressing the relevé upstand strip onto the parapet or acrotère face with a rubber roller',
+      'inspecting the completed membrane seam and drain outlet collar at the parapet edge',
+      'applying cold adhesive primer across the flat roof substrate with a roller ahead of membrane lay',
+    ],
+    postures: [
+      'crouching on the flat roof surface, both hands pressing the membrane edge — back to camera, parapet wall visible on all sides',
+      'standing at the parapet inner face applying sealant at the upstand — in profile, no open unprotected edge visible',
+      'kneeling at the membrane lap joint with a seam roller — back to camera, parapet on all sides',
+    ],
+    access: [
+      'flat roof access via internal hatch or secure external stair — not via hooked roof ladder',
+      'mobile elevated work platform (MEWP) for flat roof staging when terrain permits',
+    ],
+    safety_required: [
+      'continuous parapet wall or guardrail providing edge protection — no worker within 2 m of an open unprotected edge',
+    ],
+    forbidden: [
+      'single worker performing work alone on any etancheite task',
+      'hooked roof ladder used as flat roof access — use internal hatch or external stair',
+      'worker standing on top of the parapet coping',
+      'worker suspended outside the building without certified access equipment',
+      'membrane roll placed across the only flat roof access hatch opening',
+    ],
+    presence_indirect: [
+      'membrane roll partially unrolled across the flat roof deck — seam roller resting at the active lap, no operator on the roof',
+      'hot air gun resting on the parapet inner face between welds — power cable trailing to hatch — no operator',
+      'adhesive drum open beside the unrolled membrane on the flat roof — mop roller resting across the drum top',
+    ],
+  },
+  PITCHED: {
+    min_workers_when_visible: 1,
+    max_workers: 2,
+    state_worker_minimums: { encours: 2, semifinal: 2 },
+    actions: [
+      'Worker 1 on the rungs of a hooked roof ladder at the localized repair zone applying patch material — Worker 2 laterally offset at ground level outside the drop zone',
+      'Worker 1 pressing the flashing strip at the chimney base from a hooked roof ladder — Worker 2 at ladder base steadying and supplying materials',
+      'Worker 1 positioning the new velux flashing collar from the hooked roof ladder — Worker 2 at ground level managing lifeline',
+    ],
+    postures: [
+      'Worker 1 on the rungs of a secured hooked roof ladder at the repair zone, both hands on the work — in profile, fall-arrest harness lanyard leading to ridge anchor above',
+      'Worker 2 standing laterally offset at ground level outside the falling-object zone, managing lifeline — back to camera',
+    ],
+    access: [
+      'hooked roof ladder over the ridge for pitched roof repair — Worker 1 on the rungs, not standing freely on tiles',
+      'mobile elevated work platform (MEWP) for pitched roof staging when terrain permits',
+      'scaffold platform at eave level for pitched roof perimeter or chimney work',
+    ],
+    safety_required: [
+      'fall-arrest harness with lanyard visibly connected to a certified ridge anchor — Worker 1 on pitched roof only',
+      'hooked roof ladder clearly hooked over the ridge — Worker 1 on the rungs, not standing freely on tiles',
+      'Worker 2 laterally offset outside the falling-object zone — never directly below the active repair zone',
+    ],
+    forbidden: [
+      'single worker performing work alone on any etancheite task',
+      'worker standing freely on steep pitched tiles without visible fall protection or secured access equipment',
+      'Worker 2 standing directly below the active pitched roof repair zone — lateral offset position required',
+      'flat roof hatch used as pitched roof access',
+      'free-standing ladder propped against tiles without ridge hook',
+    ],
+    presence_indirect: [
+      'hooked roof ladder over the ridge with fall-arrest harness lanyard attached to ridge anchor — no operator, repair tools in a clipped bucket on the ladder rungs',
+      'tile lifter wedge under a displaced tile at the compact pitched repair zone — safety bag and membrane offcuts at ground level at the wall base, outside the fall zone',
+    ],
+  },
+  BALCON: {
+    min_workers_when_visible: 1,
+    max_workers: 2,
+    state_worker_minimums: { encours: 2, semifinal: 2 },
+    actions: [
+      'pressing the waterproofing membrane strip at the porte-fenêtre sill junction on the compact elevated balcony floor',
+      'sealing the balcony drain outlet collar with membrane relevé strip — Worker 1 crouching at drain, Worker 2 in doorway',
+      'rolling out membrane across the compact balcony floor toward the parapet base — Worker 2 managing the roll inside',
+    ],
+    postures: [
+      'crouching on the compact elevated balcony floor pressing membrane at the sill junction — back to camera, continuous railing visible on all open sides',
+      'Worker 2 positioned inside the porte-fenêtre opening steadying membrane roll — back to camera, protected by the doorframe',
+    ],
+    access: [
+      'porte-fenêtre opening for compact balcony access — Worker 2 inside the doorway or protected threshold zone',
+    ],
+    safety_required: [
+      'continuous guardrail on all open sides of the balcony',
+      'Worker 2 inside the doorway or protected position — never outside the railing',
+    ],
+    forbidden: [
+      'single worker performing work alone on any etancheite task',
+      'worker standing on or leaning over the balcony railing',
+      'worker suspended outside the balcony',
+      'fall-arrest harness (not required for balcony floor work)',
+      'hooked roof ladder for balcony access',
+    ],
+    presence_indirect: [
+      'membrane roll and primer tin on the compact balcony floor beside the drain outlet — no operator',
+      'seam roller resting at the membrane lap on the balcony deck — no operator visible, continuous railing on all sides',
+    ],
+  },
+  GROUND_TERRACE: {
+    min_workers_when_visible: 1,
+    max_workers: 2,
+    state_worker_minimums: { encours: 2, semifinal: 2 },
+    actions: [
+      'applying waterproofing membrane across the ground-level concrete slab near the facade wall and door threshold',
+      'pressing the membrane relevé strip onto the facade base at the terrace level — Worker 2 managing membrane roll at the slab edge',
+      'sealing the perimeter joint at the wall-slab junction with membrane band — crouched at garden level',
+    ],
+    postures: [
+      'crouching at garden level on the concrete slab applying membrane strip at the facade threshold — back to camera, no elevated position',
+      'Worker 2 at ground level managing the primer tin and membrane roll beside the facade base — in profile',
+    ],
+    access: [
+      'ground level — no elevated access required for terrasse de plain-pied work',
+    ],
+    safety_required: [],
+    forbidden: [
+      'single worker performing work alone on any etancheite task',
+      'fall-arrest harness (not required for ground-level terrasse work)',
+      'guardrail or parapet wall required',
+      'hooked roof ladder',
+      'elevated access equipment of any kind',
+    ],
+    presence_indirect: [
+      'primer brush and membrane strip beside the door threshold on the ground-level terrasse slab — no operator',
+      'membrane roll at the facade base, seam roller resting at the last bonded joint — no operator',
+    ],
+  },
+};
+
+// Returns the effective rule set for a metier+visualFamily combination.
+// Falls back to WORKER_SCENE_RULES[metier] for métiers without context dispatch.
+function _resolveWorkerRule(metier, visualFamily) {
+  if (metier === 'etancheite' && visualFamily) {
+    if      (visualFamily.startsWith('ETANCH-FLAT'))          return _ETANCH_CONTEXT_RULES.FLAT;
+    else if (visualFamily.startsWith('ETANCH-PITCHED'))       return _ETANCH_CONTEXT_RULES.PITCHED;
+    else if (visualFamily.startsWith('ETANCH-BALCON'))        return _ETANCH_CONTEXT_RULES.BALCON;
+    else if (visualFamily.startsWith('ETANCH-GROUND'))        return _ETANCH_CONTEXT_RULES.GROUND_TERRACE;
+  }
+  return WORKER_SCENE_RULES[metier] || null;
+}
+
+export { WORKER_SCENE_RULES, _resolveWorkerRule };
