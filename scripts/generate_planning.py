@@ -126,15 +126,48 @@ def build_oxylabs_username(ville):
     sessid = ''.join([str(random.randint(0, 9)) for _ in range(12)])
     return f"{OXYLABS_USER}-city-{city_slug}-sessid-{sessid}-sesstime-1440"
 
-def create_gologin_profile(gmail, ville):
+def extract_metier(fiche_nom):
+    """Extrait le métier depuis le nom de fiche."""
+    nom = fiche_nom.lower()
+    if 'elagage' in nom or 'élagage' in nom or 'abattage' in nom:
+        return 'elagage'
+    if 'couvreur' in nom or 'toiture' in nom or 'couverture' in nom:
+        return 'couvreur'
+    if 'carreleur' in nom or 'carrelage' in nom:
+        return 'carreleur'
+    if 'paysagiste' in nom or 'jardinage' in nom:
+        return 'paysagiste'
+    if 'etancheite' in nom or 'étanchéité' in nom:
+        return 'etancheite'
+    if 'ravalement' in nom or 'facade' in nom or 'façade' in nom:
+        return 'ravalement'
+    if 'nettoyage' in nom:
+        return 'nettoyage'
+    if 'vitrier' in nom or 'vitrerie' in nom:
+        return 'vitrier'
+    if 'maçon' in nom or 'macon' in nom or 'terrassement' in nom:
+        return 'macon'
+    if 'peintre' in nom or 'peinture' in nom:
+        return 'peintre'
+    if 'plombier' in nom or 'plomberie' in nom:
+        return 'plombier'
+    if 'electricien' in nom or 'électricien' in nom:
+        return 'electricien'
+    return 'autre'
+
+def create_gologin_profile(gmail, ville, fiche_nom=''):
     if not GOLOGIN_TOKEN:
         return None
     folder_id = get_gologin_folder_id()
 
+    metier = extract_metier(fiche_nom)
+    ville_slug = normalize_city_for_proxy(ville)
+    profile_name = f"GMB_{metier}_{ville_slug}"
+
     proxy_config = {"mode": "none"}
     if OXYLABS_USER and OXYLABS_PASS:
         proxy_config = {
-            "mode": "socks5",
+            "mode": "any",
             "host": "pr.oxylabs.io",
             "port": 7777,
             "username": build_oxylabs_username(ville),
@@ -142,7 +175,7 @@ def create_gologin_profile(gmail, ville):
         }
 
     payload = {
-        "name": f"GMB_{gmail.split('@')[0]}_{date.today().isoformat()}",
+        "name": profile_name,
         "os": "win",
         "navigator": {"language": "fr-FR", "userAgent": "auto"},
         "proxy": proxy_config,
@@ -307,7 +340,7 @@ def main():
     planning_rows = []
     for i, a in enumerate(assignations):
         operateur = OPERATEURS[i % len(OPERATEURS)]
-        gologin_id = create_gologin_profile(a['gmail'], a['ville']) if GOLOGIN_TOKEN else None
+        gologin_id = None  # GoLogin désactivé — générateur image pas encore prêt
         row = {
             'date': today_str,
             'fiche_nom': a['fiche_nom'],
