@@ -984,7 +984,7 @@ export const SITE_REALISM_ETANCHEITE = {
             work_pct:   70,
             foreground: 'Worker 2 preparing membrane strip and managing the parapet base junction — acrotère wall face clearly visible rising above the flat roof level, membrane strip ready to be turned up',
             midground:  'Worker 1 pressing and maroufling the relevé membrane strip onto the acrotère face — membrane turning from horizontal to vertical at the parapet base angle, flat toit-terrasse surface covered with new membrane behind',
-            background: 'flat toit-terrasse surface extending away, sky above the acrotère top — no pitched slope, no tiled surface, no gable',
+            background: 'flat toit-terrasse surface extending away, sky above the acrotère top — no pitched slope, no tiled surface, no gable, no vehicle at roof level',
           },
           scene_debris:    'membrane backing strip beside the upstand work zone, coping block set aside near the parapet top',
           scene_exclude:   [
@@ -995,6 +995,9 @@ export const SITE_REALISM_ETANCHEITE = {
             'steep roof slope visible in the scene',
             'balcony railing or porte-fenêtre as primary context',
             'single worker performing work alone',
+            'any vehicle (van, truck, car) parked or standing on the rooftop or flat roof slab',
+            'vehicle body at the same elevation as the flat roof work area',
+            'service vehicle on the roof — service vehicle may only appear at street or ground level far below',
           ],
           tools: [
             'corner roller forming the right-angle at the acrotère base',

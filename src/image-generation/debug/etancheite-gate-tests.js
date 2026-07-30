@@ -216,17 +216,20 @@ export async function runEtancheiteGateTests() {
   });
 
   // ─── Acrotère ─────────────────────────────────────────────────────────────────
-  runTest('ETCH-GATE11', 'Acrotère: accepted — flat roof + parapet + upstand', () => {
+  runTest('ETCH-GATE11', 'Acrotère: accepted — flat roof + parapet + upstand + no vehicle', () => {
     const r = evalGate('Étanchéité acrotère', {
-      flat_roof_visible:             true,
-      parapet_visible:               true,
-      horizontal_membrane_visible:   true,
-      vertical_upstand_visible:      true,
-      upstand_treatment_visible:     true,
-      worker_on_parapet_coping:      false,
-      pitched_roof_visible:          false,
-      service_visual_match:          true,
-      worker_count_matches_plan:     true,
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
     });
     assert(!r.rejected, `Expected accept, got reject: ${r.reason}`);
   });
@@ -261,6 +264,81 @@ export async function runEtancheiteGateTests() {
     });
     assert(r.rejected, 'Expected reject for pitched_roof_visible=true');
     assert(r.reason === 'service_visual_mismatch', `Expected service_visual_mismatch, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE34', 'Acrotère: rejected — vehicle physically on rooftop', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                true,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: false,
+    });
+    assert(r.rejected, 'Expected reject for vehicle_on_rooftop=true');
+    assert(r.reason === 'critical_violation', `Expected critical_violation, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE35', 'Acrotère: rejected — vehicle intersects roof work area', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: true,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(r.rejected, 'Expected reject for vehicle_intersects_roof_work_area=true');
+    assert(r.reason === 'critical_violation', `Expected critical_violation, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE36', 'Acrotère: rejected — physically incoherent rooftop access', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: false,
+    });
+    assert(r.rejected, 'Expected reject for physically_coherent_rooftop_access=false');
+    assert(r.reason === 'critical_violation', `Expected critical_violation, got ${r.reason}`);
+  });
+
+  runTest('ETCH-GATE37', 'Acrotère: accepted — no vehicle, coherent rooftop access', () => {
+    const r = evalGate('Étanchéité acrotère', {
+      flat_roof_visible:                 true,
+      parapet_visible:                   true,
+      horizontal_membrane_visible:       true,
+      vertical_upstand_visible:          true,
+      upstand_treatment_visible:         true,
+      worker_on_parapet_coping:          false,
+      pitched_roof_visible:              false,
+      service_visual_match:              true,
+      worker_count_matches_plan:         true,
+      vehicle_on_rooftop:                false,
+      vehicle_intersects_roof_work_area: false,
+      physically_coherent_rooftop_access: true,
+    });
+    assert(!r.rejected, `Expected accept (no vehicle, coherent access), got reject: ${r.reason}`);
   });
 
   // ─── Terrasse plain-pied ─────────────────────────────────────────────────────
