@@ -171,6 +171,7 @@ function showTab(name) {
   if (name === 'fiches') renderFiches();
   if (name === 'generateur') populateGenFiche();
   if (name === 'gmails') renderGmails();
+  if (name === 'planning') renderPlanning();
 }
 
 // ── FICHES ──
@@ -2688,6 +2689,146 @@ function clearNotes() {
   document.getElementById('notes-textarea').value = '';
   localStorage.removeItem('gmb_notes');
   updateNotesLines();
+}
+
+// ── PLANNING ──
+
+async function renderPlanning() {
+  const dateEl = document.getElementById('planning-date');
+  const opEl   = document.getElementById('planning-operateur');
+  const stEl   = document.getElementById('planning-statut-filter');
+  const list   = document.getElementById('planning-list');
+  const stats  = document.getElementById('planning-stats');
+
+  if (!dateEl.value) {
+    const today = new Date();
+    dateEl.value = today.toISOString().slice(0, 10);
+  }
+
+  const dateVal = dateEl.value;
+  const opVal   = opEl.value;
+  const stVal   = stEl.value;
+
+  list.innerHTML = '<p style="color:#94a3b8">Chargement...</p>';
+
+  let query = `select=*&date=eq.${dateVal}&order=operateur.asc,ville.asc`;
+  if (opVal) query += `&operateur=eq.${encodeURIComponent(opVal)}`;
+  if (stVal) query += `&statut=eq.${stVal}`;
+
+  const rows = await sbGet('planning', query);
+
+  // Stats
+  const total   = rows.length;
+  const pending = rows.filter(r => r.statut === 'pending').length;
+  const done    = rows.filter(r => r.statut === 'done').length;
+  const generated = rows.filter(r => r.statut === 'generated').length;
+
+  stats.innerHTML = [
+    ['Total', total, '#3b82f6'],
+    ['En attente', pending, '#f59e0b'],
+    ['Généré', generated, '#8b5cf6'],
+    ['Terminé', done, '#22c55e'],
+  ].map(([label, val, color]) => `
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 18px;text-align:center">
+      <div style="font-size:22px;font-weight:700;color:${color}">${val}</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:2px">${label}</div>
+    </div>`).join('');
+
+  if (!rows.length) {
+    list.innerHTML = '<p style="color:#94a3b8;padding:20px">Aucune assignation pour cette date. Le planning est généré automatiquement chaque matin à 6h.</p>';
+    return;
+  }
+
+  // Grouper par opérateur
+  const byOp = {};
+  for (const r of rows) {
+    const op = r.operateur || '—';
+    if (!byOp[op]) byOp[op] = [];
+    byOp[op].push(r);
+  }
+
+  const STATUT_COLORS = {
+    pending: '#f59e0b', generated: '#8b5cf6', done: '#22c55e', skip: '#64748b'
+  };
+  const STATUT_LABELS = {
+    pending: 'En attente', generated: 'Généré', done: 'Terminé', skip: 'Ignoré'
+  };
+
+  list.innerHTML = Object.entries(byOp).map(([op, taches]) => `
+    <div style="margin-bottom:24px">
+      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px">
+        👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span>
+      </h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="color:#64748b;text-align:left">
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Ville</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Gmail</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Fiche</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Statut</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${taches.map(r => `
+            <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}">
+              <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
+              <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#a5b4fc">${r.gmail}</td>
+              <td style="padding:7px 10px;color:#e2e8f0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fiche_nom}">${r.fiche_nom}</td>
+              <td style="padding:7px 10px">
+                <span style="background:${(STATUT_COLORS[r.statut]||'#64748b')}22;color:${STATUT_COLORS[r.statut]||'#64748b'};padding:2px 8px;border-radius:99px;font-size:11px">
+                  ${STATUT_LABELS[r.statut] || r.statut}
+                </span>
+              </td>
+              <td style="padding:7px 10px;white-space:nowrap">
+                ${r.statut === 'pending' || r.statut === 'generated' ? `
+                  <button onclick="planningGenerer('${r.id}','${r.fiche_nom.replace(/'/g,"\\'")}','${r.gmail}')"
+                    style="padding:3px 10px;border-radius:5px;background:#6366f1;color:#fff;border:none;cursor:pointer;font-size:12px;margin-right:4px">
+                    ✍️ Générer
+                  </button>
+                  <button onclick="planningSkip('${r.id}')"
+                    style="padding:3px 10px;border-radius:5px;background:#334155;color:#94a3b8;border:none;cursor:pointer;font-size:12px">
+                    Ignorer
+                  </button>
+                ` : r.statut === 'done' ? `<span style="color:#22c55e;font-size:12px">✅ Fait</span>` : ''}
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`).join('');
+}
+
+async function planningGenerer(id, ficheNom, gmail) {
+  // Marquer comme généré
+  await sbUpdate('planning', id, { statut: 'generated' });
+
+  // Pré-remplir le générateur d'avis et basculer vers cet onglet
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+  document.getElementById('tab-generateur').classList.remove('hidden');
+  document.querySelector('.tab-btn[onclick*="generateur"]').classList.add('active');
+
+  await populateGenFiche();
+
+  // Remplir fiche
+  const ficheInput = document.getElementById('gen-fiche');
+  if (ficheInput) { ficheInput.value = ficheNom; ficheInput.dispatchEvent(new Event('input')); }
+
+  // Remplir auteur (gmail)
+  const auteurInput = document.getElementById('gen-auteur');
+  if (auteurInput) auteurInput.value = gmail;
+
+  // Mettre à jour la ligne dans le planning
+  const row = document.getElementById(`planning-row-${id}`);
+  if (row) {
+    const badge = row.querySelector('span[style*="border-radius:99px"]');
+    if (badge) { badge.style.color = '#8b5cf6'; badge.style.background = '#8b5cf622'; badge.textContent = 'Généré'; }
+  }
+}
+
+async function planningSkip(id) {
+  await sbUpdate('planning', id, { statut: 'skip' });
+  renderPlanning();
 }
 
 // ── GMAILS ──

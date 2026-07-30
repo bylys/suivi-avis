@@ -1,0 +1,31 @@
+name: Génération planning quotidien GMB
+
+on:
+  schedule:
+    # Chaque matin à 6h00 heure de Paris (UTC+2 été = 4h UTC)
+    - cron: "0 4 * * 1-6"
+  workflow_dispatch:
+    inputs:
+      quota:
+        description: "Nombre d'avis par opérateur"
+        required: false
+        default: "50"
+
+jobs:
+  planning:
+    name: Générer le planning du jour
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Générer le planning
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GOLOGIN_TOKEN: ${{ secrets.GOLOGIN_TOKEN }}
+          QUOTA_PAR_OPERATEUR: ${{ github.event.inputs.quota || '50' }}
+        run: python scripts/generate_planning.py

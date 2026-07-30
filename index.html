@@ -41,6 +41,7 @@
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
       <button class="tab-btn" onclick="showTab('gmails')">📧 GMails</button>
+      <button class="tab-btn" onclick="showTab('planning')">📋 Planning</button>
     </nav>
     <button class="logout-btn" onclick="logout()">Déconnexion</button>
   </header>
@@ -385,6 +386,30 @@
       </div>
     </details>
   </section>
+
+  <!-- PLANNING -->
+  <section id="tab-planning" class="tab-content hidden">
+    <h2>📋 Planning du jour</h2>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <input type="date" id="planning-date" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px" />
+      <select id="planning-operateur" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
+        <option value="">Tous les opérateurs</option>
+        <option value="Kevin">Kevin</option>
+        <option value="Fifaliana">Fifaliana</option>
+      </select>
+      <select id="planning-statut-filter" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
+        <option value="">Tous les statuts</option>
+        <option value="pending">En attente</option>
+        <option value="generated">Généré</option>
+        <option value="done">Terminé</option>
+        <option value="skip">Ignoré</option>
+      </select>
+      <button onclick="renderPlanning()" style="padding:6px 14px;border-radius:6px;background:#3b82f6;color:#fff;border:none;cursor:pointer;font-size:14px">🔄 Actualiser</button>
+    </div>
+    <div id="planning-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+    <div id="planning-list"></div>
+  </section>
+
 </div>
 
 <!-- ── GMB MAP PANEL ── -->
