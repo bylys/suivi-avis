@@ -3392,13 +3392,19 @@ function updateImgRow(id, field, value) {
   updateCostEstimate();
 }
 
+// Display-only labels: value (routing) stays unchanged, only the visible text differs.
+const SERVICE_DISPLAY_LABELS = {
+  'Étanchéité terrasse': 'Étanchéité terrasse extérieure au sol',
+};
+
 function _svcOpts(metierKey, currentValue) {
   const cat = SERVICE_CATALOG[metierKey];
   if (!cat) return '<option value="">— Sous-service —</option>';
   return '<option value="">— Sous-service —</option>' +
-    cat.services.map(s =>
-      `<option value="${_escHtml(s)}"${s === currentValue ? ' selected' : ''}>${_escHtml(s)}</option>`
-    ).join('');
+    cat.services.map(s => {
+      const label = SERVICE_DISPLAY_LABELS[s] || s;
+      return `<option value="${_escHtml(s)}"${s === currentValue ? ' selected' : ''}>${_escHtml(label)}</option>`;
+    }).join('');
 }
 
 function _ctxOpts(metierKey, currentValue) {

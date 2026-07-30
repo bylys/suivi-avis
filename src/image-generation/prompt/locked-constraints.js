@@ -20,7 +20,8 @@ function _appendLockedFinalConstraints(prompt, scene) {
 
   const defectsBlock = defects.length > 0
     ? defects.map(d => `- ${d.prompt}`).join('\n')
-    : '- subtle JPEG compression and ordinary smartphone processing\n- slightly tilted handheld framing';
+    : null;
+  const hasOpticalDefect = defects.some(d => d.source === 'optical');
 
   const metierRules = COMPOSITION_RULES_BY_METIER[metier] || {};
   const forbiddenFr = (metierRules.forbidden_framing || []).map(f => `No ${f}.`).join('\n');
@@ -141,10 +142,10 @@ ${(camDef.required || []).map(r => `- ${r}`).join('\n')}
 ${(camDef.forbidden || []).map(f => `Not: ${f}.`).join('\n')}
 ${forbiddenFr}
 
-SUBTLE CAPTURE IMPERFECTIONS:
-These imperfections must remain slight and naturally perceptible. They must never become the main subject, obscure the work, reduce safety readability, or make the image look intentionally damaged.
-Optical defects (finger, smudge, dirt) must remain at the extreme edge of the frame and must never cover the work, a worker's face or body, safety equipment, the professional vehicle, or any technically important area.
-${defectsBlock}
+${defectsBlock ? `SUBTLE CAPTURE IMPERFECTIONS:
+These imperfections must remain slight and naturally perceptible. They must never become the main subject, obscure the work, reduce safety readability, or make the image look intentionally damaged.${hasOpticalDefect ? `
+Optical defect: must remain at the extreme edge of the frame and must never cover the work, a worker's face or body, safety equipment, the professional vehicle, or any technically important area.` : ''}
+${defectsBlock}` : ''}
 
 DOCUMENTARY STYLE:
 Ordinary handheld smartphone documentation photograph. Casual business-owner or worker photo.

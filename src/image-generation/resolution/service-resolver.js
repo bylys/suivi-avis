@@ -172,13 +172,8 @@ function _applySiteRealism(jsonStr, imageIndex) {
     }
   }
 
-  // Camera defects — drawn from global library (2 common, rare at ~5%)
-  const defects = _pick(CAMERA_DEFECTS_LIB.common, 2, seed + 3);
-  if (_hashSeed(`${sceneKey}${imageIndex}rare`) % 20 === 0) {
-    const rare = _pick(CAMERA_DEFECTS_LIB.rare, 1, seed + 4);
-    if (rare.length) defects.push(rare[0]);
-  }
-  obj.photo_defects = defects;
+  // photo_defects cleared — single source of truth is _capture_defects_resolved (batch-planner)
+  obj.photo_defects = [];
 
   // Realism layer — only when scene has data (graceful stub passthrough)
   if (realism) {

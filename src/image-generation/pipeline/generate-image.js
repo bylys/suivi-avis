@@ -148,8 +148,11 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
 
   const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
   const _reqWorkerSource = _finalSceneObj._worker_count_source || 'rolled';
-  const _fingerSelected = (_finalSceneObj.photo_defects || []).some(d => /finger|thumb/i.test(d));
   const _retryReinforcementKey = _isMismatchRetry && _retryNote ? _planBase._matched_service : null;
+  const _captureDefects    = _finalSceneObj._capture_defects_resolved || [];
+  const _captureDefectKeys = _captureDefects.map(d => d.key);
+  const _opticalSelected   = _captureDefects.some(d => d.source === 'optical');
+  const _captureSource     = _captureDefects.length === 0 ? 'none' : (_captureDefects[0].source || 'light');
   state.counters.imageCalls++;
   state.imageCallLog.push({ type: 'image', runId, taskId: task.taskId, metier: _planBase._matched_key, service: _planBase._matched_service, imageIndex: i, imageAttempt: task.imageAttempt, reason });
   console.log('[IMAGE REQUEST]', JSON.stringify({
@@ -160,11 +163,12 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
     worker_count_source:    _reqWorkerSource,
     state_lock_used:        _finalSceneObj._state_lock_used ?? null,
     site_realism_build_id:  _finalSceneObj._site_realism_build_id || null,
-    finger_scope_active:    false,
     retry_reinforcement_key:     _retryReinforcementKey,
     retry_reinforcement_applied: _retryReinforcementKey !== null,
-    finger_allowed:         _fingerSelected,
-    selected_capture_defects: _finalSceneObj.photo_defects || [],
+    capture_defect_source:  _captureSource,
+    capture_defect_keys:    _captureDefectKeys,
+    capture_defect_count:   _captureDefects.length,
+    optical_defect_selected: _opticalSelected,
   }));
 
   const req = buildImageGenerationRequest(_finalPrompt, apiKey);

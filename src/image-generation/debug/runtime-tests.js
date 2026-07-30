@@ -438,7 +438,7 @@ export async function runRuntimeTests() {
         for (const c of comps) if (!allowed.includes(c)) t26Failures.push(`${metier}/n=${n}: '${c}' not in allowed_compositions`);
         for (let i = 0; i < planned.length; i++) {
           const dl = planned[i]._capture_defects_resolved?.length;
-          if (!dl || dl < 1 || dl > 2) t26Failures.push(`${metier}/n=${n}/task${i}: ${dl} defects (expected 1-2)`);
+          if (dl === undefined || dl === null || dl > 1) t26Failures.push(`${metier}/n=${n}/task${i}: ${dl} defects (expected 0-1)`);
         }
       }
     }
@@ -471,21 +471,21 @@ export async function runRuntimeTests() {
     else fail('T27', t27Failures.slice(0, 5).join('; '));
   } catch (e) { fail('T27', e.message); }
 
-  // T28: _selectCaptureDefects — 1-2 defects, finger_edge rare
+  // T28: _selectCaptureDefects — 0-1 defects (70% none, 30% one), finger_edge rare
   try {
-    let zeroN = 0, overN = 0, fingerN = 0;
+    let overN = 0, fingerN = 0, zeroN = 0;
     for (let i = 0; i < 10000; i++) {
       const d = _selectCaptureDefects(i % 6, 6, _hashSeed(`T28|${i}`));
       if (d.length === 0) zeroN++;
-      if (d.length > 2)   overN++;
+      if (d.length > 1)   overN++;
       if (d.some(x => x.key === 'finger_edge')) fingerN++;
     }
     const fPct = (fingerN / 10000 * 100).toFixed(1);
+    const nonePct = (zeroN / 10000 * 100).toFixed(1);
     const t28Failures = [];
-    if (zeroN > 0)             t28Failures.push(`${zeroN} scenes with 0 defects`);
-    if (overN > 0)             t28Failures.push(`${overN} scenes with >2 defects`);
-    if (fingerN > 10000 * 0.15) t28Failures.push(`finger_edge too frequent: ${fPct}%`);
-    if (!t28Failures.length) pass(`T28: capture defects — 0 empty, 0 overflow, finger_edge=${fPct}% (rare), n=10000`);
+    if (overN > 0)             t28Failures.push(`${overN} scenes with >1 defect`);
+    if (fingerN > 10000 * 0.06) t28Failures.push(`finger_edge too frequent: ${fPct}%`);
+    if (!t28Failures.length) pass(`T28: capture defects — 0 overflow, none=${nonePct}%, finger_edge=${fPct}% (rare), n=10000`);
     else fail('T28', t28Failures.join('; '));
   } catch (e) { fail('T28', e.message); }
 
@@ -531,7 +531,7 @@ export async function runRuntimeTests() {
           if (planned.filter(t => t._pre_assigned_worker_presence === 'workers').length < minWImg) { failCount++; if (t30Samples.length < 5) t30Samples.push(`${metier}/n=${batchSize}: workers < min`); }
           for (let i = 0; i < planned.length; i++) {
             const dl = planned[i]._capture_defects_resolved?.length;
-            if (!dl || dl < 1 || dl > 2) { failCount++; if (t30Samples.length < 5) t30Samples.push(`${metier}/n=${batchSize}/i=${i}: defects=${dl}`); }
+            if (dl === undefined || dl === null || dl > 1) { failCount++; if (t30Samples.length < 5) t30Samples.push(`${metier}/n=${batchSize}/i=${i}: defects=${dl}`); }
           }
         }
       }
@@ -560,7 +560,7 @@ export async function runRuntimeTests() {
     for (const t of t31Tasks) {
       for (const f of required) if (t[f] === undefined || t[f] === null) t31Failures.push(`${t.taskId}: missing ${f}`);
       const dl = (t._capture_defects_resolved || []).length;
-      if (dl < 1 || dl > 2) t31Failures.push(`${t.taskId}: ${dl} defects`);
+      if (dl > 1) t31Failures.push(`${t.taskId}: ${dl} defects (max 1 allowed)`);
     }
     const comps = t31Tasks.map(t => t._pre_assigned_composition);
     if (comps.filter(c => c === 'close_detail').length > 1) t31Failures.push(`${comps.filter(c => c === 'close_detail').length} close_detail in batch of 4 (max 1)`);
@@ -694,9 +694,8 @@ export async function runRuntimeTests() {
     let fingerN = 0;
     for (let i = 0; i < 10000 && t37Failures.length < 5; i++) {
       const d = _selectCaptureDefects(i % 6, 6, _hashSeed(`T37|${i}`));
-      if (!d.length)  { t37Failures.push(`i=${i}: empty`); continue; }
-      if (d.length > 2) { t37Failures.push(`i=${i}: ${d.length} defects`); continue; }
-      if (d.length === 2) { const [fa, fb] = d.map(x => defectFamily[x.key]); if (fa && fb && fa === fb) t37Failures.push(`i=${i}: same family (${fa})`); }
+      if (d.length > 1) { t37Failures.push(`i=${i}: ${d.length} defects (max 1)`); continue; }
+      if (d.length === 0) continue;
       if (d.some(x => x.key === 'finger_edge')) fingerN++;
     }
     const fPct = (fingerN / 10000 * 100).toFixed(1);
