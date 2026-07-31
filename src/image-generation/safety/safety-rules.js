@@ -135,6 +135,16 @@ const _SERVICE_GATE_ALIASES = {
   'enduit de facade':                  'Ravalement de façade',
   'crepi':                             'Ravalement de façade',
   'application enduit':                'Ravalement de façade',
+  // ── Réparation fissure ────────────────────────────────────────────────────
+  'reparation fissure':                'Réparation fissure',
+  'reparation fissures':               'Réparation fissure',
+  'reparation de fissures':            'Réparation fissure',
+  'traitement fissure':                'Réparation fissure',
+  'traitement fissures':               'Réparation fissure',
+  'traitement fissures facade':        'Réparation fissure',
+  'rebouchage fissure':                'Réparation fissure',
+  'reprise fissure':                   'Réparation fissure',
+  'fissure facade':                    'Réparation fissure',
   // Anti-moss treatment
   'anti-mousse':                       'Traitement anti-mousse toiture',
   'traitement anti-mousse toiture':    'Traitement anti-mousse toiture',
@@ -361,6 +371,19 @@ const SERVICE_VISUAL_GATE_RULES = {
       { field: 'worker_in_mewp_basket_visible', not_exactly_true: true, reason: 'worker_count_mismatch' },
       { field: 'ground_worker_visible',         not_exactly_true: true, reason: 'worker_count_mismatch' },
       { field: 'workers_spatially_separated',   not_exactly_true: true, reason: 'worker_count_mismatch' },
+    ],
+  },
+
+  'Réparation fissure': {
+    vision_instruction: `\n\nSERVICE VISUAL GATE — LOCALIZED FACADE CRACK REPAIR: This image must show a localized crack repair on an exterior facade or masonry wall. One worker applies repair mortar, resin or filler into a visible crack using a pointing trowel, scraper, or spatula. The repair must be clearly localized — NOT a full render section or complete ravalement. You MUST add these fields to your JSON:\n"facade_crack_visible": <true/false — a crack, joint opening, or local surface defect is clearly visible on the exterior wall or facade surface — the crack or defect must be present and identifiable>,\n"localized_crack_repair_visible": <true/false — the repair is clearly localized on one area: a single crack, joint, or small section — NOT a full scaffold-supported full-wall application>,\n"repair_action_in_progress": <true/false — the worker is actively filling, smoothing, or treating the crack — fresh mortar or filler is visible in the crack or being applied; set false if the facade is already uniformly clean and finished with no active work>,\n"service_visual_match": <true if a localized exterior crack or joint repair is clearly the primary activity — fresh material is being applied to a specific crack or defect; set false if the scene shows complete ravalement, full render application, roof work, interior work, or no repair action at all>,\n"worker_on_ladder_as_workstation": <true/false — the worker uses a free-standing ladder as their only elevated access and works from the rungs rather than from a stable platform or ground level>,\n"interior_scene": <true/false — the scene shows indoor walls, interior rooms, or an interior ceiling — no exterior facade visible>,\n"full_ravalement_visible": <true/false — the scene clearly shows complete full-facade render application, full ravalement, or pressure-wash cleaning of the entire facade — NOT a localized repair>.\nIf facade_crack_visible is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf localized_crack_repair_visible is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf repair_action_in_progress is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf service_visual_match is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf worker_on_ladder_as_workstation is true: set safe=false, severity="critical", reason="access_violation".\nIf interior_scene is true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf full_ravalement_visible is true: set safe=false, severity="critical", reason="service_visual_mismatch".\nDo NOT reject because no scaffold is present — ground-level crack repair requires no scaffold. Do NOT reject because only one worker is visible — one worker is sufficient for localized crack repair.`,
+    reject_conditions: [
+      { field: 'facade_crack_visible',          not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'localized_crack_repair_visible', not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'repair_action_in_progress',     not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'service_visual_match',          not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'worker_on_ladder_as_workstation', value: true,          reason: 'access_violation'        },
+      { field: 'interior_scene',                value: true,            reason: 'service_visual_mismatch' },
+      { field: 'full_ravalement_visible',       value: true,            reason: 'service_visual_mismatch' },
     ],
   },
 };
