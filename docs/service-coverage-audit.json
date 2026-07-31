@@ -1,7 +1,7 @@
 {
   "summary": {
-    "ROUTED_TO_SPECIFIC_SCENE": 156,
-    "PARTIAL_CONTEXTE": 16,
+    "ROUTED_TO_SPECIFIC_SCENE": 158,
+    "PARTIAL_CONTEXTE": 14,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
     "UNMATCHED": 0,
@@ -2411,23 +2411,23 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "debarras appartement",
-        "targeted_count": 1,
+        "targeted_count": 2,
         "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Débarras maison",
-      "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, no fallback",
-      "matched_regex": null,
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_detail": "matched _for: maison",
+      "matched_regex": "maison",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "no_regex_match",
+        "type": "regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
-        "normalized_input": "debarras maison",
-        "targeted_count": 1,
-        "fallback_count": 0
+        "regex": "maison",
+        "flags": "i",
+        "normalized_input": "debarras maison"
       }
     },
     {
@@ -2456,23 +2456,23 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "debarras grenier",
-        "targeted_count": 1,
+        "targeted_count": 2,
         "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Vider maison succession",
-      "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, no fallback",
-      "matched_regex": null,
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_detail": "matched _for: maison",
+      "matched_regex": "maison",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "no_regex_match",
+        "type": "regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
-        "normalized_input": "vider maison succession",
-        "targeted_count": 1,
-        "fallback_count": 0
+        "regex": "maison",
+        "flags": "i",
+        "normalized_input": "vider maison succession"
       }
     },
     {
@@ -2486,7 +2486,7 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "debarras apres deces",
-        "targeted_count": 1,
+        "targeted_count": 2,
         "fallback_count": 0
       }
     },
@@ -2501,7 +2501,7 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "enlevement encombrants",
-        "targeted_count": 1,
+        "targeted_count": 2,
         "fallback_count": 0
       }
     },
@@ -2516,11 +2516,11 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "nettoyage encombrants",
-        "targeted_count": 1,
+        "targeted_count": 2,
         "fallback_count": 0
       }
     }
   ],
   "errors": [],
-  "generated_at": "2026-07-31T11:09:20.567Z"
+  "generated_at": "2026-07-31T12:08:19.444Z"
 }

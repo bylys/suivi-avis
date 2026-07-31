@@ -90,6 +90,56 @@ export const SITE_REALISM_FINISHING = {
     // ─── DEBARRAS-CAVE-INTERIOR — ENCOURS — CELLAR_INTERIOR_CLEAROUT (state_lock, pool_size=1) ──
     // Single scenario: authentic cellar interior, 2 workers, no vehicle visible.
     scenarios: [
+
+      // ─── DEBARRAS-MAISON-ENCOURS — EN COURS — maison individuelle ─────────
+      {
+        _for:                             'maison',
+        _state_for:                       'encours',
+        _visual_family:                   'DEBARRAS-MAISON-ENCOURS',
+        setting:                          'exterior',
+        scene_camera:                     'standing in the driveway or front path, 4–6 m from the entrance, eye level, slight angle toward the open front door — residential house facade visible',
+        scene_framing:                    'mid-clearout: foreground left has a stack of sealed boxes and a folded chair near the van rear doors — van parked on driveway, rear half visible, not dominant — right side open entrance with a worker emerging carrying a box or small item — second worker near the van stacking or securing items — through the open door a partially cluttered hallway visible',
+        scene_debris:                     'cardboard scraps and a crumpled bin bag on the driveway near the van, light dust on the path near the entrance',
+        location_must_have: [
+          'detached or semi-detached house facade — brick, render, or stone — residential',
+          'driveway, front path, or garden entrance visible as foreground',
+          'open front door with interior partially visible — hallway or room still cluttered',
+          'small or medium utility van on the driveway — rear half visible, not filling the frame',
+          'at least one worker visible carrying or handling items near the entrance or van',
+        ],
+        location_forbidden: [
+          'apartment building facade with multiple floors and shared hallway',
+          'commercial building, warehouse, or industrial site',
+          'completely empty driveway with no items visible outside',
+          'interior room scene — kitchen, bedroom, living room',
+          'aerial or wide street view removing the residential entrance close-up',
+        ],
+        scene_exclude: [
+          'van completely filling the frame or dominating the scene',
+          'single worker carrying a wardrobe or large armoire alone',
+          'items stacked dangerously high on a sack truck on the path',
+          'fully cleared property with nothing remaining to load',
+          'apartment-style shared entrance lobby',
+          'worker in high-visibility vest or branded uniform',
+        ],
+        chantier_details: [
+          'two or three sealed cardboard boxes stacked beside the van rear — ready to load',
+          'folded flat-pack box and a bin bag near the van doors on the driveway',
+          'open front door with light from hallway — shelves or furniture partially visible inside',
+          'hand cart or sack truck resting upright near the entrance path',
+          'garden gate or low hedge framing the property boundary on one side',
+        ],
+        tools: [
+          'hand cart or sack truck leaning against the wall beside the entrance',
+          'moving straps looped over the van side rail',
+        ],
+        protections: [
+          'cardboard sheet laid over the door threshold at the entrance',
+          'foam corner guard on the door frame at the exit point',
+        ],
+      },
+
+      // ─── DEBARRAS-CAVE-INTERIOR — ENCOURS — CELLAR_INTERIOR_CLEAROUT (state_lock, pool_size=1) ──
       {
         _for:                             'cave|sous.?sol',
         _state_for:                       'encours',
