@@ -240,8 +240,6 @@ const WORKER_SCENE_RULES = {
   ravalement: {
     max_workers: 2,
     state_worker_minimums: { encours: 2, semifinal: 2 },
-    // Ground-level services cap the state minimum to 1 worker (no scaffold crew needed)
-    service_worker_maximums: { 'enduit monocouche': 1, 'enduit hydraulique': 1, 'crepi facade': 1 },
     actions: [
       'applying render to the facade with a hawk and float',
       'sanding the old render surface with a disc sander from the scaffold platform',

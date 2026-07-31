@@ -143,6 +143,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism._access_configuration !== undefined)            obj._access_configuration            = realism._access_configuration;
           if (realism._access_configuration_source !== undefined)     obj._access_configuration_source     = realism._access_configuration_source;
           if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
+          if (picked._scaffold_variant !== undefined)                 obj._scaffold_variant                = picked._scaffold_variant;
           obj._selected_scenario_state_for = picked._state_for || null;
           obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
           // Always stamp _visual_family — never silently inherit an old value.

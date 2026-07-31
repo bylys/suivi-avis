@@ -297,9 +297,9 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/etancheite-gate-tests.js?v=5'),
     import('./debug/etancheite-worker-resolver-tests.js?v=1'),
     import('./debug/capture-defect-distribution-tests.js?v=3'),
-    import('./debug/ravalement-tests.js?v=2'),
+    import('./debug/ravalement-tests.js?v=3'),
     import('./debug/fissure-tests.js?v=1'),
-    import('./debug/enduit-tests.js?v=2'),
+    import('./debug/enduit-tests.js?v=5'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();
