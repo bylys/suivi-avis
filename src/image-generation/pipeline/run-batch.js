@@ -89,7 +89,7 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             const _assignedWC  = Number(task._pre_assigned_worker_count);
             const _expectedWC  = (task._pre_assigned_worker_presence === 'workers' && Number.isInteger(_assignedWC) && _assignedWC >= 1)
               ? _assignedWC : 0;
-            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service });
+            const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service, accessConfiguration: task._resolved_access_configuration || null });
             const _safetyReasonCode = safety.checkFailed ? 'check_failed'
               : (!safety.safe && safety.reason === 'worker_count_mismatch')         ? 'worker_count_mismatch'
               : (!safety.safe && safety.reason === 'forbidden_roof_scene')          ? 'forbidden_roof_scene'

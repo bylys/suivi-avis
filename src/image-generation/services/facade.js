@@ -223,9 +223,53 @@ export const SITE_REALISM_FACADE = {
   ravalement: {
     scenarios: [
 
+      // ─── ENDUIT MONOCOUCHE / HYDRAULIQUE / CRÉPI — ENCOURS — GROUND_LEVEL (state_lock, pool_size=1) ────
+      {
+        _for:                             'enduit.*mono|enduit.*hydr|crepi',
+        _state_for:                       'encours',
+        _access_configuration:            'GROUND_LEVEL_FACADE_WORK',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        _visual_family:                   'FACADE-ENDUIT-GROUND',
+        scene_note: 'ground-level monocouche render application on the lower section of a residential facade — one professional worker standing stably on firm flat ground applies fresh monocouche render with a large metal float (taloche) — work zone covers from the base of the wall up to shoulder height — fresh pale monocouche render on the treated section, old weathered render above and beside it — irregular active transition line clearly visible between fresh and old surface — windows or door frames near the work zone locally protected with kraft paper tape — small-to-medium bucket of premixed render and clean float on the ground beside the worker',
+        scene_camera: 'homeowner smartphone photograph — camera 2–4 m from the wall, eye level, slight diagonal — work zone fills 60–70 % of the frame — worker\'s feet, float in hand, fresh render on wall, and ground-level tools are all simultaneously visible',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'premixed render bucket and spare float resting on a protective dust sheet at the base of the wall — dried render splashes on the sheet',
+          midground:  'worker standing on firm ground, float pressed against the lower facade, spreading fresh pale monocouche render in even upward strokes — fresh surface on the left portion of the zone, bare primed substrate still showing on the right portion — irregular active transition edge clearly visible',
+          background: 'upper facade above shoulder height — old weathered render with texture and staining, no fresh render above the work zone',
+        },
+        scene_debris:  'small render drips at the base of the fresh section, open render bag folded at the bucket foot, kraft paper tape ends hanging from the window frame edge',
+        scene_exclude: [
+          'scaffold of any kind — no scaffold poles, boards, or towers — work is entirely at ground level',
+          'ladder used as a workstation — the worker stands on the ground, not on any ladder rungs',
+          'work zone above shoulder height — the fresh render must stop below the top of the worker\'s natural reach',
+          'complete full-facade fresh render covering the entire wall — the old render surface must remain clearly visible above the work zone',
+          'narrow linear crack repair — the fresh render must cover a surface area, not a single thin crack line',
+          'fully finished clean facade with no active work in progress',
+          'interior plastering scene — exterior facade only',
+          'pressure washer or cleaning equipment',
+          'roofing or roof work visible',
+        ],
+        tools: [
+          'large metal float (taloche) held flat against the facade surface — worker spreading fresh render in upward strokes',
+          'premixed render bucket at the worker\'s feet on the dust sheet',
+        ],
+        protections: [
+          'protective dust sheet laid on the ground at the base of the wall — catches render drips',
+          'kraft paper tape along the window or door frame edge closest to the work zone',
+        ],
+        chantier_details: [
+          'fresh pale monocouche render surface visible on the treated zone — slightly shiny and wet',
+          'old weathered render above and beside the fresh zone — darker tone, texture from weathering',
+          'irregular active transition edge between fresh and old render — natural uneven boundary',
+          'one professional worker only — feet firmly on the ground, float actively pressing render onto the wall',
+        ],
+      },
+
       // ─── RAVALEMENT ENCOURS — SCAFFOLD_PLATFORM (state_lock, pool_size=1) ──────────
       {
-        _for:                             'ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit',
+        _for:                             'ravalement|renovation.*facade|ite',
         _state_for:                       'encours',
         _access_configuration:            'SCAFFOLD_PLATFORM',
         _access_configuration_source:     'state_lock',

@@ -111,6 +111,8 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
 
   const _finalSceneObj = JSON.parse(finalScene);
   _assertFinalWorkerConsistency(_finalSceneObj);
+  // Stamp resolved access_configuration on task for safety-check routing (after _finalSceneObj is defined)
+  task._resolved_access_configuration = _finalSceneObj._access_configuration || null;
 
   // Preflight guard: when a worker count is pre-assigned, var_workers must match
   // before the Images API is called. Divergence here means the pipeline would

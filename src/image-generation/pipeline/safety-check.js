@@ -21,7 +21,7 @@ function _normalizeForGate(svc) {
 // Pure — verbatim params from _checkImageSafety (app.js lines 13689–13701).
 // Returns null if the métier has no safety rule (caller must guard).
 // expectedWorkerCount: when >= 2, augments the prompt to verify worker count.
-function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount = 0, matchedService = '') {
+function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount = 0, matchedService = '', accessConfiguration = null) {
   const basePrompt = SAFETY_CHECK_RULES[matchedKey];
   if (!basePrompt) return null;
   const workerInstruction = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 1)
@@ -29,7 +29,10 @@ function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount =
     : '';
   const _normSvc = _normalizeForGate(matchedService);
   const _effectiveService = _SERVICE_GATE_ALIASES[_normSvc] || matchedService;
-  const serviceGateInstruction = SERVICE_VISUAL_GATE_RULES[_effectiveService]?.vision_instruction ?? '';
+  const _gateObj = SERVICE_VISUAL_GATE_RULES[_effectiveService];
+  const serviceGateInstruction = (accessConfiguration && _gateObj?.vision_instruction_by_access?.[accessConfiguration])
+    ? _gateObj.vision_instruction_by_access[accessConfiguration]
+    : (_gateObj?.vision_instruction ?? '');
   const prompt = basePrompt + workerInstruction + serviceGateInstruction;
   return {
     url:     'https://api.openai.com/v1/chat/completions',
@@ -76,11 +79,11 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
 //   B. Service visual gate (reject_conditions — first matching condition wins)
 //   C. All structured checks passed → force safe:true (overrides Vision's autonomous safe=false)
 //   Fallback: no gate → trust obj.safe
-async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount = 0, matchedService = '' }) {
+async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount = 0, matchedService = '', accessConfiguration = null }) {
   const basePrompt = SAFETY_CHECK_RULES[matchedKey];
   if (!basePrompt) return { safe: true };
   try {
-    const req    = buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount, matchedService);
+    const req    = buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount, matchedService, accessConfiguration);
     const resp   = await fetchImpl(req.url, { method: 'POST', headers: req.headers, body: req.body }, req.timeout);
     const parsed = await readResponseImpl(resp);
     if (!parsed.ok || !parsed.data) return { safe: null, checkFailed: true, reason: `HTTP ${parsed.status}` };
@@ -100,7 +103,12 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
     // ── Resolve gate ───────────────────────────────────────────────────────────
     const _normSvc    = _normalizeForGate(matchedService);
     const _gateService = _SERVICE_GATE_ALIASES[_normSvc] || matchedService;
-    const gate = SERVICE_VISUAL_GATE_RULES[_gateService];
+    const _gateObj    = SERVICE_VISUAL_GATE_RULES[_gateService];
+    // Route to access-specific reject_conditions when available
+    const _activeConditions = (accessConfiguration && _gateObj?.reject_conditions_by_access?.[accessConfiguration])
+      ? _gateObj.reject_conditions_by_access[accessConfiguration]
+      : _gateObj?.reject_conditions;
+    const gate = _gateObj ? { ..._gateObj, reject_conditions: _activeConditions } : null;
 
     // ── Log generic Vision fields ──────────────────────────────────────────────
     console.log('[VISION GENERIC]', JSON.stringify({

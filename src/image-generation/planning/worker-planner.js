@@ -30,6 +30,13 @@ function _planBatchWorkerPresence(group, seed) {
     const svcMin    = wRules.service_worker_minimums[svcBucket];
     if (svcMin && svcMin > minW) minW = svcMin;
   }
+  // Service-level maximum: ground-level services (e.g. enduit monocouche) cap the state minimum
+  if (wRules.service_worker_maximums) {
+    const svcRaw    = group[0]?._planBase?._matched_service || '';
+    const svcBucket = svcRaw.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const svcMax    = wRules.service_worker_maximums[svcBucket];
+    if (typeof svcMax === 'number' && svcMax < minW) minW = svcMax;
+  }
   const n       = group.length;
   let workerImages = 0;
 

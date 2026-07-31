@@ -563,13 +563,13 @@
       "metier": "ravalement",
       "service_label": "Ravalement façade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
-      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
+      "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+        "regex": "ravalement|renovation.*facade|ite",
         "flags": "i",
         "normalized_input": "ravalement facade"
       }
@@ -578,13 +578,13 @@
       "metier": "ravalement",
       "service_label": "Rénovation façade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
-      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
+      "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+        "regex": "ravalement|renovation.*facade|ite",
         "flags": "i",
         "normalized_input": "renovation facade"
       }
@@ -593,13 +593,13 @@
       "metier": "ravalement",
       "service_label": "Crépi façade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
-      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr|crepi",
+      "matched_regex": "enduit.*mono|enduit.*hydr|crepi",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+        "regex": "enduit.*mono|enduit.*hydr|crepi",
         "flags": "i",
         "normalized_input": "crepi facade"
       }
@@ -608,13 +608,13 @@
       "metier": "ravalement",
       "service_label": "ITE (isolation par l'extérieur)",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
-      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
+      "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+        "regex": "ravalement|renovation.*facade|ite",
         "flags": "i",
         "normalized_input": "ite (isolation par l'exterieur)"
       }
@@ -623,13 +623,13 @@
       "metier": "ravalement",
       "service_label": "Enduit monocouche",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
-      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr|crepi",
+      "matched_regex": "enduit.*mono|enduit.*hydr|crepi",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+        "regex": "enduit.*mono|enduit.*hydr|crepi",
         "flags": "i",
         "normalized_input": "enduit monocouche"
       }
@@ -638,13 +638,13 @@
       "metier": "ravalement",
       "service_label": "Enduit hydraulique",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
-      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr|crepi",
+      "matched_regex": "enduit.*mono|enduit.*hydr|crepi",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+        "regex": "enduit.*mono|enduit.*hydr|crepi",
         "flags": "i",
         "normalized_input": "enduit hydraulique"
       }
@@ -683,13 +683,13 @@
       "metier": "ravalement",
       "service_label": "Traitement façade pierre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
-      "matched_regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+      "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
+      "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit",
+        "regex": "ravalement|renovation.*facade|ite",
         "flags": "i",
         "normalized_input": "traitement facade pierre"
       }
