@@ -169,11 +169,11 @@ export async function runRuntimeTests() {
     else fail('T5', `missing=${JSON.stringify(missing)} termSize=${TERMINAL_STATUSES.size}`);
   } catch (e) { fail('T5', e.message); }
 
-  // T6: SAFETY_CHECK_RULES 13 entries (12 original + charpente), no default-safe leak
+  // T6: SAFETY_CHECK_RULES 14 entries (12 original + charpente + débarras), no default-safe leak
   try {
     const keys   = Object.keys(SAFETY_CHECK_RULES);
     const leaked = keys.filter(k => SAFETY_CHECK_RULES[k].includes('Default safe:true'));
-    if (keys.length === 13 && !leaked.length) pass('T6: SAFETY_CHECK_RULES (13 entries, no default-safe leak)');
+    if (keys.length === 14 && !leaked.length) pass('T6: SAFETY_CHECK_RULES (14 entries, no default-safe leak)');
     else fail('T6', `count=${keys.length} leaked=${JSON.stringify(leaked)}`);
   } catch (e) { fail('T6', e.message); }
 

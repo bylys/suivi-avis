@@ -86,6 +86,64 @@ export const WORK_SCENES_FINISHING = {
 export const SITE_REALISM_FINISHING = {
 
   'débarras': {
+
+    // ─── DEBARRAS-CAVE-INTERIOR — ENCOURS — CELLAR_INTERIOR_CLEAROUT (state_lock, pool_size=1) ──
+    // Single scenario: authentic cellar interior, 2 workers, no vehicle visible.
+    scenarios: [
+      {
+        _for:                             'cave|sous.?sol',
+        _state_for:                       'encours',
+        _access_configuration:            'CELLAR_INTERIOR_CLEAROUT',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        _visual_family:                   'DEBARRAS-CAVE-INTERIOR',
+        setting:                          'interior',
+        scene_camera:                     'standing at the bottom of the cellar stairs or near the entrance, smartphone held at chest height, wide angle capturing the full cellar depth — low ceiling overhead',
+        scene_framing:                    'cellar interior mid-clearout: left third still cluttered with old shelving and stacked items, right two-thirds partially cleared with stacked sealed boxes and an open floor path leading to the exit staircase — ceiling joists or concrete slab low overhead',
+        scene_debris:                     'dust on the concrete floor around cleared area, cardboard scraps near stacked boxes, light debris near the exit path',
+        location_must_have: [
+          'stone, concrete, or breeze-block cellar walls — rough unfinished surface',
+          'low ceiling — exposed joists, concrete slab, or bare beams',
+          'cellar floor — raw concrete, packed earth, or unpolished stone',
+          'staircase or access opening visible toward the exit',
+          'part of the space still cluttered, part already cleared',
+        ],
+        location_forbidden: [
+          'modern painted plasterboard walls suggesting a renovated room',
+          'bright sunlit space suggesting above-ground rooms or large windows',
+          'kitchen, bathroom, living room, or hallway interior',
+          'outdoor driveway or garden setting',
+          'removal van visible inside the scene',
+        ],
+        scene_exclude: [
+          'removal van as subject',
+          'outdoor driveway or exterior scene',
+          'modern renovated room with smooth plasterboard walls',
+          'single worker carrying large armoire or sofa alone',
+          'worker carrying bulky item on stairs',
+          'bright sunny outdoor lighting through large windows',
+          'clearly empty finished cellar with nothing left to remove',
+        ],
+        chantier_details: [
+          'flattened cardboard boxes stacked against the cellar wall near the exit path',
+          'two or three sealed boxes stacked near the staircase foot ready for removal',
+          'dusty concrete floor with visible cleared path to the staircase',
+          'old wooden shelving unit on the left — some shelves still holding items, some emptied',
+          'small pile of miscellaneous items sorted near the wall — books, a lamp, an old box',
+        ],
+        tools: [
+          'sack truck or hand cart standing upright beside a stack of boxes near the exit',
+          'portable LED work light on the floor or hung from a beam illuminating the work area',
+          'work gloves placed on top of a sealed box near the staircase',
+        ],
+        protections: [
+          'dust mask or respirator hanging from a nail near the entrance',
+          'knee pad resting beside a low shelf being emptied',
+        ],
+      },
+    ],
+
+    // ─── Flat fallback tools/details — used for all other débarras services (no scenario match) ──
     tools: [
       'flat furniture trolley resting against the wall near the doorway',
       'moving straps on the floor near the exit',

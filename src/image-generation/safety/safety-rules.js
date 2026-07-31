@@ -82,7 +82,7 @@ const SAFETY_CHECK_RULES = {
   // peinture — skipped: indoor low-risk, forbidden[] covers edge cases
   // nettoyage — skipped: ground-level, low visual safety signal
   // carrelage — skipped: floor-level, blade guard already in prompt rules
-  // débarras  — skipped: two-person carry enforced by max_workers + forbidden[]
+  débarras:             "You are a worksite safety inspector reviewing a house clearout (débarras) scene. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: a single worker carrying an obviously oversized heavy item (wardrobe, sofa, armoire) alone; an object balanced on or obstructing a staircase handrail; the exit path completely blocked with no passable route; a worker carrying a bulky item while on a staircase. Do not reject for clutter, dust, dim lighting, or items still on shelves — a working clearout is naturally messy. Reject only when a clearly visible critical safety impossibility is present.",
   'élagage':            "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: climber in tree with no rope or harness; person standing directly under a branch being cut; climber feet dangling unsupported; chainsaw in obviously impossible posture. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   abattage:             "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person in the direct fall zone in front of the notch cut; chainsaw cutting overhead; person on far side of trunk during felling. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
   'maçonnerie':         "You are a worksite safety inspector. Return ONLY valid JSON: {\"safe\":true/false,\"severity\":\"ok\"/\"warning\"/\"critical\",\"reason\":\"string\"}. CRITICAL if you clearly see: person balanced on top of unfinished wall above 1.5 m without scaffold; single block being lifted overhead without mechanical aid. Do not reject for minor imperfections. Reject only when a clearly visible critical safety impossibility is present.",
@@ -159,6 +159,15 @@ const _SERVICE_GATE_ALIASES = {
   'etancheite acrotere':       'Étanchéité acrotère',
   'etancheite balcon':         'Étanchéité balcon',
   'etancheite terrasse':       'Étanchéité terrasse',
+  // ── Débarras ──────────────────────────────────────────────────────────────
+  'debarras cave':                  'Débarras',
+  'debarras maison':                'Débarras',
+  'debarras appartement':           'Débarras',
+  'debarras grenier':               'Débarras',
+  'vider maison succession':        'Débarras',
+  'debarras apres deces':           'Débarras',
+  'enlevement encombrants':         'Débarras',
+  'nettoyage encombrants':          'Débarras',
   // ── Étanchéité — pitched contexts ────────────────────────────────────────
   'reparation fuite toiture':  'Étanchéité inclinée',
   'reparation fuite':          'Étanchéité inclinée',
@@ -437,6 +446,34 @@ const SERVICE_VISUAL_GATE_RULES = {
       { field: 'full_ravalement_visible',       value: true,            reason: 'service_visual_mismatch' },
     ],
   },
+
+  'Débarras': {
+    vision_instruction: `\n\nSERVICE VISUAL GATE — HOUSE CLEARING / DÉBARRAS: This image must show an active clearout operation at a residential property. You MUST add these fields to your JSON: "cellar_interior_visible": <true/false — the scene shows an authentic cellar or basement interior: rough unfinished walls (stone, concrete, or breeze-block), low ceiling (exposed joists, concrete slab, or bare beams), raw concrete or earth floor, no painted plasterboard finish — set false if the room looks like a modern renovated interior, kitchen, bathroom, or any above-ground habitable room>, "clear_carrying_path_visible": <true/false — a clear walking path is visible from the work zone toward the exit staircase or doorway — items are not piled so high that the exit path is completely blocked>, "manageable_loads_visible": <true/false — all visible loads being carried or handled are manageable for two workers: individual boxes, small furniture, or bagged items — set false only if a single worker is shown carrying an oversized heavy item like a wardrobe or sofa alone>, "two_workers_visible": <true/false — exactly two professional workers are clearly visible in the frame>, "workers_wearing_gloves": <true/false — at least one worker visibly wears work gloves — set true if gloves are visible on any worker>, "solid_work_footwear_visible": <true/false — workers wear solid footwear (work boots or closed shoes) — set false only if sandals, bare feet, or clearly unsuitable footwear is visible>, "large_item_carried_by_single_worker": <true/false — a single worker is shown carrying an obviously oversized or very heavy item (wardrobe, sofa, armoire) alone without assistance — set false if loads are manageable or two workers are handling large items together>, "worker_carrying_large_item_on_stairs": <true/false — a worker is shown carrying a large bulky item while on a staircase — set false if workers are on flat ground only or if no staircase carry is shown>, "stair_handrail_obstructed": <true/false — any object is placed on or leaning against a staircase handrail blocking its use>, "exit_path_blocked": <true/false — the exit path or staircase is completely blocked by stacked items with no passable route>, "service_visual_match": <true if an active clearout operation — workers handling, sorting, stacking, or carrying items toward exit — is clearly the primary activity; set false if the space is completely empty, if only a renovation or cleaning is shown, if no items are being cleared, or if the scene is a demolition or waste dump site>, "worker_count_matches_plan": <if var_presence in this JSON is 'workers': true if the number of clearly visible professional workers equals var_workers, else false; if var_presence is not 'workers': true>.\nIf cellar_interior_visible is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf large_item_carried_by_single_worker is true: set safe=false, severity="critical", reason="access_violation".\nIf worker_carrying_large_item_on_stairs is true: set safe=false, severity="critical", reason="access_violation".\nIf stair_handrail_obstructed is true: set safe=false, severity="critical", reason="access_violation".\nIf exit_path_blocked is true: set safe=false, severity="critical", reason="access_violation".\nIf service_visual_match is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf worker_count_matches_plan is not true: set safe=false, severity="critical", reason="worker_count_mismatch".\nDo NOT reject because the space is cluttered, dusty, or items are imperfectly sorted — a working cellar clearout is naturally messy. Do NOT reject because some items remain on shelves — partial clearout is the expected state for encours.`,
+    reject_conditions: [
+      { field: 'large_item_carried_by_single_worker', value: true,            reason: 'access_violation'        },
+      { field: 'worker_carrying_large_item_on_stairs', value: true,           reason: 'access_violation'        },
+      { field: 'stair_handrail_obstructed',            value: true,           reason: 'access_violation'        },
+      { field: 'exit_path_blocked',                    value: true,           reason: 'access_violation'        },
+      { field: 'service_visual_match',                 not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'worker_count_matches_plan',            not_exactly_true: true, reason: 'worker_count_mismatch'   },
+    ],
+    reject_conditions_by_access: {
+      CELLAR_INTERIOR_CLEAROUT: [
+        { field: 'cellar_interior_visible',              not_exactly_true: true, reason: 'service_visual_mismatch' },
+        { field: 'clear_carrying_path_visible',          not_exactly_true: true, reason: 'access_violation'        },
+        { field: 'manageable_loads_visible',             not_exactly_true: true, reason: 'access_violation'        },
+        { field: 'large_item_carried_by_single_worker',  value: true,            reason: 'access_violation'        },
+        { field: 'worker_carrying_large_item_on_stairs', value: true,            reason: 'access_violation'        },
+        { field: 'stair_handrail_obstructed',            value: true,            reason: 'access_violation'        },
+        { field: 'exit_path_blocked',                    value: true,            reason: 'access_violation'        },
+        { field: 'service_visual_match',                 not_exactly_true: true, reason: 'service_visual_mismatch' },
+        { field: 'worker_count_matches_plan',            not_exactly_true: true, reason: 'worker_count_mismatch'   },
+      ],
+    },
+    vision_instruction_by_access: {
+      CELLAR_INTERIOR_CLEAROUT: `\n\nSERVICE VISUAL GATE — CELLAR CLEAROUT (DÉBARRAS CAVE): This image must show an active clearout in an authentic residential cellar or basement. Worker 1 sorts, packs, or stacks items in boxes. Worker 2 uses a sack truck or hand cart, or moves a box toward the exit path. You MUST add these fields to your JSON: "cellar_interior_visible": <true/false — the scene shows an authentic cellar or basement interior: rough stone, concrete, or breeze-block walls, low ceiling (exposed joists, concrete slab, or bare beams), raw concrete or earth floor — set false if the room looks like a modern renovated living space, painted plasterboard room, kitchen, bathroom, or bright sunlit room>, "clear_carrying_path_visible": <true/false — a clear walking path is visible from the work zone toward the exit staircase or doorway>, "manageable_loads_visible": <true/false — all visible loads are manageable: boxes, bags, small furniture handled without single-worker overload>, "large_item_carried_by_single_worker": <true/false — a single worker is shown carrying an oversized heavy item (armoire, sofa, wardrobe) alone — set false if loads are reasonable or if two workers share a large item>, "worker_carrying_large_item_on_stairs": <true/false — a worker carries a bulky item on a staircase — set false if no staircase carry is shown>, "stair_handrail_obstructed": <true/false — any object placed on or obstructing a staircase handrail>, "exit_path_blocked": <true/false — exit path or staircase completely blocked by items with no passable route>, "service_visual_match": <true if an active cellar clearout — workers packing, sorting, stacking, or moving items toward exit — is clearly the primary activity; set false if the cellar is completely empty, if a renovation or demolition is shown, if the scene is an exterior driveway, or if no items are being cleared>, "worker_count_matches_plan": <if var_presence is 'workers': true if clearly visible workers equal var_workers, else false; if var_presence is not 'workers': true>.\nIf cellar_interior_visible is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf large_item_carried_by_single_worker is true: set safe=false, severity="critical", reason="access_violation".\nIf worker_carrying_large_item_on_stairs is true: set safe=false, severity="critical", reason="access_violation".\nIf stair_handrail_obstructed is true: set safe=false, severity="critical", reason="access_violation".\nIf exit_path_blocked is true: set safe=false, severity="critical", reason="access_violation".\nIf service_visual_match is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf worker_count_matches_plan is not true: set safe=false, severity="critical", reason="worker_count_mismatch".\nDo NOT reject because the cellar is cluttered, dusty, or has items still on shelves — partial clearout is the expected state. Do NOT reject because the lighting is dim or from a portable work light — cellar lighting is naturally limited.`,
+    },
+  },
 };
 
 // ─── SERVICE_VISUAL_MISMATCH_RETRY ───────────────────────────────────────────
@@ -480,6 +517,9 @@ Both workers must be simultaneously visible. Do not crop either one out.
 Keep both ladders fully visible: the facade access ladder against the wall AND the hooked roof ladder lying flat on the same tiled slope as the chimney with ridge hooks at the ridge.
 Do not show only one worker. Do not show three or more workers. Exactly two.`,
 };
+
+// ─── DEBARRAS_CELLAR_RETRY ────────────────────────────────────────────────────
+// (placeholder — no retry prompt needed yet; gate handles rejection via structured fields)
 
 // ─── RAVALEMENT_SCAFFOLD_RETRY ───────────────────────────────────────────────
 // Injected on regenerate_after_safety_reject for Ravalement de façade.

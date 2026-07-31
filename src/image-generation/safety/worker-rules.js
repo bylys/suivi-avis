@@ -447,27 +447,36 @@ const WORKER_SCENE_RULES = {
   'débarras': {
     min_workers_when_visible: 2,
     max_workers: 2,
+    state_worker_minimums: {
+      encours:   2,
+      semifinal: 2,
+    },
     actions: [
-      'carrying a heavy item of furniture through the front door in a two-person carry',
+      'sorting items into boxes and stacking sealed boxes near the exit path — back to camera, crouching',
+      'carrying a box toward the staircase with both hands — seen from the side',
+      'guiding a sack truck loaded with boxes across the cellar floor toward the exit',
       'loading boxes onto a furniture trolley beside the van',
       'wrapping a fragile item in protective blanket before loading',
     ],
     postures: [
-      'back to camera, carrying the front end of a wardrobe through the doorway',
+      'crouching beside a low shelf, emptying contents into an open box — back to camera',
+      'standing upright pushing a sack truck loaded with boxes toward the staircase — seen from the side',
+      'kneeling to seal a box with tape on the cleared floor — front quarter view',
       'standing at the open van doors, stacking boxes in — seen from the side',
-      'crouching beside a dismantled item on the floor, wrapping with moving blanket — back to camera',
+      'back to camera, carrying the front end of a wardrobe through the doorway with a second worker',
     ],
-    access: ['ground-floor building entry', 'stair access for upper floors', 'furniture trolley on flat ground'],
+    access: ['cellar or basement interior', 'ground-floor building entry', 'stair access for upper floors', 'furniture trolley on flat ground'],
     safety_required: ['work gloves for heavy item handling', 'solid work footwear with toe cap'],
     forbidden: [
       'single person carrying a large wardrobe or sofa alone',
       'item balanced on a stair handrail',
       'van visibly overloaded above the roofline',
+      'worker carrying bulky item while on staircase',
     ],
     presence_indirect: [
+      'sack truck loaded with sealed boxes at the foot of the cellar stairs — no operator',
       'furniture trolley loaded with stacked boxes at the building entrance — van rear doors open, no operator',
-      'van rear doors open with partial load visible — protective blankets draped over the furniture, no driver or mover in frame',
-      'hand truck propped against the wall beside a stack of boxes in the hallway — no operator',
+      'hand truck propped against the cellar wall beside a stack of boxes — no operator',
     ],
   },
   terrassement: {

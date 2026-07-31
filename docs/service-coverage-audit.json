@@ -1,8 +1,8 @@
 {
   "summary": {
-    "ROUTED_TO_SPECIFIC_SCENE": 155,
-    "PARTIAL_CONTEXTE": 9,
-    "TOOLS_ONLY": 8,
+    "ROUTED_TO_SPECIFIC_SCENE": 156,
+    "PARTIAL_CONTEXTE": 16,
+    "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
     "UNMATCHED": 0,
     "TOTAL": 172
@@ -593,13 +593,13 @@
       "metier": "ravalement",
       "service_label": "Crépi façade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr|crepi",
-      "matched_regex": "enduit.*mono|enduit.*hydr|crepi",
+      "routing_detail": "matched _for: crepi",
+      "matched_regex": "crepi",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "enduit.*mono|enduit.*hydr|crepi",
+        "regex": "crepi",
         "flags": "i",
         "normalized_input": "crepi facade"
       }
@@ -623,13 +623,13 @@
       "metier": "ravalement",
       "service_label": "Enduit monocouche",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr|crepi",
-      "matched_regex": "enduit.*mono|enduit.*hydr|crepi",
+      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr",
+      "matched_regex": "enduit.*mono|enduit.*hydr",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "enduit.*mono|enduit.*hydr|crepi",
+        "regex": "enduit.*mono|enduit.*hydr",
         "flags": "i",
         "normalized_input": "enduit monocouche"
       }
@@ -638,13 +638,13 @@
       "metier": "ravalement",
       "service_label": "Enduit hydraulique",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr|crepi",
-      "matched_regex": "enduit.*mono|enduit.*hydr|crepi",
+      "routing_detail": "matched _for: enduit.*mono|enduit.*hydr",
+      "matched_regex": "enduit.*mono|enduit.*hydr",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
-        "regex": "enduit.*mono|enduit.*hydr|crepi",
+        "regex": "enduit.*mono|enduit.*hydr",
         "flags": "i",
         "normalized_input": "enduit hydraulique"
       }
@@ -660,7 +660,7 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"ravalement\"]",
         "normalized_input": "nettoyage facade",
-        "targeted_count": 10,
+        "targeted_count": 19,
         "fallback_count": 1
       }
     },
@@ -2403,100 +2403,124 @@
     {
       "metier": "débarras",
       "service_label": "Débarras appartement",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
+      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_detail": "no _for match, no fallback",
       "matched_regex": null,
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "no_regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "normalized_input": "debarras appartement",
+        "targeted_count": 1,
+        "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Débarras maison",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
+      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_detail": "no _for match, no fallback",
       "matched_regex": null,
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "no_regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "normalized_input": "debarras maison",
+        "targeted_count": 1,
+        "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Débarras cave",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
-      "matched_regex": null,
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_detail": "matched _for: cave|sous.?sol",
+      "matched_regex": "cave|sous.?sol",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "regex": "cave|sous.?sol",
+        "flags": "i",
+        "normalized_input": "debarras cave"
       }
     },
     {
       "metier": "débarras",
       "service_label": "Débarras grenier",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
+      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_detail": "no _for match, no fallback",
       "matched_regex": null,
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "no_regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "normalized_input": "debarras grenier",
+        "targeted_count": 1,
+        "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Vider maison succession",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
+      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_detail": "no _for match, no fallback",
       "matched_regex": null,
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "no_regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "normalized_input": "vider maison succession",
+        "targeted_count": 1,
+        "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Débarras après décès",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
+      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_detail": "no _for match, no fallback",
       "matched_regex": null,
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "no_regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "normalized_input": "debarras apres deces",
+        "targeted_count": 1,
+        "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Enlèvement encombrants",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
+      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_detail": "no _for match, no fallback",
       "matched_regex": null,
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "no_regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "normalized_input": "enlevement encombrants",
+        "targeted_count": 1,
+        "fallback_count": 0
       }
     },
     {
       "metier": "débarras",
       "service_label": "Nettoyage encombrants",
-      "routing_coverage": "TOOLS_ONLY",
-      "routing_detail": "SITE_REALISM is flat (tools/details only, no scenarios)",
+      "routing_coverage": "PARTIAL_CONTEXTE",
+      "routing_detail": "no _for match, no fallback",
       "matched_regex": null,
       "fallback_used": false,
       "routing_evidence": {
-        "type": "flat_tools_only",
-        "metier_key": "débarras"
+        "type": "no_regex_match",
+        "source": "SITE_REALISM[\"débarras\"]",
+        "normalized_input": "nettoyage encombrants",
+        "targeted_count": 1,
+        "fallback_count": 0
       }
     }
   ],
   "errors": [],
-  "generated_at": "2026-07-29T17:26:08.367Z"
+  "generated_at": "2026-07-31T11:09:20.567Z"
 }
