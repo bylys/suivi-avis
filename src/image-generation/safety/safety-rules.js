@@ -126,6 +126,15 @@ const _SERVICE_GATE_ALIASES = {
   // Gutter unblocking
   'debouchage gouttieres': 'Débouchage gouttières',
   'debouchage gouttiere':  'Débouchage gouttières',
+  // ── Ravalement / façade ───────────────────────────────────────────────────
+  'ravalement de facade':              'Ravalement de façade',
+  'ravalement facade':                 'Ravalement de façade',
+  'ravalement':                        'Ravalement de façade',
+  'renovation facade':                 'Ravalement de façade',
+  'enduit facade':                     'Ravalement de façade',
+  'enduit de facade':                  'Ravalement de façade',
+  'crepi':                             'Ravalement de façade',
+  'application enduit':                'Ravalement de façade',
   // Anti-moss treatment
   'anti-mousse':                       'Traitement anti-mousse toiture',
   'traitement anti-mousse toiture':    'Traitement anti-mousse toiture',
@@ -327,6 +336,24 @@ const SERVICE_VISUAL_GATE_RULES = {
     ],
   },
 
+  'Ravalement de façade': {
+    vision_instruction: `\n\nSERVICE VISUAL GATE — FACADE RENDER / ENDUIT APPLICATION (SCAFFOLD PLATFORM): This image must show active facade render or coating work performed from a complete tube-and-fitting scaffold platform on a residential house. Workers apply render with hawk and float, or apply paint or coating to the facade surface — scaffold platform is the only permitted workstation. You MUST add these fields to your JSON:\n"scaffold_visible": <true/false — a scaffold structure (tube-and-fitting, modular, or mobile tower) is clearly visible against the facade>,\n"scaffold_platform_complete": <true/false — the scaffold working platform is fully boarded with no visible gaps, missing boards, or single-plank bridging — a complete walkable surface at the working level>,\n"scaffold_guardrails_visible": <true/false — guardrails are clearly visible on the open outer edge of the working lift — at least one top rail and ideally a mid-rail; set false if the platform edge is open with no guardrail>,\n"scaffold_stable_and_supported": <true/false — the scaffold appears structurally stable: adjustable base plates or ground sills visible, scaffold braced or tied to the facade wall, no obvious lean or instability>,\n"workers_supported_by_platform": <true/false — all visible workers stand or work on the scaffold platform boards — not on a ladder rung used as a workstation, not on the guardrail, not suspended outside the scaffold>,\n"worker_standing_on_guardrail": <true/false — any worker is standing on top of or straddling the scaffold guardrail to gain extra height — set false if workers are on the platform boards>,\n"worker_on_ladder_as_workstation": <true/false — any worker uses a ladder as their primary elevated workstation on the facade instead of the scaffold platform — a short step-ladder on the platform to reach a high spot is acceptable and does NOT trigger this; only set true when no scaffold platform is present and a ladder is the sole elevated access>,\n"worker_on_roof_surface": <true/false — any worker is on the pitched or flat roof surface performing work, rather than on the scaffold>,\n"interior_painting_visible": <true/false — the scene clearly shows indoor walls, interior rooms, or ceiling painting rather than exterior facade work>,\n"facade_work_in_progress": <true/false — fresh render being applied, fresh paint being rolled, or active surface treatment on the facade exterior is clearly the primary activity; set false if the facade is fully finished with no active work visible, or if only cleaning is in progress>,\n"facade_fully_completed": <true/false — the facade is uniformly clean, painted, or rendered with no active work, no wet surfaces, no tools in use, and no workers actively applying anything; set false if active application is in progress>,\n"service_visual_match": <true if exterior facade render, coating, or paint application on a residential house is clearly the primary activity — active work must be visible; set false if only scaffold is visible without work, if work is interior, or if the scene is a roof job>,\n"worker_count_matches_plan": <if var_presence in this JSON is 'workers': true if the number of clearly visible professional workers equals var_workers, else false; if var_presence is not 'workers': true>.\nIf worker_on_roof_surface is true: set safe=false, severity="critical", reason="forbidden_roof_scene".\nIf worker_standing_on_guardrail is true: set safe=false, severity="critical", reason="critical_violation".\nIf worker_on_ladder_as_workstation is true: set safe=false, severity="critical", reason="access_violation".\nIf scaffold_visible is not true: set safe=false, severity="critical", reason="access_violation".\nIf scaffold_platform_complete is not true: set safe=false, severity="critical", reason="access_violation".\nIf scaffold_guardrails_visible is not true: set safe=false, severity="critical", reason="critical_violation".\nIf workers_supported_by_platform is not true: set safe=false, severity="critical", reason="access_violation".\nIf interior_painting_visible is true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf facade_fully_completed is true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf facade_work_in_progress is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf service_visual_match is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf worker_count_matches_plan is not true: set safe=false, severity="critical", reason="worker_count_mismatch".\nDo NOT reject because no fall-arrest harness is visible — scaffold guardrails are sufficient protection for facade work. Do NOT reject because a small step-ladder is present on the platform to help reach a high spot — this is normal and acceptable.`,
+    reject_conditions: [
+      { field: 'worker_on_roof_surface',          value: true,            reason: 'forbidden_roof_scene'    },
+      { field: 'worker_standing_on_guardrail',    value: true,            reason: 'critical_violation'      },
+      { field: 'worker_on_ladder_as_workstation', value: true,            reason: 'access_violation'        },
+      { field: 'scaffold_visible',                not_exactly_true: true, reason: 'access_violation'        },
+      { field: 'scaffold_platform_complete',      not_exactly_true: true, reason: 'access_violation'        },
+      { field: 'scaffold_guardrails_visible',     not_exactly_true: true, reason: 'critical_violation'      },
+      { field: 'workers_supported_by_platform',   not_exactly_true: true, reason: 'access_violation'        },
+      { field: 'interior_painting_visible',       value: true,            reason: 'service_visual_mismatch' },
+      { field: 'facade_fully_completed',          value: true,            reason: 'service_visual_mismatch' },
+      { field: 'facade_work_in_progress',         not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'service_visual_match',            not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'worker_count_matches_plan',       not_exactly_true: true, reason: 'worker_count_mismatch'   },
+    ],
+  },
+
   'Traitement anti-mousse toiture': {
     vision_instruction: `\n\nSERVICE VISUAL GATE — ANTI-MOSS TREATMENT (MEWP): This image must show two visible professional workers — one inside the MEWP basket, one at ground level beside the machine. You MUST add these fields to your JSON: "worker_in_mewp_basket_visible": <true/false — a worker is clearly visible inside the MEWP basket with guardrails>, "ground_worker_visible": <true/false — a second worker is clearly visible at ground level beside the MEWP base, NOT hidden behind the chassis, boom or any obstacle>, "workers_spatially_separated": <true/false — the basket worker and the ground worker are visibly in two different spatial positions>, "treatment_application_visible": <true/false — biocidal product is being applied to mossy roof tiles>, "worker_on_roof": <true/false — any worker is on the roof tiles rather than inside the basket>. If worker_on_roof is true: set safe=false, severity="critical", reason="forbidden_roof_scene". If worker_in_mewp_basket_visible is not true: set safe=false, severity="critical", reason="worker_count_mismatch". If ground_worker_visible is not true: set safe=false, severity="critical", reason="worker_count_mismatch". If workers_spatially_separated is not true: set safe=false, severity="critical", reason="worker_count_mismatch".`,
     reject_conditions: [
@@ -380,4 +407,24 @@ Keep both ladders fully visible: the facade access ladder against the wall AND t
 Do not show only one worker. Do not show three or more workers. Exactly two.`,
 };
 
-export { FORBIDDEN_SAFETY_BY_METIER, _PRE_GEN_SAFETY, SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY };
+// ─── RAVALEMENT_SCAFFOLD_RETRY ───────────────────────────────────────────────
+// Injected on regenerate_after_safety_reject for Ravalement de façade.
+// critical_violation = scaffold_guardrails_visible failed → reinforce guardrails.
+// access_violation   = scaffold_platform_complete / scaffold_visible failed →
+//   reinforce platform AND guardrails (cumulative: both constraints always required).
+const RAVALEMENT_SCAFFOLD_RETRY = {
+  critical_violation: `SCAFFOLD SAFETY RETRY — GUARDRAILS MUST BE UNMISTAKABLY VISIBLE:
+Make the outer TOP GUARDRAIL and MIDRAIL unmistakably visible as two continuous bright galvanized horizontal steel tubes running across the entire outer face of the working platform.
+One rail at waist height, one rail below it — both clearly readable as distinct metallic tubes.
+Do NOT hide them behind workers, mesh, tarpaulin, material, or perspective foreshortening.
+Both workers must remain fully inside the guardrails — feet on the deck, not on the tubes.
+Step back enough that the full outer platform edge with both rails is simultaneously visible in the frame.`,
+  access_violation: `SCAFFOLD SAFETY RETRY — COMPLETE PLATFORM AND GUARDRAILS MUST BOTH BE UNMISTAKABLY VISIBLE:
+PLATFORM: Show one continuous edge-to-edge working deck beneath both workers' feet — no gaps, no missing boards, no improvised planks, no cropped platform sections. The deck must span the full width between the two scaffold uprights.
+GUARDRAILS: Make the outer TOP GUARDRAIL and MIDRAIL unmistakably visible as two continuous bright galvanized horizontal steel tubes running across the entire outer face of the working platform — one rail at waist height and one rail below it.
+Do NOT hide the rails behind workers, mesh, tarpaulin, or material.
+The scaffold base plates must also remain visible at the bottom of the frame.
+Step back enough that the base, the complete deck, and both outer guardrail rails are simultaneously visible.`,
+};
+
+export { FORBIDDEN_SAFETY_BY_METIER, _PRE_GEN_SAFETY, SAFETY_CHECK_RULES, SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY, RAVALEMENT_SCAFFOLD_RETRY };

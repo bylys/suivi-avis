@@ -239,6 +239,7 @@ const WORKER_SCENE_RULES = {
   },
   ravalement: {
     max_workers: 2,
+    state_worker_minimums: { encours: 2, semifinal: 2 },
     actions: [
       'applying render to the facade with a hawk and float',
       'sanding the old render surface with a disc sander from the scaffold platform',

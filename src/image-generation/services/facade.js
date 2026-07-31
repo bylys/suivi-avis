@@ -223,6 +223,59 @@ export const SITE_REALISM_FACADE = {
   ravalement: {
     scenarios: [
 
+      // ─── RAVALEMENT ENCOURS — SCAFFOLD_PLATFORM (state_lock, pool_size=1) ──────────
+      {
+        _for:                             'ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit',
+        _state_for:                       'encours',
+        _access_configuration:            'SCAFFOLD_PLATFORM',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'compact professional two-bay facade scaffold in front of a residential house — one clearly visible main working platform at first-floor height — both workers fully supported on the same continuous wooden deck — galvanized steel vertical uprights, horizontal ledgers, diagonal cross braces, stable adjustable base plates on firm flat ground — two unmistakable horizontal galvanized steel safety rails running continuously across the entire outer face of the working platform: one rail at waist height and one rail below it, both clearly visible as bright metallic tubes and not hidden behind workers, mesh, or material — continuous toe board along the platform edge — integrated internal ladder giving access to the platform with a visible hatch — half the facade freshly rendered beside the old weathered render with a clear irregular active transition line — windows and doors locally protected with plastic sheeting and tape',
+        scene_camera:  'medium-wide homeowner smartphone photograph — camera 4–6 m from the scaffold, slightly below the working platform — scaffold occupies most of the frame: the complete base plates and the complete working platform edge with both guardrail rails are simultaneously visible — both workers are clearly readable on the deck',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'scaffold base close to camera — adjustable steel base plates resting on firm flat ground, mortar bags and a render bucket at the scaffold foot, render splashes on protective sheeting',
+          midground:  'one continuous edge-to-edge working deck beneath both workers\' feet — Worker 1 stands on the deck actively applying fresh render with hawk and float against the facade surface — Worker 2 stands on the same deck mixing or passing mortar material while remaining fully inside the guardrails — the two horizontal galvanized safety rails span the full outer width of the deck at waist and mid height — continuous toe board across the front edge — fresh pale render on the left half of the facade, darker weathered render on the right half, irregular active transition visible',
+          background: 'upper facade surface above the platform — old render with weathering texture, roofline, clear sky',
+        },
+        scene_debris:  'render drips on the scaffold deck boards and on the protective sheeting at the base, empty render bags folded at the scaffold foot',
+        scene_exclude: [
+          'missing top guardrail — the outer top safety rail must be unmistakably present',
+          'missing midrail — both the top rail and the midrail must span the full outer width of the platform',
+          'missing toe board along the platform front edge',
+          'open platform edge — any gap in the outer safety rails is forbidden',
+          'scaffold guardrails hidden behind mesh, tarpaulin, workers, or any material',
+          'isolated scaffold poles without a continuous deck — the deck must span edge to edge',
+          'worker standing on a horizontal tube instead of the deck',
+          'worker using a ladder as a workstation instead of the scaffold deck',
+          'scaffold cropped so closely that its base plates or guardrail rails disappear from the frame',
+          'floating scaffold — base plates must visibly rest on firm ground',
+          'workers standing on or leaning over the outer safety rail',
+          'worker on the roof surface',
+          'second worker idle, watching, or on a phone — both must be actively working',
+          'fully completed clean facade with no active work visible',
+          'interior painting scene',
+        ],
+        tools: [
+          'hawk and float in Worker 1\'s hands — spreading fresh render across the facade surface',
+          'mortar mixing bucket beside Worker 2 on the deck — trowel or paddle in use',
+        ],
+        protections: [
+          'one continuous edge-to-edge working deck fully supported by horizontal ledgers',
+          'outer top guardrail — bright galvanized steel horizontal tube at waist height spanning the full platform width',
+          'outer midrail — second bright galvanized steel horizontal tube below the top rail spanning the full platform width',
+          'continuous toe board along the outer platform edge',
+          'adjustable steel base plates on firm flat ground — scaffold stable and fully upright',
+          'integrated internal access ladder with visible platform hatch',
+        ],
+        chantier_details: [
+          'fresh pale smooth render on the left section of the facade — trowel marks still wet',
+          'old weathered darker render on the right section — irregular active transition line clearly visible',
+          'exactly two professionals on the same deck: Worker 1 applying render, Worker 2 mixing or supplying material',
+          'both safety rails clearly readable as two distinct bright horizontal tubes on the outer platform face',
+        ],
+      },
+
       // --- ravalement complet / enduit de façade ---
       {
         _for:          'ravalement|renovation.*facade|crepi|enduit.*mono|enduit.*hydr|ite|enduit',
