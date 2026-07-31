@@ -1,7 +1,7 @@
 {
   "summary": {
-    "ROUTED_TO_SPECIFIC_SCENE": 158,
-    "PARTIAL_CONTEXTE": 14,
+    "ROUTED_TO_SPECIFIC_SCENE": 159,
+    "PARTIAL_CONTEXTE": 13,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
     "UNMATCHED": 0,
@@ -2403,16 +2403,16 @@
     {
       "metier": "débarras",
       "service_label": "Débarras appartement",
-      "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, no fallback",
-      "matched_regex": null,
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_detail": "matched _for: appartement",
+      "matched_regex": "appartement",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "no_regex_match",
+        "type": "regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
-        "normalized_input": "debarras appartement",
-        "targeted_count": 2,
-        "fallback_count": 0
+        "regex": "appartement",
+        "flags": "i",
+        "normalized_input": "debarras appartement"
       }
     },
     {
@@ -2456,7 +2456,7 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "debarras grenier",
-        "targeted_count": 2,
+        "targeted_count": 3,
         "fallback_count": 0
       }
     },
@@ -2486,7 +2486,7 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "debarras apres deces",
-        "targeted_count": 2,
+        "targeted_count": 3,
         "fallback_count": 0
       }
     },
@@ -2501,7 +2501,7 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "enlevement encombrants",
-        "targeted_count": 2,
+        "targeted_count": 3,
         "fallback_count": 0
       }
     },
@@ -2516,11 +2516,11 @@
         "type": "no_regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
         "normalized_input": "nettoyage encombrants",
-        "targeted_count": 2,
+        "targeted_count": 3,
         "fallback_count": 0
       }
     }
   ],
   "errors": [],
-  "generated_at": "2026-07-31T12:08:19.444Z"
+  "generated_at": "2026-07-31T12:22:51.740Z"
 }

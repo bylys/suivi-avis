@@ -2,7 +2,9 @@
  * Débarras — no-cost test suite
  *   DEB-SC1 : Débarras cave encours → DEBARRAS-CAVE-INTERIOR / CELLAR_INTERIOR_CLEAROUT
  *   DEB-SC2 : state_lock_used=true, state_lock_pool_size=1, planned_worker_count propagates
- *   DEB-SC3 : other débarras services (maison, appartement) stay on generic route (no regression)
+ *   DEB-SC3 : Débarras maison stays on DEBARRAS-MAISON-ENCOURS (no cave regression)
+ *   DEB-SC4 : Débarras appartement encours → DEBARRAS-APARTMENT-INTERIOR / APARTMENT_INTERIOR_CLEAROUT
+ *   DEB-SC5 : appartement state_lock_used=true, pool_size=1
  *   DEB-GT1 : PASS — cellar visible, 2 workers, manageable loads, clear path
  *   DEB-GT2 : REJECT — large_item_carried_by_single_worker=true → access_violation
  *   DEB-GT3 : REJECT — exit_path_blocked=true → access_violation
@@ -10,14 +12,20 @@
  *   DEB-GT5 : REJECT — cellar_interior_visible=false → service_visual_mismatch
  *   DEB-GT6 : REJECT — service_visual_match=false (empty cellar) → service_visual_mismatch
  *   DEB-GT7 : REJECT — service_visual_match=false (renovation, no clearout) → service_visual_mismatch
+ *   DEB-GT8 : PASS — apartment interior, 2 workers, active clearout, partial clear, exit open
+ *   DEB-GT9 : REJECT — apartment_interior_visible=false → service_visual_mismatch
+ *   DEB-GT10: REJECT — active_clearout_visible=false (simple cleaning) → service_visual_mismatch
+ *   DEB-GT11: REJECT — partially_cleared_room_visible=false (empty apartment) → service_visual_mismatch
+ *   DEB-GT12: REJECT — exit_path_blocked=true → access_violation
+ *   DEB-GT13: REJECT — large_item_carried_by_single_worker=true → access_violation
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests2');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests2');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests2');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests3');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests3');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests3');
 
 export async function runDebarrasTests() {
-  console.group('DEB tests — Débarras cave DEBARRAS-CAVE-INTERIOR gate + scene');
+  console.group('DEB tests — Débarras cave + appartement interior gates + scenes');
 
   const _results = [];
   let _pass = 0;
@@ -85,12 +93,32 @@ export async function runDebarrasTests() {
       `_state_lock_pool_size expected 1, got ${r._state_lock_pool_size}`);
   });
 
-  test('DEB-SC3', 'Débarras maison stays on generic route (no regression)', () => {
+  test('DEB-SC3', 'Débarras maison → DEBARRAS-MAISON-ENCOURS (no cave regression)', () => {
     const r = resolve('Débarras maison', 'encours');
-    assert(r._visual_family !== 'DEBARRAS-CAVE-INTERIOR',
-      `Débarras maison must NOT get DEBARRAS-CAVE-INTERIOR, got "${r._visual_family}"`);
+    assert(r._visual_family === 'DEBARRAS-MAISON-ENCOURS',
+      `Débarras maison must get DEBARRAS-MAISON-ENCOURS, got "${r._visual_family}"`);
     assert(r._access_configuration !== 'CELLAR_INTERIOR_CLEAROUT',
       `Débarras maison must NOT get CELLAR_INTERIOR_CLEAROUT, got "${r._access_configuration}"`);
+    assert(r._access_configuration !== 'APARTMENT_INTERIOR_CLEAROUT',
+      `Débarras maison must NOT get APARTMENT_INTERIOR_CLEAROUT, got "${r._access_configuration}"`);
+  });
+
+  test('DEB-SC4', 'Débarras appartement encours → DEBARRAS-APARTMENT-INTERIOR + APARTMENT_INTERIOR_CLEAROUT', () => {
+    const r = resolve('Débarras appartement', 'encours');
+    assert(r._visual_family === 'DEBARRAS-APARTMENT-INTERIOR',
+      `_visual_family expected "DEBARRAS-APARTMENT-INTERIOR", got "${r._visual_family}"`);
+    assert(r._access_configuration === 'APARTMENT_INTERIOR_CLEAROUT',
+      `_access_configuration expected "APARTMENT_INTERIOR_CLEAROUT", got "${r._access_configuration}"`);
+    assert(r.setting === 'interior',
+      `setting expected "interior", got "${r.setting}"`);
+  });
+
+  test('DEB-SC5', 'Débarras appartement encours → state_lock_used=true, pool_size=1', () => {
+    const r = resolve('Débarras appartement', 'encours');
+    assert(r._state_lock_used === true,
+      `_state_lock_used expected true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,
+      `_state_lock_pool_size expected 1, got ${r._state_lock_pool_size}`);
   });
 
   // ─── DEB-GT: Gate evaluation — CELLAR_INTERIOR_CLEAROUT branch ──────────
@@ -146,6 +174,55 @@ export async function runDebarrasTests() {
     const r = evalGate({ ...PASS_FIELDS, service_visual_match: false, cellar_interior_visible: true }, 'CELLAR_INTERIOR_CLEAROUT');
     assert(!r.safe && r.reason === 'service_visual_mismatch',
       `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  // ─── DEB-GT: Gate evaluation — APARTMENT_INTERIOR_CLEAROUT branch ────────
+
+  const APPT_PASS_FIELDS = {
+    apartment_interior_visible:          true,
+    active_clearout_visible:             true,
+    partially_cleared_room_visible:      true,
+    clear_exit_path_visible:             true,
+    manageable_loads_visible:            true,
+    large_item_carried_by_single_worker: false,
+    exit_path_blocked:                   false,
+    service_visual_match:                true,
+    worker_count_matches_plan:           true,
+  };
+
+  test('DEB-GT8', 'Apartment interior + 2 workers + active clearout + partial clear + exit open → PASS', () => {
+    const r = evalGate(APPT_PASS_FIELDS, 'APARTMENT_INTERIOR_CLEAROUT');
+    assert(r.safe === true, `Expected PASS, got REJECT on ${r.first_failed} (${r.reason})`);
+  });
+
+  test('DEB-GT9', 'apartment_interior_visible=false → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...APPT_PASS_FIELDS, apartment_interior_visible: false }, 'APARTMENT_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT10', 'active_clearout_visible=false (simple cleaning) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...APPT_PASS_FIELDS, active_clearout_visible: false }, 'APARTMENT_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT11', 'partially_cleared_room_visible=false (empty apartment) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...APPT_PASS_FIELDS, partially_cleared_room_visible: false }, 'APARTMENT_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT12', 'exit_path_blocked=true → REJECT access_violation', () => {
+    const r = evalGate({ ...APPT_PASS_FIELDS, exit_path_blocked: true }, 'APARTMENT_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT13', 'large_item_carried_by_single_worker=true → REJECT access_violation', () => {
+    const r = evalGate({ ...APPT_PASS_FIELDS, large_item_carried_by_single_worker: true }, 'APARTMENT_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
   });
 
   // ─── Verify gate + aliases exist ─────────────────────────────────────────

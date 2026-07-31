@@ -139,6 +139,64 @@ export const SITE_REALISM_FINISHING = {
         ],
       },
 
+      // ─── DEBARRAS-APARTMENT-INTERIOR — ENCOURS — APARTMENT_INTERIOR_CLEAROUT (state_lock, pool_size=1) ─
+      {
+        _for:                             'appartement',
+        _state_for:                       'encours',
+        _visual_family:                   'DEBARRAS-APARTMENT-INTERIOR',
+        _access_configuration:            'APARTMENT_INTERIOR_CLEAROUT',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'interior',
+        scene_camera:                     'standing in the living room or corridor, 2–3 m from the exit door, smartphone held at chest height, wide angle — apartment walls, floor, and ceiling visible, natural light from windows on one side',
+        scene_framing:                    'mid-clearout: left half of the room partially cleared — a few sealed boxes stacked near the wall, one open box being filled — right half still has a bookshelf, side table, or small armoire not yet moved — worker 1 in foreground carries a medium box toward the door, back or three-quarters back to camera — worker 2 in mid-ground tapes a box or loads a small hand truck near the remaining furniture — entry door partially visible in the background with a clear path toward it',
+        scene_debris:                     'a few cardboard scraps and packing tape strips on the parquet or tile floor, small items sorted in a pile near the wall',
+        location_must_have: [
+          'apartment interior — entry hall, living room, or corridor with plastered walls and normal ceiling height',
+          'parquet, tile, or laminate floor typical of a French residential apartment',
+          'at least one window on the side letting in natural daylight',
+          'apartment entry door visible or strongly implied in the background',
+          'part of the room still has furniture or items — part already cleared',
+        ],
+        location_forbidden: [
+          'cellar, basement, or underground space with rough stone walls or low concrete ceiling',
+          'outdoor driveway, garden, or street scene',
+          'commercial space, warehouse, or professional premises',
+          'apartment completely empty with no items left',
+          'renovation or demolition site — no exposed masonry, no scaffolding inside',
+          'removal van or vehicle visible inside the scene',
+        ],
+        scene_exclude: [
+          'single worker carrying a wardrobe, sofa, or large armoire alone',
+          'large item wedged or stuck in a doorway',
+          'exit path completely blocked by stacked boxes with no passable route',
+          'boxes stacked dangerously to ceiling height',
+          'worker on staircase carrying a bulky item',
+          'vehicle visible inside the apartment',
+          'demolition or renovation work — no power tools, no broken walls',
+          'simple cleaning or mopping with no item removal',
+          'completely empty apartment with nothing left to clear',
+          'readable personal documents, family photos, or sensitive objects clearly visible',
+          'dramatic or staged mise en scène — this is a working clearout, natural and unglamorous',
+        ],
+        chantier_details: [
+          'three or four sealed cardboard boxes stacked against the cleared wall near the exit path',
+          'open box being filled with books or small objects near the remaining furniture',
+          'roll of packing tape and a marker on top of a sealed box',
+          'small sack truck or two-wheel hand truck upright beside the box stack',
+          'a side table or small bookshelf still in place in the un-cleared half — showing mid-operation state',
+        ],
+        tools: [
+          'small two-wheel hand truck or sack truck beside the stacked boxes',
+          'roll of brown packing tape on the floor next to an open box',
+          'work gloves on top of a sealed box near the exit',
+        ],
+        protections: [
+          'cardboard sheet or moving blanket laid over the floor at the apartment doorway threshold',
+          'foam corner protector on the door frame at the exit point',
+        ],
+      },
+
       // ─── DEBARRAS-CAVE-INTERIOR — ENCOURS — CELLAR_INTERIOR_CLEAROUT (state_lock, pool_size=1) ──
       {
         _for:                             'cave|sous.?sol',
