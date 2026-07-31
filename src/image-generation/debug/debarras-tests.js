@@ -5,6 +5,8 @@
  *   DEB-SC3 : Débarras maison stays on DEBARRAS-MAISON-ENCOURS (no cave regression)
  *   DEB-SC4 : Débarras appartement encours → DEBARRAS-APARTMENT-INTERIOR / APARTMENT_INTERIOR_CLEAROUT
  *   DEB-SC5 : appartement state_lock_used=true, pool_size=1
+ *   DEB-SC6 : Débarras grenier encours → DEBARRAS-ATTIC-INTERIOR / ATTIC_INTERIOR_CLEAROUT
+ *   DEB-SC7 : grenier state_lock_used=true, pool_size=1
  *   DEB-GT1 : PASS — cellar visible, 2 workers, manageable loads, clear path
  *   DEB-GT2 : REJECT — large_item_carried_by_single_worker=true → access_violation
  *   DEB-GT3 : REJECT — exit_path_blocked=true → access_violation
@@ -18,11 +20,18 @@
  *   DEB-GT11: REJECT — partially_cleared_room_visible=false (empty apartment) → service_visual_mismatch
  *   DEB-GT12: REJECT — exit_path_blocked=true → access_violation
  *   DEB-GT13: REJECT — large_item_carried_by_single_worker=true → access_violation
+ *   DEB-GT14: PASS — attic visible, stable floor, 2 workers, active clearout, partial clear, exit open
+ *   DEB-GT15: REJECT — attic_interior_visible=false → service_visual_mismatch
+ *   DEB-GT16: REJECT — stable_attic_floor_visible=false → access_violation
+ *   DEB-GT17: REJECT — active_clearout_visible=false → service_visual_mismatch
+ *   DEB-GT18: REJECT — partially_cleared_area_visible=false → service_visual_mismatch
+ *   DEB-GT19: REJECT — dangerous_load_on_stairs=true → access_violation
+ *   DEB-GT20: REJECT — large_item_carried_by_single_worker=true → access_violation
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests3');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests3');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests3');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests4');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests4');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests4');
 
 export async function runDebarrasTests() {
   console.group('DEB tests — Débarras cave + appartement interior gates + scenes');
@@ -115,6 +124,24 @@ export async function runDebarrasTests() {
 
   test('DEB-SC5', 'Débarras appartement encours → state_lock_used=true, pool_size=1', () => {
     const r = resolve('Débarras appartement', 'encours');
+    assert(r._state_lock_used === true,
+      `_state_lock_used expected true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,
+      `_state_lock_pool_size expected 1, got ${r._state_lock_pool_size}`);
+  });
+
+  test('DEB-SC6', 'Débarras grenier encours → DEBARRAS-ATTIC-INTERIOR + ATTIC_INTERIOR_CLEAROUT', () => {
+    const r = resolve('Débarras grenier', 'encours');
+    assert(r._visual_family === 'DEBARRAS-ATTIC-INTERIOR',
+      `_visual_family expected "DEBARRAS-ATTIC-INTERIOR", got "${r._visual_family}"`);
+    assert(r._access_configuration === 'ATTIC_INTERIOR_CLEAROUT',
+      `_access_configuration expected "ATTIC_INTERIOR_CLEAROUT", got "${r._access_configuration}"`);
+    assert(r.setting === 'interior',
+      `setting expected "interior", got "${r.setting}"`);
+  });
+
+  test('DEB-SC7', 'Débarras grenier encours → state_lock_used=true, pool_size=1', () => {
+    const r = resolve('Débarras grenier', 'encours');
     assert(r._state_lock_used === true,
       `_state_lock_used expected true, got ${r._state_lock_used}`);
     assert(r._state_lock_pool_size === 1,
@@ -221,6 +248,63 @@ export async function runDebarrasTests() {
 
   test('DEB-GT13', 'large_item_carried_by_single_worker=true → REJECT access_violation', () => {
     const r = evalGate({ ...APPT_PASS_FIELDS, large_item_carried_by_single_worker: true }, 'APARTMENT_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  // ─── DEB-GT: Gate evaluation — ATTIC_INTERIOR_CLEAROUT branch ───────────
+
+  const ATTIC_PASS_FIELDS = {
+    attic_interior_visible:              true,
+    stable_attic_floor_visible:          true,
+    active_clearout_visible:             true,
+    partially_cleared_area_visible:      true,
+    clear_exit_path_visible:             true,
+    manageable_loads_visible:            true,
+    large_item_carried_by_single_worker: false,
+    dangerous_load_on_stairs:            false,
+    open_unprotected_hatch_hazard:       false,
+    service_visual_match:                true,
+    worker_count_matches_plan:           true,
+  };
+
+  test('DEB-GT14', 'Attic visible + stable floor + 2 workers + active clearout + partial clear → PASS', () => {
+    const r = evalGate(ATTIC_PASS_FIELDS, 'ATTIC_INTERIOR_CLEAROUT');
+    assert(r.safe === true, `Expected PASS, got REJECT on ${r.first_failed} (${r.reason})`);
+  });
+
+  test('DEB-GT15', 'attic_interior_visible=false (regular room) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ATTIC_PASS_FIELDS, attic_interior_visible: false }, 'ATTIC_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT16', 'stable_attic_floor_visible=false (exposed joists, no boarding) → REJECT access_violation', () => {
+    const r = evalGate({ ...ATTIC_PASS_FIELDS, stable_attic_floor_visible: false }, 'ATTIC_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT17', 'active_clearout_visible=false (simple cleaning) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ATTIC_PASS_FIELDS, active_clearout_visible: false }, 'ATTIC_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT18', 'partially_cleared_area_visible=false (empty attic) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ATTIC_PASS_FIELDS, partially_cleared_area_visible: false }, 'ATTIC_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT19', 'dangerous_load_on_stairs=true → REJECT access_violation', () => {
+    const r = evalGate({ ...ATTIC_PASS_FIELDS, dangerous_load_on_stairs: true }, 'ATTIC_INTERIOR_CLEAROUT');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT20', 'large_item_carried_by_single_worker=true → REJECT access_violation', () => {
+    const r = evalGate({ ...ATTIC_PASS_FIELDS, large_item_carried_by_single_worker: true }, 'ATTIC_INTERIOR_CLEAROUT');
     assert(!r.safe && r.reason === 'access_violation',
       `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
   });

@@ -139,6 +139,63 @@ export const SITE_REALISM_FINISHING = {
         ],
       },
 
+      // ─── DEBARRAS-ATTIC-INTERIOR — ENCOURS — ATTIC_INTERIOR_CLEAROUT (state_lock, pool_size=1) ──────
+      {
+        _for:                             'grenier',
+        _state_for:                       'encours',
+        _visual_family:                   'DEBARRAS-ATTIC-INTERIOR',
+        _access_configuration:            'ATTIC_INTERIOR_CLEAROUT',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'interior',
+        scene_camera:                     'standing near the attic access point or top of the fixed staircase, smartphone held at chest height, wide angle capturing the attic depth — low sloped ceiling overhead, floor planks visible underfoot',
+        scene_framing:                    'mid-clearout: right half of the attic still cluttered with cardboard boxes, old suitcases, and stacked items against the sloped wall — left half partially cleared with a few sealed boxes stacked near the exit — worker 1 in foreground crouching or bending to sort items near the remaining clutter, back or three-quarters back to camera — worker 2 in mid-ground carries a medium box toward the access stairs, hands gripping both sides — sloped roof beams or rafter trusses visible overhead — continuous stable attic floor throughout',
+        scene_debris:                     'dust on the wooden attic floor, cardboard scraps near the cleared area, old packing material folded beside sorted boxes',
+        location_must_have: [
+          'attic or loft interior — sloped ceiling, roof beams, rafters, or trusses clearly visible overhead',
+          'continuous stable wooden or chipboard floor underfoot throughout the scene',
+          'low ceiling height — workers must crouch or stoop in parts of the attic',
+          'part of the attic still has stacked boxes, suitcases, or old stored items',
+          'part already cleared with sealed boxes ready near the exit',
+        ],
+        location_forbidden: [
+          'regular apartment room or living room with full-height flat ceiling',
+          'cellar, basement, or underground space',
+          'outdoor driveway, garden, or exterior scene',
+          'attic completely empty with no items left to clear',
+          'renovation or insulation work — no mineral wool, no exposed insulation batts, no power tools cutting structure',
+          'removal van visible inside the scene',
+        ],
+        scene_exclude: [
+          'single worker carrying a wardrobe or large armoire alone',
+          'worker descending narrow retractable ladder while carrying a bulky item',
+          'boxes stacked at the edge of an open floor hatch with no protection',
+          'unstable or incomplete attic floor — visible joists with no boarding, gaps in the floor',
+          'workers walking on exposed roof beams instead of a boarded floor',
+          'exit path or staircase completely blocked',
+          'renovation, insulation, or structural work — this is a clearout, not a building site',
+          'simple cleaning or sweeping with no item removal',
+          'completely empty attic with nothing left',
+          'vehicle visible inside',
+        ],
+        chantier_details: [
+          'three or four sealed cardboard boxes stacked near the attic staircase ready to go down',
+          'open suitcase being emptied beside a pile of smaller objects near the sloped wall',
+          'roll of packing tape and a marker on top of a closed box',
+          'small flat-pack dolly or two-wheel hand truck adapted for the attic floor beside the box stack',
+          'an old floor lamp, a folded garden chair, and stacked picture frames against the remaining clutter',
+        ],
+        tools: [
+          'small two-wheel hand truck or sack truck standing beside the cleared box stack',
+          'portable LED work lamp on the attic floor illuminating the work area',
+          'work gloves placed on top of a sealed box near the exit',
+        ],
+        protections: [
+          'foam corner pad placed on the stair banister at the attic access point',
+          'cardboard sheet laid on the attic floor at the top of the stairs to protect the surface',
+        ],
+      },
+
       // ─── DEBARRAS-APARTMENT-INTERIOR — ENCOURS — APARTMENT_INTERIOR_CLEAROUT (state_lock, pool_size=1) ─
       {
         _for:                             'appartement',
