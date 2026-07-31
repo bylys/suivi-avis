@@ -7,6 +7,8 @@
  *   DEB-SC5 : appartement state_lock_used=true, pool_size=1
  *   DEB-SC6 : Débarras grenier encours → DEBARRAS-ATTIC-INTERIOR / ATTIC_INTERIOR_CLEAROUT
  *   DEB-SC7 : grenier state_lock_used=true, pool_size=1
+ *   DEB-SC8 : Enlèvement encombrants encours → DEBARRAS-ENCOMBRANTS-EXTERIOR / DRIVEWAY_BULKY_ITEMS_LOADING
+ *   DEB-SC9 : encombrants state_lock_used=true, pool_size=1, setting=exterior
  *   DEB-GT1 : PASS — cellar visible, 2 workers, manageable loads, clear path
  *   DEB-GT2 : REJECT — large_item_carried_by_single_worker=true → access_violation
  *   DEB-GT3 : REJECT — exit_path_blocked=true → access_violation
@@ -27,14 +29,23 @@
  *   DEB-GT18: REJECT — partially_cleared_area_visible=false → service_visual_mismatch
  *   DEB-GT19: REJECT — dangerous_load_on_stairs=true → access_violation
  *   DEB-GT20: REJECT — large_item_carried_by_single_worker=true → access_violation
+ *   DEB-GT21: PASS — residential exterior + bulky items + active loading + vehicle visible + 2 workers
+ *   DEB-GT22: REJECT — bulky_items_visible=false (boxes only) → service_visual_mismatch
+ *   DEB-GT23: REJECT — active_loading_visible=false (abandoned pile) → service_visual_mismatch
+ *   DEB-GT24: REJECT — partially_loaded_vehicle_visible=false (no vehicle) → service_visual_mismatch
+ *   DEB-GT25: REJECT — wild_dumping_scene=true → service_visual_mismatch
+ *   DEB-GT26: REJECT — large_item_carried_by_single_worker=true → access_violation
+ *   DEB-GT27: REJECT — public_road_obstructed=true → access_violation
+ *   DEB-GT28: REJECT — service_visual_match=false (simple box move) → service_visual_mismatch
+ *   DEB-SC-NOREGx: Cave/Maison/Appt/Grenier routing unaffected
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests4');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests4');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests4');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests5');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests5');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests5');
 
 export async function runDebarrasTests() {
-  console.group('DEB tests — Débarras cave + appartement interior gates + scenes');
+  console.group('DEB tests — Débarras cave + appartement + grenier + encombrants gates + scenes');
 
   const _results = [];
   let _pass = 0;
@@ -146,6 +157,26 @@ export async function runDebarrasTests() {
       `_state_lock_used expected true, got ${r._state_lock_used}`);
     assert(r._state_lock_pool_size === 1,
       `_state_lock_pool_size expected 1, got ${r._state_lock_pool_size}`);
+  });
+
+  test('DEB-SC8', 'Enlèvement encombrants encours → DEBARRAS-ENCOMBRANTS-EXTERIOR + DRIVEWAY_BULKY_ITEMS_LOADING', () => {
+    const r = resolve('Enlèvement encombrants', 'encours');
+    assert(r._visual_family === 'DEBARRAS-ENCOMBRANTS-EXTERIOR',
+      `_visual_family expected "DEBARRAS-ENCOMBRANTS-EXTERIOR", got "${r._visual_family}"`);
+    assert(r._access_configuration === 'DRIVEWAY_BULKY_ITEMS_LOADING',
+      `_access_configuration expected "DRIVEWAY_BULKY_ITEMS_LOADING", got "${r._access_configuration}"`);
+    assert(r.setting === 'exterior',
+      `setting expected "exterior", got "${r.setting}"`);
+  });
+
+  test('DEB-SC9', 'Enlèvement encombrants encours → state_lock_used=true, pool_size=1', () => {
+    const r = resolve('Enlèvement encombrants', 'encours');
+    assert(r._state_lock_used === true,
+      `_state_lock_used expected true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,
+      `_state_lock_pool_size expected 1, got ${r._state_lock_pool_size}`);
+    assert(r._access_configuration === 'DRIVEWAY_BULKY_ITEMS_LOADING',
+      `access_configuration must be DRIVEWAY_BULKY_ITEMS_LOADING, got "${r._access_configuration}"`);
   });
 
   // ─── DEB-GT: Gate evaluation — CELLAR_INTERIOR_CLEAROUT branch ──────────
@@ -307,6 +338,69 @@ export async function runDebarrasTests() {
     const r = evalGate({ ...ATTIC_PASS_FIELDS, large_item_carried_by_single_worker: true }, 'ATTIC_INTERIOR_CLEAROUT');
     assert(!r.safe && r.reason === 'access_violation',
       `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  // ─── DEB-GT: Gate evaluation — DRIVEWAY_BULKY_ITEMS_LOADING branch ──────
+
+  const ENC_PASS_FIELDS = {
+    residential_exterior_visible:        true,
+    bulky_items_visible:                 true,
+    active_loading_visible:              true,
+    partially_loaded_vehicle_visible:    true,
+    clear_carrying_path_visible:         true,
+    vehicle_safely_parked:               true,
+    large_item_carried_by_single_worker: false,
+    wild_dumping_scene:                  false,
+    public_road_obstructed:              false,
+    service_visual_match:                true,
+    worker_count_matches_plan:           true,
+  };
+
+  test('DEB-GT21', 'Residential exterior + bulky items + active loading + vehicle + 2 workers → PASS', () => {
+    const r = evalGate(ENC_PASS_FIELDS, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(r.safe === true, `Expected PASS, got REJECT on ${r.first_failed} (${r.reason})`);
+  });
+
+  test('DEB-GT22', 'bulky_items_visible=false (boxes/bags only, no bulky item) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ENC_PASS_FIELDS, bulky_items_visible: false }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT23', 'active_loading_visible=false (items abandoned, no handling) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ENC_PASS_FIELDS, active_loading_visible: false }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT24', 'partially_loaded_vehicle_visible=false (no vehicle present) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ENC_PASS_FIELDS, partially_loaded_vehicle_visible: false }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT25', 'wild_dumping_scene=true (abandoned pile, no loading) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ENC_PASS_FIELDS, wild_dumping_scene: true }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT26', 'large_item_carried_by_single_worker=true (fridge alone) → REJECT access_violation', () => {
+    const r = evalGate({ ...ENC_PASS_FIELDS, large_item_carried_by_single_worker: true }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT27', 'public_road_obstructed=true (pavement blocked) → REJECT access_violation', () => {
+    const r = evalGate({ ...ENC_PASS_FIELDS, public_road_obstructed: true }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT28', 'service_visual_match=false (simple box relocation, no bulky item) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...ENC_PASS_FIELDS, service_visual_match: false }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
   });
 
   // ─── Verify gate + aliases exist ─────────────────────────────────────────

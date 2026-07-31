@@ -91,6 +91,63 @@ export const SITE_REALISM_FINISHING = {
     // Single scenario: authentic cellar interior, 2 workers, no vehicle visible.
     scenarios: [
 
+      // ─── DEBARRAS-ENCOMBRANTS-EXTERIOR — ENCOURS — DRIVEWAY_BULKY_ITEMS_LOADING (state_lock, pool_size=1) ──
+      {
+        _for:                             'enlevement',
+        _state_for:                       'encours',
+        _visual_family:                   'DEBARRAS-ENCOMBRANTS-EXTERIOR',
+        _access_configuration:            'DRIVEWAY_BULKY_ITEMS_LOADING',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_camera:                     'standing in the driveway, courtyard, or entrance of a private residential property, 4–7 m from the vehicle, eye level or slight downward angle — private outdoor area, not public pavement or road',
+        scene_framing:                    'mid-loading: a mix of bulky items already partially loaded and still grouped on the driveway — left foreground has a mattress leaning against the van side and a dismantled small piece of furniture waiting — right side has a worker guiding a hand truck loaded with a tied object toward the open van — second worker at the van rear steadying or arranging items inside — van rear doors open, partially filled, stationned on the driveway — hedge, garden gate, or house facade visible in background',
+        scene_debris:                     'cardboard scraps and a flattened box on the driveway near the grouped items, a coil of moving strap near the van',
+        location_must_have: [
+          'private driveway, courtyard, or residential entrance — not a public pavement or road',
+          'house facade, garage door, garden gate, or hedge visible in the background confirming residential context',
+          'small or medium removal van or tipper van — rear half visible with doors open, partially loaded',
+          'several categories of bulky items visible: mattress, armchair, dismantled furniture, appliances, or similar',
+          'a carrying path from the grouped items to the van that both workers can use',
+        ],
+        location_forbidden: [
+          'apartment building shared entrance hall or internal staircase',
+          'public pavement or road as the only ground surface — private property must be visible',
+          'interior room scene — bedroom, living room, kitchen, cellar',
+          'commercial warehouse, skip lorry, or industrial loading dock',
+          'completely empty driveway with no items visible',
+          'skip lorry or large tipper truck dominating the scene',
+        ],
+        scene_exclude: [
+          'single worker carrying a mattress, fridge, armoire, or heavy appliance alone',
+          'items abandoned in a pile with no active loading — décharge sauvage',
+          'vehicle parked entirely on the public pavement blocking pedestrian access',
+          'van overloaded with items dangerously sticking out over the sides or roof',
+          'simple household move of cardboard boxes with no bulky items',
+          'simple outdoor cleaning or sweeping with no items being removed',
+          'demolition debris, rubble, or renovation waste',
+          'only bin bags and no recognisable bulky item visible',
+          'vehicle completely absent with no carrying activity identifiable',
+          'branded uniforms or readable logo on the van',
+        ],
+        chantier_details: [
+          'mattress or folded sofa section leaning against the van side — wrapped in stretch film or tied',
+          'small dismantled shelving unit or flat-pack furniture stacked flat near the van',
+          'old armchair or single-seat sofa on the driveway waiting to be loaded',
+          'moving strap or ratchet strap looped around a grouped item near the van',
+          'small domestic appliance — microwave, toaster, or fan — grouped with other items near the van',
+        ],
+        tools: [
+          'two-wheel hand truck or sack truck loaded and strapped near the van',
+          'moving straps on the driveway or looped over the van side rail',
+          'work gloves on top of a grouped item near the van rear',
+        ],
+        protections: [
+          'stretch film or moving blanket around a bulky item to protect during loading',
+          'cardboard sheet on the driveway at the van entrance to protect the floor',
+        ],
+      },
+
       // ─── DEBARRAS-MAISON-ENCOURS — EN COURS — maison individuelle ─────────
       {
         _for:                             'maison',
