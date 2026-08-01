@@ -133,6 +133,14 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               vertical_upstand_visible:       safety.vertical_upstand_visible      ?? null,
               upstand_treatment_visible:      safety.upstand_treatment_visible     ?? null,
               first_failed_gate_field:        safety.first_failed_gate_field       ?? null,
+              service_gate:                   safety.service_gate                  ?? null,
+              decision_source:                safety.decision_source               ?? null,
+              active_pressure_washing_visible: safety.active_pressure_washing_visible ?? null,
+              pressure_washer_visible:        safety.pressure_washer_visible       ?? null,
+              lance_and_hose_coherent:        safety.lance_and_hose_coherent       ?? null,
+              dirty_and_clean_zones_visible:  safety.dirty_and_clean_zones_visible ?? null,
+              partial_work_state_visible:     safety.partial_work_state_visible    ?? null,
+              jet_directed_safely:            safety.jet_directed_safely           ?? null,
             }));
 
             if (safety.checkFailed) {

@@ -1,7 +1,7 @@
 {
   "summary": {
-    "ROUTED_TO_SPECIFIC_SCENE": 163,
-    "PARTIAL_CONTEXTE": 9,
+    "ROUTED_TO_SPECIFIC_SCENE": 164,
+    "PARTIAL_CONTEXTE": 8,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
     "UNMATCHED": 0,
@@ -2388,16 +2388,15 @@
     {
       "metier": "nettoyage",
       "service_label": "Nettoyage haute pression",
-      "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
-      "matched_regex": null,
-      "fallback_used": true,
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_detail": "matched _for: ^nettoyage haute pression$",
+      "matched_regex": "^nettoyage haute pression$",
+      "fallback_used": false,
       "routing_evidence": {
-        "type": "no_regex_match",
+        "type": "regex_match",
+        "regex": "^nettoyage haute pression$",
         "source": "SITE_REALISM[\"nettoyage\"]",
-        "normalized_input": "nettoyage haute pression",
-        "targeted_count": 6,
-        "fallback_count": 1
+        "normalized_input": "nettoyage haute pression"
       }
     },
     {

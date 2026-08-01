@@ -1203,6 +1203,62 @@ export const SITE_REALISM_FACADE = {
   nettoyage: {
     scenarios: [
 
+      // --- nettoyage haute pression (surface sol, deterministe) ---
+      {
+        _for:                             '^nettoyage haute pression$',
+        _state_for:                       'encours',
+        _visual_family:                   'NETTOYAGE-HIGH-PRESSURE-GROUND',
+        _access_configuration:            'GROUND_LEVEL_PRESSURE_WASHING',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_camera:                     'standing in the private driveway, courtyard, or garden of a detached or semi-detached house, 3–5 m back from the worker, eye level — wide framing showing the full hard-surface area being cleaned and the pressure washer sitting on a dry stable patch — house facade or garden boundary visible in background confirming residential context',
+        scene_framing:                    'pressure washing in progress on a hard ground surface — large clean zone on the left or near side: surface brighter and visibly wetter, original paving colour beginning to show — large dirty zone still remaining on the right or far side: dark green algae, grey grime, or encrusted dirt clearly visible — irregular natural boundary between clean and dirty, not a perfect straight line — worker standing at the cleaning boundary, lance held two-handed, jet directed downward at the surface at a safe angle — pressure washer unit sitting on a dry patch 1–2 m behind the worker — hose connecting machine to lance lying flat on the already-cleaned surface without looping around the worker\'s feet — dirty water running toward a drain grate, garden border, or draining edge of the surface',
+        location_must_have: [
+          'private residential property — driveway, paved courtyard, or garden terrace',
+          'hard ground surface: concrete, mineral paving, stone flags, or compacted gravel',
+          'house facade, boundary wall, garage door, or garden hedge visible in background confirming residential context',
+        ],
+        location_forbidden: [
+          'public pavement or road as the only ground surface',
+          'facade or exterior wall as the main work surface — ground only',
+          'indoor setting or interior room',
+          'commercial or industrial premises',
+          'car or vehicle as the cleaning target',
+        ],
+        scene_exclude: [
+          'worker directing jet toward another person',
+          'jet directed toward open electrical socket or junction box at close range',
+          'worker barefoot or wearing sandals',
+          'worker standing in deep pooled water above ankle height',
+          'hose looping around or crossing the worker\'s feet creating a trip hazard',
+          'ladder or scaffold in use — ground-level work only',
+          'car or vehicle as the main cleaning target',
+          'roof or exterior wall as the main work surface',
+          'interior room or indoor setting',
+          'entire surface already perfectly clean — no dirty zone visible',
+          'simple sweeping with no pressure washer present',
+          'two workers — single worker only',
+          'perfect straight-line split between clean and dirty — must be irregular',
+        ],
+        chantier_details: [
+          'irregular natural boundary between clean bright paving and dark dirty zone — not a straight line',
+          'pressure washer hose running flat across already-cleaned surface back to the machine',
+          'dirty water running along surface toward nearest drain grate or garden edge',
+          'surface partially cleaned revealing original paving colour against remaining dark dirty area',
+        ],
+        tools: [
+          'electric or petrol pressure washer unit on the ground, 1–2 m behind the worker',
+          'high-pressure hose running from the machine to the worker\'s lance — lying flat, no loops underfoot',
+          'lance held two-handed, jet directed downward at the surface cleaning boundary',
+        ],
+        protections: [
+          'waterproof work boots clearly visible — closed toe and ankle protection',
+          'protective goggles or safety glasses if chemical product in use',
+          'plastic bag tied over any nearby outdoor electrical socket',
+        ],
+      },
+
       // --- nettoyage façade ---
       {
         _for:          'facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade',

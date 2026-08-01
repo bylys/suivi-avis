@@ -54,22 +54,33 @@ function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount =
 // Fields included in every gate-aware return (reject and pass paths).
 function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
   return {
-    visible_worker_count:          visibleWC ?? obj.visible_worker_count ?? null,
-    worker_count_match:            computedWorkerMatch,
-    hedge_visible:                 obj.hedge_visible                 ?? null,
-    worker_on_roof:                obj.worker_on_roof                ?? null,
-    service_visual_match:          obj.service_visual_match          ?? null,
-    horizontal_membrane_visible:   obj.horizontal_membrane_visible   ?? null,
-    vertical_upstand_visible:      obj.vertical_upstand_visible      ?? null,
-    upstand_treatment_visible:     obj.upstand_treatment_visible     ?? null,
-    gutter_visible:                obj.gutter_visible                ?? null,
-    cleaning_action_visible:       obj.cleaning_action_visible       ?? null,
-    professional_ladder_visible:   obj.professional_ladder_visible   ?? null,
-    ladder_stable:                 obj.ladder_stable                 ?? null,
-    worker_in_mewp_basket_visible: obj.worker_in_mewp_basket_visible ?? null,
-    ground_worker_visible:         obj.ground_worker_visible         ?? null,
-    workers_spatially_separated:   obj.workers_spatially_separated   ?? null,
-    treatment_application_visible: obj.treatment_application_visible ?? null,
+    visible_worker_count:            visibleWC ?? obj.visible_worker_count ?? null,
+    worker_count_match:              computedWorkerMatch,
+    hedge_visible:                   obj.hedge_visible                   ?? null,
+    worker_on_roof:                  obj.worker_on_roof                  ?? null,
+    service_visual_match:            obj.service_visual_match            ?? null,
+    horizontal_membrane_visible:     obj.horizontal_membrane_visible     ?? null,
+    vertical_upstand_visible:        obj.vertical_upstand_visible        ?? null,
+    upstand_treatment_visible:       obj.upstand_treatment_visible       ?? null,
+    gutter_visible:                  obj.gutter_visible                  ?? null,
+    cleaning_action_visible:         obj.cleaning_action_visible         ?? null,
+    professional_ladder_visible:     obj.professional_ladder_visible     ?? null,
+    ladder_stable:                   obj.ladder_stable                   ?? null,
+    worker_in_mewp_basket_visible:   obj.worker_in_mewp_basket_visible   ?? null,
+    ground_worker_visible:           obj.ground_worker_visible           ?? null,
+    workers_spatially_separated:     obj.workers_spatially_separated     ?? null,
+    treatment_application_visible:   obj.treatment_application_visible   ?? null,
+    // Pressure washing gate fields
+    ground_hard_surface_visible:     obj.ground_hard_surface_visible     ?? null,
+    active_pressure_washing_visible: obj.active_pressure_washing_visible ?? null,
+    pressure_washer_visible:         obj.pressure_washer_visible         ?? null,
+    lance_and_hose_coherent:         obj.lance_and_hose_coherent         ?? null,
+    dirty_and_clean_zones_visible:   obj.dirty_and_clean_zones_visible   ?? null,
+    partial_work_state_visible:      obj.partial_work_state_visible      ?? null,
+    worker_stable_on_ground:         obj.worker_stable_on_ground         ?? null,
+    jet_directed_safely:             obj.jet_directed_safely             ?? null,
+    electrical_hazard_visible:       obj.electrical_hazard_visible       ?? null,
+    dangerous_hose_trip_hazard:      obj.dangerous_hose_trip_hazard      ?? null,
   };
 }
 
@@ -182,6 +193,8 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
             computed_generic_worker_match: _computedWorkerMatch,
             computed_final_safe: false, computed_final_reason: cond.reason,
             first_failed_gate_field: cond.field,
+            service_gate: _gateService,
+            decision_source: 'structured_service_gate',
             ..._commonGateFields(obj, _computedWorkerMatch, _visibleWC),
           };
         }
@@ -196,6 +209,8 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
         computed_generic_worker_match: _computedWorkerMatch,
         computed_final_safe: true, computed_final_reason: 'passed',
         first_failed_gate_field: null,
+        service_gate: _gateService,
+        decision_source: 'structured_service_gate',
         ..._commonGateFields(obj, _computedWorkerMatch, _visibleWC),
       };
     }
@@ -211,6 +226,8 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
       computed_final_safe:           obj.safe,
       computed_final_reason:         obj.reason           || '',
       first_failed_gate_field:       null,
+      service_gate:                  null,
+      decision_source:               'vision_autonomous',
       visible_worker_count:          _visibleWC ?? obj.visible_worker_count ?? null,
       worker_count_match:            _computedWorkerMatch ?? obj.worker_count_match ?? null,
       hedge_visible:                 obj.hedge_visible                 ?? null,
