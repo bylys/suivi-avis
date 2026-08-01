@@ -56,6 +56,23 @@
  *   DEB-GT39: REJECT — service_visual_match=false → service_visual_mismatch
  *   DEB-GT40: REJECT — worker_count_matches_plan=false → worker_count_mismatch
  *   DEB-SC-NOREGx: Cave/Maison/Appt/Grenier routing unaffected
+ *   DEB-SC16: Nettoyage encombrants + encours → DEBARRAS-BULKY-CLEANUP / BULKY_ITEMS_CLEANUP
+ *   DEB-SC17: Nettoyage encombrants → state_lock_used=true, pool_size=1, setting=exterior
+ *   DEB-SC18: Nettoyage encombrants → planned_worker_count=2
+ *   DEB-SC19: NO-COLLISION: Enlèvement encombrants → still DEBARRAS-ENCOMBRANTS-EXTERIOR
+ *   DEB-SC20: NO-COLLISION: Nettoyage encombrants → NOT DRIVEWAY_BULKY_ITEMS_LOADING
+ *   DEB-GT41: PASS — residential area + remnants + active cleanup + mostly cleared + 2 workers
+ *   DEB-GT42: PASS — vehicle absent (vehicle optional)
+ *   DEB-GT43: REJECT — residential_cleanup_area_visible=false → service_visual_mismatch
+ *   DEB-GT44: REJECT — bulky_item_remnants_visible=false (no remnants) → service_visual_mismatch
+ *   DEB-GT45: REJECT — active_cleanup_and_removal_visible=false (idle workers) → service_visual_mismatch
+ *   DEB-GT46: REJECT — partially_cleared_area_visible=false (space still full) → service_visual_mismatch
+ *   DEB-GT47: REJECT — two_workers_visible=false (single worker) → worker_count_mismatch
+ *   DEB-GT48: REJECT — simple_household_cleaning_only=true (domestic clean) → service_visual_mismatch
+ *   DEB-GT49: REJECT — wild_dumping_scene=true → service_visual_mismatch
+ *   DEB-GT50: REJECT — large_item_carried_by_single_worker=true → access_violation
+ *   DEB-GT51: REJECT — service_visual_match=false (simple box move) → service_visual_mismatch
+ *   DEB-GT52: REJECT — worker_count_matches_plan=false → worker_count_mismatch
  */
 
 const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests6');
@@ -554,6 +571,136 @@ export async function runDebarrasTests() {
 
   test('DEB-GT40', 'worker_count_matches_plan=false → REJECT worker_count_mismatch', () => {
     const r = evalGate({ ...FHC_PASS_FIELDS, worker_count_matches_plan: false }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'worker_count_mismatch',
+      `Expected worker_count_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  // ─── DEBARRAS-BULKY-CLEANUP — scene resolution tests ─────────────────────
+
+  test('DEB-SC16', 'Nettoyage encombrants + encours → DEBARRAS-BULKY-CLEANUP + BULKY_ITEMS_CLEANUP', () => {
+    const r = resolve('Nettoyage encombrants', 'encours');
+    assert(r._visual_family === 'DEBARRAS-BULKY-CLEANUP',
+      `_visual_family expected "DEBARRAS-BULKY-CLEANUP", got "${r._visual_family}"`);
+    assert(r._access_configuration === 'BULKY_ITEMS_CLEANUP',
+      `_access_configuration expected "BULKY_ITEMS_CLEANUP", got "${r._access_configuration}"`);
+  });
+
+  test('DEB-SC17', 'Nettoyage encombrants → state_lock_used=true, pool_size=1, setting=exterior', () => {
+    const r = resolve('Nettoyage encombrants', 'encours');
+    assert(r._state_lock_used === true,
+      `_state_lock_used expected true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,
+      `_state_lock_pool_size expected 1, got ${r._state_lock_pool_size}`);
+    assert(r.setting === 'exterior',
+      `setting expected "exterior", got "${r.setting}"`);
+  });
+
+  test('DEB-SC18', 'Nettoyage encombrants → débarras worker rule applies (state_worker_minimums.encours=2)', () => {
+    const wRules = WORKER_SCENE_RULES['débarras'];
+    assert(wRules, 'WORKER_SCENE_RULES["débarras"] must exist');
+    assert(wRules.state_worker_minimums?.encours === 2,
+      `state_worker_minimums.encours expected 2, got ${wRules.state_worker_minimums?.encours}`);
+    const r = resolve('Nettoyage encombrants', 'encours');
+    assert(r._visual_family === 'DEBARRAS-BULKY-CLEANUP',
+      `Nettoyage encombrants must resolve to DEBARRAS-BULKY-CLEANUP to inherit débarras worker rule, got "${r._visual_family}"`);
+  });
+
+  test('DEB-SC19', 'NO-COLLISION: Enlèvement encombrants → still DEBARRAS-ENCOMBRANTS-EXTERIOR', () => {
+    const r = resolve('Enlèvement encombrants', 'encours');
+    assert(r._visual_family === 'DEBARRAS-ENCOMBRANTS-EXTERIOR',
+      `Enlèvement encombrants must keep DEBARRAS-ENCOMBRANTS-EXTERIOR, got "${r._visual_family}"`);
+  });
+
+  test('DEB-SC20', 'NO-COLLISION: Nettoyage encombrants → NOT DRIVEWAY_BULKY_ITEMS_LOADING', () => {
+    const r = resolve('Nettoyage encombrants', 'encours');
+    assert(r._access_configuration !== 'DRIVEWAY_BULKY_ITEMS_LOADING',
+      `Nettoyage encombrants must NOT route to DRIVEWAY_BULKY_ITEMS_LOADING, got "${r._access_configuration}"`);
+  });
+
+  // ─── DEBARRAS-BULKY-CLEANUP — gate tests ─────────────────────────────────
+
+  const BIC_PASS_FIELDS = {
+    residential_cleanup_area_visible:   true,
+    bulky_item_remnants_visible:        true,
+    active_cleanup_and_removal_visible: true,
+    partially_cleared_area_visible:     true,
+    two_workers_visible:                true,
+    clear_carrying_path_visible:        true,
+    simple_household_cleaning_only:     false,
+    wild_dumping_scene:                 false,
+    large_item_carried_by_single_worker: false,
+    service_visual_match:               true,
+    worker_count_matches_plan:          true,
+  };
+
+  test('DEB-GT41', 'BULKY_ITEMS_CLEANUP PASS — residential area + remnants + active cleanup + 2 workers', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS }, 'BULKY_ITEMS_CLEANUP');
+    assert(r.safe === true,
+      `Expected PASS, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT42', 'BULKY_ITEMS_CLEANUP PASS — vehicle absent (vehicle is optional)', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, vehicle_visible: false }, 'BULKY_ITEMS_CLEANUP');
+    assert(r.safe === true,
+      `Expected PASS with no vehicle, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT43', 'residential_cleanup_area_visible=false → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, residential_cleanup_area_visible: false }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT44', 'bulky_item_remnants_visible=false (no remnants, only clean floor) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, bulky_item_remnants_visible: false }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT45', 'active_cleanup_and_removal_visible=false (idle workers, nothing being moved) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, active_cleanup_and_removal_visible: false }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT46', 'partially_cleared_area_visible=false (space still entirely full) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, partially_cleared_area_visible: false }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT47', 'two_workers_visible=false (single worker only) → REJECT worker_count_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, two_workers_visible: false }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'worker_count_mismatch',
+      `Expected worker_count_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT48', 'simple_household_cleaning_only=true (domestic cleaning, no clearout) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, simple_household_cleaning_only: true }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT49', 'wild_dumping_scene=true (abandoned pile, no active work) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, wild_dumping_scene: true }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT50', 'large_item_carried_by_single_worker=true → REJECT access_violation', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, large_item_carried_by_single_worker: true }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT51', 'service_visual_match=false (simple box move, no debris/remnants) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, service_visual_match: false }, 'BULKY_ITEMS_CLEANUP');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT52', 'worker_count_matches_plan=false → REJECT worker_count_mismatch', () => {
+    const r = evalGate({ ...BIC_PASS_FIELDS, worker_count_matches_plan: false }, 'BULKY_ITEMS_CLEANUP');
     assert(!r.safe && r.reason === 'worker_count_mismatch',
       `Expected worker_count_mismatch, got safe=${r.safe} reason=${r.reason}`);
   });

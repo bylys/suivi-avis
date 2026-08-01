@@ -1,7 +1,7 @@
 {
   "summary": {
-    "ROUTED_TO_SPECIFIC_SCENE": 162,
-    "PARTIAL_CONTEXTE": 10,
+    "ROUTED_TO_SPECIFIC_SCENE": 163,
+    "PARTIAL_CONTEXTE": 9,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
     "UNMATCHED": 0,
@@ -2508,16 +2508,15 @@
     {
       "metier": "débarras",
       "service_label": "Nettoyage encombrants",
-      "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, no fallback",
-      "matched_regex": null,
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_detail": "matched _for: ^nettoyage encombrants$",
+      "matched_regex": "^nettoyage encombrants$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "no_regex_match",
+        "type": "regex_match",
+        "regex": "^nettoyage encombrants$",
         "source": "SITE_REALISM[\"débarras\"]",
-        "normalized_input": "nettoyage encombrants",
-        "targeted_count": 5,
-        "fallback_count": 0
+        "normalized_input": "nettoyage encombrants"
       }
     }
   ],

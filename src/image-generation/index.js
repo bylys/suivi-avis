@@ -300,7 +300,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/ravalement-tests.js?v=3'),
     import('./debug/fissure-tests.js?v=1'),
     import('./debug/enduit-tests.js?v=5'),
-    import('./debug/debarras-tests.js?v=6'),
+    import('./debug/debarras-tests.js?v=7'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();

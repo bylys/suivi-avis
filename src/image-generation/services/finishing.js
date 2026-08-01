@@ -148,6 +148,59 @@ export const SITE_REALISM_FINISHING = {
         ],
       },
 
+      // ─── DEBARRAS-BULKY-CLEANUP — ENCOURS — BULKY_ITEMS_CLEANUP (state_lock, pool_size=1) ────
+      {
+        _for:                             '^nettoyage encombrants$',
+        _state_for:                       'encours',
+        _visual_family:                   'DEBARRAS-BULKY-CLEANUP',
+        _access_configuration:            'BULKY_ITEMS_CLEANUP',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_camera:                     'standing 4–6 m back in a private residential driveway, open courtyard, or front of an open garage — eye level — wide framing showing the full width of the space — house facade, gate, hedge, or garage opening visible in the background confirming residential context — no public pavement or road as the main ground surface',
+        scene_framing:                    'end-of-clearout cleanup in progress: the space is already largely cleared — left side: a small grouped pile of last remaining items — a plastic chair, planks or dismantled shelving, and a small domestic appliance (microwave, fan, or old vacuum) — worker 1 standing, bending to lift or sort the last items, or using a two-wheel hand truck to move a small grouped load toward the edge of the space — centre: large cleared area of bare ground showing the clearout is nearly complete — right side: worker 2 crouching or sweeping, collecting debris and residue into a solid black bin bag, or tying the top of a full bag — two or three full black bin bags already tied and set aside near the grouped items — driveway or courtyard visibly bare except for the last group of items and the two workers',
+        scene_debris:                     'dust lines and scuff marks on the concrete or gravel showing where furniture previously stood — torn cardboard scraps and small packing material on the ground near the last pile — two or three full black bin bags tied and grouped near the remaining items',
+        location_must_have: [
+          'private residential driveway, open courtyard, front of an open garage, or annexe — NOT a public pavement or road',
+          'house facade, garage opening, garden gate, or hedge visible in the background confirming residential context',
+          'space mostly cleared — large bare ground area already visible, only last remnants remaining',
+          'small group of final items still on the ground: a chair, planks, small appliance, or dismantled shelving — at least two different types of item',
+          'two or three full black bin bags tied and set to the side',
+          'exactly two workers actively working — one sorting or moving the last items, one sweeping or collecting debris',
+        ],
+        location_forbidden: [
+          'ABSOLUTE PROHIBITION — scene looks like active loading of a full van with many large bulky items — must be end-of-clearout, not mid-loading',
+          'ABSOLUTE PROHIBITION — space completely tidy with no remaining items and no workers doing anything — must show final cleanup in progress',
+          'ABSOLUTE PROHIBITION — interior room (bedroom, kitchen, living room, cellar) — exterior or garage only',
+          'apartment building shared entrance or internal staircase',
+          'commercial warehouse, industrial premises, or public road',
+          'demolition site with rubble, plasterboard, or construction waste',
+        ],
+        scene_exclude: [
+          'single worker carrying an oversized heavy item (fridge, sofa, wardrobe) alone',
+          'pile of items abandoned with no worker handling them — décharge sauvage',
+          'scene looking like a domestic interior cleaning session with mop, bucket, or household products',
+          'large van dominating the foreground with mid-loading of many bulky items — that is Enlèvement encombrants',
+          'completely bare and tidy space with no items remaining and no active work',
+          'space entirely covered in items with no cleared area visible — must show mostly-done state',
+          'simple cardboard-box move with no bulky remnants or debris visible',
+          'branded uniforms or readable logo on any vehicle if present',
+        ],
+        chantier_details: [
+          'small plastic garden chair or folding chair on the ground near worker 1',
+          'two or three planks or a dismantled flat-pack shelf flat on the ground beside the last pile',
+          'old small domestic appliance — microwave, table fan, or vacuum cleaner — grouped with the last items',
+          'two or three full black bin bags tied and grouped at the edge of the cleared area',
+          'dust lines and scuff marks on the concrete or gravel where larger items previously stood',
+        ],
+        tools: [
+          'two-wheel hand truck or sack truck standing upright near worker 1',
+          'stiff broom or dustpan and brush on the ground near worker 2',
+          'work gloves on worker 1\'s hands or resting on the hand truck',
+        ],
+        protections: [],
+      },
+
       // ─── DEBARRAS-MAISON-ENCOURS — EN COURS — maison individuelle ─────────
       {
         _for:                             '^debarras maison$',
