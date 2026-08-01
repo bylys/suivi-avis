@@ -1,7 +1,7 @@
 {
   "summary": {
-    "ROUTED_TO_SPECIFIC_SCENE": 161,
-    "PARTIAL_CONTEXTE": 11,
+    "ROUTED_TO_SPECIFIC_SCENE": 162,
+    "PARTIAL_CONTEXTE": 10,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
     "UNMATCHED": 0,
@@ -2419,13 +2419,13 @@
       "metier": "débarras",
       "service_label": "Débarras maison",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: maison",
-      "matched_regex": "maison",
+      "routing_detail": "matched _for: ^debarras maison$",
+      "matched_regex": "^debarras maison$",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
-        "regex": "maison",
+        "regex": "^debarras maison$",
         "flags": "i",
         "normalized_input": "debarras maison"
       }
@@ -2464,13 +2464,13 @@
       "metier": "débarras",
       "service_label": "Vider maison succession",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: maison",
-      "matched_regex": "maison",
+      "routing_detail": "matched _for: ^vider maison succession$|^debarras apres deces$",
+      "matched_regex": "^vider maison succession$|^debarras apres deces$",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
-        "regex": "maison",
+        "regex": "^vider maison succession$|^debarras apres deces$",
         "flags": "i",
         "normalized_input": "vider maison succession"
       }
@@ -2478,16 +2478,16 @@
     {
       "metier": "débarras",
       "service_label": "Débarras après décès",
-      "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, no fallback",
-      "matched_regex": null,
+      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_detail": "matched _for: ^vider maison succession$|^debarras apres deces$",
+      "matched_regex": "^vider maison succession$|^debarras apres deces$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "no_regex_match",
+        "type": "regex_match",
         "source": "SITE_REALISM[\"débarras\"]",
-        "normalized_input": "debarras apres deces",
-        "targeted_count": 5,
-        "fallback_count": 0
+        "regex": "^vider maison succession$|^debarras apres deces$",
+        "flags": "i",
+        "normalized_input": "debarras apres deces"
       }
     },
     {

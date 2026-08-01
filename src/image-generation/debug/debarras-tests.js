@@ -37,15 +37,33 @@
  *   DEB-GT26: REJECT — large_item_carried_by_single_worker=true → access_violation
  *   DEB-GT27: REJECT — public_road_obstructed=true → access_violation
  *   DEB-GT28: REJECT — service_visual_match=false (simple box move) → service_visual_mismatch
+ *   DEB-SC10: Vider maison succession encours → DEBARRAS-FULL-HOUSE-CLEARANCE / FULL_HOUSE_CLEARANCE
+ *   DEB-SC11: Débarras après décès encours → DEBARRAS-FULL-HOUSE-CLEARANCE / FULL_HOUSE_CLEARANCE
+ *   DEB-SC12: Vider maison succession → state_lock_used=true, pool_size=1
+ *   DEB-SC13: Débarras après décès → state_lock_used=true, pool_size=1
+ *   DEB-SC14: NO-COLLISION: Vider maison succession → not DEBARRAS-MAISON-ENCOURS
+ *   DEB-SC15: NO-COLLISION: Débarras maison → still DEBARRAS-MAISON-ENCOURS
+ *   DEB-GT29: PASS — house interior + full clearance + 2 workers + active
+ *   DEB-GT30: REJECT — house_interior_visible=false → service_visual_mismatch
+ *   DEB-GT31: REJECT — full_clearance_in_progress_visible=false → service_visual_mismatch
+ *   DEB-GT32: REJECT — partially_cleared_rooms_visible=false → service_visual_mismatch
+ *   DEB-GT33: REJECT — active_packing_or_removal_visible=false → service_visual_mismatch
+ *   DEB-GT34: REJECT — large_item_carried_by_single_worker=true → access_violation
+ *   DEB-GT35: REJECT — exit_path_blocked=true → access_violation
+ *   DEB-GT36: REJECT — private_sensitive_items_visible=true → service_visual_mismatch
+ *   DEB-GT37: REJECT — funerary_items_visible=true → service_visual_mismatch
+ *   DEB-GT38: REJECT — dramatic_grief_scene=true → service_visual_mismatch
+ *   DEB-GT39: REJECT — service_visual_match=false → service_visual_mismatch
+ *   DEB-GT40: REJECT — worker_count_matches_plan=false → worker_count_mismatch
  *   DEB-SC-NOREGx: Cave/Maison/Appt/Grenier routing unaffected
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests5');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests5');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests5');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=deb-tests6');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=deb-tests6');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=deb-tests6');
 
 export async function runDebarrasTests() {
-  console.group('DEB tests — Débarras cave + appartement + grenier + encombrants gates + scenes');
+  console.group('DEB tests — Débarras cave + appartement + grenier + encombrants + full-clearance gates + scenes');
 
   const _results = [];
   let _pass = 0;
@@ -401,6 +419,143 @@ export async function runDebarrasTests() {
     const r = evalGate({ ...ENC_PASS_FIELDS, service_visual_match: false }, 'DRIVEWAY_BULKY_ITEMS_LOADING');
     assert(!r.safe && r.reason === 'service_visual_mismatch',
       `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  // ─── DEBARRAS-FULL-HOUSE-CLEARANCE — scene routing ───────────────────────
+
+  test('DEB-SC10', 'Vider maison succession encours → DEBARRAS-FULL-HOUSE-CLEARANCE + FULL_HOUSE_CLEARANCE', () => {
+    const r = resolve('Vider maison succession', 'encours');
+    assert(r._visual_family === 'DEBARRAS-FULL-HOUSE-CLEARANCE',
+      `Expected DEBARRAS-FULL-HOUSE-CLEARANCE, got "${r._visual_family}"`);
+    assert(r._access_configuration === 'FULL_HOUSE_CLEARANCE',
+      `Expected FULL_HOUSE_CLEARANCE, got "${r._access_configuration}"`);
+    assert(r.setting === 'interior',
+      `Expected setting=interior, got "${r.setting}"`);
+  });
+
+  test('DEB-SC11', 'Débarras après décès encours → DEBARRAS-FULL-HOUSE-CLEARANCE + FULL_HOUSE_CLEARANCE', () => {
+    const r = resolve('Débarras après décès', 'encours');
+    assert(r._visual_family === 'DEBARRAS-FULL-HOUSE-CLEARANCE',
+      `Expected DEBARRAS-FULL-HOUSE-CLEARANCE, got "${r._visual_family}"`);
+    assert(r._access_configuration === 'FULL_HOUSE_CLEARANCE',
+      `Expected FULL_HOUSE_CLEARANCE, got "${r._access_configuration}"`);
+  });
+
+  test('DEB-SC12', 'Vider maison succession encours → state_lock_used=true, pool_size=1', () => {
+    const r = resolve('Vider maison succession', 'encours');
+    assert(r._state_lock_used === true,
+      `Expected _state_lock_used=true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,
+      `Expected _state_lock_pool_size=1, got ${r._state_lock_pool_size}`);
+  });
+
+  test('DEB-SC13', 'Débarras après décès encours → state_lock_used=true, pool_size=1', () => {
+    const r = resolve('Débarras après décès', 'encours');
+    assert(r._state_lock_used === true,
+      `Expected _state_lock_used=true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,
+      `Expected _state_lock_pool_size=1, got ${r._state_lock_pool_size}`);
+  });
+
+  test('DEB-SC14', 'NO-COLLISION: Vider maison succession → not DEBARRAS-MAISON-ENCOURS', () => {
+    const r = resolve('Vider maison succession', 'encours');
+    assert(r._visual_family !== 'DEBARRAS-MAISON-ENCOURS',
+      `Collision: Vider maison succession must not route to DEBARRAS-MAISON-ENCOURS, got "${r._visual_family}"`);
+  });
+
+  test('DEB-SC15', 'NO-COLLISION: Débarras maison → still DEBARRAS-MAISON-ENCOURS after _for tightening', () => {
+    const r = resolve('Débarras maison', 'encours');
+    assert(r._visual_family === 'DEBARRAS-MAISON-ENCOURS',
+      `Expected DEBARRAS-MAISON-ENCOURS, got "${r._visual_family}"`);
+  });
+
+  // ─── DEBARRAS-FULL-HOUSE-CLEARANCE — gate tests ───────────────────────────
+
+  const FHC_PASS_FIELDS = {
+    house_interior_visible:             true,
+    full_clearance_in_progress_visible: true,
+    partially_cleared_rooms_visible:    true,
+    active_packing_or_removal_visible:  true,
+    clear_exit_path_visible:            true,
+    large_item_carried_by_single_worker: false,
+    exit_path_blocked:                  false,
+    private_sensitive_items_visible:    false,
+    funerary_items_visible:             false,
+    dramatic_grief_scene:               false,
+    service_visual_match:               true,
+    worker_count_matches_plan:          true,
+  };
+
+  test('DEB-GT29', 'FULL_HOUSE_CLEARANCE PASS — all fields valid', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS }, 'FULL_HOUSE_CLEARANCE');
+    assert(r.safe === true,
+      `Expected PASS, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT30', 'house_interior_visible=false → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, house_interior_visible: false }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT31', 'full_clearance_in_progress_visible=false (simple small move) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, full_clearance_in_progress_visible: false }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT32', 'partially_cleared_rooms_visible=false (entirely empty house) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, partially_cleared_rooms_visible: false }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT33', 'active_packing_or_removal_visible=false (idle workers) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, active_packing_or_removal_visible: false }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT34', 'large_item_carried_by_single_worker=true → REJECT access_violation', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, large_item_carried_by_single_worker: true }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT35', 'exit_path_blocked=true → REJECT access_violation', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, exit_path_blocked: true }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'access_violation',
+      `Expected access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT36', 'private_sensitive_items_visible=true (readable documents) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, private_sensitive_items_visible: true }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT37', 'funerary_items_visible=true (urns / memorial candles) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, funerary_items_visible: true }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT38', 'dramatic_grief_scene=true (person grieving) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, dramatic_grief_scene: true }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT39', 'service_visual_match=false (simple cleaning, no removal) → REJECT service_visual_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, service_visual_match: false }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'service_visual_mismatch',
+      `Expected service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('DEB-GT40', 'worker_count_matches_plan=false → REJECT worker_count_mismatch', () => {
+    const r = evalGate({ ...FHC_PASS_FIELDS, worker_count_matches_plan: false }, 'FULL_HOUSE_CLEARANCE');
+    assert(!r.safe && r.reason === 'worker_count_mismatch',
+      `Expected worker_count_mismatch, got safe=${r.safe} reason=${r.reason}`);
   });
 
   // ─── Verify gate + aliases exist ─────────────────────────────────────────
