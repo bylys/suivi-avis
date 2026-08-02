@@ -1,5 +1,5 @@
 /**
- * Nettoyage extérieur — no-cost test suite (v3)
+ * Nettoyage extérieur — no-cost test suite (v4)
  *   NEX-SC1 : Nettoyage haute pression + encours → NETTOYAGE-HIGH-PRESSURE-GROUND
  *   NEX-SC2 : Nettoyage haute pression → GROUND_LEVEL_PRESSURE_WASHING
  *   NEX-SC3 : Nettoyage haute pression → state_lock_used=true, pool_size=1, setting=exterior
@@ -25,12 +25,31 @@
  *   NEX-SAFETY-2: buildVisionSafetyRequest with Nettoyage haute pression includes gate vision_instruction
  *   NEX-SAFETY-3: SAFETY_CHECK_RULES['nettoyage_toiture'] still exists
  *   NEX-SAFETY-4: SAFETY_CHECK_RULES['nettoyage_gouttieres'] still exists
+ *   NEX-FAC-SC1 : Nettoyage façade encours → NETTOYAGE-FACADE-GROUND
+ *   NEX-FAC-SC2 : Nettoyage façade encours → GROUND_LEVEL_FACADE_CLEANING
+ *   NEX-FAC-SC3 : Nettoyage façade encours → state_lock_used=true, pool_size=1, setting=exterior
+ *   NEX-FAC-SC4 : NO-COLLISION: Nettoyage façade → not NETTOYAGE-HIGH-PRESSURE-GROUND
+ *   NEX-FAC-SC5 : NO-COLLISION: Nettoyage façade → not NETTOYAGE-SURFACE-GROUND
+ *   NEX-FAC-ALIAS1: "nettoyage facade" → "Nettoyage façade"
+ *   NEX-FAC-ALIAS2: "nettoyage de facade" → "Nettoyage façade"
+ *   NEX-FAC-GT1  : PASS — façade basse + nettoyage actif + progression visible
+ *   NEX-FAC-GT2  : REJECT — facade_surface_visible=false → service_visual_mismatch
+ *   NEX-FAC-GT3  : REJECT — active_facade_cleaning_visible=false → service_visual_mismatch
+ *   NEX-FAC-GT4  : REJECT — dirty_and_clean_facade_zones_visible=false → service_visual_mismatch
+ *   NEX-FAC-GT5  : REJECT — worker_stable_on_ground=false → access_violation
+ *   NEX-FAC-GT6  : REJECT — work_area_reachable_from_ground=false → access_violation
+ *   NEX-FAC-GT7  : REJECT — cleaning_equipment_visible=false → service_visual_mismatch
+ *   NEX-FAC-GT8  : REJECT — electrical_hazard_visible=true → critical_violation
+ *   NEX-FAC-GT9  : REJECT — worker_on_ladder_or_scaffold=true → access_violation
+ *   NEX-FAC-GT10 : REJECT — service_visual_match=false → service_visual_mismatch
+ *   NEX-FAC-GT11 : REJECT — worker_count_matches_plan=false → worker_count_mismatch
+ *   NEX-FAC-GATE-EXISTS: gate structure + GROUND_LEVEL_FACADE_CLEANING conditions
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=nex-tests3');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=nex-tests3');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SAFETY_CHECK_RULES } = await import('../safety/safety-rules.js?bust=nex-tests3');
-const { buildVisionSafetyRequest } = await import('../pipeline/safety-check.js?bust=nex-tests3');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=nex-tests4');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=nex-tests4');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SAFETY_CHECK_RULES } = await import('../safety/safety-rules.js?bust=nex-tests4');
+const { buildVisionSafetyRequest } = await import('../pipeline/safety-check.js?bust=nex-tests4');
 
 export async function runNettoyageExtTests() {
   console.group('NEX tests — Nettoyage extérieur: Haute pression gate + scenes');
@@ -440,6 +459,159 @@ export async function runNettoyageExtTests() {
     ['terrace_surface_visible','active_surface_cleaning_visible','cleaning_machine_visible',
      'dirty_and_clean_zones_visible','worker_stable_on_ground','terrace_context_visible'].forEach(f => {
       assert(fields.includes(f), `reject_conditions must include field "${f}"`);
+    });
+  });
+
+  // ── Nettoyage façade — scene resolution tests ────────────────────────────────
+
+  function evalFacadeGate(fields) {
+    const gate = SERVICE_VISUAL_GATE_RULES['Nettoyage façade'];
+    assert(gate, 'Gate "Nettoyage façade" must exist');
+    const conds = gate.reject_conditions_by_access?.GROUND_LEVEL_FACADE_CLEANING ?? gate.reject_conditions;
+    for (const cond of conds) {
+      if ('value' in cond && fields[cond.field] === cond.value) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+      if (cond.not_exactly_true && fields[cond.field] !== true) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+    }
+    return { safe: true };
+  }
+
+  const FACADE_PASS_FIELDS = {
+    facade_surface_visible:               true,
+    active_facade_cleaning_visible:       true,
+    dirty_and_clean_facade_zones_visible: true,
+    worker_stable_on_ground:              true,
+    work_area_reachable_from_ground:      true,
+    cleaning_equipment_visible:           true,
+    hose_or_sprayer_coherent:             true,
+    jet_or_product_directed_safely:       true,
+    electrical_hazard_visible:            false,
+    worker_on_ladder_or_scaffold:         false,
+    service_visual_match:                 true,
+    worker_count_matches_plan:            true,
+  };
+
+  test('NEX-FAC-SC1', 'Nettoyage façade encours → NETTOYAGE-FACADE-GROUND', () => {
+    const r = resolve('nettoyage', 'Nettoyage façade', 'encours');
+    assert(r._visual_family === 'NETTOYAGE-FACADE-GROUND',
+      `Expected NETTOYAGE-FACADE-GROUND, got "${r._visual_family}"`);
+  });
+
+  test('NEX-FAC-SC2', 'Nettoyage façade encours → GROUND_LEVEL_FACADE_CLEANING', () => {
+    const r = resolve('nettoyage', 'Nettoyage façade', 'encours');
+    assert(r._access_configuration === 'GROUND_LEVEL_FACADE_CLEANING',
+      `Expected GROUND_LEVEL_FACADE_CLEANING, got "${r._access_configuration}"`);
+  });
+
+  test('NEX-FAC-SC3', 'Nettoyage façade encours → state_lock_used=true, pool_size=1, setting=exterior', () => {
+    const r = resolve('nettoyage', 'Nettoyage façade', 'encours');
+    assert(r._state_lock_used === true,      `state_lock_used must be true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,    `pool_size must be 1, got ${r._state_lock_pool_size}`);
+    assert(r.setting === 'exterior',         `setting must be exterior, got ${r.setting}`);
+  });
+
+  test('NEX-FAC-SC4', 'NO-COLLISION: Nettoyage façade → not NETTOYAGE-HIGH-PRESSURE-GROUND', () => {
+    const r = resolve('nettoyage', 'Nettoyage façade', 'encours');
+    assert(r._visual_family !== 'NETTOYAGE-HIGH-PRESSURE-GROUND',
+      `Nettoyage façade must not resolve to NETTOYAGE-HIGH-PRESSURE-GROUND`);
+  });
+
+  test('NEX-FAC-SC5', 'NO-COLLISION: Nettoyage façade → not NETTOYAGE-SURFACE-GROUND', () => {
+    const r = resolve('nettoyage', 'Nettoyage façade', 'encours');
+    assert(r._visual_family !== 'NETTOYAGE-SURFACE-GROUND',
+      `Nettoyage façade must not resolve to NETTOYAGE-SURFACE-GROUND (terrasse)`);
+  });
+
+  test('NEX-FAC-ALIAS1', '_SERVICE_GATE_ALIASES: "nettoyage facade" → "Nettoyage façade"', () => {
+    assert(_SERVICE_GATE_ALIASES['nettoyage facade'] === 'Nettoyage façade',
+      `Expected "Nettoyage façade", got "${_SERVICE_GATE_ALIASES['nettoyage facade']}"`);
+  });
+
+  test('NEX-FAC-ALIAS2', '_SERVICE_GATE_ALIASES: "nettoyage de facade" → "Nettoyage façade"', () => {
+    assert(_SERVICE_GATE_ALIASES['nettoyage de facade'] === 'Nettoyage façade',
+      `Expected "Nettoyage façade", got "${_SERVICE_GATE_ALIASES['nettoyage de facade']}"`);
+  });
+
+  test('NEX-FAC-GT1', 'PASS — façade basse + nettoyage actif + progression visible → safe', () => {
+    const r = evalFacadeGate(FACADE_PASS_FIELDS);
+    assert(r.safe === true, `Expected safe=true, got safe=${r.safe}, first_failed=${r.first_failed}`);
+  });
+
+  test('NEX-FAC-GT2', 'REJECT — facade_surface_visible=false (sol/terrasse) → service_visual_mismatch', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, facade_surface_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT3', 'REJECT — active_facade_cleaning_visible=false (peinture / enduit) → service_visual_mismatch', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, active_facade_cleaning_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT4', 'REJECT — dirty_and_clean_facade_zones_visible=false (façade uniformément propre) → service_visual_mismatch', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, dirty_and_clean_facade_zones_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT5', 'REJECT — worker_stable_on_ground=false (worker sur échelle) → access_violation', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, worker_stable_on_ground: false });
+    assert(r.safe === false && r.reason === 'access_violation',
+      `Expected reject/access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT6', 'REJECT — work_area_reachable_from_ground=false (étage hors portée) → access_violation', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, work_area_reachable_from_ground: false });
+    assert(r.safe === false && r.reason === 'access_violation',
+      `Expected reject/access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT7', 'REJECT — cleaning_equipment_visible=false (absence de machine) → service_visual_mismatch', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, cleaning_equipment_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT8', 'REJECT — electrical_hazard_visible=true → critical_violation', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, electrical_hazard_visible: true });
+    assert(r.safe === false && r.reason === 'critical_violation',
+      `Expected reject/critical_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT9', 'REJECT — worker_on_ladder_or_scaffold=true → access_violation', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, worker_on_ladder_or_scaffold: true });
+    assert(r.safe === false && r.reason === 'access_violation',
+      `Expected reject/access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT10', 'REJECT — service_visual_match=false (ravalement / peinture) → service_visual_mismatch', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, service_visual_match: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GT11', 'REJECT — worker_count_matches_plan=false → worker_count_mismatch', () => {
+    const r = evalFacadeGate({ ...FACADE_PASS_FIELDS, worker_count_matches_plan: false });
+    assert(r.safe === false && r.reason === 'worker_count_mismatch',
+      `Expected reject/worker_count_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-FAC-GATE-EXISTS', 'SERVICE_VISUAL_GATE_RULES[\'Nettoyage façade\'] exists with correct structure', () => {
+    const gate = SERVICE_VISUAL_GATE_RULES['Nettoyage façade'];
+    assert(gate, 'Gate must exist');
+    assert(typeof gate.vision_instruction === 'string' && gate.vision_instruction.includes('SERVICE VISUAL GATE'),
+      'vision_instruction must contain SERVICE VISUAL GATE');
+    assert(gate.reject_conditions_by_access?.GROUND_LEVEL_FACADE_CLEANING,
+      'reject_conditions_by_access.GROUND_LEVEL_FACADE_CLEANING must exist');
+    const fields = gate.reject_conditions_by_access.GROUND_LEVEL_FACADE_CLEANING.map(c => c.field);
+    ['facade_surface_visible','active_facade_cleaning_visible','dirty_and_clean_facade_zones_visible',
+     'worker_stable_on_ground','work_area_reachable_from_ground','cleaning_equipment_visible',
+     'electrical_hazard_visible','worker_on_ladder_or_scaffold'].forEach(f => {
+      assert(fields.includes(f), `GROUND_LEVEL_FACADE_CLEANING must include field "${f}"`);
     });
   });
 

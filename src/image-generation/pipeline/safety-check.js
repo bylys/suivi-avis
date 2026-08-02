@@ -86,6 +86,15 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     jet_directed_safely:             obj.jet_directed_safely             ?? null,
     electrical_hazard_visible:       obj.electrical_hazard_visible       ?? null,
     dangerous_hose_trip_hazard:      obj.dangerous_hose_trip_hazard      ?? null,
+    // Facade cleaning gate fields
+    facade_surface_visible:               obj.facade_surface_visible               ?? null,
+    active_facade_cleaning_visible:       obj.active_facade_cleaning_visible       ?? null,
+    dirty_and_clean_facade_zones_visible: obj.dirty_and_clean_facade_zones_visible ?? null,
+    work_area_reachable_from_ground:      obj.work_area_reachable_from_ground      ?? null,
+    cleaning_equipment_visible:           obj.cleaning_equipment_visible           ?? null,
+    hose_or_sprayer_coherent:             obj.hose_or_sprayer_coherent             ?? null,
+    jet_or_product_directed_safely:       obj.jet_or_product_directed_safely       ?? null,
+    worker_on_ladder_or_scaffold:         obj.worker_on_ladder_or_scaffold         ?? null,
   };
 }
 

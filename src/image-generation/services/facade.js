@@ -1343,6 +1343,66 @@ export const SITE_REALISM_FACADE = {
         ],
       },
 
+      // --- nettoyage façade sol (zone basse, déterministe) ---
+      {
+        _for:                             '^nettoyage facade$',
+        _state_for:                       'encours',
+        _visual_family:                   'NETTOYAGE-FACADE-GROUND',
+        _access_configuration:            'GROUND_LEVEL_FACADE_CLEANING',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_camera:                     'standing 3–5 m back from the facade of a residential house (pavillon individuel), eye level — wide framing showing the full visible facade section being cleaned — worker stable on the ground directly in front of the wall, lance or brush in hand — cleaning machine on the ground 1–2 m to the side or behind the worker — hose running flat on the ground — dirty runoff water visible at the base of the wall — NO ladder, NO scaffold, NO elevated platform in frame',
+        scene_framing:                    'ground-level facade cleaning in progress — the work zone is the lower section of the exterior wall: soubassement, rez-de-chaussée wall, or facade area directly surrounding a door or low window — dirty zone still remaining on the upper part or right side: dark green algae streaks, grey grime, air-pollution blackening, or lichen clearly visible — cleaned zone below or to the left: lighter surface, original render or stone colour beginning to show, still wet — irregular natural boundary between clean and dirty, not a straight line — worker stands flat on the ground, no ladder or scaffold — cleaning machine (electric or petrol pressure washer OR professional sprayer with lance) sits on the ground within 2 m of the worker — hose connecting machine to lance runs flat on the ground — dirty brown or green water runs down the facade and collects at the wall base — protections visible: plastic bag taped over outdoor socket, plastic sheeting over window glass, tarp on garden bed at wall base — the facade surface is rendered render, bare stone, or bare brick (NOT wood panels, not glass, not a modern composite cladding) — salissures, algae streaks, or dark pollution visible on the uncleaned zone — cleaned zone clearly lighter and wetter',
+        location_must_have: [
+          'exterior facade wall of a residential house as the main work surface — render, stone, or brick — clearly vertical',
+          'work zone at LOW HEIGHT: soubassement, ground-floor wall level, or facade area around a door or low window — reachable without any ladder or scaffold',
+          'worker standing stably on flat ground directly in front of the facade — both feet on the ground',
+          'dirty zone AND cleaned zone simultaneously visible on the same facade surface — algae or grime on the dirty side, lighter wet surface on the cleaned side',
+        ],
+        location_forbidden: [
+          'worker on a ladder or scaffold of any kind — strictly ground-level only',
+          'work zone above the worker\'s natural arm reach — upper-floor facade or high gable out of reach from the ground',
+          'terrace floor or paving as the main work surface — the main subject must be the vertical facade wall',
+          'roofing, tiles, or gutters as the main subject',
+          'interior room or indoor setting',
+          'entire facade already clean — a dirty zone must remain',
+          'fresh paint or render application — no enduit, no peinture',
+          'jet directed toward a bare electrical socket, luminaire, or junction box at close range',
+        ],
+        scene_exclude: [
+          'ladder or scaffold in frame — ground-level only',
+          'worker at height — both feet must be on the ground',
+          'terrace surface or paving as the main cleaning subject',
+          'roofing or gutters',
+          'fresh render or paint application',
+          'entire facade uniformly clean with no dirty zone',
+          'jet directed toward another person',
+          'jet directed straight at an unprotected electrical socket or luminaire',
+          'worker barefoot or in sandals',
+          'two workers — single worker only',
+          'perfect straight-line boundary between clean and dirty — must be irregular',
+        ],
+        chantier_details: [
+          'irregular diagonal or organic boundary between the cleaned and dirty facade zone — not a straight line',
+          'dirty brown or green water running down the facade and pooling at the base of the wall',
+          'plastic protection on the window glass and socket — clearly applied before cleaning started',
+          'cleaning machine hose running flat on the ground — no loops around the worker\'s feet',
+        ],
+        tools: [
+          'electric or petrol pressure washer on the ground, 1–2 m to the side of the worker',
+          'high-pressure lance held two-handed directing jet at the lower facade zone',
+          'OR professional backpack or wheeled sprayer with lance for chemical cleaning treatment',
+          'high-pressure hose running flat on the ground from machine to lance — no dangerous loops',
+        ],
+        protections: [
+          'plastic bag taped over the exterior electrical socket at the facade',
+          'plastic sheeting taped over the window glass and frame in the work zone',
+          'tarp or plastic sheet on the garden bed or ground at the base of the wall',
+          'waterproof work boots — closed toe',
+        ],
+      },
+
       // --- nettoyage terrasse (surface sol, déterministe) ---
       {
         _for:                             '^nettoyage terrasse$',

@@ -2299,13 +2299,17 @@
       "metier": "nettoyage",
       "service_label": "Nettoyage façade",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade",
+      "routing_detail": "matched _for: ^nettoyage facade$ (state_lock encours → NETTOYAGE-FACADE-GROUND / GROUND_LEVEL_FACADE_CLEANING); fallback to facade|nettoy.*facade for other states",
       "matched_regex": "facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock_regex_match",
         "source": "SITE_REALISM[\"nettoyage\"]",
-        "regex": "facade|nettoy.*facade|traitement.*facade|hydrofuge.*facade",
+        "regex": "^nettoyage facade$",
+        "state_for": "encours",
+        "visual_family": "NETTOYAGE-FACADE-GROUND",
+        "access_configuration": "GROUND_LEVEL_FACADE_CLEANING",
+        "state_lock_pool_size": 1,
         "flags": "i",
         "normalized_input": "nettoyage facade"
       }
