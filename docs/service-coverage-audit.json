@@ -2314,13 +2314,13 @@
       "metier": "nettoyage",
       "service_label": "Nettoyage terrasse",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
-      "matched_regex": "terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+      "routing_detail": "matched _for: ^nettoyage terrasse$ (state_lock encours → NETTOYAGE-SURFACE-GROUND / GROUND_SURFACE_CLEANING)",
+      "matched_regex": "^nettoyage terrasse$",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"nettoyage\"]",
-        "regex": "terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave",
+        "regex": "^nettoyage terrasse$",
         "flags": "i",
         "normalized_input": "nettoyage terrasse"
       }

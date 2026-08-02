@@ -1343,9 +1343,72 @@ export const SITE_REALISM_FACADE = {
         ],
       },
 
-      // --- nettoyage terrasse / dallage ---
+      // --- nettoyage terrasse (surface sol, déterministe) ---
       {
-        _for:          'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        _for:                             '^nettoyage terrasse$',
+        _state_for:                       'encours',
+        _visual_family:                   'NETTOYAGE-SURFACE-GROUND',
+        _access_configuration:            'GROUND_SURFACE_CLEANING',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_camera:                     'standing at the edge of a residential outdoor terrace directly adjoining the rear or side of the house, 3–5 m back from the worker, eye level — wide framing showing the full terrace tiled or stone-slab surface with the pressure-washed clean zone and the remaining dirty moss-covered zone — in the background: house facade with a bay window, French door, or sliding patio door clearly visible — garden table and chairs or planters visibly displaced to one dry corner — NO garage door, carport, or vehicle access point in frame',
+        scene_framing:                    'terrace surface cleaning in progress — the surface is ceramic tiles, natural stone slabs, or concrete flags typical of a residential outdoor living terrace (NOT tarmac, asphalt, or loose gravel typical of a driveway) — clean zone on the near or left half: tiles/slabs brighter and visibly wet, original surface colour beginning to show — dirty zone still remaining on the far or right half: dark green algae, grey grime, or moss encrusted clearly visible — irregular natural boundary between clean and dirty, not a straight line — worker standing at the cleaning boundary, lance held two-handed, jet directed downward at the surface — cleaning machine sitting on the clean zone 1–2 m behind the worker — hose connecting machine to lance running flat on the already-cleaned surface — dirty water running toward a drain grate, garden edge, or terrace border — garden furniture (table, chairs) or potted plants moved and stacked to one dry corner of the terrace, confirming this is a living/dining terrace not a circulation path',
+        location_must_have: [
+          'residential terrace DIRECTLY ADJACENT to the habitable interior of the house — outdoor living or dining area, NOT a driveway, path, or vehicle access lane',
+          'mineral surface: ceramic tiles, natural stone slabs, concrete flags, or quarry tiles — surface must be clearly non-carrossable (no tarmac, asphalt, or poured concrete driveway finish)',
+          'house facade visible in background with a bay window, French door, or large sliding patio door CLEARLY VISIBLE — this is mandatory to confirm outdoor living terrace context',
+          'garden furniture (table, chairs) OR potted plants OR decorative planters visibly moved to one dry corner — mandatory living-area indicator',
+        ],
+        location_forbidden: [
+          'garage door or carport structure visible and dominating the composition',
+          'driveway, vehicle access lane, or tarmac/asphalt surface as the primary surface',
+          'public pavement or road',
+          'indoor setting or interior room',
+          'facade or exterior wall as the main work surface',
+          'car or vehicle as the cleaning target',
+          'no bay window or French door visible in background — must see at least one residential glazed opening',
+          'scene indistinguishable from a driveway or alley — must show living terrace context',
+        ],
+        scene_exclude: [
+          'worker directing jet toward another person',
+          'jet directed toward open electrical socket or glazing at close range',
+          'worker barefoot or wearing sandals',
+          'worker standing in deep pooled water above ankle height',
+          'hose looping around or crossing the worker\'s feet creating a trip hazard',
+          'ladder or scaffold in use — ground-level work only',
+          'car or vehicle as the main cleaning target',
+          'roof or exterior wall as the main work surface',
+          'entire surface already perfectly clean — no dirty zone visible',
+          'two workers — single worker only',
+          'perfect straight-line split between clean and dirty — must be irregular',
+          'furniture still in place and being soaked by the jet',
+          'electrical extension lead or power strip lying in the water',
+          'garage door visible or any vehicle access point in frame',
+        ],
+        chantier_details: [
+          'irregular natural boundary between clean bright surface and dark dirty zone — not a straight line',
+          'cleaning machine hose running flat across already-cleaned surface back to the worker\'s lance',
+          'dirty water running along the terrace toward nearest drain or garden edge',
+          'garden furniture stacked to one dry corner — terrace cleared for work',
+        ],
+        tools: [
+          'electric or petrol pressure washer or surface cleaner on the ground, 1–2 m behind the worker',
+          'high-pressure hose or surface cleaner head connected to the machine — lying flat, no loops underfoot',
+          'lance held two-handed or surface cleaner head pushed across the cleaning boundary',
+        ],
+        protections: [
+          'waterproof work boots clearly visible — closed toe and ankle protection',
+          'protective goggles if chemical product in use',
+          'plastic cover or tarp over any nearby outdoor socket or electrical fitting',
+        ],
+      },
+
+      // --- nettoyage terrasse / dallage / pavés / allée (famille commune) ---
+      {
+        _for:                   'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        _visual_family:         'NETTOYAGE-SURFACE-GROUND',
+        _access_configuration:  'GROUND_SURFACE_CLEANING',
         scene_note:    'terrace half-cleaned — bright clean paving on one half, green moss-covered dark paving on the other, sharp cleaning line across the terrace surface',
         scene_camera:  'standing at the terrace edge, framing the full surface with the bright clean section and the mossy dark section clearly side by side',
         scene_framing: {
@@ -1370,7 +1433,9 @@ export const SITE_REALISM_FACADE = {
         ],
       },
       {
-        _for:          'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        _for:                   'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        _visual_family:         'NETTOYAGE-SURFACE-GROUND',
+        _access_configuration:  'GROUND_SURFACE_CLEANING',
         scene_note:    'terrace cleaning — dirty grey water and dislodged moss being pushed toward the drain with a stiff broom, drain grate visible at the low end of the terrace',
         scene_camera:  'standing at the high end of the terrace, framing the stiff broom pushing the dirty water and moss debris toward the drain',
         scene_framing: {
@@ -1395,7 +1460,9 @@ export const SITE_REALISM_FACADE = {
         ],
       },
       {
-        _for:          'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        _for:                   'terrasse|dallage|paves|allee|sol.*ext|beton.*ext|nettoy.*terr|nettoy.*dall|nettoy.*pave',
+        _visual_family:         'NETTOYAGE-SURFACE-GROUND',
+        _access_configuration:  'GROUND_SURFACE_CLEANING',
         scene_note:    'terrace nearly fully cleaned — garden furniture moved to one side and covered, freshly cleaned paving bright in the foreground, last section with old moss stains at the back edge',
         scene_camera:  'standing at the clean end of the terrace, framing the bright cleaned paving in the foreground and the remaining mossy section at the far back edge',
         scene_framing: {

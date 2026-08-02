@@ -213,7 +213,7 @@ const COMPOSITION_RULES_BY_METIER = {
     preferred_compositions: ['medium_intervention', 'wide_worksite'],
     close_detail_max_ratio: 0.25,
     minimum_contextual_images_per_batch: 1,
-    minimum_worker_images_per_active_batch: 0,
+    minimum_worker_images_per_active_batch: 1,
     vehicle_rules: {},
     forbidden_framing: ['hose nozzle as hero shot', 'chemical bottle filling frame'],
   },

@@ -70,6 +70,11 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     ground_worker_visible:           obj.ground_worker_visible           ?? null,
     workers_spatially_separated:     obj.workers_spatially_separated     ?? null,
     treatment_application_visible:   obj.treatment_application_visible   ?? null,
+    // Terrace surface cleaning gate fields
+    terrace_surface_visible:         obj.terrace_surface_visible         ?? null,
+    active_surface_cleaning_visible: obj.active_surface_cleaning_visible ?? null,
+    cleaning_machine_visible:        obj.cleaning_machine_visible        ?? null,
+    terrace_context_visible:         obj.terrace_context_visible         ?? null,
     // Pressure washing gate fields
     ground_hard_surface_visible:     obj.ground_hard_surface_visible     ?? null,
     active_pressure_washing_visible: obj.active_pressure_washing_visible ?? null,
@@ -185,6 +190,9 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
         const _fieldVal = cond.field === 'worker_count_matches_plan'
           ? _computedWorkerMatchesPlan
           : obj[cond.field];
+        // worker_count_matches_plan is only applicable when a planned count exists (_expectedWC !== null).
+        // When null (no fiche → no planned count), skip — A1 already handles the fiche-backed count check.
+        if (cond.field === 'worker_count_matches_plan' && _fieldVal === null) continue;
         const matches = cond.not_exactly_true ? _fieldVal !== true : _fieldVal === cond.value;
         if (matches) {
           return {

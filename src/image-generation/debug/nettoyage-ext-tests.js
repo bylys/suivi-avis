@@ -1,5 +1,5 @@
 /**
- * Nettoyage extérieur — no-cost test suite
+ * Nettoyage extérieur — no-cost test suite (v3)
  *   NEX-SC1 : Nettoyage haute pression + encours → NETTOYAGE-HIGH-PRESSURE-GROUND
  *   NEX-SC2 : Nettoyage haute pression → GROUND_LEVEL_PRESSURE_WASHING
  *   NEX-SC3 : Nettoyage haute pression → state_lock_used=true, pool_size=1, setting=exterior
@@ -27,10 +27,10 @@
  *   NEX-SAFETY-4: SAFETY_CHECK_RULES['nettoyage_gouttieres'] still exists
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=nex-tests2');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=nex-tests2');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SAFETY_CHECK_RULES } = await import('../safety/safety-rules.js?bust=nex-tests2');
-const { buildVisionSafetyRequest } = await import('../pipeline/safety-check.js?bust=nex-tests2');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=nex-tests3');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=nex-tests3');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SAFETY_CHECK_RULES } = await import('../safety/safety-rules.js?bust=nex-tests3');
+const { buildVisionSafetyRequest } = await import('../pipeline/safety-check.js?bust=nex-tests3');
 
 export async function runNettoyageExtTests() {
   console.group('NEX tests — Nettoyage extérieur: Haute pression gate + scenes');
@@ -265,6 +265,182 @@ export async function runNettoyageExtTests() {
     const rule = SAFETY_CHECK_RULES['nettoyage_gouttieres'];
     assert(typeof rule === 'string' && rule.length > 20,
       `nettoyage_gouttieres safety rule must still exist, got: ${JSON.stringify(rule)}`);
+  });
+
+  // ── Nettoyage terrasse — scene routing ─────────────────────────────────────
+
+  function evalTerraceGate(fields) {
+    const gate = SERVICE_VISUAL_GATE_RULES['Nettoyage terrasse'];
+    assert(gate, 'Gate "Nettoyage terrasse" must exist');
+    for (const cond of gate.reject_conditions) {
+      if ('value' in cond && fields[cond.field] === cond.value) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+      if (cond.not_exactly_true && fields[cond.field] !== true) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+    }
+    return { safe: true };
+  }
+
+  const TERRACE_PASS_FIELDS = {
+    terrace_surface_visible:          true,
+    active_surface_cleaning_visible:  true,
+    cleaning_machine_visible:         true,
+    lance_and_hose_coherent:          true,
+    dirty_and_clean_zones_visible:    true,
+    partial_work_state_visible:       true,
+    worker_stable_on_ground:          true,
+    jet_directed_safely:              true,
+    terrace_context_visible:          true,
+    service_visual_match:             true,
+    worker_count_matches_plan:        true,
+  };
+
+  test('NEX-TERR-SC1', 'Nettoyage terrasse encours → NETTOYAGE-SURFACE-GROUND', () => {
+    const r = resolve('nettoyage', 'Nettoyage terrasse', 'encours');
+    assert(r._visual_family === 'NETTOYAGE-SURFACE-GROUND',
+      `Expected NETTOYAGE-SURFACE-GROUND, got "${r._visual_family}"`);
+  });
+
+  test('NEX-TERR-SC2', 'Nettoyage terrasse encours → GROUND_SURFACE_CLEANING', () => {
+    const r = resolve('nettoyage', 'Nettoyage terrasse', 'encours');
+    assert(r._access_configuration === 'GROUND_SURFACE_CLEANING',
+      `Expected GROUND_SURFACE_CLEANING, got "${r._access_configuration}"`);
+  });
+
+  test('NEX-TERR-SC3', 'Nettoyage terrasse encours → state_lock_used=true, pool_size=1, setting=exterior', () => {
+    const r = resolve('nettoyage', 'Nettoyage terrasse', 'encours');
+    assert(r._state_lock_used === true,    `state_lock_used must be true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1,  `pool_size must be 1, got ${r._state_lock_pool_size}`);
+    assert(r.setting === 'exterior',       `setting must be exterior, got ${r.setting}`);
+  });
+
+  test('NEX-TERR-SC4', 'Nettoyage terrasse encours → planned_worker_count respected via WORKER_SCENE_RULES', () => {
+    const rules = WORKER_SCENE_RULES.nettoyage;
+    assert(rules, 'WORKER_SCENE_RULES.nettoyage must exist');
+    assert(rules.max_workers === 1, `nettoyage max_workers must be 1, got ${rules.max_workers}`);
+  });
+
+  test('NEX-TERR-SC5', 'NO-COLLISION: Nettoyage terrasse → not NETTOYAGE-HIGH-PRESSURE-GROUND', () => {
+    const r = resolve('nettoyage', 'Nettoyage terrasse', 'encours');
+    assert(r._visual_family !== 'NETTOYAGE-HIGH-PRESSURE-GROUND',
+      `Nettoyage terrasse must not resolve to NETTOYAGE-HIGH-PRESSURE-GROUND`);
+  });
+
+  // ── Nettoyage terrasse — alias resolution (no real image) ──────────────────
+
+  test('NEX-TERR-ALIAS1', '_SERVICE_GATE_ALIASES nettoyage terrasse → Nettoyage terrasse', () => {
+    assert(_SERVICE_GATE_ALIASES['nettoyage terrasse'] === 'Nettoyage terrasse',
+      `Expected 'Nettoyage terrasse', got "${_SERVICE_GATE_ALIASES['nettoyage terrasse']}"`);
+  });
+
+  test('NEX-TERR-ALIAS2', '_SERVICE_GATE_ALIASES nettoyage dallage → Nettoyage terrasse', () => {
+    assert(_SERVICE_GATE_ALIASES['nettoyage dallage'] === 'Nettoyage terrasse',
+      `Expected 'Nettoyage terrasse', got "${_SERVICE_GATE_ALIASES['nettoyage dallage']}"`);
+  });
+
+  test('NEX-TERR-ALIAS3', '_SERVICE_GATE_ALIASES nettoyage paves → Nettoyage terrasse', () => {
+    assert(_SERVICE_GATE_ALIASES['nettoyage paves'] === 'Nettoyage terrasse',
+      `Expected 'Nettoyage terrasse', got "${_SERVICE_GATE_ALIASES['nettoyage paves']}"`);
+  });
+
+  test('NEX-TERR-ALIAS4', '_SERVICE_GATE_ALIASES nettoyage allee → Nettoyage terrasse', () => {
+    assert(_SERVICE_GATE_ALIASES['nettoyage allee'] === 'Nettoyage terrasse',
+      `Expected 'Nettoyage terrasse', got "${_SERVICE_GATE_ALIASES['nettoyage allee']}"`);
+  });
+
+  test('NEX-TERR-ALIAS5', 'Nettoyage dallage resolves to NETTOYAGE-SURFACE-GROUND via scene resolver', () => {
+    const r = resolve('nettoyage', 'Nettoyage dallage', 'encours');
+    assert(r._visual_family === 'NETTOYAGE-SURFACE-GROUND',
+      `Nettoyage dallage must resolve to NETTOYAGE-SURFACE-GROUND, got "${r._visual_family}"`);
+  });
+
+  test('NEX-TERR-ALIAS6', 'Nettoyage pavés resolves to NETTOYAGE-SURFACE-GROUND via scene resolver', () => {
+    const r = resolve('nettoyage', 'Nettoyage pavés', 'encours');
+    assert(r._visual_family === 'NETTOYAGE-SURFACE-GROUND',
+      `Nettoyage pavés must resolve to NETTOYAGE-SURFACE-GROUND, got "${r._visual_family}"`);
+  });
+
+  test('NEX-TERR-ALIAS7', 'Nettoyage allée resolves to NETTOYAGE-SURFACE-GROUND via scene resolver', () => {
+    const r = resolve('nettoyage', 'Nettoyage allée', 'encours');
+    assert(r._visual_family === 'NETTOYAGE-SURFACE-GROUND',
+      `Nettoyage allée must resolve to NETTOYAGE-SURFACE-GROUND, got "${r._visual_family}"`);
+  });
+
+  // ── Nettoyage terrasse — gate logic ────────────────────────────────────────
+
+  test('NEX-TERR-GT1', 'PASS — terrasse + nettoyage actif + progression partielle → safe', () => {
+    const r = evalTerraceGate(TERRACE_PASS_FIELDS);
+    assert(r.safe === true, `Expected safe=true, got safe=${r.safe}, first_failed=${r.first_failed}`);
+  });
+
+  test('NEX-TERR-GT2', 'REJECT — terrace_surface_visible=false (grande allée) → service_visual_mismatch', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, terrace_surface_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT3', 'REJECT — cleaning_machine_visible=false (absence de machine) → service_visual_mismatch', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, cleaning_machine_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT4', 'REJECT — dirty_and_clean_zones_visible=false (absence progression sale/propre) → service_visual_mismatch', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, dirty_and_clean_zones_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT5', 'REJECT — active_surface_cleaning_visible=false (lavage voiture / brossage à sec) → service_visual_mismatch', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, active_surface_cleaning_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT6', 'REJECT — worker_stable_on_ground=false (worker sur échelle) → access_violation', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, worker_stable_on_ground: false });
+    assert(r.safe === false && r.reason === 'access_violation',
+      `Expected reject/access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT7', 'REJECT — jet_directed_safely=false (jet vers baie électrique/vitrée) → access_violation', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, jet_directed_safely: false });
+    assert(r.safe === false && r.reason === 'access_violation',
+      `Expected reject/access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT8', 'REJECT — terrace_context_visible=false (contexte commercial, pas résidentiel) → service_visual_mismatch', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, terrace_context_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT9', 'REJECT — service_visual_match=false (nettoyage voiture) → service_visual_mismatch', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, service_visual_match: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GT10', 'REJECT — worker_count_matches_plan=false → worker_count_mismatch', () => {
+    const r = evalTerraceGate({ ...TERRACE_PASS_FIELDS, worker_count_matches_plan: false });
+    assert(r.safe === false && r.reason === 'worker_count_mismatch',
+      `Expected reject/worker_count_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-TERR-GATE-EXISTS', 'SERVICE_VISUAL_GATE_RULES[\'Nettoyage terrasse\'] exists with correct structure', () => {
+    const gate = SERVICE_VISUAL_GATE_RULES['Nettoyage terrasse'];
+    assert(gate, 'Gate must exist');
+    assert(typeof gate.vision_instruction === 'string' && gate.vision_instruction.includes('SERVICE VISUAL GATE'),
+      'vision_instruction must contain SERVICE VISUAL GATE');
+    assert(Array.isArray(gate.reject_conditions) && gate.reject_conditions.length >= 10,
+      `reject_conditions must have at least 10 entries, got ${gate.reject_conditions?.length}`);
+    const fields = gate.reject_conditions.map(c => c.field);
+    ['terrace_surface_visible','active_surface_cleaning_visible','cleaning_machine_visible',
+     'dirty_and_clean_zones_visible','worker_stable_on_ground','terrace_context_visible'].forEach(f => {
+      assert(fields.includes(f), `reject_conditions must include field "${f}"`);
+    });
   });
 
   // ── Summary ─────────────────────────────────────────────────────────────────
