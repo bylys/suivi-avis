@@ -1086,8 +1086,11 @@ async function renderListe(openMonths = null) {
   const note   = document.getElementById('list-note').value;
   const statut = document.getElementById('list-statut').value;
 
+  const rappelsDusIds = new Set(getRappelsDus(allAvisForRappels).map(d => d.avis.id));
+
   if (fiche)  avis = avis.filter(a => a.fiche_nom === fiche);
-  if (month)  avis = avis.filter(a => a.date.startsWith(month));
+  // Filtre mois : garder aussi les avis oranges des autres mois
+  if (month)  avis = avis.filter(a => a.date.startsWith(month) || rappelsDusIds.has(a.id));
   if (note)   avis = avis.filter(a => a.note === parseInt(note));
   if (statut) avis = avis.filter(a => a.statut === statut);
 
