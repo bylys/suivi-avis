@@ -27,6 +27,7 @@ import { buildDallePromptV2 }                            from '../prompt/scene-b
 import { _hashSeed }                                     from '../utils/deterministic.js';
 import { WORK_SCENES }                                   from '../services/index.js';
 import { CONTEXTE_BY_METIER, CONTEXTE_OPTIONS }          from '../config/service-catalog.js';
+import { buildVisionSafetyRequest }                       from '../pipeline/safety-check.js';
 import { createImagePipeline }                           from '../pipeline/run-batch.js';
 import { getBatchPlanPolicy }                            from '../planning/batch-requirements.js';
 
@@ -811,6 +812,14 @@ export async function runRuntimeTests() {
     try { _validateCompleteBatchPlan(tasks, { getPolicy: sentinel }); pass('RT4: getBatchPlanPolicy sentinel injection — policy override works'); }
     catch(e) { fail('RT4', `validation threw with sentinel: ${e.message}`); }
   } catch (e) { fail('RT4', e.message); }
+
+  // RT5: Vision API max_tokens >= 400 (guards against JSON truncation on large gate responses)
+  try {
+    const req = buildVisionSafetyRequest('toiture', 'AAAA', 'sk-test', 1, 'test', null);
+    const body = JSON.parse(req.body);
+    if (body.max_tokens >= 400) pass('RT5: buildVisionSafetyRequest max_tokens >= 400');
+    else fail('RT5', `max_tokens=${body.max_tokens} — too small, structured gate JSON will be truncated`);
+  } catch (e) { fail('RT5', e.message); }
 
   } finally {
     window.fetch = realFetch;

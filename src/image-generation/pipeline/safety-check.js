@@ -39,7 +39,7 @@ function buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount =
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model:      'gpt-4o',
-      max_tokens: 200,
+      max_tokens: 400,
       messages:   [{ role: 'user', content: [
         { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}`, detail: 'low' } },
         { type: 'text', text: prompt },

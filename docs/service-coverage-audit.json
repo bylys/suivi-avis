@@ -885,7 +885,9 @@
         "regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
         "flags": "i",
         "normalized_input": "seuil"
-      }
+      },
+      "status": "DEFERRED",
+      "deferred_reason": "structured gate valid but visual generation not stable after 3 attempts"
     },
     {
       "metier": "maçonnerie",
