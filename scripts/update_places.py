@@ -90,7 +90,7 @@ def extract_name_and_coords(url):
     return name, coords
 
 
-def find_place_by_name(name, coords=None):
+def find_place_by_name(name, coords=None, debug=False):
     """Cherche un place_id via findplacefromtext, avec locationbias si coordonnées dispo."""
     params = (
         f"input={urllib.parse.quote(name)}&inputtype=textquery"
@@ -101,6 +101,8 @@ def find_place_by_name(name, coords=None):
     url = f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json?{params}"
     with urllib.request.urlopen(url) as r:
         data = json.loads(r.read())
+    if debug:
+        print(f"    API status: {data.get('status')} | candidates: {len(data.get('candidates', []))} | error: {data.get('error_message','')}")
     candidates = data.get("candidates", [])
     if not candidates:
         return None
@@ -127,6 +129,7 @@ def main():
     print(f"{len(fiches)} fiches avec lien")
 
     ok, skip, errors = 0, 0, 0
+    first = True
     for f in fiches:
         nom  = f["nom"]
         lien = f["lien"]
@@ -139,7 +142,8 @@ def main():
                 # Fallback : extraire nom + coordonnées depuis l'URL
                 name_from_url, coords = extract_name_and_coords(resolved)
                 if name_from_url:
-                    place_id = find_place_by_name(name_from_url, coords)
+                    place_id = find_place_by_name(name_from_url, coords, debug=first)
+                    first = False
             if not place_id:
                 print(f"  ⚠ place_id introuvable : {nom}")
                 skip += 1
