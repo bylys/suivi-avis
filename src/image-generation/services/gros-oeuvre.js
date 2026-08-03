@@ -1005,6 +1005,43 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
 
+      // --- rejointoiement pierre encours state-lock ---
+      {
+        _for:                             '^rejointoiement pierre$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-STONE-REPOINTING-GROUND',
+        _access_configuration:            'GROUND_LEVEL_STONE_REPOINTING',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'stone wall repointing in progress at ground level — wall of irregular natural stones (limestone, granite, or sandstone), old joints visibly recessed and dark where already raked out — Worker 1 crouched or kneeling directly in front of the wall at the low section, pointing trowel physically pressed into an open joint between two stones, fresh grey mortar visible immediately behind the trowel tip — several adjacent joints already filled with fresh pale mortar, nearby joints still recessed and unfinished — the stones themselves remain clearly visible and uncovered, mortar applied only inside the joints — wall zone worked extends from the soubassement up to approximately 1.2 m — NO ladder, NO scaffold — worker has both feet firmly on the ground',
+        scene_camera:  'customer smartphone angle, standing 1.5–2 m from the wall at standing eye level, slight diagonal — full work section visible from soubassement to 1.2 m — worker visible crouched at the wall with trowel in contact with a joint — fresh and open joints both visible',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'mortar trough (auge) or small bucket with fresh grey mortar mix at the wall base beside the worker',
+          midground:  'Worker 1 crouched at the wall face, pointing trowel pressed into an open joint — fresh pale mortar visible in the filled joints above — recessed dark old joints still open below — stones clearly identifiable as natural irregular shapes',
+          background: 'garden or courtyard extending behind the worker — house wall continuing to left and right',
+        },
+        scene_debris:  'old mortar fragments on the ground at the wall base from the joint raking — small pile of rubble beside the mortar trough',
+        scene_exclude: ['smooth rendered wall', 'crack in plaster or render', 'new stone wall construction', 'scaffold', 'ladder', 'pressure washer', 'concrete block wall', 'plaster or render applied over stones', 'paint on wall'],
+        tools: [
+          'pointing trowel pressed into an open joint — fresh mortar visible immediately behind the tip',
+          'small mortar trough (auge) or bucket with fresh grey mortar at the worker\'s side',
+          'cold chisel on the ground — used for raking out old mortar',
+          'small finishing brush leaning against the mortar trough — secondary tool',
+        ],
+        protections: [
+          'work gloves on the worker',
+          'safety glasses resting on the mortar trough',
+        ],
+        chantier_details: [
+          'natural irregular stones clearly visible — limestone, granite, or sandstone surface texture identifiable',
+          'fresh pale grey mortar in the filled joints — flush or slightly recessed, not covering the stone faces',
+          'old dark recessed joints in the remaining open section — clearly depleted',
+          'sharp demarcation between freshly pointed section and unfinished section',
+          'old mortar fragments on the ground from the raking preparation',
+        ],
+      },
+
       // --- fissures / rejointoiement ---
       {
         _for:          'fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint',

@@ -953,15 +953,20 @@
       "metier": "maçonnerie",
       "service_label": "Rejointoiement pierre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
-      "matched_regex": "fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "routing_detail": "state-lock _for: ^rejointoiement pierre$ + _state_for: encours",
+      "matched_regex": "^rejointoiement pierre$",
       "fallback_used": false,
+      "state_lock": true,
+      "visual_family": "MACONNERIE-STONE-REPOINTING-GROUND",
+      "access_configuration": "GROUND_LEVEL_STONE_REPOINTING",
+      "structured_gate": "Rejointoiement pierre",
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+        "regex": "^rejointoiement pierre$",
         "flags": "i",
-        "normalized_input": "rejointoiement pierre"
+        "normalized_input": "rejointoiement pierre",
+        "state_for": "encours"
       }
     },
     {

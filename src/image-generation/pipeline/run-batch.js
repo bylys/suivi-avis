@@ -162,6 +162,16 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               dirty_and_clean_zones_visible:  safety.dirty_and_clean_zones_visible ?? null,
               partial_work_state_visible:     safety.partial_work_state_visible    ?? null,
               jet_directed_safely:            safety.jet_directed_safely           ?? null,
+              natural_stone_wall_visible:                safety.natural_stone_wall_visible                ?? null,
+              open_or_degraded_stone_joints_visible:     safety.open_or_degraded_stone_joints_visible     ?? null,
+              active_stone_repointing_visible:           safety.active_stone_repointing_visible           ?? null,
+              pointing_tool_in_contact_with_joint:       safety.pointing_tool_in_contact_with_joint       ?? null,
+              fresh_mortar_inside_joints_visible:        safety.fresh_mortar_inside_joints_visible        ?? null,
+              treated_and_untreated_joint_zones_visible: safety.treated_and_untreated_joint_zones_visible ?? null,
+              original_stones_remain_uncovered:          safety.original_stones_remain_uncovered          ?? null,
+              new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
+              render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
+              single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
             }));
 
             if (safety.checkFailed) {
