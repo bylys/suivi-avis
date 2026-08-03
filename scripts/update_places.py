@@ -77,21 +77,28 @@ def extract_place_id_from_url(url):
     return None
 
 
-def extract_name_from_url(url):
-    """Extrait le nom du business depuis l'URL /maps/place/NOM/@..."""
+def extract_name_and_coords(url):
+    """Extrait le nom du business et les coordonnées depuis l'URL Maps."""
+    name = None
     m = re.search(r'/maps/place/([^/@?]+)', url)
     if m:
-        return urllib.parse.unquote_plus(m.group(1))
-    return None
+        name = urllib.parse.unquote_plus(m.group(1))
+    coords = None
+    m = re.search(r'/@(-?\d+\.\d+),(-?\d+\.\d+)', url)
+    if m:
+        coords = (m.group(1), m.group(2))
+    return name, coords
 
 
-def find_place_by_name(name):
-    """Cherche un place_id via findplacefromtext avec le nom extrait de l'URL."""
-    url = (
-        f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
-        f"?input={urllib.parse.quote(name)}&inputtype=textquery"
+def find_place_by_name(name, coords=None):
+    """Cherche un place_id via findplacefromtext, avec locationbias si coordonnées dispo."""
+    params = (
+        f"input={urllib.parse.quote(name)}&inputtype=textquery"
         f"&fields=place_id&key={PLACES_KEY}"
     )
+    if coords:
+        params += f"&locationbias=circle:2000@{coords[0]},{coords[1]}"
+    url = f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json?{params}"
     with urllib.request.urlopen(url) as r:
         data = json.loads(r.read())
     candidates = data.get("candidates", [])
@@ -129,10 +136,10 @@ def main():
 
             place_id = extract_place_id_from_url(resolved)
             if not place_id:
-                # Fallback : extraire le nom depuis l'URL et chercher via API
-                name_from_url = extract_name_from_url(resolved)
+                # Fallback : extraire nom + coordonnées depuis l'URL
+                name_from_url, coords = extract_name_and_coords(resolved)
                 if name_from_url:
-                    place_id = find_place_by_name(name_from_url)
+                    place_id = find_place_by_name(name_from_url, coords)
             if not place_id:
                 print(f"  ⚠ place_id introuvable : {nom}")
                 skip += 1
