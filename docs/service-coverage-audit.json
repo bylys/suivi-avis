@@ -892,20 +892,24 @@
       "service_label": "Linteau",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
-      "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "matched_regex": "^linteau$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+        "regex": "^linteau$",
         "flags": "i",
         "normalized_input": "linteau"
-      }
+      },
+      "state_lock": true,
+      "visual_family": "MACONNERIE-LINTEL-GROUND",
+      "access_configuration": "GROUND_LEVEL_LINTEL_INSTALLATION",
+      "structured_gate": "Linteau"
     },
     {
       "metier": "maçonnerie",
       "service_label": "Ouverture dans mur",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "DEFERRED",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
       "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
       "fallback_used": false,
@@ -915,12 +919,15 @@
         "regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
         "flags": "i",
         "normalized_input": "ouverture dans mur"
-      }
+      },
+      "deferred_reason": "Structural type (load-bearing vs partition) and opening dimensions unknown — no contextual data in current catalogue",
+      "state_lock": false,
+      "structured_gate": null
     },
     {
       "metier": "maçonnerie",
       "service_label": "Percement mur",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "DEFERRED",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
       "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
       "fallback_used": false,
@@ -930,7 +937,10 @@
         "regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
         "flags": "i",
         "normalized_input": "percement mur"
-      }
+      },
+      "deferred_reason": "Structural type (load-bearing vs partition) and opening dimensions unknown — no contextual data in current catalogue",
+      "state_lock": false,
+      "structured_gate": null
     },
     {
       "metier": "maçonnerie",

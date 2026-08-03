@@ -347,6 +347,9 @@ const WORKER_SCENE_RULES = {
   },
   'maçonnerie': {
     max_workers: 2,
+    service_worker_minimums: {
+      linteau: 2,
+    },
     actions: [
       'laying concrete blocks with a trowel and full mortar hawk',
       'checking the freshly laid course with a long spirit level and string line',

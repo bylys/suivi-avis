@@ -1035,7 +1035,57 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
 
-      // --- escalier / seuil / linteau / ouverture ---
+      // --- linteau encours state-lock ---
+      {
+        _for:                             '^linteau$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-LINTEL-GROUND',
+        _access_configuration:            'GROUND_LEVEL_LINTEL_INSTALLATION',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note: 'The lintel is already resting securely on both masonry bearing seats above a small exterior wall opening at ground floor level — opening approximately 90–120 cm wide. One worker checks the lintel with a spirit level while adjusting the bedding at one bearing point with a small pointing trowel. Visible bedding mortar or adjustment shims are present beneath at least one end of the lintel. Temporary steel acrow props visibly support the masonry above the opening. No worker is holding the lintel overhead. Worker 2 stabilises or monitors the opposite prop. Mortar still wet and slightly extruded at the bearing joint. Concrete dust and small block fragments on the ground below the opening.',
+        scene_camera: 'standing in front of the wall opening at ground floor level, 2–3 m away, framing the full opening width with both workers and the lintel on its bearings — spirit level visible against the lintel face',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'freshly cut masonry block edges on both jambs — concrete dust and mortar fragments on the ground below the lintel',
+          midground:  'lintel resting on both bearing seats — two acrow props supporting from below — Worker 1 pressing the spirit level against the lintel face — Worker 2 steadying the opposite prop',
+          background: 'wall continuing on both sides of the opening, exterior of the building visible beyond, ground-floor residential context',
+        },
+        scene_debris:  'mortar mix fragments and cut block dust on the ground below the opening, pointing trowel resting on the ledge beside the mortar bucket',
+        scene_exclude: [
+          'lintel suspended in mid-air without bearing support',
+          'lintel held manually overhead by workers',
+          'workers directly under unsupported masonry with no props',
+          'large opening without any temporary propping',
+          'lintel with bearing on one side only',
+          'simultaneous demolition of both jambs',
+          'falling blocks or masonry debris above workers',
+          'ladder used as working platform',
+          'worker standing on top of the wall',
+          'finished door frame fitted',
+          'window fitted in the opening',
+          'rendering or plastering over the lintel',
+          'no mortar at bearing points',
+        ],
+        tools: [
+          'spirit level pressed against the lintel face — Worker 1 checking horizontal alignment',
+          'two adjustable acrow props planted on the floor below the bearing zones — adjustment screws visible',
+          'pointing trowel at the bearing mortar bed — adjusting and smoothing the mortar seat',
+        ],
+        protections: [
+          'safety boots on both workers',
+          'work gloves for block and lintel handling',
+        ],
+        chantier_details: [
+          'lintel resting on both bearing seats — minimum 15–20 cm bearing visible on each side',
+          'two acrow props planted directly below the bearing zones — adjustment collars tightened',
+          'fresh mortar at both bearing points — slightly extruded at the joint — still wet',
+          'freshly cut masonry block edges on both jambs — concrete dust still on the floor',
+          'spirit level in contact with the lintel surface confirming horizontal alignment',
+        ],
+      },
+
+      // --- escalier / seuil / ouverture (shared pool — linteau now has its own state-lock above) ---
       {
         _for:          'escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture',
         scene_note:    'lintel being set above a newly created wall opening — concrete or steel lintel supported at both bearing points, freshly cut masonry on either side of the opening',

@@ -105,6 +105,22 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     dirty_water_runoff_visible:                   obj.dirty_water_runoff_visible                   ?? null,
     opaque_paint_application_visible:             obj.opaque_paint_application_visible             ?? null,
     fresh_render_application_visible:             obj.fresh_render_application_visible             ?? null,
+    // Linteau gate fields
+    wall_opening_visible:                        obj.wall_opening_visible                        ?? null,
+    lintel_visible:                              obj.lintel_visible                              ?? null,
+    lintel_seated_on_both_bearings:              obj.lintel_seated_on_both_bearings              ?? null,
+    sufficient_lateral_bearing_visible:          obj.sufficient_lateral_bearing_visible          ?? null,
+    temporary_supports_visible:                  obj.temporary_supports_visible                  ?? null,
+    masonry_above_supported:                     obj.masonry_above_supported                     ?? null,
+    active_lintel_adjustment_visible:            obj.active_lintel_adjustment_visible            ?? null,
+    bearing_bed_or_adjustment_evidence_visible:  obj.bearing_bed_or_adjustment_evidence_visible  ?? null,
+    workers_stable_on_ground:                    obj.workers_stable_on_ground                    ?? null,
+    worker_beneath_unsupported_masonry:          obj.worker_beneath_unsupported_masonry          ?? null,
+    lintel_held_overhead_manually:               obj.lintel_held_overhead_manually               ?? null,
+    ladder_used_as_workstation:                  obj.ladder_used_as_workstation                  ?? null,
+    falling_debris_hazard_visible:               obj.falling_debris_hazard_visible               ?? null,
+    // Linteau optional telemetry (not in gate)
+    fresh_mortar_at_bearings_visible:            obj.fresh_mortar_at_bearings_visible            ?? null,
     // Ferraillage gate fields
     reinforcement_cage_visible:       obj.reinforcement_cage_visible       ?? null,
     longitudinal_rebar_visible:       obj.longitudinal_rebar_visible       ?? null,
