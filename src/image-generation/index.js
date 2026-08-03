@@ -270,7 +270,7 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests, gutterAntimossTests, roofAccessTests, etchGateTests, etchWorkerResolverTests, captureDefectDistTests, ravalementTests, fissureTests, enduitTests, debarrasTests, nettoyageExtTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests, gutterAntimossTests, roofAccessTests, etchGateTests, etchWorkerResolverTests, captureDefectDistTests, ravalementTests, fissureTests, enduitTests, debarrasTests, nettoyageExtTests, murParpaingTests] = await Promise.all([
     import('./debug/runtime-tests.js?v=15'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
@@ -302,6 +302,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/enduit-tests.js?v=5'),
     import('./debug/debarras-tests.js?v=7'),
     import('./debug/nettoyage-ext-tests.js?v=8'),
+    import('./debug/mur-parpaing-tests.js?v=1'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult          = await runtimeTests.runRuntimeTests();
@@ -340,6 +341,7 @@ if (_params.get('imageGenTests') === '1') {
   window._runEnduitTests                                = enduitTests.runEnduitTests;
   window._runDebarrasTests                              = debarrasTests.runDebarrasTests;
   window._runNettoyageExtTests                          = nettoyageExtTests.runNettoyageExtTests;
+  window._runMurParpaingTests                           = murParpaingTests.runMurParpaingTests;
   console.info('[IMAGE MODULE 7C] Debug harness ready — _runImageGenerationTests(), _runCarrelageContractsTests(), _runCarrelageSceneTests(), _runVitrierContractsTests(), _runVitrierScenesTests(), _runRoofContractsTests(), _runRoofClusterScenesTests(), _runRoofPRTests(), _runRoofWorkerSafetyTests(), _runServiceResolverStateLockTests(), _runRoofCoveringWaterproofingValidationTests(), _runCovFixScenesTests(), _runArboristScenesTests(), _runRoofMaintenanceMewpTests(), _runGutterAntimossTests(), _runRoofAccessTests()');
 }
 

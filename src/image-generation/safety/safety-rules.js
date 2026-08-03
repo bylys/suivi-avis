@@ -135,6 +135,11 @@ const _SERVICE_GATE_ALIASES = {
   'enduit de facade':                  'Ravalement de façade',
   'crepi':                             'Ravalement de façade',
   'application enduit':                'Ravalement de façade',
+  // ── Mur parpaing ──────────────────────────────────────────────────────────
+  'mur parpaing':                      'Mur parpaing',
+  'mur en parpaing':                   'Mur parpaing',
+  'mur parpaings':                     'Mur parpaing',
+  'mur en parpaings':                  'Mur parpaing',
   // ── Réparation fissure ────────────────────────────────────────────────────
   'reparation fissure':                'Réparation fissure',
   'reparation fissures':               'Réparation fissure',
@@ -446,6 +451,21 @@ const SERVICE_VISUAL_GATE_RULES = {
       { field: 'worker_in_mewp_basket_visible', not_exactly_true: true, reason: 'worker_count_mismatch' },
       { field: 'ground_worker_visible',         not_exactly_true: true, reason: 'worker_count_mismatch' },
       { field: 'workers_spatially_separated',   not_exactly_true: true, reason: 'worker_count_mismatch' },
+    ],
+  },
+
+  'Mur parpaing': {
+    vision_instruction: `\n\nSERVICE VISUAL GATE — CONCRETE BLOCK WALL CONSTRUCTION (MUR PARPAING): This image must show active construction of a concrete block wall at a residential property. Two workers are engaged: one laying a block onto a fresh mortar bed with a trowel, the other preparing mortar or assisting. The wall must be partially built with fresh mortar joints visible, and the work zone must be entirely accessible from the ground without any ladder or scaffold. You MUST add these fields to your JSON: "concrete_block_wall_visible": <true/false — a wall built from grey hollow concrete blocks (parpaings) is clearly visible — set false if the wall is built from red clay bricks, natural stone, timber framing, or if this is a poured concrete wall>, "active_block_laying_visible": <true/false — a worker is actively placing or pressing a concrete block onto a fresh mortar bed — trowel in hand, block being positioned or adjusted — set false if only blocks are stacked on the ground with no laying action, if a completed wall is shown, or if no worker is visibly engaged in laying>, "fresh_mortar_visible": <true/false — fresh grey mortar is clearly visible: squeeze-out at block joints, or a loaded mortar hawk on the wall top — set false if the wall joints appear dry, cured, or rendered over, or if no mortar is visible>, "partial_wall_progress_visible": <true/false — the wall is clearly under construction: some courses already laid below, the top course being placed, and some remaining blocks nearby — set false if the wall appears entirely finished and complete at full height with no active work zone>, "workers_stable_on_ground": <true/false — all visible workers stand stably on flat ground beside the wall — set false if any worker is elevated above the ground, on a makeshift platform, or using raised access>, "wall_height_reachable_from_ground": <true/false — the active work zone on the wall is at a height easily reachable by a standing worker from the ground — set false if the top course appears above reach from the ground, requiring a ladder to access>, "worker_on_top_of_wall": <true/false — any worker is standing on top of the incomplete wall courses — set true even if the wall is low>, "ladder_used_as_workstation": <true/false — a ladder is being used as the primary access method for the worker performing the block laying — set false if no ladder is present>, "wall_above_safe_working_height": <true/false — the wall being actively worked on appears taller than 1.5 m from the ground AND no scaffold platform is present — set true if the worker must reach above comfortable arm height to lay blocks with no scaffold>, "service_visual_match": <true if active concrete block wall construction is clearly the primary activity with fresh mortar and block laying in progress, else false>, "worker_count_match": <true if the number of clearly visible active workers in the scene matches the planned count (var_workers), else false — for this gate: acceptable if 1 or 2 workers are visible and at least one is actively laying blocks>.\nIf worker_on_top_of_wall is true: set safe=false, severity="critical", reason="critical_violation".\nIf ladder_used_as_workstation is true: set safe=false, severity="critical", reason="access_violation".\nIf wall_above_safe_working_height is true: set safe=false, severity="critical", reason="access_violation".\nIf concrete_block_wall_visible is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf active_block_laying_visible is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf fresh_mortar_visible is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf partial_wall_progress_visible is not true: set safe=false, severity="critical", reason="state_mismatch".\nIf service_visual_match is not true: set safe=false, severity="critical", reason="service_visual_mismatch".\nIf worker_count_match is not true: set safe=false, severity="critical", reason="worker_count_mismatch".\nDo NOT reject for absence of scaffold when the wall is clearly at a low height reachable from the ground. Do NOT reject because only one worker is visible when the wall-laying action is clearly in progress.`,
+    reject_conditions: [
+      { field: 'worker_on_top_of_wall',           value: true,            reason: 'critical_violation'      },
+      { field: 'ladder_used_as_workstation',       value: true,            reason: 'access_violation'        },
+      { field: 'wall_above_safe_working_height',   value: true,            reason: 'access_violation'        },
+      { field: 'concrete_block_wall_visible',      not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'active_block_laying_visible',      not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'fresh_mortar_visible',             not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'partial_wall_progress_visible',    not_exactly_true: true, reason: 'state_mismatch'          },
+      { field: 'service_visual_match',             not_exactly_true: true, reason: 'service_visual_mismatch' },
+      { field: 'worker_count_match',               not_exactly_true: true, reason: 'worker_count_mismatch'   },
     ],
   },
 

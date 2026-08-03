@@ -698,13 +698,13 @@
       "metier": "maçonnerie",
       "service_label": "Mur parpaing",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
-      "matched_regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "routing_detail": "matched _for: ^mur.*parpaing|^parpaing\\b",
+      "matched_regex": "^mur.*parpaing|^parpaing\\b",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+        "regex": "^mur.*parpaing|^parpaing\\b",
         "flags": "i",
         "normalized_input": "mur parpaing"
       }

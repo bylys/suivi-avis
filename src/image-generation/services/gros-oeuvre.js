@@ -618,6 +618,45 @@ export const SITE_REALISM_GROS_OEUVRE = {
   'maçonnerie': {
     scenarios: [
 
+      // --- mur parpaing encours state-lock ---
+      {
+        _for:                             '^mur.*parpaing|^parpaing\\b',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-WALL-BLOCK-GROUND',
+        _access_configuration:            'GROUND_LEVEL_BLOCK_WALL',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'concrete block wall being built at ground level — wall at 1.0–1.2 m height, fully accessible from the ground without any ladder or scaffold — Worker 1 lays a grey hollow concrete block onto a fresh mortar bed on the top course, trowel in hand — Worker 2 prepares a fresh mortar batch in the drum mixer at the wall base or recharges the mortar hawk — both workers stand flat on the ground throughout — fresh grey mortar squeeze-out visible at the block joints — mason\'s string line pulled taut along the top course — a stack of remaining grey parpaing blocks sits on a pallet beside the wall',
+        scene_camera:  'standing 2–3 m from the wall face, slight diagonal angle, eye level — wall fills most of the frame — both workers and the block pallet visible — house facade or garden fence in the background',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'drum mixer at the wall base beside a stack of grey concrete blocks on a pallet, mortar residue on the ground',
+          midground:  'half-height concrete block wall — 5–7 courses laid, mortar joints clearly visible, Worker 1 pressing a block onto the top course mortar bed, Worker 2 at the mixer',
+          background: 'house facade or garden fence, open sky above',
+        },
+        scene_debris:  'mortar squeeze-out at the block joints — fresh grey mortar at all bed joint faces, cement dust on the ground near the pallet',
+        scene_exclude: ['red clay bricks', 'stone wall', 'timber framing', 'poured concrete wall', 'wall painting', 'render or plaster', 'pressure washer', 'roofing materials', 'ladder', 'scaffold'],
+        tools: [
+          'brick trowel in Worker 1\'s hand pressing a block onto the mortar bed',
+          'mason\'s string line pulled taut along the top course',
+          'spirit level resting on the last laid course',
+          'mortar hawk loaded with fresh grey mortar on the top course',
+          'drum mixer running at the wall base — fresh mortar ready in bucket',
+          'rubber mallet on the wall top for tapping blocks level',
+        ],
+        protections: [
+          'safety work gloves on both workers',
+          'safety boots visible at the wall base',
+        ],
+        chantier_details: [
+          'fresh grey mortar squeeze-out at all block bed joint faces — mortar not yet cured',
+          'string line defining the exact height of the next course',
+          'grey hollow concrete blocks clearly identifiable — regular rectangular courses',
+          'block pallet with remaining parpaings stacked beside the wall base',
+          'cement bag off-cuts on the ground near the drum mixer',
+        ],
+      },
+
       // --- mur / muret parpaings ou briques ---
       {
         _for:          'mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur',
