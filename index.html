@@ -347,6 +347,10 @@
         <option value="init-desc">Initiaux ↓</option>
         <option value="init-asc">Initiaux ↑</option>
       </select>
+      <select id="fiches-filter" onchange="renderFiches()" style="background:#1e293b;color:#f1f5f9;border:1.5px solid #334155;border-radius:8px;padding:0.5rem 0.8rem;font-size:0.85rem;">
+        <option value="all">Toutes les fiches</option>
+        <option value="no-lien">Sans lien</option>
+      </select>
     </div>
     <ul id="liste-fiches"></ul>
 
@@ -490,6 +494,6 @@
   window.downloadImagesZip  = function() { return window.__IMAGE_GEN_READY__.then(function(a) { return a.downloadImagesZip(); }); };
   window._retryFailedImages = function() { return window.__IMAGE_GEN_READY__.then(function(a) { return a.retryFailedImages(); }); };
 </script>
-<script type="module" src="src/image-generation/index.js?v=51"></script>
+<script type="module" src="src/image-generation/index.js?v=53"></script>
 </body>
 </html>

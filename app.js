@@ -845,10 +845,15 @@ async function renderFiches() {
     return 0;
   });
 
+  // Filtre
+  const filterVal = (document.getElementById('fiches-filter') || {}).value || 'all';
+  let fichesFiltrees = fiches;
+  if (filterVal === 'no-lien') fichesFiltrees = fiches.filter(f => !f.lien);
+
   // Grouper par catégorie
   const groups = {};
   CATEGORIES_FICHES.forEach(c => groups[c.key] = []);
-  fiches.forEach(f => {
+  fichesFiltrees.forEach(f => {
     const cat = categoriserFiche(f);
     groups[cat].push(f);
   });
