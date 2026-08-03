@@ -100,8 +100,7 @@ def search_place(name, coords=None):
     """
     body = {"textQuery": name}
     if coords:
-        # locationRestriction (cercle strict) si coordonnées exactes dispo
-        body["locationRestriction"] = {
+        body["locationBias"] = {
             "circle": {
                 "center": {"latitude": float(coords[0]), "longitude": float(coords[1])},
                 "radius": 300.0
