@@ -130,8 +130,16 @@ def main():
             name_from_url, coords = extract_name_and_coords(resolved)
             search_name = name_from_url or nom
 
-            place_id, nb = search_place(search_name, coords)
-            time.sleep(0.05)  # 50ms entre chaque appel pour éviter rate limit
+            for attempt in range(3):
+                try:
+                    place_id, nb = search_place(search_name, coords)
+                    break
+                except urllib.error.HTTPError as he:
+                    if he.code == 429 and attempt < 2:
+                        time.sleep(5)
+                    else:
+                        raise
+            time.sleep(0.15)  # 150ms entre chaque appel (~6 req/sec)
 
             if not place_id or nb is None:
                 print(f"  ⚠ non trouvé : {nom}")
