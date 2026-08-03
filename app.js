@@ -139,6 +139,16 @@ async function init() {
   if (savedId)  { const el = document.getElementById('sheets-id');      if (el) el.value = savedId; }
   const savedOpenAI = localStorage.getItem('openai_key');
   if (savedOpenAI) { const el = document.getElementById('openai-key'); if (el) el.value = savedOpenAI; }
+
+  // Restaurer config DonutBrowser
+  const donutToken = localStorage.getItem('donut_token');
+  const donutPort  = localStorage.getItem('donut_port');
+  const decodoUser = localStorage.getItem('decodo_user');
+  const decodoPass = localStorage.getItem('decodo_pass');
+  if (donutToken) { const el = document.getElementById('donut-token-input'); if (el) el.value = donutToken; }
+  if (donutPort)  { const el = document.getElementById('donut-port-input');  if (el) el.value = donutPort; }
+  if (decodoUser) { const el = document.getElementById('decodo-user-input'); if (el) el.value = decodoUser; }
+  if (decodoPass) { const el = document.getElementById('decodo-pass-input'); if (el) el.value = decodoPass; }
   const savedCount = parseInt(localStorage.getItem('gmb_img_count') || '0', 10);
   if (savedCount > 0) {
     const el = document.getElementById('img-gen-counter');
@@ -2800,11 +2810,108 @@ async function renderPlanning() {
     </div>`).join('');
 }
 
+// ── DonutBrowser local API ────────────────────────────────────────────────────
+
+function getDonutBase() {
+  const port = localStorage.getItem('donut_port') || '10108';
+  return `http://127.0.0.1:${port}`;
+}
+
+function getDonutToken() {
+  return localStorage.getItem('donut_token') || '';
+}
+
+function normalizeCityForProxy(ville) {
+  return ville.normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().trim()
+    .replace(/[\s']+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/_+/g, '_');
+}
+
+async function donutCreerProfil(ville, gmail, ficheNom) {
+  const token = getDonutToken();
+  if (!token) {
+    alert('Configure ton token DonutBrowser dans ⚙️ Config DonutBrowser (section Planning).');
+    return null;
+  }
+  const base = getDonutBase();
+  const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  // 1. Créer le proxy Decodo pour cette ville
+  const citySlug = normalizeCityForProxy(ville);
+  const decodoUser = localStorage.getItem('decodo_user') || '';
+  const decodoPass = localStorage.getItem('decodo_pass') || '';
+
+  let proxyId = null;
+  if (decodoUser && decodoPass) {
+    try {
+      const proxyRes = await fetch(`${base}/v1/proxies`, {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          name: `Decodo_${citySlug}`,
+          proxy_settings: {
+            proxy_type: 'https',
+            host: 'gate.decodo.com',
+            port: 10001,
+            username: `${decodoUser}-city-${citySlug}-sessionduration-1440`,
+            password: decodoPass
+          }
+        })
+      });
+      if (proxyRes.ok) {
+        const p = await proxyRes.json();
+        proxyId = p.id;
+      }
+    } catch (e) {
+      console.warn('DonutBrowser proxy création échouée:', e);
+    }
+  }
+
+  // 2. Créer le profil
+  const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
+    : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
+    : ficheNom.toLowerCase().includes('peintre') ? 'peintre'
+    : ficheNom.toLowerCase().includes('plombier') ? 'plombier'
+    : ficheNom.toLowerCase().includes('electricien') ? 'electricien'
+    : ficheNom.toLowerCase().includes('elagage') ? 'elagage'
+    : 'gmb';
+  const profileName = `GMB_${metier}_${citySlug}`;
+
+  try {
+    const body = { name: profileName, browser: 'wayfern' };
+    if (proxyId) body.proxy_id = proxyId;
+    const profRes = await fetch(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) });
+    if (!profRes.ok) {
+      console.error('DonutBrowser profil erreur:', await profRes.text());
+      return null;
+    }
+    const prof = await profRes.json();
+    const profileId = prof.profile?.id || prof.id;
+
+    // 3. Lancer le profil
+    await fetch(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers });
+    console.log('DonutBrowser profil lancé:', profileId, profileName);
+    return profileId;
+  } catch (e) {
+    console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
+    return null;
+  }
+}
+
 async function planningGenerer(id, ficheNom, gmail) {
-  // Marquer comme généré
   await sbUpdate('planning', id, { statut: 'generated' });
 
-  // Pré-remplir le générateur d'avis et basculer vers cet onglet
+  // Récupérer la ville depuis la ligne du planning
+  const row = document.getElementById(`planning-row-${id}`);
+  const ville = row ? row.querySelector('td')?.textContent?.trim() : '';
+
+  // Créer et lancer le profil DonutBrowser si token configuré
+  if (getDonutToken() && ville && ville !== '—') {
+    await donutCreerProfil(ville, gmail, ficheNom);
+  }
+
+  // Basculer vers le générateur d'avis
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
   document.getElementById('tab-generateur').classList.remove('hidden');
@@ -2812,16 +2919,12 @@ async function planningGenerer(id, ficheNom, gmail) {
 
   await populateGenFiche();
 
-  // Remplir fiche
   const ficheInput = document.getElementById('gen-fiche');
   if (ficheInput) { ficheInput.value = ficheNom; ficheInput.dispatchEvent(new Event('input')); }
 
-  // Remplir auteur (gmail)
   const auteurInput = document.getElementById('gen-auteur');
   if (auteurInput) auteurInput.value = gmail;
 
-  // Mettre à jour la ligne dans le planning
-  const row = document.getElementById(`planning-row-${id}`);
   if (row) {
     const badge = row.querySelector('span[style*="border-radius:99px"]');
     if (badge) { badge.style.color = '#8b5cf6'; badge.style.background = '#8b5cf622'; badge.textContent = 'Généré'; }

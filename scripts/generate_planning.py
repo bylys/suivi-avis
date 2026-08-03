@@ -110,15 +110,14 @@ def get_gologin_folder_id():
     return None
 
 def normalize_city_for_proxy(ville):
-    """Normalise le nom de ville pour l'URL Oxylabs (minuscules, sans accents, tirets)."""
+    """Normalise le nom de ville pour Decodo (minuscules, sans accents, underscores)."""
     import unicodedata
     ville = unicodedata.normalize('NFD', ville)
     ville = ''.join(c for c in ville if unicodedata.category(c) != 'Mn')
     ville = ville.lower().strip()
-    ville = ville.replace(' ', '-').replace("'", '-').replace('_', '-')
-    # Supprimer les doubles tirets
-    while '--' in ville:
-        ville = ville.replace('--', '-')
+    ville = ville.replace(' ', '_').replace("'", '_').replace('-', '_')
+    while '__' in ville:
+        ville = ville.replace('__', '_')
     return ville
 
 def build_decodo_username(ville):
@@ -167,7 +166,7 @@ def create_gologin_profile(gmail, ville, fiche_nom=''):
     proxy_config = {"mode": "none"}
     if DECODO_USER and DECODO_PASS:
         proxy_config = {
-            "mode": "http",
+            "mode": "https",
             "host": "gate.decodo.com",
             "port": 10001,
             "username": build_decodo_username(ville),
