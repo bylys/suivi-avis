@@ -161,7 +161,7 @@ def main():
                         nb = get_place_details(place_id)
                     else:
                         # Fallback : text search avec nom + coords
-                        nb = search_by_text(name_from_url or nom, coords)
+                        nb = search_by_text(nom, coords)
                     break
                 except urllib.error.HTTPError as he:
                     if he.code == 429 and attempt < 3:
