@@ -104,10 +104,22 @@ def get_place_details(place_id):
     return data.get("userRatingCount")
 
 
+def _name_matches(expected, returned):
+    """Vérifie que les deux noms partagent assez de mots pour éviter les faux positifs."""
+    def tokens(s):
+        return set(re.sub(r'[^\w]', ' ', s.lower()).split())
+    a, b = tokens(expected), tokens(returned)
+    if not a or not b:
+        return False
+    overlap = len(a & b)
+    return overlap >= max(1, min(len(a), len(b)) // 2)
+
+
 def search_by_text(name, coords=None):
     """
     Places API (New) — Text Search.
-    Retourne userRatingCount ou None.
+    Retourne (userRatingCount, displayName) ou (None, None).
+    Vérifie que le résultat correspond bien au nom attendu.
     """
     body = {"textQuery": name}
     if coords:
@@ -124,13 +136,18 @@ def search_by_text(name, coords=None):
     )
     req.add_header("Content-Type", "application/json")
     req.add_header("X-Goog-Api-Key", PLACES_KEY)
-    req.add_header("X-Goog-FieldMask", "places.userRatingCount")
+    req.add_header("X-Goog-FieldMask", "places.userRatingCount,places.displayName")
     with urllib.request.urlopen(req) as r:
         result = json.loads(r.read())
     places = result.get("places", [])
     if not places:
-        return None
-    return places[0].get("userRatingCount")
+        return None, None
+    p = places[0]
+    returned_name = (p.get("displayName") or {}).get("text", "")
+    if returned_name and not _name_matches(name, returned_name):
+        print(f"    ↳ rejeté : trouvé '{returned_name}' ≠ '{name}'")
+        return None, returned_name
+    return p.get("userRatingCount"), returned_name
 
 
 def main():
@@ -160,8 +177,8 @@ def main():
                         # Place ID extrait directement → appel direct, 100% précis
                         nb = get_place_details(place_id)
                     else:
-                        # Fallback : text search avec nom + coords
-                        nb = search_by_text(nom, coords)
+                        # Fallback : text search avec nom + coords + vérification du nom retourné
+                        nb, _ = search_by_text(nom, coords)
                     break
                 except urllib.error.HTTPError as he:
                     if he.code == 429 and attempt < 3:

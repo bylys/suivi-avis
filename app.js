@@ -847,13 +847,16 @@ async function renderFiches() {
     if (sortVal === 'posted-asc')  return (avisPostes[a.nom] || 0) - (avisPostes[b.nom] || 0);
     if (sortVal === 'init-desc')   return (b.avis_initiaux || 0) - (a.avis_initiaux || 0);
     if (sortVal === 'init-asc')    return (a.avis_initiaux || 0) - (b.avis_initiaux || 0);
+    if (sortVal === 'google-desc') return (b.nb_avis_google ?? -1) - (a.nb_avis_google ?? -1);
+    if (sortVal === 'google-asc')  return (a.nb_avis_google ?? Infinity) - (b.nb_avis_google ?? Infinity);
     return 0;
   });
 
   // Filtre
   const filterVal = (document.getElementById('fiches-filter') || {}).value || 'all';
   let fichesFiltrees = fiches;
-  if (filterVal === 'no-lien') fichesFiltrees = fiches.filter(f => !f.lien);
+  if (filterVal === 'no-lien')        fichesFiltrees = fiches.filter(f => !f.lien);
+  if (filterVal === 'no-avis-google') fichesFiltrees = fiches.filter(f => f.nb_avis_google == null);
 
   // Grouper par catégorie
   const groups = {};
