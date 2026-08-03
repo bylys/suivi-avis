@@ -18,10 +18,10 @@ MODE = sys.argv[1] if len(sys.argv) > 1 else "daily"
 def sb_get(path):
     # Pagination automatique — Supabase plafonne à 1000 lignes par requête
     base = path.split('?')[0]
-    qs   = path[len(base):]  # inclut le '?' ou vide
+    qs   = path[len(base):].lstrip('?')  # sans le '?' initial
     # Supprimer tout limit= existant dans la query string
     import re
-    qs = re.sub(r'[&?]limit=\d+', '', qs).lstrip('&')
+    qs = re.sub(r'[&?]?limit=\d+', '', qs).strip('&')
     sep = '?' if qs else ''
     all_rows, offset = [], 0
     PAGE = 1000
