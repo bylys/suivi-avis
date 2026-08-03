@@ -733,6 +733,42 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
 
+      // --- dalle béton encours state-lock ---
+      {
+        _for:                             '^dalle.*beton|^beton.*dalle',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-CONCRETE-SLAB-REBAR',
+        _access_configuration:            'GROUND_LEVEL_SLAB_PREPARATION',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'reinforced concrete slab in preparation — steel reinforcement mesh laid flat across the full slab area on concrete spacer chairs, wooden perimeter formwork boards pegged level on a compacted gravel subbase — Worker 1 is crouched on the mesh actively tying or adjusting a rebar joint with tie wire — worker is NEVER in a dangerous position, both feet resting on the mesh surface at ground level — worker is clearly shorter than the formwork height — no wet concrete present — the slab is entirely in the rebar and formwork stage, ready for the pour',
+        scene_camera:  'standing at the corner of the slab, slight diagonal angle, camera at standing eye level — full mesh surface visible from near corner to far corner — worker visible crouched in the midground on the mesh — formwork boards visible on at least two sides — house facade visible in background',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'wooden perimeter formwork board at the near edge of the slab — pegged level into the compacted gravel subbase',
+          midground:  'steel reinforcement mesh covering the full slab area on concrete spacer chairs — Worker 1 crouched on the mesh at ground level, adjusting or tying rebar with tie wire — mesh bars parallel and evenly spaced — spacer chairs visible beneath the mesh',
+          background: 'house facade and garden, open sky above',
+        },
+        scene_debris:  'tie wire off-cuts on the mesh surface, spacer chair packaging and rebar tie wire reel on the ground beside the formwork',
+        scene_exclude: ['wet concrete', 'freshly poured concrete', 'finished smooth slab', 'masonry wall', 'roofing materials', 'pressure washer', 'trench', 'foundation trench', 'ladder'],
+        tools: [
+          'tie wire reel beside the mesh — wire used to fix rebar intersections',
+          'formwork boards pegged level at the slab perimeter',
+          'concrete spacer chairs visible below the mesh bars',
+        ],
+        protections: [
+          'safety boots on the worker',
+          'work gloves on the worker adjusting the rebar',
+        ],
+        chantier_details: [
+          'steel mesh on spacer chairs — bars parallel and evenly spaced across the full slab area',
+          'spacer chairs clearly visible below the mesh — ensuring correct concrete cover',
+          'formwork boards levelled and pegged at the slab perimeter on compacted gravel',
+          'no concrete yet — slab entirely in rebar and formwork preparation stage',
+          'compacted gravel subbase visible beyond the formwork edges',
+        ],
+      },
+
       // --- dalle béton / terrasse béton ---
       {
         _for:          'dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton',
