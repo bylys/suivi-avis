@@ -105,6 +105,19 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     dirty_water_runoff_visible:                   obj.dirty_water_runoff_visible                   ?? null,
     opaque_paint_application_visible:             obj.opaque_paint_application_visible             ?? null,
     fresh_render_application_visible:             obj.fresh_render_application_visible             ?? null,
+    // Fondation gate fields
+    shallow_foundation_trench_visible:                    obj.shallow_foundation_trench_visible                    ?? null,
+    strip_footing_rebar_cage_visible:                     obj.strip_footing_rebar_cage_visible                     ?? null,
+    rebar_stirrups_visible:                               obj.rebar_stirrups_visible                               ?? null,
+    rebar_supported_off_soil_with_visible_cover_supports: obj.rebar_supported_off_soil_with_visible_cover_supports ?? null,
+    active_rebar_tying_visible:                           obj.active_rebar_tying_visible                           ?? null,
+    partial_foundation_progress_visible:                  obj.partial_foundation_progress_visible                  ?? null,
+    worker_stable_at_ground_level:                        obj.worker_stable_at_ground_level                        ?? null,
+    worker_inside_trench:                                 obj.worker_inside_trench                                 ?? null,
+    deep_unprotected_trench_visible:                      obj.deep_unprotected_trench_visible                      ?? null,
+    slab_formwork_visible:                                obj.slab_formwork_visible                                ?? null,
+    horizontal_slab_mesh_dominant:                        obj.horizontal_slab_mesh_dominant                        ?? null,
+    fresh_concrete_poured_visible:                        obj.fresh_concrete_poured_visible                        ?? null,
   };
 }
 
@@ -186,6 +199,24 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
 
     // ── B. Service visual gate ─────────────────────────────────────────────────
     if (gate) {
+      // ── B0. Mandatory fields — any absent/non-boolean → structured_evidence_incomplete ──
+      if (gate.mandatory_fields) {
+        for (const mf of gate.mandatory_fields) {
+          if (typeof obj[mf] !== 'boolean') {
+            return {
+              safe: false, severity: 'critical', reason: 'structured_evidence_incomplete',
+              vision_reported_safe: obj.safe, vision_reported_reason: obj.reason ?? null,
+              computed_generic_worker_match: _computedWorkerMatch,
+              computed_final_safe: false, computed_final_reason: 'structured_evidence_incomplete',
+              first_failed_gate_field: mf,
+              service_gate: _gateService,
+              decision_source: 'structured_service_gate',
+              ..._commonGateFields(obj, _computedWorkerMatch, _visibleWC),
+            };
+          }
+        }
+      }
+
       // Debug log for acrotère (temporary instrumentation)
       if (_gateService === 'Étanchéité acrotère') {
         console.log('[VISION GATE RAW]', JSON.stringify({

@@ -700,6 +700,53 @@ export const SITE_REALISM_GROS_OEUVRE = {
           'block pallet with remaining blocks stacked beside the wall',
         ],
       },
+
+      // --- fondation / semelle béton encours state-lock ---
+      {
+        _for:                             '^(fondation|semelle beton)$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-STRIP-FOUNDATION-REBAR',
+        _access_configuration:            'GROUND_LEVEL_SHALLOW_FOUNDATION',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_note:    'A shallow narrow open earth trench approximately 40–70 cm deep cut into natural soil. A three-dimensional reinforcement cage with longitudinal steel bars and regular rectangular stirrups runs inside the trench. The cage is visibly raised several centimetres above the soil on multiple small concrete cover blocks placed underneath the lower bars — at least three concrete cover blocks are clearly visible beneath the cage. The reinforcement must not touch the soil. One worker remains kneeling on the natural ground beside the trench and actively ties two crossing steel bars with tying wire and pliers. The worker is not inside the trench. Layout strings may be visible at the trench edge. Part of the cage already tied, one section still in progress. No slab enclosure boards, no broad horizontal reinforcement mesh, and no freshly poured concrete.',
+        scene_camera:  'customer smartphone angle at standing height, 1.5–2.5 m from the trench edge, slight diagonal — trench visible in full width, rebar cage visible inside — worker crouched at the edge with pliers in contact with the rebar',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'edge of the trench — excavated soil mound and a rebar tie wire reel on the ground beside the worker',
+          midground:  'Worker 1 crouched at the trench lip, pliers pressed onto a stirrup-to-bar joint — rebar cage running along the trench base on white plastic spacers — completed tying visible at the left section, untied section at right',
+          background: 'residential plot — hedgerow, garden fence, or neighbouring roof visible discreetly — no large house facade dominating the frame',
+        },
+        scene_debris:  'cut tie wire tails on the ground beside the trench, loose soil clods from excavation',
+        scene_exclude: [
+          'worker inside trench', 'worker at the bottom of trench', 'worker under a soil wall',
+          'worker standing on rebar cage', 'worker straddling the trench',
+          'deep trench requiring shoring', 'vertical unprotected soil walls above 1 m',
+          'wet concrete in trench', 'fresh concrete poured over rebar',
+          'horizontal slab mesh', 'large flat slab formwork', 'surface formwork boards',
+          'concrete slab preparation', 'finished concrete surface',
+          'red brick wall', 'block wall under construction', 'masonry wall',
+          'industrial site', 'public road', 'factory',
+        ],
+        tools: [
+          'rebar tying pliers in Worker 1\'s hand pressing a tie wire loop onto a stirrup-to-bar joint',
+          'tie wire reel beside the trench on the excavated soil — wire end running to the active joint',
+          'concrete spacers (plastic chairs) under the longitudinal bars — three or four clearly visible',
+          'timber profile boards with string line defining the foundation axis',
+        ],
+        protections: [
+          'safety boots on the worker',
+          'orange safety mesh or wooden boards loosely marking the open trench perimeter',
+        ],
+        chantier_details: [
+          'rebar cage: three or four longitudinal bars tied to U-stirrups at regular spacing — all joints wire-tied',
+          'partly finished section left of worker — partly unfinished section right — progressive tying visible',
+          'plastic spacer chairs under the bars ensuring correct concrete cover',
+          'tie wire tails cut and bent on the finished joints — fresh tails still straight on recent ones',
+          'excavated soil mound beside the trench — subsoil colour distinct from topsoil',
+        ],
+      },
       {
         _for:          'mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur',
         scene_note:    'brick being pressed into the fresh mortar bed — spirit level placed on top of the last course, mortar squeeze-out at the joint faces, trowel beside the mason\'s hand',
