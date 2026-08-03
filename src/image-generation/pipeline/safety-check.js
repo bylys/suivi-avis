@@ -95,6 +95,16 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     hose_or_sprayer_coherent:             obj.hose_or_sprayer_coherent             ?? null,
     jet_or_product_directed_safely:       obj.jet_or_product_directed_safely       ?? null,
     worker_on_ladder_or_scaffold:         obj.worker_on_ladder_or_scaffold         ?? null,
+    // Hydrofuge facade gate fields
+    active_hydrofuge_application_visible:         obj.active_hydrofuge_application_visible         ?? null,
+    hydrofuge_application_tool_visible:           obj.hydrofuge_application_tool_visible           ?? null,
+    treated_and_untreated_facade_zones_visible:   obj.treated_and_untreated_facade_zones_visible   ?? null,
+    transparent_or_subtle_product_effect_visible: obj.transparent_or_subtle_product_effect_visible ?? null,
+    original_facade_texture_remains_visible:      obj.original_facade_texture_remains_visible      ?? null,
+    pressure_washing_visible:                     obj.pressure_washing_visible                     ?? null,
+    dirty_water_runoff_visible:                   obj.dirty_water_runoff_visible                   ?? null,
+    opaque_paint_application_visible:             obj.opaque_paint_application_visible             ?? null,
+    fresh_render_application_visible:             obj.fresh_render_application_visible             ?? null,
   };
 }
 

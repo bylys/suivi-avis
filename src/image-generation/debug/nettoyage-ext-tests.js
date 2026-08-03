@@ -1,5 +1,5 @@
 /**
- * Nettoyage extérieur — no-cost test suite (v4)
+ * Nettoyage extérieur — no-cost test suite (v5)
  *   NEX-SC1 : Nettoyage haute pression + encours → NETTOYAGE-HIGH-PRESSURE-GROUND
  *   NEX-SC2 : Nettoyage haute pression → GROUND_LEVEL_PRESSURE_WASHING
  *   NEX-SC3 : Nettoyage haute pression → state_lock_used=true, pool_size=1, setting=exterior
@@ -46,12 +46,12 @@
  *   NEX-FAC-GATE-EXISTS: gate structure + GROUND_LEVEL_FACADE_CLEANING conditions
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=nex-tests4');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=nex-tests4');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SAFETY_CHECK_RULES } = await import('../safety/safety-rules.js?bust=nex-tests4');
-const { buildVisionSafetyRequest } = await import('../pipeline/safety-check.js?bust=nex-tests4');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=nex-tests8');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=nex-tests8');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES, SAFETY_CHECK_RULES } = await import('../safety/safety-rules.js?bust=nex-tests8');
+const { buildVisionSafetyRequest } = await import('../pipeline/safety-check.js?bust=nex-tests8');
 
-export async function runNettoyageExtTests() {
+export function runNettoyageExtTests() {
   console.group('NEX tests — Nettoyage extérieur: Haute pression gate + scenes');
 
   const _results = [];
@@ -612,6 +612,169 @@ export async function runNettoyageExtTests() {
      'worker_stable_on_ground','work_area_reachable_from_ground','cleaning_equipment_visible',
      'electrical_hazard_visible','worker_on_ladder_or_scaffold'].forEach(f => {
       assert(fields.includes(f), `GROUND_LEVEL_FACADE_CLEANING must include field "${f}"`);
+    });
+  });
+
+  // ── Traitement hydrofuge façade — scene-config + gate ────────────────────────
+  function evalHydrofugeGate(fields) {
+    const gate = SERVICE_VISUAL_GATE_RULES['Traitement hydrofuge façade'];
+    assert(gate, 'Gate "Traitement hydrofuge façade" must exist');
+    const conds = gate.reject_conditions_by_access?.GROUND_LEVEL_FACADE_HYDROFUGE ?? gate.reject_conditions;
+    for (const cond of conds) {
+      if ('value' in cond && fields[cond.field] === cond.value) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+      if (cond.not_exactly_true && fields[cond.field] !== true) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+    }
+    return { safe: true };
+  }
+
+  const HYDROFUGE_PASS_FIELDS = {
+    facade_surface_visible:                       true,
+    active_hydrofuge_application_visible:         true,
+    hydrofuge_application_tool_visible:           true,
+    treated_and_untreated_facade_zones_visible:   true,
+    transparent_or_subtle_product_effect_visible: true,
+    original_facade_texture_remains_visible:      true,
+    worker_stable_on_ground:                      true,
+    work_area_reachable_from_ground:              true,
+    hose_or_sprayer_coherent:                     true,
+    pressure_washing_visible:                     false,
+    dirty_water_runoff_visible:                   false,
+    opaque_paint_application_visible:             false,
+    fresh_render_application_visible:             false,
+    worker_on_ladder_or_scaffold:                 false,
+    service_visual_match:                         true,
+    worker_count_matches_plan:                    true,
+  };
+
+  test('NEX-HYD-SC1', 'Traitement hydrofuge façade encours → HYDROFUGE-FACADE-GROUND', () => {
+    const r = resolve('nettoyage', 'Traitement hydrofuge façade', 'encours');
+    assert(r._visual_family === 'HYDROFUGE-FACADE-GROUND',
+      `Expected HYDROFUGE-FACADE-GROUND, got "${r._visual_family}"`);
+  });
+
+  test('NEX-HYD-SC2', 'Traitement hydrofuge façade encours → GROUND_LEVEL_FACADE_HYDROFUGE', () => {
+    const r = resolve('nettoyage', 'Traitement hydrofuge façade', 'encours');
+    assert(r._access_configuration === 'GROUND_LEVEL_FACADE_HYDROFUGE',
+      `Expected GROUND_LEVEL_FACADE_HYDROFUGE, got "${r._access_configuration}"`);
+  });
+
+  test('NEX-HYD-SC3', 'Traitement hydrofuge façade encours → state_lock_used=true, pool_size=1', () => {
+    const r = resolve('nettoyage', 'Traitement hydrofuge façade', 'encours');
+    assert(r._state_lock_used === true, `Expected state_lock_used=true, got ${r._state_lock_used}`);
+    assert(r._state_lock_pool_size === 1, `Expected pool_size=1, got ${r._state_lock_pool_size}`);
+  });
+
+  test('NEX-HYD-SC4', 'NO-COLLISION: Traitement hydrofuge façade → not NETTOYAGE-FACADE-GROUND', () => {
+    const r = resolve('nettoyage', 'Traitement hydrofuge façade', 'encours');
+    assert(r._visual_family !== 'NETTOYAGE-FACADE-GROUND',
+      `Hydrofuge must not resolve to NETTOYAGE-FACADE-GROUND, got "${r._visual_family}"`);
+  });
+
+  test('NEX-HYD-SC5', 'NO-COLLISION: Traitement hydrofuge façade → not NETTOYAGE-HIGH-PRESSURE-GROUND', () => {
+    const r = resolve('nettoyage', 'Traitement hydrofuge façade', 'encours');
+    assert(r._visual_family !== 'NETTOYAGE-HIGH-PRESSURE-GROUND',
+      `Hydrofuge must not resolve to NETTOYAGE-HIGH-PRESSURE-GROUND, got "${r._visual_family}"`);
+  });
+
+  test('NEX-HYD-ALIAS1', '_SERVICE_GATE_ALIASES: "traitement hydrofuge facade" → "Traitement hydrofuge façade"', () => {
+    const alias = _SERVICE_GATE_ALIASES['traitement hydrofuge facade'];
+    assert(alias === 'Traitement hydrofuge façade',
+      `Expected "Traitement hydrofuge façade", got "${alias}"`);
+  });
+
+  test('NEX-HYD-ALIAS2', '_SERVICE_GATE_ALIASES: "hydrofuge facade" → "Traitement hydrofuge façade"', () => {
+    const alias = _SERVICE_GATE_ALIASES['hydrofuge facade'];
+    assert(alias === 'Traitement hydrofuge façade',
+      `Expected "Traitement hydrofuge façade", got "${alias}"`);
+  });
+
+  test('NEX-HYD-GT1', 'PASS — application hydrofuge transparente + effet partiel visible → safe', () => {
+    const r = evalHydrofugeGate(HYDROFUGE_PASS_FIELDS);
+    assert(r.safe === true, `Expected safe=true, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT2', 'REJECT — pressure_washing_visible=true (nettoyage HP) → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, pressure_washing_visible: true });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT3', 'REJECT — dirty_water_runoff_visible=true (eau sale) → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, dirty_water_runoff_visible: true });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT4', 'REJECT — opaque_paint_application_visible=true → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, opaque_paint_application_visible: true });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT5', 'REJECT — fresh_render_application_visible=true → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, fresh_render_application_visible: true });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT6', 'REJECT — active_hydrofuge_application_visible=false → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, active_hydrofuge_application_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT7', 'REJECT — treated_and_untreated_facade_zones_visible=false → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, treated_and_untreated_facade_zones_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT8', 'REJECT — transparent_or_subtle_product_effect_visible=false → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, transparent_or_subtle_product_effect_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT9', 'REJECT — worker_on_ladder_or_scaffold=true → access_violation', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, worker_on_ladder_or_scaffold: true });
+    assert(r.safe === false && r.reason === 'access_violation',
+      `Expected reject/access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT10', 'REJECT — work_area_reachable_from_ground=false → access_violation', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, work_area_reachable_from_ground: false });
+    assert(r.safe === false && r.reason === 'access_violation',
+      `Expected reject/access_violation, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT11', 'REJECT — service_visual_match=false → service_visual_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, service_visual_match: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch',
+      `Expected reject/service_visual_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GT12', 'REJECT — worker_count_matches_plan=false → worker_count_mismatch', () => {
+    const r = evalHydrofugeGate({ ...HYDROFUGE_PASS_FIELDS, worker_count_matches_plan: false });
+    assert(r.safe === false && r.reason === 'worker_count_mismatch',
+      `Expected reject/worker_count_mismatch, got safe=${r.safe} reason=${r.reason}`);
+  });
+
+  test('NEX-HYD-GATE-EXISTS', 'SERVICE_VISUAL_GATE_RULES[\'Traitement hydrofuge façade\'] exists with correct structure', () => {
+    const gate = SERVICE_VISUAL_GATE_RULES['Traitement hydrofuge façade'];
+    assert(gate, 'Gate must exist');
+    assert(typeof gate.vision_instruction === 'string' && gate.vision_instruction.includes('SERVICE VISUAL GATE'),
+      'vision_instruction must contain SERVICE VISUAL GATE');
+    assert(gate.reject_conditions_by_access?.GROUND_LEVEL_FACADE_HYDROFUGE,
+      'reject_conditions_by_access.GROUND_LEVEL_FACADE_HYDROFUGE must exist');
+    const fields = gate.reject_conditions_by_access.GROUND_LEVEL_FACADE_HYDROFUGE.map(c => c.field);
+    ['facade_surface_visible','active_hydrofuge_application_visible','treated_and_untreated_facade_zones_visible',
+     'worker_stable_on_ground','work_area_reachable_from_ground','pressure_washing_visible',
+     'dirty_water_runoff_visible','worker_on_ladder_or_scaffold'].forEach(f => {
+      assert(fields.includes(f), `GROUND_LEVEL_FACADE_HYDROFUGE must include field "${f}"`);
     });
   });
 

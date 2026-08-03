@@ -19,7 +19,7 @@ import { _assertTaskHasBatchPlan }        from '../validation/batch-validator.js
 import { PromptBuilder, _USE_PROMPT_BUILDER } from '../prompt/prompt-builder.js';
 import { _appendLockedFinalConstraints }  from '../prompt/locked-constraints.js';
 import { _sanitizeSceneForPrompt, _validateInteriorPayload } from './prompt-scene-sanitizer.js';
-import { SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY, RAVALEMENT_SCAFFOLD_RETRY } from '../safety/safety-rules.js';
+import { SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY, RAVALEMENT_SCAFFOLD_RETRY, HYDROFUGE_SAFETY_RETRY } from '../safety/safety-rules.js';
 
 // ─── buildImageGenerationRequest ─────────────────────────────────────────────
 // Pure — verbatim params from app.js lines 13802–13806.
@@ -162,7 +162,14 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
     && !!RAVALEMENT_SCAFFOLD_RETRY[task.error];
   const _ravalementRetryNote = _isRavalementScaffoldRetry ? RAVALEMENT_SCAFFOLD_RETRY[task.error] : '';
 
-  const _activeRetryNote = _retryNote || _solinRetryNote || _ravalementRetryNote;
+  // Hydrofuge safety retry injection (keyed by _matched_service)
+  const _isHydrofugeRetry = task._imageRetryReason === 'regenerate_after_safety_reject'
+    && _planBase._matched_service === 'Traitement hydrofuge façade'
+    && !!task.error
+    && !!HYDROFUGE_SAFETY_RETRY[task.error];
+  const _hydrofugeRetryNote = _isHydrofugeRetry ? HYDROFUGE_SAFETY_RETRY[task.error] : '';
+
+  const _activeRetryNote = _retryNote || _solinRetryNote || _ravalementRetryNote || _hydrofugeRetryNote;
   const _finalPrompt = _activeRetryNote ? `${prompt}\n\n${_activeRetryNote}` : prompt;
 
   const reason = task.imageAttempt === 1 ? 'initial' : (task._imageRetryReason || 'retry_image_error');
@@ -173,7 +180,9 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
       ? `${_planBase._matched_service}:${task.error}`
       : _isRavalementScaffoldRetry
         ? `${_planBase._matched_service}:${task.error}`
-        : null;
+        : _isHydrofugeRetry
+          ? `${_planBase._matched_service}:${task.error}`
+          : null;
   const _captureDefects    = _finalSceneObj._capture_defects_resolved || [];
   const _captureDefectKeys = _captureDefects.map(d => d.key);
   const _opticalSelected   = _captureDefects.some(d => d.source === 'optical');
