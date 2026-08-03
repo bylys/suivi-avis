@@ -32,7 +32,6 @@ def sb_get(path):
         pagination = f"limit={PAGE}&offset={offset}"
         qs = f"{base_qs}&{pagination}" if base_qs else pagination
         url = f"{SB_URL}/rest/v1/{table}?{qs}"
-        print(f"  GET {url}")
         req = urllib.request.Request(url)
         req.add_header("apikey", SB_KEY)
         req.add_header("Authorization", f"Bearer {SB_KEY}")
