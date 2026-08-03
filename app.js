@@ -710,6 +710,7 @@ function buildFicheLi(f, fiches, avis) {
     `<span>🏁 ${avisInit} initiaux</span>` +
     `<span>✍️ ${count} postés Kevin</span>` +
     `<span style="color:#38bdf8;font-weight:600;">= ${total} avis total</span>` +
+    (f.nb_avis_google != null ? `<span title="Mis à jour le ${f.nb_avis_updated_at || '?'}" style="color:#a78bfa;font-weight:600;">🌐 ${f.nb_avis_google} sur Google</span>` : '') +
     `<select class="cat-override-select" data-id="${f.id}" onchange="setCatOverride(this.dataset.id, this.value); renderFiches();" style="margin-left:auto;font-size:0.75rem;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:4px;padding:2px 4px;">${catOptions}</select>`;
 
   const nomEdit = document.createElement('div');

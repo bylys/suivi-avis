@@ -1,0 +1,25 @@
+name: Mise à jour nb avis Google Places
+
+on:
+  schedule:
+    # 1er et 15 du mois à 3h00 Paris (UTC+2 en été = 1h00 UTC)
+    - cron: "0 1 1,15 * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    name: Mettre à jour nb_avis_google
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Mettre à jour le nombre d'avis Google par fiche
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GOOGLE_PLACES_KEY: ${{ secrets.GOOGLE_PLACES_KEY }}
+        run: python scripts/update_places.py
