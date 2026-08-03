@@ -177,8 +177,9 @@ def main():
                         # Place ID extrait directement → appel direct, 100% précis
                         nb = get_place_details(place_id)
                     else:
-                        # Fallback : text search avec nom + coords + vérification du nom retourné
-                        nb, _ = search_by_text(nom, coords)
+                        # Fallback : text search avec nom GMB de l'URL (plus précis) ou nom fiche
+                        search_name = name_from_url or nom
+                        nb, _ = search_by_text(search_name, coords)
                     break
                 except urllib.error.HTTPError as he:
                     if he.code == 429 and attempt < 3:
