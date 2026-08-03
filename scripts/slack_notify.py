@@ -12,7 +12,8 @@ from collections import Counter
 SB_URL = os.environ["SUPABASE_URL"]
 SB_KEY = os.environ["SUPABASE_KEY"]
 SLACK_WEBHOOK = os.environ["SLACK_WEBHOOK_URL"]
-MODE = sys.argv[1] if len(sys.argv) > 1 else "daily"
+MODE        = sys.argv[1] if len(sys.argv) > 1 else "daily"
+FORCE_FULL  = len(sys.argv) > 2 and sys.argv[2] == "full"
 
 
 def sb_get(path):
@@ -141,7 +142,7 @@ def daily():
 def survival():
     today = date.today()
 
-    if today.day == 1:
+    if today.day == 1 or FORCE_FULL:
         # ── 1er du mois : rapport complet sur le mois J-2 ───────────────────
         # Ex: 1er juillet → rapport de mai (avis de juin pas encore tous à J+30)
         cohort_end   = today.replace(day=1) - timedelta(days=1)   # dernier jour du mois précédent

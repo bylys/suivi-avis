@@ -5,6 +5,12 @@ on:
     # 1er et 15 du mois à 9h30 Paris (UTC+2 en été = 7h30 UTC)
     - cron: "30 7 1,15 * *"
   workflow_dispatch:
+    inputs:
+      force_full:
+        description: 'Forcer le rapport complet (juin) au lieu du rapport mi-mois'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   survival:
@@ -20,4 +26,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: python scripts/slack_notify.py survival
+        run: |
+          ARGS="survival"
+          if [ "${{ github.event.inputs.force_full }}" = "true" ]; then
+            ARGS="survival full"
+          fi
+          python scripts/slack_notify.py $ARGS
