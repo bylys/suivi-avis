@@ -24,7 +24,7 @@ def sb_get(path):
     qs = re.sub(r'[&?]?limit=\d+', '', qs).strip('&')
     sep = '?' if qs else ''
     all_rows, offset = [], 0
-    PAGE = 1000
+    PAGE = 9000
     while True:
         off_param = f"&offset={offset}" if offset else ""
         url = f"{SB_URL}/rest/v1/{base}{sep}{qs}&limit={PAGE}{off_param}" if qs else f"{SB_URL}/rest/v1/{base}?limit={PAGE}{off_param}"
