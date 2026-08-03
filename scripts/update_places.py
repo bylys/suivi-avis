@@ -90,38 +90,34 @@ def extract_name_and_coords(url):
     return name, coords
 
 
-def find_place_by_name(name, coords=None, debug=False):
-    """Cherche un place_id via findplacefromtext, avec locationbias si coordonnées dispo."""
-    params = (
-        f"input={urllib.parse.quote(name)}&inputtype=textquery"
-        f"&fields=place_id&key={PLACES_KEY}"
-    )
+def search_place(name, coords=None):
+    """
+    Places API (New) — Text Search.
+    Retourne (place_id, user_rating_count) ou (None, None).
+    """
+    body = {"textQuery": name}
     if coords:
-        params += f"&locationbias=circle:2000@{coords[0]},{coords[1]}"
-    url = f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json?{params}"
-    with urllib.request.urlopen(url) as r:
-        data = json.loads(r.read())
-    if debug:
-        print(f"    API status: {data.get('status')} | candidates: {len(data.get('candidates', []))} | error: {data.get('error_message','')}")
-    candidates = data.get("candidates", [])
-    if not candidates:
-        return None
-    return candidates[0]["place_id"]
-
-
-def get_ratings(place_id):
-    """Retourne user_ratings_total pour un place_id."""
-    url = (
-        f"https://maps.googleapis.com/maps/api/place/details/json"
-        f"?place_id={urllib.parse.quote(place_id)}"
-        f"&fields=user_ratings_total&key={PLACES_KEY}"
+        body["locationBias"] = {
+            "circle": {
+                "center": {"latitude": float(coords[0]), "longitude": float(coords[1])},
+                "radius": 2000.0
+            }
+        }
+    data = json.dumps(body).encode()
+    req = urllib.request.Request(
+        "https://places.googleapis.com/v1/places:searchText",
+        data=data, method="POST"
     )
-    with urllib.request.urlopen(url) as r:
-        data = json.loads(r.read())
-    status = data.get("status")
-    if status != "OK":
-        raise ValueError(f"Places API status: {status}")
-    return data.get("result", {}).get("user_ratings_total")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("X-Goog-Api-Key", PLACES_KEY)
+    req.add_header("X-Goog-FieldMask", "places.id,places.userRatingCount")
+    with urllib.request.urlopen(req) as r:
+        result = json.loads(r.read())
+    places = result.get("places", [])
+    if not places:
+        return None, None
+    p = places[0]
+    return p.get("id"), p.get("userRatingCount")
 
 
 def main():
@@ -129,29 +125,18 @@ def main():
     print(f"{len(fiches)} fiches avec lien")
 
     ok, skip, errors = 0, 0, 0
-    first = True
     for f in fiches:
         nom  = f["nom"]
         lien = f["lien"]
         try:
-            # Résoudre les URLs courtes
             resolved = resolve_url(lien)
+            name_from_url, coords = extract_name_and_coords(resolved)
+            search_name = name_from_url or nom
 
-            place_id = extract_place_id_from_url(resolved)
-            if not place_id:
-                # Fallback : extraire nom + coordonnées depuis l'URL
-                name_from_url, coords = extract_name_and_coords(resolved)
-                if name_from_url:
-                    place_id = find_place_by_name(name_from_url, coords, debug=first)
-                    first = False
-            if not place_id:
-                print(f"  ⚠ place_id introuvable : {nom}")
-                skip += 1
-                continue
+            place_id, nb = search_place(search_name, coords)
 
-            nb = get_ratings(place_id)
-            if nb is None:
-                print(f"  ⚠ nb_avis null : {nom}")
+            if not place_id or nb is None:
+                print(f"  ⚠ non trouvé : {nom}")
                 skip += 1
                 continue
 
