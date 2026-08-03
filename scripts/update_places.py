@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 """
 Met à jour nb_avis_google sur chaque fiche via Google Places API.
-Utilise "Find Place from Text" pour trouver le place_id depuis le nom,
-puis "Place Details" pour récupérer user_ratings_total.
+Gère les URLs longues (google.com/maps/place/) et courtes (maps.app.goo.gl/).
 """
 
-import os, sys, json, urllib.request, urllib.parse
+import os, re, json, urllib.request, urllib.parse, urllib.error
 from datetime import date
 
-SB_URL      = os.environ["SUPABASE_URL"]
-SB_KEY      = os.environ["SUPABASE_KEY"]
-PLACES_KEY  = os.environ["GOOGLE_PLACES_KEY"]
-TODAY       = date.today().isoformat()
+SB_URL     = os.environ["SUPABASE_URL"]
+SB_KEY     = os.environ["SUPABASE_KEY"]
+PLACES_KEY = os.environ["GOOGLE_PLACES_KEY"]
+TODAY      = date.today().isoformat()
+
 
 def sb_get(path):
-    if '?' in path:
-        table, qs_raw = path.split('?', 1)
-    else:
-        table, qs_raw = path, ''
+    table, qs_raw = (path.split('?', 1) + [''])[:2]
     params = [p for p in qs_raw.split('&') if p and not p.startswith('limit=') and not p.startswith('offset=')]
     base_qs = '&'.join(params)
     all_rows, offset, PAGE = [], 0, 1000
@@ -36,6 +33,7 @@ def sb_get(path):
         offset += PAGE
     return all_rows
 
+
 def sb_patch(table, id_, payload):
     data = json.dumps(payload).encode()
     req = urllib.request.Request(
@@ -49,55 +47,94 @@ def sb_patch(table, id_, payload):
     with urllib.request.urlopen(req) as r:
         return r.status
 
-def find_place(nom):
-    """Retourne (place_id, user_ratings_total) ou (None, None) si non trouvé."""
-    query = urllib.parse.quote(nom)
+
+def resolve_url(lien):
+    """Suit les redirections pour obtenir l'URL finale (goo.gl → maps longue)."""
+    if 'goo.gl' not in lien:
+        return lien
+    try:
+        req = urllib.request.Request(
+            lien,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.url
+    except Exception:
+        return lien
+
+
+def extract_place_id(url):
+    """Extrait le place_id depuis une URL Google Maps longue."""
+    # Format classique : !1sChIJxxxxxx dans le paramètre data
+    m = re.search(r'!1s(ChIJ[^!&%]+)', url)
+    if m:
+        return urllib.parse.unquote(m.group(1))
+
+    # Format encodé URL : %211s(ChIJ...)
+    m = re.search(r'%211s(ChIJ[^!&%]+)', url)
+    if m:
+        return urllib.parse.unquote(m.group(1))
+
+    # Paramètre place_id= explicite
+    m = re.search(r'[?&]place_id=([^&]+)', url)
+    if m:
+        return m.group(1)
+
+    return None
+
+
+def get_ratings(place_id):
+    """Retourne user_ratings_total pour un place_id."""
     url = (
-        f"https://maps.googleapis.com/maps/api/place/findplacefromtext/json"
-        f"?input={query}&inputtype=textquery"
-        f"&fields=place_id&key={PLACES_KEY}"
+        f"https://maps.googleapis.com/maps/api/place/details/json"
+        f"?place_id={urllib.parse.quote(place_id)}"
+        f"&fields=user_ratings_total&key={PLACES_KEY}"
     )
     with urllib.request.urlopen(url) as r:
         data = json.loads(r.read())
-    candidates = data.get("candidates", [])
-    if not candidates:
-        return None, None
-    place_id = candidates[0]["place_id"]
+    status = data.get("status")
+    if status != "OK":
+        raise ValueError(f"Places API status: {status}")
+    return data.get("result", {}).get("user_ratings_total")
 
-    # Détails pour récupérer user_ratings_total
-    url2 = (
-        f"https://maps.googleapis.com/maps/api/place/details/json"
-        f"?place_id={place_id}&fields=user_ratings_total&key={PLACES_KEY}"
-    )
-    with urllib.request.urlopen(url2) as r:
-        data2 = json.loads(r.read())
-    nb = data2.get("result", {}).get("user_ratings_total")
-    return place_id, nb
 
 def main():
     fiches = sb_get("fiches?select=id,nom,lien&lien=not.is.null")
-    print(f"{len(fiches)} fiches avec lien à traiter")
+    print(f"{len(fiches)} fiches avec lien")
 
     ok, skip, errors = 0, 0, 0
     for f in fiches:
-        nom = f["nom"]
+        nom  = f["nom"]
+        lien = f["lien"]
         try:
-            place_id, nb = find_place(nom)
-            if nb is None:
-                print(f"  ⚠ Non trouvé : {nom}")
+            # Résoudre les URLs courtes
+            resolved = resolve_url(lien)
+
+            place_id = extract_place_id(resolved)
+            if not place_id:
+                print(f"  ⚠ place_id introuvable : {nom}  ({resolved[:70]})")
                 skip += 1
                 continue
+
+            nb = get_ratings(place_id)
+            if nb is None:
+                print(f"  ⚠ nb_avis null : {nom}")
+                skip += 1
+                continue
+
             sb_patch("fiches", f["id"], {
                 "nb_avis_google": nb,
                 "nb_avis_updated_at": TODAY
             })
             print(f"  ✓ {nom} → {nb} avis Google")
             ok += 1
+
         except Exception as e:
             print(f"  ✗ {nom} : {e}")
             errors += 1
 
     print(f"\nTerminé — {ok} mis à jour | {skip} non trouvés | {errors} erreurs")
+
 
 if __name__ == "__main__":
     main()
