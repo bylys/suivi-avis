@@ -842,14 +842,18 @@
       "metier": "maçonnerie",
       "service_label": "Ferraillage",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: fondation|semelle|ferraillage|ancrage|infrastructure",
-      "matched_regex": "fondation|semelle|ferraillage|ancrage|infrastructure",
+      "routing_detail": "state-lock matched _for: ^ferraillage$ _state_for: encours",
+      "matched_regex": "^ferraillage$",
       "fallback_used": false,
+      "state_lock": true,
+      "visual_family": "MACONNERIE-REBAR-ASSEMBLY-GROUND",
+      "access_configuration": "GROUND_LEVEL_REBAR_FABRICATION",
+      "structured_gate": "Ferraillage",
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "fondation|semelle|ferraillage|ancrage|infrastructure",
-        "flags": "i",
+        "regex": "^ferraillage$",
+        "state_for": "encours",
         "normalized_input": "ferraillage"
       }
     },

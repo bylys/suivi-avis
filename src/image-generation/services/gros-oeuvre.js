@@ -226,7 +226,7 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
       {
-        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        _for:          'fondation|semelle|coulage|ancrage|infrastructure',
         scene_note:    'foundation work in progress — reinforced concrete strip or pad being prepared, rebar cage in the trench, formwork boards in place',
         scene_camera:  'crouching at the trench edge or standing at the formwork end, framing the rebar cage and the trench interior',
         scene_framing: {
@@ -443,7 +443,7 @@ export const SITE_REALISM_GROS_OEUVRE = {
 
       // --- fondation (3 additional) ---
       {
-        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        _for:          'fondation|semelle|coulage|ancrage|infrastructure',
         scene_note:    'concrete being poured into the foundation trench — concrete flowing from a mixer chute or bucket, vibrator probe nearby',
         scene_camera:  'standing above the trench, framing the wet concrete pouring in from the end and flowing along the formwork length',
         scene_framing: {
@@ -470,7 +470,7 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
       {
-        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        _for:          'fondation|semelle|coulage|ancrage|infrastructure',
         scene_note:    'concrete vibrator compacting the fresh pour — vibrator probe inserted into the concrete, air bubbles being released at the surface',
         scene_camera:  'crouching beside the trench, framing the vibrator probe submerged in the fresh concrete with the motor unit above',
         scene_framing: {
@@ -495,7 +495,7 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
       {
-        _for:          'fondation|semelle|coulage|ferraillage|ancrage|infrastructure',
+        _for:          'fondation|semelle|coulage|ancrage|infrastructure',
         scene_note:    'formwork being struck after concrete has set — ply boards being removed to reveal the concrete strip or pad surface',
         scene_camera:  'standing at the trench end, framing the formwork board being levered off to reveal the fresh concrete face',
         scene_framing: {
@@ -832,6 +832,50 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
 
+      // --- ferraillage encours state-lock ---
+      {
+        _for:                             '^ferraillage$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-REBAR-ASSEMBLY-GROUND',
+        _access_configuration:            'GROUND_LEVEL_REBAR_FABRICATION',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'reinforcement cage being assembled on low trestles in an outdoor residential work area — a single ferrailleur works at ground level beside the cage, tying a stirrup-to-bar junction with tying wire and pliers — part of the cage is already tied, part still needs securing — no trench, no formwork, no wet concrete',
+        scene_camera:  'standing beside the cage at ground level, framing the worker actively tying a junction with the cage running horizontally on the trestles',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'reinforcement cage on low timber trestles — longitudinal bars and rectangular stirrups clearly visible — worker crouching or standing beside the cage with tying pliers in contact with a junction',
+          midground:  'rest of the cage on trestles — some sections already tied, tie wire tails visible — loose stirrups and bars nearby ready for assembly',
+          background: 'residential site surroundings — house facade or boundary wall at distance, construction material on the ground',
+        },
+        scene_debris:  'cut tie wire ends on the ground beneath the cage, reinforcement bar offcuts near the trestle feet',
+        scene_exclude: [
+          'cage inside a trench or foundation excavation as the main subject',
+          'broad flat horizontal mesh covering a slab area',
+          'wet or poured concrete',
+          'mixer or concrete truck',
+          'formwork boards or slab enclosure',
+          'worker standing or walking on top of the cage',
+          'vertical rebar column cage',
+          'scaffolding or ladder',
+        ],
+        tools: [
+          'tying pliers in the worker\'s hand at the junction being secured',
+          'tie wire reel on the ground beside the trestles',
+          'loose stirrups and longitudinal bars staged beside the cage',
+        ],
+        protections: [
+          'gloves on the ferrailleur\'s hands',
+          'safety boots on the worker',
+        ],
+        chantier_details: [
+          'reinforcement cage on low trestles — approximately 30–70 cm off the ground',
+          'completed wire ties at the secured junctions — wire tails bent back',
+          'open unstirrupped sections at one end of the cage — work in progress',
+          'bar offcuts and wire reel on the ground near the trestles',
+        ],
+      },
+
       // --- dalle béton / terrasse béton ---
       {
         _for:          'dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton',
@@ -914,7 +958,7 @@ export const SITE_REALISM_GROS_OEUVRE = {
 
       // --- fondations ---
       {
-        _for:          'fondation|semelle|ferraillage|ancrage|infrastructure',
+        _for:          'fondation|semelle|ancrage|infrastructure',
         scene_note:    'strip foundation rebar cage in the trench — rebar tied and laid along the trench base before the concrete pour, tie wire ends visible, spacers under the bars',
         scene_camera:  'standing at the trench edge, framing the rebar cage along the trench base',
         scene_framing: {
@@ -940,7 +984,7 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
       {
-        _for:          'fondation|semelle|ferraillage|ancrage|infrastructure',
+        _for:          'fondation|semelle|ancrage|infrastructure',
         scene_note:    'foundation concrete being poured — wet concrete flowing into the reinforced trench from a mixer chute, vibrator probe being used to compact the pour',
         scene_camera:  'standing above the trench, framing the concrete flowing in from one end, vibrator probe in use',
         scene_framing: {
@@ -966,7 +1010,7 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
       {
-        _for:          'fondation|semelle|ferraillage|ancrage|infrastructure',
+        _for:          'fondation|semelle|ancrage|infrastructure',
         scene_note:    'foundation formwork with concrete poured inside — ply boards holding the wet concrete, tie rods at intervals, fresh concrete surface just level with the board top edge',
         scene_camera:  'standing at the end of the formwork run, framing the poured concrete held between the ply boards',
         scene_framing: {

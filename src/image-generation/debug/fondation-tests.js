@@ -4,11 +4,11 @@
  *   FON-SC1..6 : state-lock resolution for Fondation + Semelle béton + encours
  *   FON-GT1..12: gate reject_conditions
  *   FON-AL1..2 : alias resolution + gate count
- *   FON-REG1..5: regression — Ferraillage, Dalle béton, Coulage dalle, Fondations profondes, Mur parpaing
+ *   FON-REG1..5: regression — Ferraillage own state-lock (not FON), Dalle béton, Coulage dalle, Fondations profondes, Mur parpaing
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=fon-tests3');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=fon-tests3');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=fon-tests4');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=fon-tests4');
 
 export async function runFondationTests() {
   console.group('FON tests — Fondation / Semelle béton state-lock + gate');
@@ -308,10 +308,14 @@ export async function runFondationTests() {
 
   // ─── FON-REG: Regression ────────────────────────────────────────────────────
 
-  test('FON-REG1', 'Ferraillage encours → state_lock_used=false (no collision)', () => {
+  test('FON-REG1', 'Ferraillage encours → own state-lock MACONNERIE-REBAR-ASSEMBLY-GROUND (not Fondation)', () => {
     const r = resolveScene('Ferraillage', 'encours');
-    assert(r._state_lock_used === false,
-      `Ferraillage must not hit Fondation state-lock, got state_lock_used=${r._state_lock_used}`);
+    assert(r._state_lock_used === true,
+      `Ferraillage must have its own state-lock, got state_lock_used=${r._state_lock_used}`);
+    assert(r._visual_family !== 'MACONNERIE-STRIP-FOUNDATION-REBAR',
+      `Ferraillage must not hit Fondation state-lock, got visual_family=${r._visual_family}`);
+    assert(r._visual_family === 'MACONNERIE-REBAR-ASSEMBLY-GROUND',
+      `Expected MACONNERIE-REBAR-ASSEMBLY-GROUND, got ${r._visual_family}`);
   });
 
   test('FON-REG2', 'Dalle béton encours → MACONNERIE-CONCRETE-SLAB-REBAR (unchanged)', () => {

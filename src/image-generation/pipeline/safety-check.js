@@ -105,6 +105,18 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     dirty_water_runoff_visible:                   obj.dirty_water_runoff_visible                   ?? null,
     opaque_paint_application_visible:             obj.opaque_paint_application_visible             ?? null,
     fresh_render_application_visible:             obj.fresh_render_application_visible             ?? null,
+    // Ferraillage gate fields
+    reinforcement_cage_visible:       obj.reinforcement_cage_visible       ?? null,
+    longitudinal_rebar_visible:       obj.longitudinal_rebar_visible       ?? null,
+    regular_stirrups_visible:         obj.regular_stirrups_visible         ?? null,
+    tying_tool_in_contact_with_rebar: obj.tying_tool_in_contact_with_rebar ?? null,
+    partial_rebar_assembly_visible:   obj.partial_rebar_assembly_visible   ?? null,
+    rebar_supported_on_low_stands:    obj.rebar_supported_on_low_stands    ?? null,
+    worker_standing_on_rebar:         obj.worker_standing_on_rebar         ?? null,
+    foundation_trench_dominant:       obj.foundation_trench_dominant       ?? null,
+    fresh_concrete_visible:           obj.fresh_concrete_visible           ?? null,
+    concrete_pouring_visible:         obj.concrete_pouring_visible         ?? null,
+    formwork_removal_visible:         obj.formwork_removal_visible         ?? null,
     // Fondation gate fields
     shallow_foundation_trench_visible:                    obj.shallow_foundation_trench_visible                    ?? null,
     strip_footing_rebar_cage_visible:                     obj.strip_footing_rebar_cage_visible                     ?? null,
