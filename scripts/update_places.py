@@ -93,48 +93,28 @@ def extract_name_and_coords(url):
     return name, coords
 
 
-def search_nearby(coords):
-    """
-    Places API (New) — Nearby Search.
-    Trouve le place exact à ces coordonnées (rayon 100m).
-    Retourne (place_id, user_rating_count) ou (None, None).
-    """
-    body = {
-        "locationRestriction": {
-            "circle": {
-                "center": {"latitude": float(coords[0]), "longitude": float(coords[1])},
-                "radius": 100.0
-            }
-        }
-    }
-    data = json.dumps(body).encode()
-    req = urllib.request.Request(
-        "https://places.googleapis.com/v1/places:searchNearby",
-        data=data, method="POST"
-    )
-    req.add_header("Content-Type", "application/json")
+def get_place_details(place_id):
+    """Retourne userRatingCount pour un place_id connu (Places API New)."""
+    url = f"https://places.googleapis.com/v1/places/{urllib.parse.quote(place_id)}"
+    req = urllib.request.Request(url)
     req.add_header("X-Goog-Api-Key", PLACES_KEY)
-    req.add_header("X-Goog-FieldMask", "places.id,places.userRatingCount")
+    req.add_header("X-Goog-FieldMask", "userRatingCount")
     with urllib.request.urlopen(req) as r:
-        result = json.loads(r.read())
-    places = result.get("places", [])
-    if not places:
-        return None, None
-    p = places[0]
-    return p.get("id"), p.get("userRatingCount")
+        data = json.loads(r.read())
+    return data.get("userRatingCount")
 
 
 def search_by_text(name, coords=None):
     """
-    Places API (New) — Text Search (fallback sans coordonnées exactes).
-    Retourne (place_id, user_rating_count) ou (None, None).
+    Places API (New) — Text Search.
+    Retourne userRatingCount ou None.
     """
     body = {"textQuery": name}
     if coords:
         body["locationBias"] = {
             "circle": {
                 "center": {"latitude": float(coords[0]), "longitude": float(coords[1])},
-                "radius": 2000.0
+                "radius": 500.0
             }
         }
     data = json.dumps(body).encode()
@@ -144,14 +124,13 @@ def search_by_text(name, coords=None):
     )
     req.add_header("Content-Type", "application/json")
     req.add_header("X-Goog-Api-Key", PLACES_KEY)
-    req.add_header("X-Goog-FieldMask", "places.id,places.userRatingCount")
+    req.add_header("X-Goog-FieldMask", "places.userRatingCount")
     with urllib.request.urlopen(req) as r:
         result = json.loads(r.read())
     places = result.get("places", [])
     if not places:
-        return None, None
-    p = places[0]
-    return p.get("id"), p.get("userRatingCount")
+        return None
+    return places[0].get("userRatingCount")
 
 
 def main():
@@ -172,17 +151,17 @@ def main():
             print(f"[{i+1}/{len(fiches)}] ok={ok} skip={skip} err={errors}")
         try:
             resolved = resolve_url(lien)
+            place_id = extract_place_id_from_url(resolved)
             name_from_url, coords = extract_name_and_coords(resolved)
-            # Coordonnées exactes (!3d/!4d) → searchNearby précis
-            # Sinon → searchText avec locationBias
-            use_nearby = coords and ('!3d' in resolved)
 
             for attempt in range(4):
                 try:
-                    if use_nearby:
-                        place_id, nb = search_nearby(coords)
+                    if place_id:
+                        # Place ID extrait directement → appel direct, 100% précis
+                        nb = get_place_details(place_id)
                     else:
-                        place_id, nb = search_by_text(name_from_url or nom, coords)
+                        # Fallback : text search avec nom + coords
+                        nb = search_by_text(name_from_url or nom, coords)
                     break
                 except urllib.error.HTTPError as he:
                     if he.code == 429 and attempt < 3:
@@ -191,9 +170,9 @@ def main():
                         time.sleep(wait)
                     else:
                         raise
-            time.sleep(0.5)  # 500ms entre chaque appel (2 req/sec)
+            time.sleep(0.5)
 
-            if not place_id or nb is None:
+            if nb is None:
                 print(f"  ⚠ non trouvé : {nom}")
                 skip += 1
                 continue
