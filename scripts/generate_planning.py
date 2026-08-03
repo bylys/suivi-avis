@@ -25,12 +25,16 @@ DONUT_TOKEN   = os.environ.get("DONUT_TOKEN", "")    # remplace GOLOGIN_TOKEN
 SLACK_OPERATEURS = {
     "Kevin":     os.environ.get("SLACK_WEBHOOK_KEVIN", SLACK_WEBHOOK),
     "Fifaliana": os.environ.get("SLACK_WEBHOOK_FIFALIANA", SLACK_WEBHOOK),
+    "Aina":      os.environ.get("SLACK_WEBHOOK_AINA", SLACK_WEBHOOK),
+    "Kintana":   os.environ.get("SLACK_WEBHOOK_KINTANA", SLACK_WEBHOOK),
+    "Korail":    os.environ.get("SLACK_WEBHOOK_KORAIL", SLACK_WEBHOOK),
+    "Anjara":    os.environ.get("SLACK_WEBHOOK_ANJARA", SLACK_WEBHOOK),
 }
 
 DELAI_GMAIL_JOURS  = 3   # délai min entre deux utilisations du même gmail
 DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
 QUOTA_PAR_OPERATEUR = int(os.environ.get("QUOTA_PAR_OPERATEUR", "50"))
-OPERATEURS = ["Kevin", "Fifaliana"]
+OPERATEURS = ["Kevin", "Fifaliana", "Aina", "Kintana", "Korail", "Anjara"]
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 

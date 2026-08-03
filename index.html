@@ -127,7 +127,15 @@
         <datalist id="datalist-form-fiche"></datalist>
       </label>
       <label>Ton prénom *
-        <input type="text" id="form-operateur" placeholder="Kevin, Mailys..." required />
+        <input type="text" id="form-operateur" list="datalist-operateur" placeholder="Kevin, Fifaliana, Aina..." autocomplete="off" required />
+        <datalist id="datalist-operateur">
+          <option value="Kevin"/>
+          <option value="Fifaliana"/>
+          <option value="Aina"/>
+          <option value="Kintana"/>
+          <option value="Korail"/>
+          <option value="Anjara"/>
+        </datalist>
       </label>
       <label>Gmail de l'auteur *
         <input type="email" id="form-auteur" placeholder="client@gmail.com" required />
@@ -400,6 +408,10 @@
         <option value="">Tous les opérateurs</option>
         <option value="Kevin">Kevin</option>
         <option value="Fifaliana">Fifaliana</option>
+        <option value="Aina">Aina</option>
+        <option value="Kintana">Kintana</option>
+        <option value="Korail">Korail</option>
+        <option value="Anjara">Anjara</option>
       </select>
       <select id="planning-statut-filter" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
         <option value="">Tous les statuts</option>
