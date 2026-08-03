@@ -75,15 +75,21 @@ def extract_place_id_from_url(url):
 
 
 def extract_name_and_coords(url):
-    """Extrait le nom du business et les coordonnées depuis l'URL Maps."""
+    """Extrait le nom du business et les coordonnées exactes depuis l'URL Maps."""
     name = None
     m = re.search(r'/maps/place/([^/@?]+)', url)
     if m:
         name = urllib.parse.unquote_plus(m.group(1))
+
+    # Coordonnées exactes de la fiche (!3d lat !4d lng) — plus précis que le viewport /@
     coords = None
-    m = re.search(r'/@(-?\d+\.\d+),(-?\d+\.\d+)', url)
+    m = re.search(r'!3d(-?\d+\.\d+).*?!4d(-?\d+\.\d+)', url)
     if m:
         coords = (m.group(1), m.group(2))
+    else:
+        m = re.search(r'/@(-?\d+\.\d+),(-?\d+\.\d+)', url)
+        if m:
+            coords = (m.group(1), m.group(2))
     return name, coords
 
 
@@ -94,10 +100,11 @@ def search_place(name, coords=None):
     """
     body = {"textQuery": name}
     if coords:
-        body["locationBias"] = {
+        # locationRestriction (cercle strict) si coordonnées exactes dispo
+        body["locationRestriction"] = {
             "circle": {
                 "center": {"latitude": float(coords[0]), "longitude": float(coords[1])},
-                "radius": 2000.0
+                "radius": 300.0
             }
         }
     data = json.dumps(body).encode()
