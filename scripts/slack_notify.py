@@ -17,18 +17,22 @@ FORCE_FULL  = len(sys.argv) > 2 and sys.argv[2] == "full"
 
 
 def sb_get(path):
-    # Pagination automatique — Supabase plafonne à 1000 lignes par requête
-    base = path.split('?')[0]
-    qs   = path[len(base):].lstrip('?')  # sans le '?' initial
-    # Supprimer tout limit= existant dans la query string
-    import re
-    qs = re.sub(r'[&?]?limit=\d+', '', qs).strip('&')
-    sep = '?' if qs else ''
-    all_rows, offset = [], 0
-    PAGE = 1000
+    import urllib.parse, re
+    # Séparer table et query string, retirer tout limit=/offset= existant
+    if '?' in path:
+        table, qs_raw = path.split('?', 1)
+    else:
+        table, qs_raw = path, ''
+    # Filtrer les paramètres limit= et offset= déjà présents
+    params = [p for p in qs_raw.split('&') if p and not p.startswith('limit=') and not p.startswith('offset=')]
+    base_qs = '&'.join(params)
+
+    all_rows, offset, PAGE = [], 0, 1000
     while True:
-        off_param = f"&offset={offset}" if offset else ""
-        url = f"{SB_URL}/rest/v1/{base}{sep}{qs}&limit={PAGE}{off_param}" if qs else f"{SB_URL}/rest/v1/{base}?limit={PAGE}{off_param}"
+        pagination = f"limit={PAGE}&offset={offset}"
+        qs = f"{base_qs}&{pagination}" if base_qs else pagination
+        url = f"{SB_URL}/rest/v1/{table}?{qs}"
+        print(f"  GET {url}")
         req = urllib.request.Request(url)
         req.add_header("apikey", SB_KEY)
         req.add_header("Authorization", f"Bearer {SB_KEY}")
