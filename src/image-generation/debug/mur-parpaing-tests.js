@@ -7,9 +7,9 @@
  *   MAC-REG1..4: regression — Réparation fissure, Mur brique, Muret unchanged
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=mac-tests1');
-const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=mac-tests1');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=mac-tests1');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=mac-tests2');
+const { WORKER_SCENE_RULES }  = await import('../safety/worker-rules.js?bust=mac-tests2');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=mac-tests2');
 
 export async function runMurParpaingTests() {
   console.group('MAC tests — Mur parpaing state-lock + gate');
@@ -202,6 +202,71 @@ export async function runMurParpaingTests() {
     const r = resolveScene('Muret', 'encours');
     assert(r._state_lock_used === false,
       `Muret must not hit mur parpaing state-lock, got state_lock_used=${r._state_lock_used}`);
+  });
+
+  // ─── MAC-BV: Background variant distribution ───────────────────────────────
+
+  test('MAC-BV1', 'Mur parpaing encours → _residential_background_variant défini', () => {
+    const r = resolveScene('Mur parpaing', 'encours');
+    const valid = ['NO_HOUSE_VISIBLE', 'PARTIAL_OR_DISTANT_HOUSE'];
+    assert(valid.includes(r._residential_background_variant),
+      `Expected one of ${valid.join('|')}, got ${r._residential_background_variant}`);
+  });
+
+  test('MAC-BV2', 'Distribution 30 indices : ≥8 NO_HOUSE + ≥15 PARTIAL_OR_DISTANT', () => {
+    const counts = { NO_HOUSE_VISIBLE: 0, PARTIAL_OR_DISTANT_HOUSE: 0 };
+    for (let i = 0; i < 30; i++) {
+      const so = { _matched_key: 'maçonnerie', _matched_service: 'Mur parpaing', state_level: 'encours', contexte: 'maison_individuelle' };
+      const r = JSON.parse(_applySiteRealism(JSON.stringify(so), i));
+      counts[r._residential_background_variant] = (counts[r._residential_background_variant] || 0) + 1;
+    }
+    assert(counts.NO_HOUSE_VISIBLE >= 8,
+      `NO_HOUSE_VISIBLE expected ≥8/30, got ${counts.NO_HOUSE_VISIBLE}`);
+    assert(counts.PARTIAL_OR_DISTANT_HOUSE >= 15,
+      `PARTIAL_OR_DISTANT_HOUSE expected ≥15/30, got ${counts.PARTIAL_OR_DISTANT_HOUSE}`);
+  });
+
+  test('MAC-BV3', 'NO_HOUSE_VISIBLE → framing.background override présent + maison absente', () => {
+    let found = null;
+    for (let i = 0; i < 30; i++) {
+      const so = { _matched_key: 'maçonnerie', _matched_service: 'Mur parpaing', state_level: 'encours', contexte: 'maison_individuelle' };
+      const r = JSON.parse(_applySiteRealism(JSON.stringify(so), i));
+      if (r._residential_background_variant === 'NO_HOUSE_VISIBLE') { found = r; break; }
+    }
+    assert(found !== null, 'Could not find a NO_HOUSE_VISIBLE result in 30 indices');
+    assert(found.framing && typeof found.framing.background === 'string',
+      'framing.background must be a string');
+    assert(!found.framing.background.toLowerCase().includes('house facade or garden fence'),
+      'background must not be the original unoverridden string');
+    assert(found.framing.background.includes('no house facade'),
+      `NO_HOUSE background must mention "no house facade", got: ${found.framing.background}`);
+  });
+
+  test('MAC-BV4', 'PARTIAL_OR_DISTANT_HOUSE → work_type contient background_note', () => {
+    let found = null;
+    for (let i = 0; i < 30; i++) {
+      const so = { _matched_key: 'maçonnerie', _matched_service: 'Mur parpaing', state_level: 'encours', contexte: 'maison_individuelle' };
+      const r = JSON.parse(_applySiteRealism(JSON.stringify(so), i));
+      if (r._residential_background_variant === 'PARTIAL_OR_DISTANT_HOUSE') { found = r; break; }
+    }
+    assert(found !== null, 'Could not find a PARTIAL_OR_DISTANT_HOUSE result in 30 indices');
+    assert(typeof found.work_type === 'string' && found.work_type.includes('secondary'),
+      `work_type must contain background note with "secondary", got: ${found.work_type?.slice(0, 80)}`);
+  });
+
+  test('MAC-BV5', 'exclude contient les entrées background-specific', () => {
+    const r = resolveScene('Mur parpaing', 'encours');
+    assert(Array.isArray(r.exclude), 'exclude must be an array');
+    assert(r.exclude.includes('large house facade directly behind the wall'),
+      'exclude must contain "large house facade directly behind the wall"');
+    assert(r.exclude.includes('house dominating the composition'),
+      'exclude must contain "house dominating the composition"');
+  });
+
+  test('MAC-BV6', 'Mur parpaing début → pas de _residential_background_variant', () => {
+    const r = resolveScene('Mur parpaing', 'debut');
+    assert(r._residential_background_variant === undefined,
+      `début must not have _residential_background_variant, got ${r._residential_background_variant}`);
   });
 
   // ─── Summary ───────────────────────────────────────────────────────────────

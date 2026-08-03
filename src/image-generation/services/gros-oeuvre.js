@@ -636,6 +636,22 @@ export const SITE_REALISM_GROS_OEUVRE = {
         },
         scene_debris:  'mortar squeeze-out at the block joints — fresh grey mortar at all bed joint faces, cement dust on the ground near the pallet',
         scene_exclude: ['worker on top of wall', 'worker standing on wall', 'worker sitting on wall', 'ladder', 'scaffold', 'red clay bricks', 'stone wall', 'timber framing'],
+        _background_variant_pool: [
+          {
+            _weight: 1,
+            _residential_background_variant: 'NO_HOUSE_VISIBLE',
+            background_override: 'garden boundary, driveway or plot limit — hedges, fencing or vegetation establish the residential context — no house facade visible in the frame',
+            background_note: 'The block wall is being built along a residential garden boundary or driveway. No house facade is visible in the frame. Hedges, fencing, vegetation or neighboring garden elements establish the residential context.',
+            scene_exclude_extra: ['large house facade directly behind the wall', 'windows and doors immediately blocked by the new wall', 'house dominating the composition', 'wall visually attached to the house facade'],
+          },
+          {
+            _weight: 2,
+            _residential_background_variant: 'PARTIAL_OR_DISTANT_HOUSE',
+            background_override: 'small portion of a house visible at one edge of the frame or farther in the background — the house remains secondary and must not sit directly behind or visually merge with the block wall',
+            background_note: 'Only a small portion of a house is visible at one edge of the frame or farther in the background. The house must remain secondary and must not sit directly behind or visually merge with the block wall.',
+            scene_exclude_extra: ['large house facade directly behind the wall', 'windows and doors immediately blocked by the new wall', 'house dominating the composition', 'wall visually attached to the house facade'],
+          },
+        ],
         tools: [
           'brick trowel in Worker 1\'s hand pressing a block onto the mortar bed',
           'mason\'s string line pulled taut along the top course',

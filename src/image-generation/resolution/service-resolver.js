@@ -152,11 +152,34 @@ function _applySiteRealism(jsonStr, imageIndex) {
           obj._visual_family = picked._visual_family
             || (sceneKey === 'etancheite' ? _etanchVfFallback(svc) : null)
             || null;
+
+          // Background variant — weighted random selection when scenario declares _background_variant_pool
+          // Guard: only apply when the state-lock was active (avoids triggering when this scenario
+          // is picked as a generic fallback for a non-matching state_level)
+          if (_stateLockUsed && Array.isArray(picked._background_variant_pool) && picked._background_variant_pool.length) {
+            const bgSeed    = _hashSeed(`${sceneKey}${obj._matched_service || ''}${obj.state_level || ''}${imageIndex}bgv`);
+            const bgPool    = picked._background_variant_pool.flatMap(v => Array(v._weight || 1).fill(v));
+            const bgVariant = _pick(bgPool, 1, bgSeed)[0];
+            if (bgVariant) {
+              obj._residential_background_variant = bgVariant._residential_background_variant;
+              if (bgVariant.background_override) {
+                obj.framing = { ...(obj.framing || {}), background: bgVariant.background_override };
+              }
+              if (Array.isArray(bgVariant.scene_exclude_extra)) {
+                obj.exclude = [...(obj.exclude || []), ...bgVariant.scene_exclude_extra];
+              }
+              obj._pending_bg_note = bgVariant.background_note || null;
+            }
+          }
         }
       }
     }
     // Inject context-specific description into work_type for PromptBuilder
     if (realism && realism.scene_note) obj.work_type = realism.scene_note;
+    if (obj._pending_bg_note) {
+      obj.work_type = (obj.work_type || '') + ' — ' + obj._pending_bg_note;
+      delete obj._pending_bg_note;
+    }
     // Apply interior variant when contexte is appartement and scenario defines one
     if (_intVariant && /^(appartement|studio)$/.test(obj.contexte || '')) {
       if (_intVariant.scene_note)           obj.work_type           = _intVariant.scene_note;

@@ -302,7 +302,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/enduit-tests.js?v=5'),
     import('./debug/debarras-tests.js?v=7'),
     import('./debug/nettoyage-ext-tests.js?v=8'),
-    import('./debug/mur-parpaing-tests.js?v=1'),
+    import('./debug/mur-parpaing-tests.js?v=2'),
     import('./debug/dalle-beton-tests.js?v=1'),
     import('./debug/repointing-pierre-tests.js?v=1'),
   ]);
