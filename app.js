@@ -1318,7 +1318,7 @@ function getRappelsDus(avis) {
     if (a.statut === 'supprime' || a.statut === 'j30') continue;
     const st = a.statut || 'j0';
     const age = daysDiff(a.date); // toujours depuis la date de l'avis
-    const r = RAPPELS.find(r => r.statut === st && age >= r.joursDepuisAvis);
+    const r = RAPPELS.find(r => r.statut === st && age > r.joursDepuisAvis);
     if (r) dus.push({ avis: a, label: r.label });
   }
   return dus;
