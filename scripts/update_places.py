@@ -93,9 +93,40 @@ def extract_name_and_coords(url):
     return name, coords
 
 
-def search_place(name, coords=None):
+def search_nearby(coords):
     """
-    Places API (New) — Text Search.
+    Places API (New) — Nearby Search.
+    Trouve le place exact à ces coordonnées (rayon 100m).
+    Retourne (place_id, user_rating_count) ou (None, None).
+    """
+    body = {
+        "locationRestriction": {
+            "circle": {
+                "center": {"latitude": float(coords[0]), "longitude": float(coords[1])},
+                "radius": 100.0
+            }
+        }
+    }
+    data = json.dumps(body).encode()
+    req = urllib.request.Request(
+        "https://places.googleapis.com/v1/places:searchNearby",
+        data=data, method="POST"
+    )
+    req.add_header("Content-Type", "application/json")
+    req.add_header("X-Goog-Api-Key", PLACES_KEY)
+    req.add_header("X-Goog-FieldMask", "places.id,places.userRatingCount")
+    with urllib.request.urlopen(req) as r:
+        result = json.loads(r.read())
+    places = result.get("places", [])
+    if not places:
+        return None, None
+    p = places[0]
+    return p.get("id"), p.get("userRatingCount")
+
+
+def search_by_text(name, coords=None):
+    """
+    Places API (New) — Text Search (fallback sans coordonnées exactes).
     Retourne (place_id, user_rating_count) ou (None, None).
     """
     body = {"textQuery": name}
@@ -103,7 +134,7 @@ def search_place(name, coords=None):
         body["locationBias"] = {
             "circle": {
                 "center": {"latitude": float(coords[0]), "longitude": float(coords[1])},
-                "radius": 300.0
+                "radius": 2000.0
             }
         }
     data = json.dumps(body).encode()
@@ -142,11 +173,16 @@ def main():
         try:
             resolved = resolve_url(lien)
             name_from_url, coords = extract_name_and_coords(resolved)
-            search_name = name_from_url or nom
+            # Coordonnées exactes (!3d/!4d) → searchNearby précis
+            # Sinon → searchText avec locationBias
+            use_nearby = coords and ('!3d' in resolved)
 
             for attempt in range(4):
                 try:
-                    place_id, nb = search_place(search_name, coords)
+                    if use_nearby:
+                        place_id, nb = search_nearby(coords)
+                    else:
+                        place_id, nb = search_by_text(name_from_url or nom, coords)
                     break
                 except urllib.error.HTTPError as he:
                     if he.code == 429 and attempt < 3:
