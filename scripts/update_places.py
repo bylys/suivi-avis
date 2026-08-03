@@ -54,10 +54,10 @@ def resolve_url(lien):
         return lien
     try:
         req = urllib.request.Request(lien, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=5) as r:
+        with urllib.request.urlopen(req, timeout=2) as r:
             return r.url
     except Exception:
-        return lien  # Si résolution échoue, on garde l'URL courte et on cherche par nom
+        return lien
 
 
 def extract_place_id_from_url(url):
@@ -128,9 +128,11 @@ def main():
         print(f"{len(fiches)} fiches sans nb_avis_google")
 
     ok, skip, errors = 0, 0, 0
-    for f in fiches:
+    for i, f in enumerate(fiches):
         nom  = f["nom"]
         lien = f["lien"]
+        if (i + 1) % 20 == 0:
+            print(f"[{i+1}/{len(fiches)}] ok={ok} skip={skip} err={errors}")
         try:
             resolved = resolve_url(lien)
             name_from_url, coords = extract_name_and_coords(resolved)
