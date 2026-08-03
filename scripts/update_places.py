@@ -4,7 +4,7 @@ Met à jour nb_avis_google sur chaque fiche via Google Places API.
 Gère les URLs longues (google.com/maps/place/) et courtes (maps.app.goo.gl/).
 """
 
-import os, re, json, time, urllib.request, urllib.parse, urllib.error
+import os, re, json, sys, time, urllib.request, urllib.parse, urllib.error
 from datetime import date
 
 SB_URL     = os.environ["SUPABASE_URL"]
@@ -118,8 +118,14 @@ def search_place(name, coords=None):
 
 
 def main():
-    fiches = sb_get("fiches?select=id,nom,lien&lien=not.is.null")
-    print(f"{len(fiches)} fiches avec lien")
+    # En mode cron : toutes les fiches. En mode force : seulement celles sans nb_avis_google
+    force = len(sys.argv) > 1 and sys.argv[1] == "force"
+    if force:
+        fiches = sb_get("fiches?select=id,nom,lien&lien=not.is.null")
+        print(f"{len(fiches)} fiches avec lien (mode force)")
+    else:
+        fiches = sb_get("fiches?select=id,nom,lien&lien=not.is.null&nb_avis_google=is.null")
+        print(f"{len(fiches)} fiches sans nb_avis_google")
 
     ok, skip, errors = 0, 0, 0
     for f in fiches:
