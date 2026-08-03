@@ -28,6 +28,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           GOOGLE_PLACES_KEY: ${{ secrets.GOOGLE_PLACES_KEY }}
+          PYTHONUNBUFFERED: "1"
         run: |
           ARGS=""
           if [ "${{ github.event.inputs.force }}" = "true" ]; then
