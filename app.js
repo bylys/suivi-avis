@@ -442,8 +442,13 @@ async function syncFromSheets() {
     const aUpdater = [];
     fromSheet.forEach(f => {
       const match = findMatch(f);
-      if (match) aUpdater.push({ ...f, supabaseId: match.id, ancienNom: match.nom });
-      else       aInserer.push(f);
+      if (match) {
+        // Si la fiche a déjà un lien ET une date → rien à mettre à jour
+        if (match.lien && match.date_ouverture) return;
+        aUpdater.push({ ...f, supabaseId: match.id, ancienNom: match.nom });
+      } else {
+        aInserer.push(f);
+      }
     });
 
     // Badge
