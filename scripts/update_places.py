@@ -4,7 +4,7 @@ Met à jour nb_avis_google sur chaque fiche via Google Places API.
 Gère les URLs longues (google.com/maps/place/) et courtes (maps.app.goo.gl/).
 """
 
-import os, re, json, urllib.request, urllib.parse, urllib.error
+import os, re, json, time, urllib.request, urllib.parse, urllib.error
 from datetime import date
 
 SB_URL     = os.environ["SUPABASE_URL"]
@@ -53,14 +53,11 @@ def resolve_url(lien):
     if 'goo.gl' not in lien:
         return lien
     try:
-        req = urllib.request.Request(
-            lien,
-            headers={"User-Agent": "Mozilla/5.0"}
-        )
-        with urllib.request.urlopen(req, timeout=10) as r:
+        req = urllib.request.Request(lien, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
             return r.url
     except Exception:
-        return lien
+        return lien  # Si résolution échoue, on garde l'URL courte et on cherche par nom
 
 
 def extract_place_id_from_url(url):
@@ -134,6 +131,7 @@ def main():
             search_name = name_from_url or nom
 
             place_id, nb = search_place(search_name, coords)
+            time.sleep(0.05)  # 50ms entre chaque appel pour éviter rate limit
 
             if not place_id or nb is None:
                 print(f"  ⚠ non trouvé : {nom}")
@@ -148,7 +146,7 @@ def main():
             ok += 1
 
         except Exception as e:
-            print(f"  ✗ {nom} : {e}")
+            print(f"  ✗ {nom} : {type(e).__name__}: {e}")
             errors += 1
 
     print(f"\nTerminé — {ok} mis à jour | {skip} non trouvés | {errors} erreurs")
