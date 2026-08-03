@@ -17,8 +17,9 @@ SB_URL        = os.environ["SUPABASE_URL"]
 SB_KEY        = os.environ["SUPABASE_KEY"]
 SLACK_WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL", "")
 GOLOGIN_TOKEN = os.environ.get("GOLOGIN_TOKEN", "")
-OXYLABS_USER  = os.environ.get("OXYLABS_USER", "")   # ex: customer-AssistantGMB_3svai-cc-fr
-OXYLABS_PASS  = os.environ.get("OXYLABS_PASS", "")
+DECODO_USER   = os.environ.get("DECODO_USER", "")    # ex: user-xxxxxxxxxxx-country-fr
+DECODO_PASS   = os.environ.get("DECODO_PASS", "")
+DONUT_TOKEN   = os.environ.get("DONUT_TOKEN", "")    # remplace GOLOGIN_TOKEN
 
 # Slack webhooks par opérateur (optionnel — ajouter comme secrets GitHub)
 SLACK_OPERATEURS = {
@@ -120,11 +121,10 @@ def normalize_city_for_proxy(ville):
         ville = ville.replace('--', '-')
     return ville
 
-def build_oxylabs_username(ville):
-    """Construit le username Oxylabs avec ville et session ID aléatoire."""
+def build_decodo_username(ville):
+    """Construit le username Decodo avec ville et durée de session."""
     city_slug = normalize_city_for_proxy(ville)
-    sessid = ''.join([str(random.randint(0, 9)) for _ in range(12)])
-    return f"{OXYLABS_USER}-city-{city_slug}-sessid-{sessid}-sesstime-1440"
+    return f"{DECODO_USER}-city-{city_slug}-sessionduration-1440"
 
 def extract_metier(fiche_nom):
     """Extrait le métier depuis le nom de fiche."""
@@ -165,13 +165,13 @@ def create_gologin_profile(gmail, ville, fiche_nom=''):
     profile_name = f"GMB_{metier}_{ville_slug}"
 
     proxy_config = {"mode": "none"}
-    if OXYLABS_USER and OXYLABS_PASS:
+    if DECODO_USER and DECODO_PASS:
         proxy_config = {
-            "mode": "any",
-            "host": "pr.oxylabs.io",
-            "port": 7777,
-            "username": build_oxylabs_username(ville),
-            "password": OXYLABS_PASS,
+            "mode": "http",
+            "host": "gate.decodo.com",
+            "port": 10001,
+            "username": build_decodo_username(ville),
+            "password": DECODO_PASS,
         }
 
     payload = {
