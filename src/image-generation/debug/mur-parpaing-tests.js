@@ -198,10 +198,10 @@ export async function runMurParpaingTests() {
       `Mur brique must not resolve to GROUND_LEVEL_BLOCK_WALL, got ${r._access_configuration}`);
   });
 
-  test('MAC-REG4', 'Muret encours → state_lock_used=false (no collision)', () => {
+  test('MAC-REG4', 'Muret encours → not resolved to Mur parpaing family (no collision)', () => {
     const r = resolveScene('Muret', 'encours');
-    assert(r._state_lock_used === false,
-      `Muret must not hit mur parpaing state-lock, got state_lock_used=${r._state_lock_used}`);
+    assert(r._visual_family !== 'MACONNERIE-WALL-BLOCK-GROUND',
+      `Anti-collision FAIL: Muret resolved to MACONNERIE-WALL-BLOCK-GROUND (Mur parpaing family)`);
   });
 
   // ─── MAC-BV: Background variant distribution ───────────────────────────────

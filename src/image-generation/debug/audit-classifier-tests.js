@@ -126,14 +126,14 @@ export async function runAuditClassifierTests() {
       `Sum of categories (${computed}) ≠ TOTAL (${TOTAL})`);
   });
 
-  test('AUD-SUM2', 'summary: STATE_LOCKED=42, DEFERRED=3, ROUTED_TO_SPECIFIC_SCENE=119', () => {
+  test('AUD-SUM2', 'summary: STATE_LOCKED=42, DEFERRED=4, ROUTED_TO_SPECIFIC_SCENE=118', () => {
     const { summary } = generateServiceCoverageAudit();
     assert(summary.STATE_LOCKED === 42,
       `Expected STATE_LOCKED=42, got ${summary.STATE_LOCKED}`);
-    assert(summary.DEFERRED === 3,
-      `Expected DEFERRED=3, got ${summary.DEFERRED}`);
-    assert(summary.ROUTED_TO_SPECIFIC_SCENE === 119,
-      `Expected ROUTED_TO_SPECIFIC_SCENE=119, got ${summary.ROUTED_TO_SPECIFIC_SCENE}`);
+    assert(summary.DEFERRED === 4,
+      `Expected DEFERRED=4, got ${summary.DEFERRED}`);
+    assert(summary.ROUTED_TO_SPECIFIC_SCENE === 118,
+      `Expected ROUTED_TO_SPECIFIC_SCENE=118, got ${summary.ROUTED_TO_SPECIFIC_SCENE}`);
     assert(summary.TOTAL === 172,
       `Expected TOTAL=172, got ${summary.TOTAL}`);
   });

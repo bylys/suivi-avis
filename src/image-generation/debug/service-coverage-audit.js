@@ -26,6 +26,7 @@ const DEFERRED_SERVICES = new Set([
   'maçonnerie:Terrasse béton',
   'maçonnerie:Ouverture dans mur',
   'maçonnerie:Percement mur',
+  'maçonnerie:Muret',
 ]);
 
 // ─── Classify one service using the actual runtime logic ─────────────────────
