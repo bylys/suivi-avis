@@ -876,6 +876,55 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
 
+      // --- coulage dalle encours state-lock ---
+      {
+        _for:                             '^coulage( de)? dalle( beton)?$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-CONCRETE-SLAB-POUR',
+        _access_configuration:            'GROUND_LEVEL_SLAB_POUR',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'small residential concrete slab actively being poured — rectangular perimeter formwork at ground level, steel reinforcement mesh correctly positioned on spacer chairs inside — a concrete mixer truck chute enters the frame from one side (truck body mostly out of frame), fresh wet concrete flowing from the chute into the unpoured zone — Worker 1 stands at the formwork edge guiding and controlling the chute with both hands — Worker 2 stands on the dry side of the slab using a mason\'s screed board or concrete rake to spread and level the fresh concrete — roughly half the slab already filled with grey shiny fresh concrete, the other half still showing the reinforcement mesh on spacers — an irregular wet front line separating the two zones — both workers stand on stable dry ground beside the formwork, never in the fresh concrete',
+        scene_camera:  'standing at the corner of the slab, slight diagonal angle at standing eye level — the chute enters from one side of the frame — both workers visible simultaneously: Worker 1 near the chute end, Worker 2 working the screed in the poured zone — formwork boards on at least two sides visible — residential house facade or garden visible in background',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'perimeter formwork board at the near slab edge — fresh concrete surface meeting the board top cleanly on the poured side',
+          midground:  'slab divided into poured zone (grey shiny wet concrete surface) and unpoured zone (reinforcement mesh on spacer chairs clearly visible) — Worker 1 beside the chute guiding the concrete flow — Worker 2 pulling a screed board across the fresh concrete surface to level it',
+          background: 'concrete truck chute partially visible at frame edge, residential house facade or garden beyond the slab',
+        },
+        scene_debris:  'wet concrete splash on the inside face of the formwork boards at the pour front, small concrete drips on the dry ground beside the chute entry point',
+        scene_exclude: [
+          'worker standing or walking in the fresh wet concrete',
+          'worker standing on the reinforcement mesh',
+          'pump hose or long flexible pipe as the sole concrete source',
+          'portable standalone mixer as the sole source',
+          'fully dry or cured finished slab with no pour in progress',
+          'entire slab already uniformly covered with wet concrete',
+          'only rebar and no concrete present',
+          'foundation trench',
+          'masonry wall under construction',
+          'roofing materials',
+          'ladder',
+          'large industrial multi-storey building context',
+        ],
+        tools: [
+          'concrete mixer truck chute entering the frame from one side — fresh concrete flowing from the chute nozzle into the unpoured zone',
+          'mason\'s screed board or concrete rake in Worker 2\'s hands — pulled across the wet concrete surface',
+          'formwork boards pegged and levelled at the slab perimeter',
+        ],
+        protections: [
+          'safety boots on both workers',
+          'work gloves on Worker 1 guiding the chute',
+        ],
+        chantier_details: [
+          'poured zone: grey shiny wet concrete surface — fluid and slightly reflective at the pour front',
+          'unpoured zone: reinforcement mesh on spacer chairs clearly visible — bars parallel and evenly spaced',
+          'irregular wet concrete front line between the two zones — showing active progression',
+          'concrete chute connected to the truck body partially visible outside the frame — coherent source',
+          'formwork boards levelled at the slab perimeter containing the pour on all sides',
+        ],
+      },
+
       // --- dalle béton / terrasse béton ---
       {
         _for:          'dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton',

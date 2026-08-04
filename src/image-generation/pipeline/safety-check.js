@@ -163,6 +163,23 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     slab_formwork_visible:                                obj.slab_formwork_visible                                ?? null,
     horizontal_slab_mesh_dominant:                        obj.horizontal_slab_mesh_dominant                        ?? null,
     fresh_concrete_poured_visible:                        obj.fresh_concrete_poured_visible                        ?? null,
+    // Coulage dalle gate fields
+    fresh_concrete_actively_poured_visible:               obj.fresh_concrete_actively_poured_visible               ?? null,
+    concrete_delivery_source_visible:                     obj.concrete_delivery_source_visible                     ?? null,
+    delivery_source_connected_to_pour:                    obj.delivery_source_connected_to_pour                    ?? null,
+    partial_poured_and_unpoured_zones_visible:             obj.partial_poured_and_unpoured_zones_visible             ?? null,
+    reinforcement_visible_in_unpoured_zone:               obj.reinforcement_visible_in_unpoured_zone               ?? null,
+    active_concrete_screeding_or_spreading_visible:       obj.active_concrete_screeding_or_spreading_visible       ?? null,
+    workers_stable_outside_fresh_concrete:                obj.workers_stable_outside_fresh_concrete                ?? null,
+    worker_standing_in_fresh_concrete:                    obj.worker_standing_in_fresh_concrete                    ?? null,
+    reinforcement_unstable_or_displaced_by_worker:        obj.reinforcement_unstable_or_displaced_by_worker        ?? null,
+    reinforcement_insufficiently_supported:               obj.reinforcement_insufficiently_supported               ?? null,
+    visible_mesh_deformation_under_worker:                obj.visible_mesh_deformation_under_worker                ?? null,
+    worker_posture_unstable_on_reinforcement:             obj.worker_posture_unstable_on_reinforcement             ?? null,
+    protruding_rebar_impalement_hazard_visible:           obj.protruding_rebar_impalement_hazard_visible           ?? null,
+    prepour_rebar_preparation_only:                       obj.prepour_rebar_preparation_only                       ?? null,
+    completed_slab_dominant:                              obj.completed_slab_dominant                              ?? null,
+    large_industrial_construction_dominant:               obj.large_industrial_construction_dominant               ?? null,
   };
 }
 

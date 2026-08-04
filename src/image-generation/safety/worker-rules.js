@@ -348,7 +348,8 @@ const WORKER_SCENE_RULES = {
   'maçonnerie': {
     max_workers: 2,
     service_worker_minimums: {
-      linteau: 2,
+      linteau:      2,
+      coulage_dalle: 2,
     },
     actions: [
       'laying concrete blocks with a trowel and full mortar hawk',

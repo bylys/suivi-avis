@@ -773,14 +773,16 @@
     {
       "metier": "maçonnerie",
       "service_label": "Terrasse béton",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
-      "matched_regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "routing_coverage": "DEFERRED",
+      "status": "DEFERRED",
+      "deferred_reason": "Contexte résidentiel de terrasse non stabilisé — risque de génération de dalle générique identique à Dalle béton. À implémenter quand la scène terrasse résidentielle sera clairement différenciée (pergola, dallage, revêtement fini).",
+      "routing_detail": "matched _for: dalle|terrasse.*beton|beton.*terr|dalle.*beton (shared pool — no state-lock for terrasse beton)",
+      "matched_regex": "dalle|terrasse.*beton|beton.*terr|dalle.*beton",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+        "regex": "dalle|terrasse.*beton|beton.*terr|dalle.*beton",
         "flags": "i",
         "normalized_input": "terrasse beton"
       }
@@ -788,14 +790,19 @@
     {
       "metier": "maçonnerie",
       "service_label": "Coulage dalle",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
-      "matched_regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+      "routing_coverage": "STATE_LOCKED",
+      "state_lock": true,
+      "visual_family": "MACONNERIE-CONCRETE-SLAB-POUR",
+      "access_configuration": "GROUND_LEVEL_SLAB_POUR",
+      "structured_gate": "Coulage dalle",
+      "routing_detail": "state-lock matched _for: ^coulage( de)? dalle( beton)?$ _state_for: encours",
+      "matched_regex": "^coulage( de)? dalle( beton)?$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
+        "regex": "^coulage( de)? dalle( beton)?$",
+        "state_for": "encours",
         "flags": "i",
         "normalized_input": "coulage dalle"
       }

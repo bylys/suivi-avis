@@ -325,10 +325,10 @@ export async function runFondationTests() {
       `visual_family expected MACONNERIE-CONCRETE-SLAB-REBAR, got ${r._visual_family}`);
   });
 
-  test('FON-REG3', 'Coulage dalle encours → state_lock_used=false (no collision)', () => {
+  test('FON-REG3', 'Coulage dalle encours → no Fondation access_configuration (no collision)', () => {
     const r = resolveScene('Coulage dalle', 'encours');
-    assert(r._state_lock_used === false,
-      `Coulage dalle must not hit Fondation state-lock, got state_lock_used=${r._state_lock_used}`);
+    assert(r._access_configuration !== 'GROUND_LEVEL_TRENCH_FOOTING',
+      `Coulage dalle must not hit Fondation state-lock, got access_configuration=${r._access_configuration}`);
   });
 
   test('FON-REG4', 'Fondations profondes encours → state_lock_used=false (exact regex guard)', () => {
