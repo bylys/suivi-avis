@@ -68,6 +68,7 @@ function _serviceGroup(matchedService) {
   if (/remorquage|remorque|transport|treuil|enlevement.*vehicule|enlevement.*voiture/.test(s)) return 'remorquage';
   if (/ouverture|ouvert|cles.*enferm|deverrouillage|verrouillage/.test(s))          return 'ouverture';
   if (/^linteau$/.test(s))                                                           return 'linteau';
+  if (/^escalier beton$/.test(s))                                                    return 'escalier_beton';
   // Paysagiste — 2-worker service buckets
   if (/taille.*haie|haie.*taille|coupe.*haie/.test(s))                              return 'paysagiste_taille_haie';
   if (/plantation.*haie|haie.*plantation/.test(s))                                  return 'paysagiste_plantation_haie';

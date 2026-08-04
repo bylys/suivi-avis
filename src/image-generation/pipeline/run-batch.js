@@ -108,6 +108,12 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
                 src: `data:image/jpeg;base64,${imageResult.b64}`,
               });
             }
+            // Store ESC check_failed images for post-fix reuse (same pattern as acrotère)
+            const _isEscalier = task._planBase._matched_service === 'Escalier béton';
+            if (_isEscalier && imageResult?.b64) {
+              if (!globalThis._escalierLastImage) globalThis._escalierLastImage = null;
+              globalThis._escalierLastImage = { attempt: imageAttempt, safetyAttempt, b64: imageResult.b64, src: `data:image/jpeg;base64,${imageResult.b64}` };
+            }
             console.log('[SAFETY TELEMETRY]', JSON.stringify({
               taskId:               task.taskId,
               service:              task._planBase._matched_service,
@@ -115,6 +121,8 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               safetyAttempt,
               safety_rule_id:       task._planBase._matched_key,
               safety_reason_code:   _safetyReasonCode,
+              check_failed_reason:  safety.checkFailed ? (safety.reason ?? null) : null,
+              check_failed_type:    safety.checkFailed ? (safety.check_failed_type ?? null) : null,
               safety_result:        safety.checkFailed ? 'check_failed'
                                   : (!safety.safe && safety.severity === 'critical') ? 'reject'
                                   : 'pass',
@@ -176,6 +184,22 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               ladder_used_as_workstation:                  safety.ladder_used_as_workstation                  ?? null,
               falling_debris_hazard_visible:               safety.falling_debris_hazard_visible               ?? null,
               fresh_mortar_at_bearings_visible:            safety.fresh_mortar_at_bearings_visible            ?? null,
+              residential_building_entrance_visible:          safety.residential_building_entrance_visible          ?? null,
+              small_exterior_concrete_stair_context_visible:  safety.small_exterior_concrete_stair_context_visible  ?? null,
+              stepped_stair_formwork_visible:                 safety.stepped_stair_formwork_visible                 ?? null,
+              distinct_riser_boards_visible:                  safety.distinct_riser_boards_visible                  ?? null,
+              side_formwork_panels_visible:                   safety.side_formwork_panels_visible                   ?? null,
+              three_or_four_step_profile_visible:             safety.three_or_four_step_profile_visible             ?? null,
+              ground_supported_compacted_base_visible:        safety.ground_supported_compacted_base_visible        ?? null,
+              formwork_bracing_or_stakes_visible:             safety.formwork_bracing_or_stakes_visible             ?? null,
+              active_stair_formwork_adjustment_visible:       safety.active_stair_formwork_adjustment_visible       ?? null,
+              worker_standing_on_formwork:                    safety.worker_standing_on_formwork                    ?? null,
+              suspended_stair_formwork_visible:               safety.suspended_stair_formwork_visible               ?? null,
+              fresh_concrete_filling_all_steps_visible:       safety.fresh_concrete_filling_all_steps_visible       ?? null,
+              threshold_only_work_visible:                    safety.threshold_only_work_visible                    ?? null,
+              large_slab_area_dominant:                       safety.large_slab_area_dominant                       ?? null,
+              lintel_work_visible:                            safety.lintel_work_visible                            ?? null,
+              stair_reinforcement_visible:                    safety.stair_reinforcement_visible                    ?? null,
               reinforcement_cage_visible:                safety.reinforcement_cage_visible                ?? null,
               longitudinal_rebar_visible:                safety.longitudinal_rebar_visible                ?? null,
               regular_stirrups_visible:                  safety.regular_stirrups_visible                  ?? null,

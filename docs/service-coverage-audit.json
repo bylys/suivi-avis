@@ -861,16 +861,20 @@
       "metier": "maçonnerie",
       "service_label": "Escalier béton",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
-      "matched_regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+      "routing_detail": "matched _for: ^escalier beton$ (state-lock encours)",
+      "matched_regex": "^escalier beton$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
+        "regex": "^escalier beton$",
         "flags": "i",
         "normalized_input": "escalier beton"
-      }
+      },
+      "state_lock": true,
+      "visual_family": "MACONNERIE-CONCRETE-STAIR-FORMWORK-GROUND",
+      "access_configuration": "GROUND_LEVEL_STAIR_FORMWORK",
+      "structured_gate": "Escalier béton"
     },
     {
       "metier": "maçonnerie",

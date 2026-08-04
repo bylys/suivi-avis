@@ -1085,7 +1085,59 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
 
-      // --- escalier / seuil / ouverture (shared pool — linteau now has its own state-lock above) ---
+      // --- escalier beton encours state-lock (exterior) ---
+      {
+        _for:                             '^escalier beton$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-CONCRETE-STAIR-FORMWORK-GROUND',
+        _access_configuration:            'GROUND_LEVEL_STAIR_FORMWORK',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_note:    'A small ground-supported exterior concrete entrance stair is being formed in front of a residential exterior doorway. The stair has exactly three or four clearly stepped levels. Wooden side panels and individual riser boards define each step. The formwork rests directly on a visible compacted gravel base and is reinforced with wooden stakes and braces. One mason stands safely on the natural ground beside the stair and actively adjusts a riser board with a spirit level and hand tools. The worker never stands on the formwork or reinforcement. No concrete has yet filled the steps. The building facade and an exterior door or French door opening are clearly visible in the background — the stair serves that door directly.',
+        scene_camera:  'customer smartphone photo from the side at the bottom of the stair, 2–3 m away, framing the full 3–4 step profile with both side panels visible — mason working at the near side panel, house facade and door opening in the background',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'compacted gravel base at the foot of the stair — wooden stakes driven into the ground anchoring the side panel at the bottom step',
+          midground:  'wooden side panels flanking the stepped profile — individual riser boards nailed horizontally across the steps — mason crouching at the near panel adjusting a board with a hammer or adjusting screw — spirit level resting on the top riser',
+          background: 'residential house facade — exterior door or French door opening clearly visible at the top of the stair run — unfinished masonry or render visible on the facade',
+        },
+        scene_debris:  'wood saw offcuts on the ground beside the formwork, a few loose nails and timber off-cuts at the base of the side panel',
+        scene_exclude: [
+          'stair suspended between two floors or without ground support',
+          'large interior staircase',
+          'coffrage suspendu sans support au sol',
+          'worker standing on top of the formwork boards',
+          'worker standing on reinforcement bars',
+          'fresh concrete already filling all steps',
+          'large concrete slab — dalle horizontale grande surface',
+          'simple door threshold at ground level — seuil de porte',
+          'lintel beam spanning a wall opening',
+          'finished concrete stair — no active work',
+          'decorative stone stair — escalier en pierre naturelle finie',
+          'metal stair or steel frame staircase',
+          'tiled stair already completed',
+          'interior room context — no building facade visible',
+        ],
+        tools: [
+          'hammer or adjusting screw at the riser board — active fixing',
+          'spirit level on the top riser board confirming the step slope',
+          'hand saw or circular saw on the ground beside the formwork',
+          'tape measure or square resting on the side panel top edge',
+        ],
+        protections: [
+          'safety boots on the mason',
+          'work gloves for timber handling',
+        ],
+        chantier_details: [
+          'compacted gravel base visible between the bottom riser and the existing ground surface',
+          '3 or 4 stepped levels clearly formed — riser boards horizontal, tread area open between panels',
+          'wooden stakes driven into the ground anchoring the side panels laterally',
+          'spirit level confirming the correct step slope — still active, not yet removed',
+        ],
+      },
+
+      // --- escalier / seuil / ouverture (shared pool — linteau and escalier beton now have their own state-locks above) ---
       {
         _for:          'escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture',
         scene_note:    'lintel being set above a newly created wall opening — concrete or steel lintel supported at both bearing points, freshly cut masonry on either side of the opening',

@@ -121,6 +121,23 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     falling_debris_hazard_visible:               obj.falling_debris_hazard_visible               ?? null,
     // Linteau optional telemetry (not in gate)
     fresh_mortar_at_bearings_visible:            obj.fresh_mortar_at_bearings_visible            ?? null,
+    // Escalier béton gate fields (19 base + 4 variant discriminators)
+    residential_building_entrance_visible:          obj.residential_building_entrance_visible          ?? null,
+    small_exterior_concrete_stair_context_visible:  obj.small_exterior_concrete_stair_context_visible  ?? null,
+    stepped_stair_formwork_visible:                 obj.stepped_stair_formwork_visible                 ?? null,
+    distinct_riser_boards_visible:                  obj.distinct_riser_boards_visible                  ?? null,
+    side_formwork_panels_visible:                   obj.side_formwork_panels_visible                   ?? null,
+    three_or_four_step_profile_visible:             obj.three_or_four_step_profile_visible             ?? null,
+    ground_supported_compacted_base_visible:        obj.ground_supported_compacted_base_visible        ?? null,
+    formwork_bracing_or_stakes_visible:             obj.formwork_bracing_or_stakes_visible             ?? null,
+    active_stair_formwork_adjustment_visible:       obj.active_stair_formwork_adjustment_visible       ?? null,
+    worker_standing_on_formwork:                    obj.worker_standing_on_formwork                    ?? null,
+    suspended_stair_formwork_visible:               obj.suspended_stair_formwork_visible               ?? null,
+    fresh_concrete_filling_all_steps_visible:       obj.fresh_concrete_filling_all_steps_visible       ?? null,
+    threshold_only_work_visible:                    obj.threshold_only_work_visible                    ?? null,
+    stair_reinforcement_visible:                    obj.stair_reinforcement_visible                    ?? null,
+    large_slab_area_dominant:                       obj.large_slab_area_dominant                       ?? null,
+    lintel_work_visible:                            obj.lintel_work_visible                            ?? null,
     // Ferraillage gate fields
     reinforcement_cage_visible:       obj.reinforcement_cage_visible       ?? null,
     longitudinal_rebar_visible:       obj.longitudinal_rebar_visible       ?? null,
@@ -158,33 +175,62 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
 async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount = 0, matchedService = '', accessConfiguration = null }) {
   const basePrompt = SAFETY_CHECK_RULES[matchedKey];
   if (!basePrompt) return { safe: true };
+  // ── Resolve gate BEFORE Vision call — needed for pre-call logging and safe-field bypass ──
+  const _normSvcPre    = _normalizeForGate(matchedService);
+  const _gateServicePre = _SERVICE_GATE_ALIASES[_normSvcPre] || matchedService;
+  const _gateObjPre    = SERVICE_VISUAL_GATE_RULES[_gateServicePre];
+  const _activeCondsPre = (accessConfiguration && _gateObjPre?.reject_conditions_by_access?.[accessConfiguration])
+    ? _gateObjPre.reject_conditions_by_access[accessConfiguration]
+    : _gateObjPre?.reject_conditions;
+  const _gatePre = _gateObjPre ? { ..._gateObjPre, reject_conditions: _activeCondsPre } : null;
+  const _debug = typeof window !== 'undefined' && window._safetyDebug === true;
+  if (_debug) {
+    const _req0 = buildVisionSafetyRequest(matchedKey, '', apiKey, expectedWorkerCount, matchedService, accessConfiguration);
+    const _body0 = _req0 ? JSON.parse(_req0.body) : null;
+    console.log('[SAFETY DEBUG PRE]', JSON.stringify({
+      resolved_service_before_vision:      matchedService,
+      resolved_service_gate_before_vision: _gateServicePre,
+      gate_found:                          !!_gateObjPre,
+      mandatory_fields_count:              _gateObjPre?.mandatory_fields?.length ?? 0,
+      configured_max_tokens:               _body0?.max_tokens ?? null,
+    }));
+  }
   try {
     const req    = buildVisionSafetyRequest(matchedKey, b64, apiKey, expectedWorkerCount, matchedService, accessConfiguration);
     const resp   = await fetchImpl(req.url, { method: 'POST', headers: req.headers, body: req.body }, req.timeout);
     const parsed = await readResponseImpl(resp);
-    if (!parsed.ok || !parsed.data) return { safe: null, checkFailed: true, reason: `HTTP ${parsed.status}` };
+    if (!parsed.ok || !parsed.data) {
+      if (_debug) console.log('[SAFETY DEBUG CHECK_FAILED]', JSON.stringify({ type: 'vision_http_error', http_status: parsed.status, service: matchedService, gate: _gateServicePre }));
+      return { safe: null, checkFailed: true, reason: `HTTP ${parsed.status}`, check_failed_type: 'vision_http_error' };
+    }
     const raw = parsed.data.choices?.[0]?.message?.content;
+    const _finishReason = parsed.data.choices?.[0]?.finish_reason ?? null;
+    const _rawLen = typeof raw === 'string' ? raw.length : null;
     let obj;
-    try { obj = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return { safe: null, checkFailed: true, reason: 'JSON parse error' }; }
-    if (obj?.safe == null) return { safe: null, checkFailed: true, reason: 'missing safe field' };
+    try { obj = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch(parseErr) {
+      if (_debug) console.log('[SAFETY DEBUG CHECK_FAILED]', JSON.stringify({ type: 'invalid_json', finish_reason: _finishReason, raw_length: _rawLen, raw_prefix: typeof raw === 'string' ? raw.slice(0, 120) : null, raw_suffix: typeof raw === 'string' ? raw.slice(-60) : null, service: matchedService, gate: _gateServicePre }));
+      return { safe: null, checkFailed: true, reason: 'JSON parse error', check_failed_type: 'invalid_json' };
+    }
+    if (_debug && _finishReason === 'length') console.log('[SAFETY DEBUG CHECK_FAILED]', JSON.stringify({ type: 'truncated_vision_response', finish_reason: 'length', raw_length: _rawLen, service: matchedService, gate: _gateServicePre }));
 
     // ── Recompute worker count from numbers — never trust Vision booleans ──────
-    // Generic (>= minimum): mirrors the workerInstruction semantics sent to Vision.
-    // Plan (=== exact):     used for the gate condition worker_count_matches_plan.
     const _visibleWC  = typeof obj.visible_worker_count === 'number' ? obj.visible_worker_count : null;
     const _expectedWC = (Number.isInteger(expectedWorkerCount) && expectedWorkerCount >= 1) ? expectedWorkerCount : null;
     const _computedWorkerMatch       = (_visibleWC !== null && _expectedWC !== null) ? (_visibleWC >= _expectedWC) : null;
     const _computedWorkerMatchesPlan = (_visibleWC !== null && _expectedWC !== null) ? (_visibleWC === _expectedWC) : null;
 
-    // ── Resolve gate ───────────────────────────────────────────────────────────
-    const _normSvc    = _normalizeForGate(matchedService);
-    const _gateService = _SERVICE_GATE_ALIASES[_normSvc] || matchedService;
-    const _gateObj    = SERVICE_VISUAL_GATE_RULES[_gateService];
-    // Route to access-specific reject_conditions when available
-    const _activeConditions = (accessConfiguration && _gateObj?.reject_conditions_by_access?.[accessConfiguration])
-      ? _gateObj.reject_conditions_by_access[accessConfiguration]
-      : _gateObj?.reject_conditions;
-    const gate = _gateObj ? { ..._gateObj, reject_conditions: _activeConditions } : null;
+    // ── Resolve gate (reuse pre-resolved values) ───────────────────────────────
+    const _normSvc    = _normSvcPre;
+    const _gateService = _gateServicePre;
+    const _gateObj    = _gateObjPre;
+    const _activeConditions = _activeCondsPre;
+    const gate = _gatePre;
+
+    // ── safe field required only when no gate (gate instructions intentionally omit safe) ──
+    if (obj?.safe == null && !gate) {
+      if (_debug) console.log('[SAFETY DEBUG CHECK_FAILED]', JSON.stringify({ type: 'missing_json_object', field: 'safe', finish_reason: _finishReason, raw_length: _rawLen, raw_prefix: typeof raw === 'string' ? raw.slice(0, 120) : null, service: matchedService, gate: _gateServicePre }));
+      return { safe: null, checkFailed: true, reason: 'missing safe field', check_failed_type: 'missing_json_object' };
+    }
 
     // ── Log generic Vision fields ──────────────────────────────────────────────
     console.log('[VISION GENERIC]', JSON.stringify({
@@ -328,7 +374,10 @@ async function checkImageSafety(b64, matchedKey, apiKey, { fetchImpl, readRespon
       workers_spatially_separated:   obj.workers_spatially_separated   ?? null,
       treatment_application_visible: obj.treatment_application_visible ?? null,
     };
-  } catch(e) { return { safe: null, checkFailed: true, reason: e.message }; }
+  } catch(e) {
+    if (_debug) console.log('[SAFETY DEBUG CHECK_FAILED]', JSON.stringify({ type: 'unknown_check_failure', error_name: e?.name ?? null, error_message: e?.message ?? null, service: matchedService, gate: _gateServicePre }));
+    return { safe: null, checkFailed: true, reason: e.message, check_failed_type: 'unknown_check_failure' };
+  }
 }
 
 export { buildVisionSafetyRequest, checkImageSafety };
