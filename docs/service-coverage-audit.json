@@ -1,10 +1,9 @@
 {
   "summary": {
-    "ROUTED_TO_SPECIFIC_SCENE": 164,
+    "ROUTED_TO_SPECIFIC_SCENE": 119,
+    "STATE_LOCKED": 42,
     "PARTIAL_CONTEXTE": 8,
-    "TOOLS_ONLY": 0,
-    "GENERIC_FALLBACK": 0,
-    "UNMATCHED": 0,
+    "DEFERRED": 3,
     "TOTAL": 172
   },
   "services": [
@@ -206,7 +205,7 @@
     {
       "metier": "nettoyage_toiture",
       "service_label": "Traitement hydrofuge toiture",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: hydrofuge|traitement.*hydrofuge",
       "matched_regex": "hydrofuge|traitement.*hydrofuge",
       "fallback_used": false,
@@ -236,7 +235,7 @@
     {
       "metier": "nettoyage_toiture",
       "service_label": "Hydrofuge toiture",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: hydrofuge|traitement.*hydrofuge",
       "matched_regex": "hydrofuge|traitement.*hydrofuge",
       "fallback_used": false,
@@ -251,7 +250,7 @@
     {
       "metier": "nettoyage_toiture",
       "service_label": "Traitement anti-mousse toiture",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: anti.mousse",
       "matched_regex": "anti.mousse",
       "fallback_used": false,
@@ -266,7 +265,7 @@
     {
       "metier": "nettoyage_gouttieres",
       "service_label": "Nettoyage gouttières",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: nettoy|entretien|curag|debris|feuill",
       "matched_regex": "nettoy|entretien|curag|debris|feuill",
       "fallback_used": false,
@@ -281,7 +280,7 @@
     {
       "metier": "nettoyage_gouttieres",
       "service_label": "Débouchage gouttières",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: deboucha|bouchon|obstruct",
       "matched_regex": "deboucha|bouchon|obstruct",
       "fallback_used": false,
@@ -296,7 +295,7 @@
     {
       "metier": "nettoyage_gouttieres",
       "service_label": "Remplacement gouttières",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: remplace|pose|install|neuf|nouveau",
       "matched_regex": "remplace|pose|install|neuf|nouveau",
       "fallback_used": false,
@@ -311,7 +310,7 @@
     {
       "metier": "nettoyage_gouttieres",
       "service_label": "Entretien gouttières",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: nettoy|entretien|curag|debris|feuill",
       "matched_regex": "nettoy|entretien|curag|debris|feuill",
       "fallback_used": false,
@@ -326,7 +325,7 @@
     {
       "metier": "nettoyage_gouttieres",
       "service_label": "Pose gouttières",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: remplace|pose|install|neuf|nouveau",
       "matched_regex": "remplace|pose|install|neuf|nouveau",
       "fallback_used": false,
@@ -562,7 +561,7 @@
     {
       "metier": "ravalement",
       "service_label": "Ravalement façade",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
       "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
@@ -577,7 +576,7 @@
     {
       "metier": "ravalement",
       "service_label": "Rénovation façade",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
       "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
@@ -592,7 +591,7 @@
     {
       "metier": "ravalement",
       "service_label": "Crépi façade",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: crepi",
       "matched_regex": "crepi",
       "fallback_used": false,
@@ -607,7 +606,7 @@
     {
       "metier": "ravalement",
       "service_label": "ITE (isolation par l'extérieur)",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
       "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
@@ -622,7 +621,7 @@
     {
       "metier": "ravalement",
       "service_label": "Enduit monocouche",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: enduit.*mono|enduit.*hydr",
       "matched_regex": "enduit.*mono|enduit.*hydr",
       "fallback_used": false,
@@ -637,7 +636,7 @@
     {
       "metier": "ravalement",
       "service_label": "Enduit hydraulique",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: enduit.*mono|enduit.*hydr",
       "matched_regex": "enduit.*mono|enduit.*hydr",
       "fallback_used": false,
@@ -682,7 +681,7 @@
     {
       "metier": "ravalement",
       "service_label": "Traitement façade pierre",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ravalement|renovation.*facade|ite",
       "matched_regex": "ravalement|renovation.*facade|ite",
       "fallback_used": false,
@@ -697,7 +696,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Mur parpaing",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^mur.*parpaing|^parpaing\\b",
       "matched_regex": "^mur.*parpaing|^parpaing\\b",
       "fallback_used": false,
@@ -712,7 +711,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Mur brique",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "state-lock _for: ^mur brique$ / encours → MACONNERIE-WALL-BRICK-GROUND",
       "matched_regex": "^mur brique$",
       "fallback_used": false,
@@ -761,7 +760,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Dalle béton",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^dalle.*beton|^beton.*dalle",
       "matched_regex": "^dalle.*beton|^beton.*dalle",
       "fallback_used": false,
@@ -781,7 +780,7 @@
       "status": "DEFERRED",
       "deferred_reason": "Contexte résidentiel de terrasse non stabilisé — risque de génération de dalle générique identique à Dalle béton. À implémenter quand la scène terrasse résidentielle sera clairement différenciée (pergola, dallage, revêtement fini).",
       "routing_detail": "matched _for: dalle|terrasse.*beton|beton.*terr|dalle.*beton (shared pool — no state-lock for terrasse beton)",
-      "matched_regex": "dalle|terrasse.*beton|beton.*terr|dalle.*beton",
+      "matched_regex": "dalle|terrasse.*beton|beton.*terr|coulage.*dalle|dalle.*beton",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
@@ -814,7 +813,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Fondation",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "state-lock matched _for: ^(fondation|semelle beton)$ _state_for: encours",
       "matched_regex": "^(fondation|semelle beton)$",
       "fallback_used": false,
@@ -833,7 +832,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Semelle béton",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "state-lock matched _for: ^(fondation|semelle beton)$ _state_for: encours",
       "matched_regex": "^(fondation|semelle beton)$",
       "fallback_used": false,
@@ -852,7 +851,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Ferraillage",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "state-lock matched _for: ^ferraillage$ _state_for: encours",
       "matched_regex": "^ferraillage$",
       "fallback_used": false,
@@ -871,7 +870,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Escalier béton",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^escalier beton$ (state-lock encours)",
       "matched_regex": "^escalier beton$",
       "fallback_used": false,
@@ -907,7 +906,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Linteau",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: escalier.*beton|seuil|linteau|ouverture.*mur|percement|ouverture",
       "matched_regex": "^linteau$",
       "fallback_used": false,
@@ -992,7 +991,7 @@
     {
       "metier": "maçonnerie",
       "service_label": "Rejointoiement pierre",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "state-lock _for: ^rejointoiement pierre$ + _state_for: encours",
       "matched_regex": "^rejointoiement pierre$",
       "fallback_used": false,
@@ -1567,7 +1566,7 @@
     {
       "metier": "abattage",
       "service_label": "Abattage en zone difficile",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: abattage.*zone.*difficile|abattage.*difficile|demontage|arbre.*dangereux",
       "matched_regex": "abattage.*zone.*difficile|abattage.*difficile|demontage|arbre.*dangereux",
       "fallback_used": false,
@@ -1942,7 +1941,7 @@
     {
       "metier": "paysagiste",
       "service_label": "Taille de haie",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie",
       "matched_regex": "taille|haie|coupe.*haie|arbust.*entretien|entretien.*haie|arbre.*taille|taille.*arbre|elagage.*haie",
       "fallback_used": false,
@@ -1987,7 +1986,7 @@
     {
       "metier": "paysagiste",
       "service_label": "Pose de gazon",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
       "matched_regex": "gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
       "fallback_used": false,
@@ -2002,7 +2001,7 @@
     {
       "metier": "paysagiste",
       "service_label": "Gazon en rouleau",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
       "matched_regex": "gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
       "fallback_used": false,
@@ -2017,7 +2016,7 @@
     {
       "metier": "paysagiste",
       "service_label": "Semis de gazon",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
       "matched_regex": "gazon|pelouse|engazonn|semis.*gazon|rouleau.*gazon|pose.*gazon|creation.*pelouse",
       "fallback_used": false,
@@ -2032,7 +2031,7 @@
     {
       "metier": "paysagiste",
       "service_label": "Arrosage automatique",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: arrosage.*auto|automatique.*arros|arrosage automatique|irrigation|arroseur|tuyau.*arros",
       "matched_regex": "arrosage.*auto|automatique.*arros|arrosage automatique|irrigation|arroseur|tuyau.*arros",
       "fallback_used": false,
@@ -2107,7 +2106,7 @@
     {
       "metier": "paysagiste",
       "service_label": "Petite maçonnerie paysagère",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: maconn|maçonn|maconnerie|muret|pas.*japonais|dalle.*jardin|terrasse.*jardin|ouvrage.*jardin|maconnerie.*paysag|petite.*maconn",
       "matched_regex": "maconn|maçonn|maconnerie|muret|pas.*japonais|dalle.*jardin|terrasse.*jardin|ouvrage.*jardin|maconnerie.*paysag|petite.*maconn",
       "fallback_used": false,
@@ -2362,7 +2361,7 @@
     {
       "metier": "nettoyage",
       "service_label": "Nettoyage terrasse",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^nettoyage terrasse$ (state_lock encours → NETTOYAGE-SURFACE-GROUND / GROUND_SURFACE_CLEANING)",
       "matched_regex": "^nettoyage terrasse$",
       "fallback_used": false,
@@ -2441,7 +2440,7 @@
     {
       "metier": "nettoyage",
       "service_label": "Nettoyage haute pression",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^nettoyage haute pression$",
       "matched_regex": "^nettoyage haute pression$",
       "fallback_used": false,
@@ -2455,7 +2454,7 @@
     {
       "metier": "débarras",
       "service_label": "Débarras appartement",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: appartement",
       "matched_regex": "appartement",
       "fallback_used": false,
@@ -2470,7 +2469,7 @@
     {
       "metier": "débarras",
       "service_label": "Débarras maison",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^debarras maison$",
       "matched_regex": "^debarras maison$",
       "fallback_used": false,
@@ -2485,7 +2484,7 @@
     {
       "metier": "débarras",
       "service_label": "Débarras cave",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: cave|sous.?sol",
       "matched_regex": "cave|sous.?sol",
       "fallback_used": false,
@@ -2500,7 +2499,7 @@
     {
       "metier": "débarras",
       "service_label": "Débarras grenier",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: grenier",
       "matched_regex": "grenier",
       "fallback_used": false,
@@ -2515,7 +2514,7 @@
     {
       "metier": "débarras",
       "service_label": "Vider maison succession",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^vider maison succession$|^debarras apres deces$",
       "matched_regex": "^vider maison succession$|^debarras apres deces$",
       "fallback_used": false,
@@ -2530,7 +2529,7 @@
     {
       "metier": "débarras",
       "service_label": "Débarras après décès",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^vider maison succession$|^debarras apres deces$",
       "matched_regex": "^vider maison succession$|^debarras apres deces$",
       "fallback_used": false,
@@ -2545,7 +2544,7 @@
     {
       "metier": "débarras",
       "service_label": "Enlèvement encombrants",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: enlevement",
       "matched_regex": "enlevement",
       "fallback_used": false,
@@ -2560,7 +2559,7 @@
     {
       "metier": "débarras",
       "service_label": "Nettoyage encombrants",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
+      "routing_coverage": "STATE_LOCKED",
       "routing_detail": "matched _for: ^nettoyage encombrants$",
       "matched_regex": "^nettoyage encombrants$",
       "fallback_used": false,

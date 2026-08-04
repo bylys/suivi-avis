@@ -270,11 +270,12 @@ window.dispatchEvent(new CustomEvent('imagegen:ready', { detail: publicApi }));
 // ─── Debug test harness — loaded only when ?imageGenTests=1 ──────────────────
 const _params = new URLSearchParams(window.location.search);
 if (_params.get('imageGenTests') === '1') {
-  const [runtimeTests, integrationTests, routingTests, coverageAudit, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests, gutterAntimossTests, roofAccessTests, etchGateTests, etchWorkerResolverTests, captureDefectDistTests, ravalementTests, fissureTests, enduitTests, debarrasTests, nettoyageExtTests, murParpaingTests, dalleBetonTests, repointingPierreTests, fondationTests, ferraillageTests, linteauTests, escalierTests, coulageTests, briqueTests] = await Promise.all([
+  const [runtimeTests, integrationTests, routingTests, coverageAudit, auditClassifierTests, carrelageTests, carrelageScenes, vitrierContractsTests, vitrierScenesTests, roofContractsTests, roofScenesTests, roofPRTests, roofWorkerSafetyTests, resolverStateLockTests, rcwTests, covFixTests, arboristScenesTests, automotiveTests, landscapingTests, workerPropTests, hedgeTests, roofMaintenanceMewpTests, gutterAntimossTests, roofAccessTests, etchGateTests, etchWorkerResolverTests, captureDefectDistTests, ravalementTests, fissureTests, enduitTests, debarrasTests, nettoyageExtTests, murParpaingTests, dalleBetonTests, repointingPierreTests, fondationTests, ferraillageTests, linteauTests, escalierTests, coulageTests, briqueTests] = await Promise.all([
     import('./debug/runtime-tests.js?v=15'),
     import('./debug/integration-tests.js'),
     import('./debug/service-routing-tests.js'),
-    import('./debug/service-coverage-audit.js?v=4'),
+    import('./debug/service-coverage-audit.js?v=5'),
+    import('./debug/audit-classifier-tests.js?v=1'),
     import('./debug/carrelage-contracts-tests.js'),
     import('./debug/carrelage-scenes-tests.js?v=21'),
     import('./debug/vitrier-contracts-tests.js'),
@@ -313,15 +314,17 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/brique-tests.js?v=1'),
   ]);
   window._runImageGenerationTests = async () => {
-    const runtimeResult          = await runtimeTests.runRuntimeTests();
-    const integrationResult      = await integrationTests.runIntegrationTests();
-    const routingResult          = await routingTests.runServiceRoutingTests();
-    const auditParityResult      = await coverageAudit.runAuditParityTest();
-    const roofWorkerSafetyResult = await roofWorkerSafetyTests.runRoofWorkerSafetyTests();
-    return { runtimeResult, integrationResult, routingResult, auditParityResult, roofWorkerSafetyResult };
+    const runtimeResult              = await runtimeTests.runRuntimeTests();
+    const integrationResult          = await integrationTests.runIntegrationTests();
+    const routingResult              = await routingTests.runServiceRoutingTests();
+    const auditParityResult          = await coverageAudit.runAuditParityTest();
+    const auditClassifierResult      = await auditClassifierTests.runAuditClassifierTests();
+    const roofWorkerSafetyResult     = await roofWorkerSafetyTests.runRoofWorkerSafetyTests();
+    return { runtimeResult, integrationResult, routingResult, auditParityResult, auditClassifierResult, roofWorkerSafetyResult };
   };
   window._runServiceRoutingTests      = routingTests.runServiceRoutingTests;
   window._runServiceCoverageAudit     = coverageAudit.generateServiceCoverageAudit;
+  window._runAuditClassifierTests     = auditClassifierTests.runAuditClassifierTests;
   window._runCarrelageContractsTests  = carrelageTests.runCarrelageContractsTests;
   window._runCarrelageSceneTests      = carrelageScenes.runCarrelageSceneTests;
   window._runVitrierContractsTests    = vitrierContractsTests.runVitrierContractsTests;

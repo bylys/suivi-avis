@@ -21,9 +21,27 @@ function _norm(s) {
     .replace(/['']/g, "'");
 }
 
-// ─── Classify one service using the actual runtime logic ─────────────────────
+// ─── Services intentionally deferred (context not yet stabilized) ────────────
+const DEFERRED_SERVICES = new Set([
+  'maçonnerie:Terrasse béton',
+  'maçonnerie:Ouverture dans mur',
+  'maçonnerie:Percement mur',
+]);
 
-function classifyService(metierKey, serviceLabel) {
+// ─── Classify one service using the actual runtime logic ─────────────────────
+//
+// routing_coverage values:
+//   STATE_LOCKED             — service has at least one scenario routed via _state_for.
+//                              Does NOT guarantee every state uses a state-lock; effective
+//                              resolution per batch is indicated by state_lock_used.
+//   ROUTED_TO_SPECIFIC_SCENE — matched a _for scenario without _state_for, not deferred.
+//   DEFERRED                 — service intentionally deferred (DEFERRED_SERVICES set).
+//   PARTIAL_CONTEXTE         — no _for match; fallback scenario may or may not apply.
+//   TOOLS_ONLY               — SITE_REALISM entry has tools but no scenarios.
+//   GENERIC_FALLBACK         — metier has no WORK_SCENES entry.
+//   UNMATCHED                — SITE_REALISM entry has neither scenarios nor tools.
+
+export function classifyService(metierKey, serviceLabel) {
   const normalized = _norm(serviceLabel);
 
   // Step 1: Does a WORK_SCENE entry exist for this metier key?
@@ -127,6 +145,36 @@ function classifyService(metierKey, serviceLabel) {
     for (const scenario of targeted) {
       const rx = new RegExp(scenario._for, 'i');
       if (rx.test(normalized)) {
+        if (scenario._state_for) {
+          return {
+            routing_coverage: 'STATE_LOCKED',
+            routing_detail:   `state-lock: _for=${scenario._for}, _state_for=${scenario._state_for}`,
+            matched_regex:    scenario._for,
+            fallback_used:    false,
+            routing_evidence: {
+              type:             'state_lock',
+              source:           `SITE_REALISM["${metierKey}"]`,
+              regex:            scenario._for,
+              state_for:        scenario._state_for,
+              normalized_input: normalized,
+            },
+          };
+        }
+        const svcKey = `${metierKey}:${serviceLabel}`;
+        if (DEFERRED_SERVICES.has(svcKey)) {
+          return {
+            routing_coverage: 'DEFERRED',
+            routing_detail:   `intentionally deferred — matched _for: ${scenario._for}`,
+            matched_regex:    scenario._for,
+            fallback_used:    false,
+            routing_evidence: {
+              type:             'deferred',
+              source:           `SITE_REALISM["${metierKey}"]`,
+              regex:            scenario._for,
+              normalized_input: normalized,
+            },
+          };
+        }
         return {
           routing_coverage: 'ROUTED_TO_SPECIFIC_SCENE',
           routing_detail:   `matched _for: ${scenario._for}`,
@@ -173,7 +221,9 @@ function classifyService(metierKey, serviceLabel) {
 export function generateServiceCoverageAudit() {
   const services = [];
   const summary  = {
+    STATE_LOCKED:             0,
     ROUTED_TO_SPECIFIC_SCENE: 0,
+    DEFERRED:                 0,
     PARTIAL_CONTEXTE:         0,
     TOOLS_ONLY:               0,
     GENERIC_FALLBACK:         0,
