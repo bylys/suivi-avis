@@ -5,13 +5,16 @@
  * PLA-AC1..4   : access configuration stamping
  * PLA-GT1..18  : gate field / reject / pass logic
  * PLA-WP1..5   : worker propagation (planner → resolver → prompt count)
+ * PLA-PR1..4   : prompt text — exclude list, worker instruction, scene_reset_exclude isolation
  *
  * Security: zero real API calls. Loaded only when ?imageGenTests=1.
  */
 
 import { _applySiteRealism, _resolveServiceSetting }  from '../resolution/service-resolver.js';
+import { _applyVariation }                             from '../resolution/scene-resolver.js';
 import { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } from '../safety/safety-rules.js';
 import { _planBatchWorkerPresence }                    from '../planning/worker-planner.js';
+import { PromptBuilder }                               from '../prompt/prompt-builder.js';
 import { SITE_REALISM }                                from '../services/index.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -345,6 +348,86 @@ export function runPlafondTests() {
     const s = _resolveServiceSetting('peinture', 'Peinture plafond', 'exterior');
     assert(s === 'interior',
       `Expected interior, got ${s}`);
+  });
+
+  // ─── PLA-PR: Prompt text verification ────────────────────────────────────────
+
+  // Helper: build full prompt text for Peinture plafond encours with workers
+  function buildPlafondPrompt() {
+    const resolved = resolveScene('Peinture plafond', 'encours');
+    resolved._pre_assigned_worker_count = 1;
+    const varied = _applyVariation(JSON.stringify(resolved), 0, 'workers');
+    return PromptBuilder.build(varied);
+  }
+
+  // PLA-PR1: "workers" and "people" absent from Never include section;
+  //          "One tradesperson" instruction present
+  test('PLA-PR1', 'prompt: "workers"/"people" absent from Never include, "One tradesperson" present', () => {
+    const prompt = buildPlafondPrompt();
+    // "Never include" line must not contain "workers" or "people"
+    const neverLine = prompt.split('\n').find(l => l.startsWith('Never include:')) || '';
+    assert(!neverLine.toLowerCase().includes('workers'),
+      `"workers" found in Never include line: "${neverLine}"`);
+    assert(!neverLine.toLowerCase().includes('people'),
+      `"people" found in Never include line: "${neverLine}"`);
+    // Worker instruction must be present
+    assert(prompt.includes('One tradesperson') || prompt.includes('One painter') || /[Oo]ne .+tradesperson/.test(prompt),
+      `"One tradesperson" instruction not found in prompt`);
+  });
+
+  // PLA-PR2: Never include explicitly lists ladder, stepladder, scaffold,
+  //          exterior painting / facade / wall painting dominant
+  test('PLA-PR2', 'prompt Never include: ladder, scaffold, exterior painting, facade, wall painting', () => {
+    const prompt = buildPlafondPrompt();
+    const neverLine = prompt.split('\n').find(l => l.startsWith('Never include:')) || prompt;
+    const nl = neverLine.toLowerCase();
+    assert(nl.includes('ladder'),          `"ladder" missing from Never include: "${neverLine}"`);
+    assert(nl.includes('scaffold'),        `"scaffold" missing from Never include: "${neverLine}"`);
+    assert(nl.includes('exterior'),        `"exterior" missing from Never include: "${neverLine}"`);
+    assert(nl.includes('facade'),          `"facade" missing from Never include: "${neverLine}"`);
+    assert(nl.includes('wall painting'),   `"wall painting" missing from Never include: "${neverLine}"`);
+  });
+
+  // PLA-PR3: A peinture scenario WITHOUT scene_reset_exclude preserves
+  //          pre-existing exclude entries intact
+  test('PLA-PR3', 'no scene_reset_exclude → pre-existing exclude entries preserved', () => {
+    const so = {
+      _matched_key:     'peinture',
+      _matched_service: 'Peinture intérieure',
+      state_level:      'encours',
+      contexte:         'maison_individuelle',
+      exclude:          ['workers', 'people', 'sentinel_marker'],
+    };
+    const r = JSON.parse(_applySiteRealism(JSON.stringify(so), 0));
+    const excl = r.exclude || [];
+    assert(excl.includes('workers'),
+      `"workers" was removed from exclude without scene_reset_exclude`);
+    assert(excl.includes('people'),
+      `"people" was removed from exclude without scene_reset_exclude`);
+    assert(excl.includes('sentinel_marker'),
+      `"sentinel_marker" was removed from exclude without scene_reset_exclude`);
+  });
+
+  // PLA-PR4: scene_reset_exclude on Peinture plafond does NOT affect other
+  //          peinture services resolved in the same context
+  test('PLA-PR4', 'scene_reset_exclude scoped: Peinture salon exclude unchanged after Peinture plafond resolution', () => {
+    // Resolve plafond — this must NOT mutate any shared state
+    resolveScene('Peinture plafond', 'encours');
+
+    // Now resolve Peinture salon with pre-seeded exclude — must survive intact
+    const so = {
+      _matched_key:     'peinture',
+      _matched_service: 'Peinture salon',
+      state_level:      'encours',
+      contexte:         'maison_individuelle',
+      exclude:          ['workers', 'people'],
+    };
+    const r = JSON.parse(_applySiteRealism(JSON.stringify(so), 1));
+    const excl = r.exclude || [];
+    assert(excl.includes('workers'),
+      `"workers" missing from Peinture salon exclude after Peinture plafond was resolved — shared state mutation`);
+    assert(excl.includes('people'),
+      `"people" missing from Peinture salon exclude after Peinture plafond was resolved — shared state mutation`);
   });
 
   console.log(`\n--- PLA: ${_pass}/${_pass + _fail} ---\n`);

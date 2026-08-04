@@ -313,7 +313,7 @@ if (_params.get('imageGenTests') === '1') {
     import('./debug/coulage-tests.js?v=2'),
     import('./debug/brique-tests.js?v=1'),
     import('./debug/scene-worker-infra-tests.js?v=1'),
-    import('./debug/plafond-tests.js?v=1'),
+    import('./debug/plafond-tests.js?v=2'),
   ]);
   window._runImageGenerationTests = async () => {
     const runtimeResult              = await runtimeTests.runRuntimeTests();
