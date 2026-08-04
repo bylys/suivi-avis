@@ -1006,7 +1006,43 @@ export const SITE_REALISM_FACADE = {
         ],
       },
 
-      // --- peinture plafond ---
+      // --- peinture plafond state-lock (encours) ---
+      {
+        _for:                             '^peinture plafond$',
+        _state_for:                       'encours',
+        _visual_family:                   'PEINTURE-CEILING-ROLLER-INTERIOR',
+        _access_configuration:            'GROUND_LEVEL_CEILING_ROLLER',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        planned_worker_count:             1,
+        setting:                          'interior',
+        scene_reset_exclude:              true,
+        scene_note:    'ceiling being painted with a long-handled extension roller — roller on a pole being pushed steadily across the flat horizontal ceiling, freshly painted white section wet and bright beside the old warm-toned unpainted area',
+        scene_camera:  'standing in the room, camera tilted upward, framing the roller on the extension pole in contact with the ceiling surface — drop cloth visible on the floor below',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'canvas drop cloth fully covering the floor — roller tray with white paint at the room side',
+          midground:  'one tradesperson standing on the floor, both arms raised, pushing the extension roller steadily across the ceiling surface',
+          background: 'ceiling — freshly painted white section wet and bright beside the old warm-toned unpainted area, clean ceiling-wall junction',
+        },
+        scene_debris:  'paint fleck on the drop cloth from the ceiling roller, thin drip at the ceiling-wall junction from the roller pass',
+        scene_exclude: ['ladder', 'stepladder', 'scaffold', 'wall painting', 'exterior painting', 'facade', 'masonry', 'roofing', 'spray painting', 'pressure washer', 'completed ceiling with no wet zone'],
+        tools: [
+          'extension roller on a long pole in contact with the ceiling surface',
+          'roller tray with white paint on the drop cloth at the room side',
+        ],
+        protections: [
+          'full floor coverage with canvas drop cloth — no floor visible',
+          'masking tape along the ceiling-wall junction',
+        ],
+        chantier_details: [
+          'freshly applied white ceiling paint wet and shiny beside the still-warm-toned unpainted zone',
+          'roller marks visible in the fresh paint — normal texture from the extension pole pass',
+          'paint fleck on the drop cloth from the roller overhead',
+        ],
+      },
+
+      // --- peinture plafond générique (autres états) ---
       {
         _for:          'plafond',
         setting:       'interior',

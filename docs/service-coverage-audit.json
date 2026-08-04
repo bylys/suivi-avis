@@ -1,7 +1,7 @@
 {
   "summary": {
-    "STATE_LOCKED": 42,
-    "ROUTED_TO_SPECIFIC_SCENE": 115,
+    "STATE_LOCKED": 43,
+    "ROUTED_TO_SPECIFIC_SCENE": 114,
     "DEFERRED": 8,
     "PARTIAL_CONTEXTE": 7,
     "TOOLS_ONLY": 0,
@@ -1038,15 +1038,15 @@
     {
       "metier": "peinture",
       "service_label": "Peinture plafond",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: plafond",
-      "matched_regex": "plafond",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^peinture plafond$, _state_for=encours",
+      "matched_regex": "^peinture plafond$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "plafond",
-        "flags": "i",
+        "regex": "^peinture plafond$",
+        "state_for": "encours",
         "normalized_input": "peinture plafond"
       }
     },

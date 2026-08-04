@@ -259,6 +259,23 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
               render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
               single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
+              // Peinture plafond gate fields
+              interior_ceiling_visible:                              safety.interior_ceiling_visible                              ?? null,
+              ceiling_plane_dominant:                                safety.ceiling_plane_dominant                                ?? null,
+              active_ceiling_roller_contact_visible:                 safety.active_ceiling_roller_contact_visible                 ?? null,
+              extension_pole_visible:                                safety.extension_pole_visible                                ?? null,
+              partial_painted_and_unpainted_ceiling_zones_visible:   safety.partial_painted_and_unpainted_ceiling_zones_visible   ?? null,
+              paint_tray_or_bucket_visible:                          safety.paint_tray_or_bucket_visible                          ?? null,
+              floor_drop_cloth_visible:                              safety.floor_drop_cloth_visible                              ?? null,
+              worker_stable_on_floor:                                safety.worker_stable_on_floor                                ?? null,
+              wall_painting_dominant:                                safety.wall_painting_dominant                                ?? null,
+              completed_ceiling_dominant:                            safety.completed_ceiling_dominant                            ?? null,
+              exterior_context_visible:                              safety.exterior_context_visible                              ?? null,
+              facade_painting_visible:                               safety.facade_painting_visible                               ?? null,
+              worker_on_ladder:                                      safety.worker_on_ladder                                      ?? null,
+              worker_on_step_ladder:                                 safety.worker_on_step_ladder                                 ?? null,
+              worker_on_scaffold:                                    safety.worker_on_scaffold                                    ?? null,
+              spray_painting_dominant:                               safety.spray_painting_dominant                               ?? null,
             }));
 
             if (safety.checkFailed) {

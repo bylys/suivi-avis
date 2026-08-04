@@ -186,6 +186,23 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     active_brick_laying_visible:               obj.active_brick_laying_visible               ?? null,
     wall_alignment_tools_visible:              obj.wall_alignment_tools_visible              ?? null,
     stone_wall_visible:                        obj.stone_wall_visible                        ?? null,
+    // Peinture plafond gate fields
+    interior_ceiling_visible:                              obj.interior_ceiling_visible                              ?? null,
+    ceiling_plane_dominant:                                obj.ceiling_plane_dominant                                ?? null,
+    active_ceiling_roller_contact_visible:                 obj.active_ceiling_roller_contact_visible                 ?? null,
+    extension_pole_visible:                                obj.extension_pole_visible                                ?? null,
+    partial_painted_and_unpainted_ceiling_zones_visible:   obj.partial_painted_and_unpainted_ceiling_zones_visible   ?? null,
+    paint_tray_or_bucket_visible:                          obj.paint_tray_or_bucket_visible                          ?? null,
+    floor_drop_cloth_visible:                              obj.floor_drop_cloth_visible                              ?? null,
+    worker_stable_on_floor:                                obj.worker_stable_on_floor                                ?? null,
+    wall_painting_dominant:                                obj.wall_painting_dominant                                ?? null,
+    completed_ceiling_dominant:                            obj.completed_ceiling_dominant                            ?? null,
+    exterior_context_visible:                              obj.exterior_context_visible                              ?? null,
+    facade_painting_visible:                               obj.facade_painting_visible                               ?? null,
+    worker_on_ladder:                                      obj.worker_on_ladder                                      ?? null,
+    worker_on_step_ladder:                                 obj.worker_on_step_ladder                                 ?? null,
+    worker_on_scaffold:                                    obj.worker_on_scaffold                                    ?? null,
+    spray_painting_dominant:                               obj.spray_painting_dominant                               ?? null,
   };
 }
 
