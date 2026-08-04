@@ -204,6 +204,14 @@ export async function runMurParpaingTests() {
       `Anti-collision FAIL: Muret resolved to MACONNERIE-WALL-BLOCK-GROUND (Mur parpaing family)`);
   });
 
+  test('MAC-REG5', 'Construction mur encours → _visual_family≠MACONNERIE-WALL-BLOCK-GROUND + _access_configuration≠GROUND_LEVEL_BLOCK_WALL (no Mur parpaing collision)', () => {
+    const r = resolveScene('Construction mur', 'encours');
+    assert(r._visual_family !== 'MACONNERIE-WALL-BLOCK-GROUND',
+      `Anti-collision FAIL: Construction mur resolved to MACONNERIE-WALL-BLOCK-GROUND (Mur parpaing visual family)`);
+    assert(r._access_configuration !== 'GROUND_LEVEL_BLOCK_WALL',
+      `Anti-collision FAIL: Construction mur got GROUND_LEVEL_BLOCK_WALL (Mur parpaing access config)`);
+  });
+
   // ─── MAC-BV: Background variant distribution ───────────────────────────────
 
   test('MAC-BV1', 'Mur parpaing encours → _residential_background_variant défini', () => {

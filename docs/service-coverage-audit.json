@@ -1,8 +1,8 @@
 {
   "summary": {
     "STATE_LOCKED": 42,
-    "ROUTED_TO_SPECIFIC_SCENE": 118,
-    "DEFERRED": 4,
+    "ROUTED_TO_SPECIFIC_SCENE": 117,
+    "DEFERRED": 5,
     "PARTIAL_CONTEXTE": 8,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
@@ -729,15 +729,14 @@
     {
       "metier": "maçonnerie",
       "service_label": "Construction mur",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "routing_coverage": "DEFERRED",
+      "routing_detail": "intentionally deferred — matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
       "matched_regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "deferred",
         "source": "SITE_REALISM[\"maçonnerie\"]",
         "regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
-        "flags": "i",
         "normalized_input": "construction mur"
       }
     },
