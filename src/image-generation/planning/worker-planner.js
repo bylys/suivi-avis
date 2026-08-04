@@ -42,6 +42,14 @@ function _planBatchWorkerPresence(group, seed) {
 
   for (let i = 0; i < n; i++) {
     const task = group[i];
+    // planned_worker_count override: resolver stamps this from the scenario; exact lock takes priority.
+    if (Number.isInteger(task._planBase?._planned_worker_count)) {
+      const lockCount = task._planBase._planned_worker_count;
+      task._pre_assigned_worker_presence = lockCount > 0 ? 'workers' : 'none';
+      task._pre_assigned_worker_count    = lockCount;
+      if (lockCount > 0) workerImages++;
+      continue;
+    }
     const comp = task._pre_assigned_composition || 'medium_intervention';
     const roll = _hashSeed(`worker|${metier}|${seed}|${i}`) % 100;
     let pres;
@@ -53,11 +61,13 @@ function _planBatchWorkerPresence(group, seed) {
     if (pres === 'workers') workerImages++;
   }
 
-  // Enforce minimum — promote non-workers images to workers (prefer non-close-detail)
+  // Enforce minimum — promote non-workers images to workers (prefer non-close-detail).
+  // Skip tasks with a state-locked planned_worker_count — they must not be overridden.
+  const stateLockFixed = (t) => Number.isInteger(t._planBase?._planned_worker_count);
   for (let pass = 0; pass < 2 && workerImages < minWImg; pass++) {
     for (let i = 0; i < n && workerImages < minWImg; i++) {
       const comp = group[i]._pre_assigned_composition || '';
-      if (group[i]._pre_assigned_worker_presence !== 'workers' && (pass > 0 || comp !== 'close_detail')) {
+      if (!stateLockFixed(group[i]) && group[i]._pre_assigned_worker_presence !== 'workers' && (pass > 0 || comp !== 'close_detail')) {
         group[i]._pre_assigned_worker_presence = 'workers';
         group[i]._pre_assigned_worker_count    = minW;
         workerImages++;
