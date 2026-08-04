@@ -1,8 +1,8 @@
 {
   "summary": {
     "STATE_LOCKED": 42,
-    "ROUTED_TO_SPECIFIC_SCENE": 116,
-    "DEFERRED": 6,
+    "ROUTED_TO_SPECIFIC_SCENE": 115,
+    "DEFERRED": 7,
     "PARTIAL_CONTEXTE": 8,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
@@ -1608,15 +1608,14 @@
     {
       "metier": "terrassement",
       "service_label": "Décaissement",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
+      "routing_coverage": "DEFERRED",
+      "routing_detail": "intentionally deferred — matched _for: decaiss|fouill|excavat|percement|terrassem",
       "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "deferred",
         "source": "SITE_REALISM[\"terrassement\"]",
         "regex": "decaiss|fouill|excavat|percement|terrassem",
-        "flags": "i",
         "normalized_input": "decaissement"
       }
     },
