@@ -26,6 +26,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          GOLOGIN_TOKEN: ${{ secrets.GOLOGIN_TOKEN }}
+          DECODO_USER: ${{ secrets.DECODO_USER }}
+          DECODO_PASS: ${{ secrets.DECODO_PASS }}
+          DECODO_USER_MOBILE: ${{ secrets.DECODO_USER_MOBILE }}
+          DECODO_PASS_MOBILE: ${{ secrets.DECODO_PASS_MOBILE }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           QUOTA_PAR_OPERATEUR: ${{ github.event.inputs.quota || '50' }}
         run: python scripts/generate_planning.py

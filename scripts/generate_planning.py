@@ -17,8 +17,10 @@ SB_URL        = os.environ["SUPABASE_URL"]
 SB_KEY        = os.environ["SUPABASE_KEY"]
 SLACK_WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL", "")
 GOLOGIN_TOKEN = os.environ.get("GOLOGIN_TOKEN", "")
-DECODO_USER   = os.environ.get("DECODO_USER", "")    # ex: user-xxxxxxxxxxx-country-fr
-DECODO_PASS   = os.environ.get("DECODO_PASS", "")
+DECODO_USER        = os.environ.get("DECODO_USER", "")         # résidentiel
+DECODO_PASS        = os.environ.get("DECODO_PASS", "")
+DECODO_USER_MOBILE = os.environ.get("DECODO_USER_MOBILE", "")  # mobile
+DECODO_PASS_MOBILE = os.environ.get("DECODO_PASS_MOBILE", "")
 DONUT_TOKEN   = os.environ.get("DONUT_TOKEN", "")    # remplace GOLOGIN_TOKEN
 
 # Slack webhooks par opérateur (optionnel — ajouter comme secrets GitHub)

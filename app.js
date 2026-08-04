@@ -149,6 +149,12 @@ async function init() {
   if (donutPort)  { const el = document.getElementById('donut-port-input');  if (el) el.value = donutPort; }
   if (decodoUser) { const el = document.getElementById('decodo-user-input'); if (el) el.value = decodoUser; }
   if (decodoPass) { const el = document.getElementById('decodo-pass-input'); if (el) el.value = decodoPass; }
+  const decodoType = localStorage.getItem('decodo_type');
+  if (decodoType) { const el = document.getElementById('decodo-type-input'); if (el) el.value = decodoType; }
+  const decodoUserMobile = localStorage.getItem('decodo_user_mobile');
+  const decodoPassMobile = localStorage.getItem('decodo_pass_mobile');
+  if (decodoUserMobile) { const el = document.getElementById('decodo-user-mobile-input'); if (el) el.value = decodoUserMobile; }
+  if (decodoPassMobile) { const el = document.getElementById('decodo-pass-mobile-input'); if (el) el.value = decodoPassMobile; }
   const savedCount = parseInt(localStorage.getItem('gmb_img_count') || '0', 10);
   if (savedCount > 0) {
     const el = document.getElementById('img-gen-counter');
@@ -2852,8 +2858,17 @@ async function donutCreerProfil(ville, gmail, ficheNom) {
 
   // 1. Créer le proxy Decodo pour cette ville
   const citySlug = normalizeCityForProxy(ville);
-  const decodoUser = localStorage.getItem('decodo_user') || '';
-  const decodoPass = localStorage.getItem('decodo_pass') || '';
+  const proxyType = localStorage.getItem('decodo_type') || 'residential';
+  const isMobile = proxyType === 'mobile';
+  const decodoUser = isMobile
+    ? (localStorage.getItem('decodo_user_mobile') || localStorage.getItem('decodo_user') || '')
+    : (localStorage.getItem('decodo_user') || '');
+  const decodoPass = isMobile
+    ? (localStorage.getItem('decodo_pass_mobile') || localStorage.getItem('decodo_pass') || '')
+    : (localStorage.getItem('decodo_pass') || '');
+  const decodoUsername = isMobile
+    ? `${decodoUser}-city-paris-sessionduration-1440`
+    : `${decodoUser}-city-${citySlug}-sessionduration-1440`;
 
   let proxyId = null;
   if (decodoUser && decodoPass) {
@@ -2861,12 +2876,12 @@ async function donutCreerProfil(ville, gmail, ficheNom) {
       const proxyRes = await fetch(`${base}/v1/proxies`, {
         method: 'POST', headers,
         body: JSON.stringify({
-          name: `Decodo_${citySlug}`,
+          name: isMobile ? `Decodo_mobile_paris` : `Decodo_${citySlug}`,
           proxy_settings: {
             proxy_type: 'https',
             host: 'gate.decodo.com',
             port: 10001,
-            username: `${decodoUser}-city-${citySlug}-sessionduration-1440`,
+            username: decodoUsername,
             password: decodoPass
           }
         })
