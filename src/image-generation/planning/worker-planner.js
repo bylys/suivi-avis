@@ -51,13 +51,29 @@ function _planBatchWorkerPresence(group, seed) {
     task._pre_assigned_worker_presence = pres;
     task._pre_assigned_worker_count    = pres === 'workers' ? minW : 0;
     if (pres === 'workers') workerImages++;
+    // State-lock override: when the scenario explicitly sets planned_worker_count,
+    // honour that exact value. Uses Number.isInteger so that 0 is honoured, not treated as falsy.
+    if (Number.isInteger(task._planBase?._planned_worker_count)) {
+      const lockCount = task._planBase._planned_worker_count;
+      if (lockCount === 0) {
+        if (task._pre_assigned_worker_presence === 'workers') workerImages--;
+        task._pre_assigned_worker_presence = 'none';
+        task._pre_assigned_worker_count    = 0;
+      } else {
+        if (task._pre_assigned_worker_presence !== 'workers') workerImages++;
+        task._pre_assigned_worker_presence = 'workers';
+        task._pre_assigned_worker_count    = lockCount;
+      }
+    }
   }
 
-  // Enforce minimum — promote non-workers images to workers (prefer non-close-detail)
+  // Enforce minimum — promote non-workers images to workers (prefer non-close-detail).
+  // Skip tasks whose state-lock explicitly declares planned_worker_count — their count is exact.
   for (let pass = 0; pass < 2 && workerImages < minWImg; pass++) {
     for (let i = 0; i < n && workerImages < minWImg; i++) {
-      const comp = group[i]._pre_assigned_composition || '';
-      if (group[i]._pre_assigned_worker_presence !== 'workers' && (pass > 0 || comp !== 'close_detail')) {
+      const comp          = group[i]._pre_assigned_composition || '';
+      const stateLockFixed = Number.isInteger(group[i]._planBase?._planned_worker_count);
+      if (!stateLockFixed && group[i]._pre_assigned_worker_presence !== 'workers' && (pass > 0 || comp !== 'close_detail')) {
         group[i]._pre_assigned_worker_presence = 'workers';
         group[i]._pre_assigned_worker_count    = minW;
         workerImages++;
