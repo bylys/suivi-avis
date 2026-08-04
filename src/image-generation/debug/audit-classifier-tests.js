@@ -97,6 +97,16 @@ export async function runAuditClassifierTests() {
       'matched_regex must still be recorded for traceability');
   });
 
+  test('AUD-CLASS3e', 'Rejointoiement → DEFERRED (pool contaminé, gate absente)', () => {
+    const r = classifyService('maçonnerie', 'Rejointoiement');
+    assert(r.routing_coverage === 'DEFERRED',
+      `Expected DEFERRED, got ${r.routing_coverage}`);
+    assert(r.fallback_used === false,
+      `Expected fallback_used=false, got ${r.fallback_used}`);
+    assert(r.matched_regex !== null,
+      'matched_regex must still be recorded for traceability');
+  });
+
   // ─── AUD-CLASS4: FALLBACK_ONLY ────────────────────────────────────────────
   // peinture / Enduit décoratif has no _for match but has a fallback scenario
   // → PARTIAL_CONTEXTE + fallback_used=true
@@ -136,14 +146,14 @@ export async function runAuditClassifierTests() {
       `Sum of categories (${computed}) ≠ TOTAL (${TOTAL})`);
   });
 
-  test('AUD-SUM2', 'summary: STATE_LOCKED=42, DEFERRED=5, ROUTED_TO_SPECIFIC_SCENE=117', () => {
+  test('AUD-SUM2', 'summary: STATE_LOCKED=42, DEFERRED=6, ROUTED_TO_SPECIFIC_SCENE=116', () => {
     const { summary } = generateServiceCoverageAudit();
     assert(summary.STATE_LOCKED === 42,
       `Expected STATE_LOCKED=42, got ${summary.STATE_LOCKED}`);
-    assert(summary.DEFERRED === 5,
-      `Expected DEFERRED=5, got ${summary.DEFERRED}`);
-    assert(summary.ROUTED_TO_SPECIFIC_SCENE === 117,
-      `Expected ROUTED_TO_SPECIFIC_SCENE=117, got ${summary.ROUTED_TO_SPECIFIC_SCENE}`);
+    assert(summary.DEFERRED === 6,
+      `Expected DEFERRED=6, got ${summary.DEFERRED}`);
+    assert(summary.ROUTED_TO_SPECIFIC_SCENE === 116,
+      `Expected ROUTED_TO_SPECIFIC_SCENE=116, got ${summary.ROUTED_TO_SPECIFIC_SCENE}`);
     assert(summary.TOTAL === 172,
       `Expected TOTAL=172, got ${summary.TOTAL}`);
   });

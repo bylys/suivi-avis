@@ -1,8 +1,8 @@
 {
   "summary": {
     "STATE_LOCKED": 42,
-    "ROUTED_TO_SPECIFIC_SCENE": 117,
-    "DEFERRED": 5,
+    "ROUTED_TO_SPECIFIC_SCENE": 116,
+    "DEFERRED": 6,
     "PARTIAL_CONTEXTE": 8,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
@@ -934,15 +934,14 @@
     {
       "metier": "maçonnerie",
       "service_label": "Rejointoiement",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
+      "routing_coverage": "DEFERRED",
+      "routing_detail": "intentionally deferred — matched _for: fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
       "matched_regex": "fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "deferred",
         "source": "SITE_REALISM[\"maçonnerie\"]",
         "regex": "fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint",
-        "flags": "i",
         "normalized_input": "rejointoiement"
       }
     },
