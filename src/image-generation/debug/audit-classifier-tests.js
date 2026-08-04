@@ -117,18 +117,17 @@ export async function runAuditClassifierTests() {
       'matched_regex must still be recorded for traceability');
   });
 
-  // ─── AUD-CLASS4: FALLBACK_ONLY ────────────────────────────────────────────
-  // peinture / Enduit décoratif has no _for match but has a fallback scenario
-  // → PARTIAL_CONTEXTE + fallback_used=true
+  // ─── AUD-CLASS4: DEFERRED (no _for match, fallback suppressed) ──────────
+  // peinture / Enduit décoratif is in DEFERRED_SERVICES — fallback must NOT win
 
-  test('AUD-CLASS4', 'Enduit décoratif (no _for match, fallback exists) → PARTIAL_CONTEXTE + fallback_used=true', () => {
+  test('AUD-CLASS4', 'Enduit décoratif (DEFERRED_SERVICES, no _for match) → DEFERRED wins over fallback', () => {
     const r = classifyService('peinture', 'Enduit décoratif');
-    assert(r.routing_coverage === 'PARTIAL_CONTEXTE',
-      `Expected PARTIAL_CONTEXTE, got ${r.routing_coverage}`);
-    assert(r.fallback_used === true,
-      `Expected fallback_used=true (fallback scenario present), got ${r.fallback_used}`);
+    assert(r.routing_coverage === 'DEFERRED',
+      `Expected DEFERRED, got ${r.routing_coverage}`);
+    assert(r.fallback_used === false,
+      `Expected fallback_used=false (fallback suppressed by DEFERRED), got ${r.fallback_used}`);
     assert(r.matched_regex === null,
-      `Expected matched_regex=null for fallback-only, got ${r.matched_regex}`);
+      `Expected matched_regex=null, got ${r.matched_regex}`);
   });
 
   // ─── AUD-CLASS5: UNROUTED ─────────────────────────────────────────────────
@@ -156,12 +155,12 @@ export async function runAuditClassifierTests() {
       `Sum of categories (${computed}) ≠ TOTAL (${TOTAL})`);
   });
 
-  test('AUD-SUM2', 'summary: STATE_LOCKED=42, DEFERRED=7, ROUTED_TO_SPECIFIC_SCENE=115', () => {
+  test('AUD-SUM2', 'summary: STATE_LOCKED=42, DEFERRED=8, ROUTED_TO_SPECIFIC_SCENE=115', () => {
     const { summary } = generateServiceCoverageAudit();
     assert(summary.STATE_LOCKED === 42,
       `Expected STATE_LOCKED=42, got ${summary.STATE_LOCKED}`);
-    assert(summary.DEFERRED === 7,
-      `Expected DEFERRED=7, got ${summary.DEFERRED}`);
+    assert(summary.DEFERRED === 8,
+      `Expected DEFERRED=8, got ${summary.DEFERRED}`);
     assert(summary.ROUTED_TO_SPECIFIC_SCENE === 115,
       `Expected ROUTED_TO_SPECIFIC_SCENE=115, got ${summary.ROUTED_TO_SPECIFIC_SCENE}`);
     assert(summary.TOTAL === 172,

@@ -2,8 +2,8 @@
   "summary": {
     "STATE_LOCKED": 42,
     "ROUTED_TO_SPECIFIC_SCENE": 115,
-    "DEFERRED": 7,
-    "PARTIAL_CONTEXTE": 8,
+    "DEFERRED": 8,
+    "PARTIAL_CONTEXTE": 7,
     "TOOLS_ONLY": 0,
     "GENERIC_FALLBACK": 0,
     "UNMATCHED": 0,
@@ -1098,16 +1098,15 @@
     {
       "metier": "peinture",
       "service_label": "Enduit décoratif",
-      "routing_coverage": "PARTIAL_CONTEXTE",
-      "routing_detail": "no _for match, fallback scenario applied",
+      "routing_coverage": "DEFERRED",
+      "routing_detail": "intentionally deferred — no _for match, fallback suppressed",
       "matched_regex": null,
-      "fallback_used": true,
+      "fallback_used": false,
       "routing_evidence": {
-        "type": "no_regex_match",
+        "type": "deferred",
         "source": "SITE_REALISM[\"peinture\"]",
-        "normalized_input": "enduit decoratif",
-        "targeted_count": 8,
-        "fallback_count": 1
+        "regex": null,
+        "normalized_input": "enduit decoratif"
       }
     },
     {

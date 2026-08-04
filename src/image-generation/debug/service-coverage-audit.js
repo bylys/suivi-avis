@@ -30,6 +30,7 @@ const DEFERRED_SERVICES = new Set([
   'maçonnerie:Construction mur',
   'maçonnerie:Rejointoiement',
   'terrassement:Décaissement',
+  'peinture:Enduit décoratif',
 ]);
 
 // ─── Classify one service using the actual runtime logic ─────────────────────
@@ -196,6 +197,21 @@ export function classifyService(metierKey, serviceLabel) {
     }
 
     const hasFallback = fallbacks.length > 0;
+    const svcKeyFallback = `${metierKey}:${serviceLabel}`;
+    if (DEFERRED_SERVICES.has(svcKeyFallback)) {
+      return {
+        routing_coverage: 'DEFERRED',
+        routing_detail:   `intentionally deferred — no _for match, fallback suppressed`,
+        matched_regex:    null,
+        fallback_used:    false,
+        routing_evidence: {
+          type:             'deferred',
+          source:           `SITE_REALISM["${metierKey}"]`,
+          regex:            null,
+          normalized_input: normalized,
+        },
+      };
+    }
     return {
       routing_coverage: 'PARTIAL_CONTEXTE',
       routing_detail:   `no _for match${hasFallback ? ', fallback scenario applied' : ', no fallback'}`,
