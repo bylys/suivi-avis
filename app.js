@@ -1,3 +1,7 @@
+// ── DECODO PROXY ──
+const DECODO_PASS_RESIDENTIAL = '';  // mot de passe résidentiel (VAteamR)
+const DECODO_PASS_MOBILE      = '';  // mot de passe mobile (VATeam)
+
 // ── SUPABASE REST API (sans CDN) ──
 const SUPABASE_URL = 'https://rrbvghxmnimusfyqixau.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_k0nVhKHWUT5kBW9xBNpLkA_AKam7uBa';
@@ -2841,7 +2845,7 @@ function normalizeCityForProxy(ville) {
     .replace(/_+/g, '_');
 }
 
-async function donutCreerProfil(ville, gmail, ficheNom) {
+async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const token = getDonutToken();
   if (!token) {
     alert('Configure ton token DonutBrowser dans ⚙️ Config DonutBrowser (section Planning).');
@@ -2852,21 +2856,36 @@ async function donutCreerProfil(ville, gmail, ficheNom) {
 
   // 1. Créer le proxy Decodo pour cette ville
   const citySlug = normalizeCityForProxy(ville);
-  const decodoUser = localStorage.getItem('decodo_user') || '';
-  const decodoPass = localStorage.getItem('decodo_pass') || '';
+  const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
+  const PROXY_CFG = {
+    FR: { host: 'gate.decodo.com', port: 10001,
+          res: `user-VAteamR-country-fr-city-${citySlug}-sessionduration-1440`,
+          mob: `user-VATeam-country-fr-city-${citySlug}-sessionduration-1440` },
+    BE: { host: 'be.decodo.com', port: 40001,
+          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
+    LU: { host: 'lu.decodo.com', port: 25001,
+          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
+    CA: { host: 'ca.decodo.com', port: 20001,
+          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
+    US: { host: 'us.decodo.com', port: 10001,
+          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
+  };
+  const cfg = PROXY_CFG[pays] || PROXY_CFG['FR'];
+  const decodoUsername = isMobile ? cfg.mob : cfg.res;
+  const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
 
   let proxyId = null;
-  if (decodoUser && decodoPass) {
+  if (decodoPass) {
     try {
       const proxyRes = await fetch(`${base}/v1/proxies`, {
         method: 'POST', headers,
         body: JSON.stringify({
-          name: `Decodo_${citySlug}`,
+          name: isMobile ? `Decodo_mob_${citySlug}` : `Decodo_res_${citySlug}`,
           proxy_settings: {
             proxy_type: 'https',
-            host: 'gate.decodo.com',
-            port: 10001,
-            username: `${decodoUser}-city-${citySlug}-sessionduration-1440`,
+            host: cfg.host,
+            port: cfg.port,
+            username: decodoUsername,
             password: decodoPass
           }
         })
