@@ -424,6 +424,12 @@
     <details style="margin-bottom:14px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px">
       <summary style="cursor:pointer;font-size:12px;color:#64748b;user-select:none">⚙️ Config DonutBrowser (local)</summary>
       <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="decodo-type-input"
+          style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
+          onchange="localStorage.setItem('decodo_type', this.value)">
+          <option value="residential">Résidentiel (ville ciblée)</option>
+          <option value="mobile">Mobile (Paris)</option>
+        </select>
         <input type="password" id="donut-token-input" placeholder="Token DonutBrowser"
           style="flex:1;min-width:220px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
           oninput="localStorage.setItem('donut_token', this.value)" />
