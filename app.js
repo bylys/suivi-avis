@@ -2970,10 +2970,37 @@ async function planningGenerer(id, ficheNom, gmail) {
   const auteurInput = document.getElementById('gen-auteur');
   if (auteurInput) auteurInput.value = gmail;
 
+  // Pré-remplir ville
+  const villeInput = document.getElementById('gen-ville');
+  if (villeInput && ville) villeInput.value = ville;
+
+  // Dériver les travaux depuis le nom de la fiche
+  const TRAVAUX_MAP = {
+    couvreur: 'réfection de toiture', toiture: 'réfection de toiture', couverture: 'travaux de couverture',
+    paysagiste: 'aménagement paysager', jardinage: 'entretien jardin',
+    elagage: 'élagage et abattage d\'arbres', abattage: 'abattage d\'arbres',
+    carreleur: 'pose de carrelage', carrelage: 'pose de carrelage',
+    etancheite: 'travaux d\'étanchéité',
+    ravalement: 'ravalement de façade', facade: 'ravalement de façade',
+    nettoyage: 'nettoyage haute pression',
+    vitrier: 'remplacement de vitres',
+    macon: 'travaux de maçonnerie', terrassement: 'travaux de terrassement',
+    peintre: 'travaux de peinture', peinture: 'travaux de peinture',
+    plombier: 'travaux de plomberie',
+    electricien: 'travaux d\'électricité',
+  };
+  const nomLower = ficheNom.toLowerCase();
+  const travaux = Object.entries(TRAVAUX_MAP).find(([k]) => nomLower.includes(k))?.[1] || 'travaux à domicile';
+  const travauxInput = document.getElementById('gen-travaux');
+  if (travauxInput) travauxInput.value = travaux;
+
   if (row) {
     const badge = row.querySelector('span[style*="border-radius:99px"]');
     if (badge) { badge.style.color = '#8b5cf6'; badge.style.background = '#8b5cf622'; badge.textContent = 'Généré'; }
   }
+
+  // Lancer la génération automatiquement si clé Gemini configurée
+  if (getGeminiKey()) await genererAvis();
 }
 
 async function planningSkip(id) {
