@@ -17,10 +17,27 @@ SB_URL        = os.environ["SUPABASE_URL"]
 SB_KEY        = os.environ["SUPABASE_KEY"]
 SLACK_WEBHOOK = os.environ.get("SLACK_WEBHOOK_URL", "")
 GOLOGIN_TOKEN = os.environ.get("GOLOGIN_TOKEN", "")
-DECODO_USER        = os.environ.get("DECODO_USER", "")         # résidentiel
-DECODO_PASS        = os.environ.get("DECODO_PASS", "")
-DECODO_USER_MOBILE = os.environ.get("DECODO_USER_MOBILE", "")  # mobile
-DECODO_PASS_MOBILE = os.environ.get("DECODO_PASS_MOBILE", "")
+DECODO_PASS        = os.environ.get("DECODO_PASS", "")         # résidentiel
+DECODO_PASS_MOBILE = os.environ.get("DECODO_PASS_MOBILE", "")  # mobile
+
+# Config proxy par pays : (host, port, username_résidentiel, username_mobile)
+DECODO_PROXY_CONFIG = {
+    "FR": ("gate.decodo.com", 10001,
+           "user-VAteamR-country-fr-city-{city}-sessionduration-1440",
+           "user-VATeam-country-fr-city-paris-sessionduration-1440"),
+    "BE": ("be.decodo.com",   40001,
+           "user-VAteamR-sessionduration-1440",
+           "user-VATeam-sessionduration-1440"),
+    "LU": ("lu.decodo.com",   25001,
+           "user-VAteamR-sessionduration-1440",
+           "user-VATeam-sessionduration-1440"),
+    "CA": ("ca.decodo.com",   20001,
+           "user-VAteamR-sessionduration-1440",
+           "user-VATeam-sessionduration-1440"),
+    "US": ("us.decodo.com",   10001,
+           "user-VAteamR-sessionduration-1440",
+           "user-VATeam-sessionduration-1440"),
+}
 DONUT_TOKEN   = os.environ.get("DONUT_TOKEN", "")    # remplace GOLOGIN_TOKEN
 
 # Slack webhooks par opérateur (optionnel — ajouter comme secrets GitHub)
@@ -126,10 +143,13 @@ def normalize_city_for_proxy(ville):
         ville = ville.replace('__', '_')
     return ville
 
-def build_decodo_username(ville):
-    """Construit le username Decodo avec ville et durée de session."""
+def build_proxy_config(pays, ville):
+    """Retourne le dict proxy Decodo selon le pays et la ville."""
+    cfg = DECODO_PROXY_CONFIG.get(pays, DECODO_PROXY_CONFIG["FR"])
+    host, port, user_res, user_mob = cfg
     city_slug = normalize_city_for_proxy(ville)
-    return f"{DECODO_USER}-city-{city_slug}-sessionduration-1440"
+    username = user_res.replace("{city}", city_slug)
+    return {"host": host, "port": port, "username": username, "password": DECODO_PASS}
 
 def extract_metier(fiche_nom):
     """Extrait le métier depuis le nom de fiche."""
@@ -250,6 +270,8 @@ def main():
 
     # Charger les données
     all_avis = sb_get_all("avis", "select=auteur,fiche_nom,date,operateur")
+    fiches_data = sb_get_all("fiches", "select=nom,pays")
+    fiche_pays = {f['nom']: (f.get('pays') or 'FR') for f in fiches_data}
     gmails_data = sb_get_all("gmails", "select=email,ville")
     gmail_ville = {g['email'].lower(): g['ville'] for g in gmails_data if g['ville']}
 
@@ -346,6 +368,7 @@ def main():
     for i, a in enumerate(assignations):
         operateur = OPERATEURS[i % len(OPERATEURS)]
         gologin_id = None  # GoLogin désactivé — générateur image pas encore prêt
+        pays = fiche_pays.get(a['fiche_nom'], 'FR')
         row = {
             'date': today_str,
             'fiche_nom': a['fiche_nom'],
@@ -353,6 +376,7 @@ def main():
             'gmail': a['gmail'],
             'operateur': operateur,
             'statut': 'pending',
+            'pays': pays,
         }
         if gologin_id:
             row['gologin_id'] = gologin_id

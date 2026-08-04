@@ -585,10 +585,11 @@ async function addFiche(e) {
   e.preventDefault();
   const nom  = document.getElementById('fiche-nom').value.trim();
   const lien = document.getElementById('fiche-lien').value.trim();
+  const pays = document.getElementById('fiche-pays').value || 'FR';
   if (!nom) return;
   const fiches = await getFiches();
   if (fiches.find(f => f.nom === nom)) return alert('Cette fiche existe déjà.');
-  await sbInsert('fiches', { nom, lien: lien || null });
+  await sbInsert('fiches', { nom, lien: lien || null, pays });
   invalidateFichesCache();
   document.getElementById('fiche-nom').value = '';
   document.getElementById('fiche-lien').value = '';
@@ -716,10 +717,19 @@ function buildFicheLi(f, fiches, avis) {
   const catOptions = CATEGORIES_FICHES.filter(c => c.key !== 'autre')
     .map(c => `<option value="${c.key}" ${currentCat === c.key ? 'selected' : ''}>${c.label}</option>`)
     .join('');
+  const PAYS_FLAGS = { FR: '🇫🇷', BE: '🇧🇪', LU: '🇱🇺', CA: '🇨🇦', US: '🇺🇸' };
+  const paysFlag = PAYS_FLAGS[f.pays] || '🌍';
   statsBar.innerHTML =
     `<span>📅 ${dateOuv}</span>` +
     `<span>✍️ ${count} postés</span>` +
     (f.nb_avis_google != null ? `<span title="Mis à jour le ${f.nb_avis_updated_at || '?'}" style="color:#a78bfa;font-weight:600;">🌐 ${f.nb_avis_google} sur Google</span>` : '') +
+    `<select onchange="savePays('${f.id}', this.value)" style="font-size:0.75rem;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:4px;padding:2px 4px;">
+      <option value="FR" ${(f.pays||'FR')==='FR'?'selected':''}>🇫🇷 FR</option>
+      <option value="BE" ${f.pays==='BE'?'selected':''}>🇧🇪 BE</option>
+      <option value="LU" ${f.pays==='LU'?'selected':''}>🇱🇺 LU</option>
+      <option value="CA" ${f.pays==='CA'?'selected':''}>🇨🇦 CA</option>
+      <option value="US" ${f.pays==='US'?'selected':''}>🇺🇸 US</option>
+    </select>` +
     `<select class="cat-override-select" data-id="${f.id}" onchange="setCatOverride(this.dataset.id, this.value); renderFiches();" style="margin-left:auto;font-size:0.75rem;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:4px;padding:2px 4px;">${catOptions}</select>`;
 
   const nomEdit = document.createElement('div');
@@ -1011,6 +1021,12 @@ async function saveLien(id) {
   } else {
     alert('Erreur lors de la sauvegarde du lien.');
   }
+}
+
+async function savePays(id, pays) {
+  await sbUpdate('fiches', id, { pays });
+  invalidateFichesCache();
+  renderFiches();
 }
 
 // ── SAISIE ──
