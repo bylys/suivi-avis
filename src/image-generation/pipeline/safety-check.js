@@ -180,6 +180,12 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     prepour_rebar_preparation_only:                       obj.prepour_rebar_preparation_only                       ?? null,
     completed_slab_dominant:                              obj.completed_slab_dominant                              ?? null,
     large_industrial_construction_dominant:               obj.large_industrial_construction_dominant               ?? null,
+    // Mur brique gate fields
+    clay_brick_wall_visible:                   obj.clay_brick_wall_visible                   ?? null,
+    red_or_orange_clay_bricks_visible:         obj.red_or_orange_clay_bricks_visible         ?? null,
+    active_brick_laying_visible:               obj.active_brick_laying_visible               ?? null,
+    wall_alignment_tools_visible:              obj.wall_alignment_tools_visible              ?? null,
+    stone_wall_visible:                        obj.stone_wall_visible                        ?? null,
   };
 }
 

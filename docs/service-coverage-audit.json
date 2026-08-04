@@ -713,14 +713,18 @@
       "metier": "maçonnerie",
       "service_label": "Mur brique",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
-      "matched_regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
+      "routing_detail": "state-lock _for: ^mur brique$ / encours → MACONNERIE-WALL-BRICK-GROUND",
+      "matched_regex": "^mur brique$",
       "fallback_used": false,
+      "state_lock": true,
+      "visual_family": "MACONNERIE-WALL-BRICK-GROUND",
+      "access_configuration": "GROUND_LEVEL_BRICK_WALL",
+      "structured_gate": "Mur brique",
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"maçonnerie\"]",
-        "regex": "mur.*parpaing|parpaing|mur.*brique|brique|muret|construction.*mur|elev.*mur",
-        "flags": "i",
+        "regex": "^mur brique$",
+        "flags": "",
         "normalized_input": "mur brique"
       }
     },

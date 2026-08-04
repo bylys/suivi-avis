@@ -192,10 +192,10 @@ export async function runMurParpaingTests() {
       `Expected 7 reject_conditions for fissure, got ${gate?.reject_conditions?.length}`);
   });
 
-  test('MAC-REG3', 'Mur brique encours → state_lock_used=false (no collision)', () => {
+  test('MAC-REG3', 'Mur brique encours → _access_configuration≠GROUND_LEVEL_BLOCK_WALL (no parpaing collision)', () => {
     const r = resolveScene('Mur brique', 'encours');
-    assert(r._state_lock_used === false,
-      `Mur brique must not hit mur parpaing state-lock, got state_lock_used=${r._state_lock_used}`);
+    assert(r._access_configuration !== 'GROUND_LEVEL_BLOCK_WALL',
+      `Mur brique must not resolve to GROUND_LEVEL_BLOCK_WALL, got ${r._access_configuration}`);
   });
 
   test('MAC-REG4', 'Muret encours → state_lock_used=false (no collision)', () => {

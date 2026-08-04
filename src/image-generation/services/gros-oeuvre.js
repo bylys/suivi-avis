@@ -618,6 +618,59 @@ export const SITE_REALISM_GROS_OEUVRE = {
   'maçonnerie': {
     scenarios: [
 
+      // --- mur brique encours state-lock ---
+      {
+        _for:                             '^mur brique$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-WALL-BRICK-GROUND',
+        _access_configuration:            'GROUND_LEVEL_BRICK_WALL',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:                          'exterior',
+        scene_note:    'low residential brick wall under active construction — red or orange clay bricks clearly identifiable, approximately 1.0–1.2 m tall (6–8 courses), well within standing reach from the ground — Worker 1 stands on the ground beside the wall, both feet flat, actively placing a red clay brick onto a fresh mortar bed at the top course — the worker\'s hand or trowel is physically positioning the brick — fresh grey mortar is visible squeezing out at the bed and perpend joints — a mason\'s string line is pulled taut along the top course defining the alignment — a few loose bricks wait on the ground beside the wall — upper course is incomplete with 2–3 bricks still missing — the wall shows natural progression with complete lower courses and an incomplete top course',
+        scene_camera:  'standing 2–3 m from the wall face, slight diagonal angle, camera at hip-to-chest height — full wall height visible from base to the incomplete top course — worker visible beside and slightly above the wall top, arm reaching over to press a brick — residential garden or house partially visible to the side or background',
+        scene_framing: {
+          work_pct:   72,
+          foreground: 'loose red clay bricks and a small mortar trough or hawk on the ground at the wall base',
+          midground:  'partially built red brick wall — complete lower courses with visible grey mortar joints — Worker 1 standing on the ground beside the wall, pressing a brick onto the fresh mortar bed at the top course — mason\'s string line taut along the active course — 2–3 bricks still missing from the top course',
+          background: 'house facade visible partially to one side or modestly in background, garden or plot boundary',
+        },
+        scene_debris:  'mortar squeeze-out at perpend and bed joints of the top courses, brick dust and mortar drips on the ground at the wall base',
+        scene_exclude: [
+          'grey hollow concrete blocks (parpaings)',
+          'natural stone wall',
+          'poured concrete wall',
+          'timber framing',
+          'continuous render or plaster covering brick faces',
+          'worker on top of wall',
+          'worker sitting on wall',
+          'ladder or scaffold',
+          'fully completed wall with no active work',
+          'all bricks already laid with no incomplete course',
+          'industrial construction site',
+          'promotional composition with no active worker',
+          'large house facade directly behind the wall dominating the composition',
+        ],
+        tools: [
+          'brick trowel in Worker 1\'s hand pressing a clay brick onto the mortar bed',
+          'mason\'s string line pulled taut along the active course',
+          'spirit level resting on the last complete course',
+          'small mortar trough or hawk loaded with fresh grey mortar at the wall base',
+          'rubber mallet beside the fresh course for tapping bricks level',
+        ],
+        protections: [
+          'safety work gloves on the worker',
+          'safety boots visible at the wall base',
+        ],
+        chantier_details: [
+          'red or orange clay bricks — regular rectangular shape, smooth or textured face, uniform colour visible',
+          'fresh grey mortar squeeze-out at the bed and perpend joints of the top courses',
+          'string line pulled taut — next course alignment clearly defined',
+          'incomplete top course — 2–3 bricks still missing, open mortar bed visible',
+          'lower courses already complete with settled mortar joints',
+        ],
+      },
+
       // --- mur parpaing encours state-lock ---
       {
         _for:                             '^mur.*parpaing|^parpaing\\b',

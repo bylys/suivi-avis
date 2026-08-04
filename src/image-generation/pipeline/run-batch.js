@@ -243,6 +243,12 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               prepour_rebar_preparation_only:                           safety.prepour_rebar_preparation_only                           ?? null,
               completed_slab_dominant:                             safety.completed_slab_dominant                             ?? null,
               large_industrial_construction_dominant:              safety.large_industrial_construction_dominant              ?? null,
+              // Mur brique gate fields
+              clay_brick_wall_visible:                   safety.clay_brick_wall_visible                   ?? null,
+              red_or_orange_clay_bricks_visible:         safety.red_or_orange_clay_bricks_visible         ?? null,
+              active_brick_laying_visible:               safety.active_brick_laying_visible               ?? null,
+              wall_alignment_tools_visible:              safety.wall_alignment_tools_visible              ?? null,
+              stone_wall_visible:                        safety.stone_wall_visible                        ?? null,
               natural_stone_wall_visible:                safety.natural_stone_wall_visible                ?? null,
               open_or_degraded_stone_joints_visible:     safety.open_or_degraded_stone_joints_visible     ?? null,
               active_stone_repointing_visible:           safety.active_stone_repointing_visible           ?? null,
