@@ -259,6 +259,21 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
               render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
               single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
+              // Création allée gate fields
+              residential_driveway_or_path_visible:          safety.residential_driveway_or_path_visible          ?? null,
+              paving_blocks_visible:                         safety.paving_blocks_visible                         ?? null,
+              active_paver_installation_visible:             safety.active_paver_installation_visible             ?? null,
+              partially_paved_and_unfinished_zones_visible:  safety.partially_paved_and_unfinished_zones_visible  ?? null,
+              bedding_sand_visible_in_unfinished_zone:       safety.bedding_sand_visible_in_unfinished_zone       ?? null,
+              alignment_tool_visible:                        safety.alignment_tool_visible                        ?? null,
+              rubber_mallet_or_paver_tool_visible:           safety.rubber_mallet_or_paver_tool_visible           ?? null,
+              fully_completed_paved_surface_dominant:        safety.fully_completed_paved_surface_dominant        ?? null,
+              jointing_sand_sweeping_dominant:               safety.jointing_sand_sweeping_dominant               ?? null,
+              aggregate_subbase_only_visible:                safety.aggregate_subbase_only_visible                ?? null,
+              concrete_slab_dominant:                        safety.concrete_slab_dominant                        ?? null,
+              asphalt_surface_dominant:                      safety.asphalt_surface_dominant                      ?? null,
+              general_ground_leveling_dominant:              safety.general_ground_leveling_dominant              ?? null,
+              utility_trench_dominant:                       safety.utility_trench_dominant                       ?? null,
             }));
 
             if (safety.checkFailed) {

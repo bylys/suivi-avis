@@ -186,6 +186,21 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     active_brick_laying_visible:               obj.active_brick_laying_visible               ?? null,
     wall_alignment_tools_visible:              obj.wall_alignment_tools_visible              ?? null,
     stone_wall_visible:                        obj.stone_wall_visible                        ?? null,
+    // Création allée gate fields
+    residential_driveway_or_path_visible:          obj.residential_driveway_or_path_visible          ?? null,
+    paving_blocks_visible:                         obj.paving_blocks_visible                         ?? null,
+    active_paver_installation_visible:             obj.active_paver_installation_visible             ?? null,
+    partially_paved_and_unfinished_zones_visible:  obj.partially_paved_and_unfinished_zones_visible  ?? null,
+    bedding_sand_visible_in_unfinished_zone:       obj.bedding_sand_visible_in_unfinished_zone       ?? null,
+    alignment_tool_visible:                        obj.alignment_tool_visible                        ?? null,
+    rubber_mallet_or_paver_tool_visible:           obj.rubber_mallet_or_paver_tool_visible           ?? null,
+    fully_completed_paved_surface_dominant:        obj.fully_completed_paved_surface_dominant        ?? null,
+    jointing_sand_sweeping_dominant:               obj.jointing_sand_sweeping_dominant               ?? null,
+    aggregate_subbase_only_visible:                obj.aggregate_subbase_only_visible                ?? null,
+    concrete_slab_dominant:                        obj.concrete_slab_dominant                        ?? null,
+    asphalt_surface_dominant:                      obj.asphalt_surface_dominant                      ?? null,
+    general_ground_leveling_dominant:              obj.general_ground_leveling_dominant              ?? null,
+    utility_trench_dominant:                       obj.utility_trench_dominant                       ?? null,
   };
 }
 
