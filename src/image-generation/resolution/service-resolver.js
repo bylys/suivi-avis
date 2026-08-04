@@ -124,8 +124,11 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (!s._state_for) return false;
           return Array.isArray(s._state_for) ? s._state_for.includes(obj.state_level) : s._state_for === obj.state_level;
         });
+        // Scenarios with _state_for must never join the regular pool when their state doesn't match.
+        // Only scenarios without _state_for are available as regular targeted fallbacks.
+        const regularTargeted = targeted.filter(s => !s._state_for);
         const _stateLockUsed = stateLocked.length > 0;
-        const pool      = _stateLockUsed ? stateLocked : (targeted.length ? targeted : fallback);
+        const pool      = stateLocked.length ? stateLocked : (regularTargeted.length ? regularTargeted : fallback);
         const picked    = pool.length ? _pick(pool, 1, scenSeed)[0] : null;
         obj._state_lock_used      = _stateLockUsed;
         obj._state_lock_pool_size = pool.length;
