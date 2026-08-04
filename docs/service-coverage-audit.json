@@ -1,7 +1,7 @@
 {
   "summary": {
-    "STATE_LOCKED": 42,
-    "ROUTED_TO_SPECIFIC_SCENE": 115,
+    "STATE_LOCKED": 47,
+    "ROUTED_TO_SPECIFIC_SCENE": 110,
     "DEFERRED": 8,
     "PARTIAL_CONTEXTE": 7,
     "TOOLS_ONLY": 0,
@@ -963,75 +963,75 @@
     {
       "metier": "peinture",
       "service_label": "Peinture intérieure",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$, _state_for=encours",
+      "matched_regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-        "flags": "i",
+        "regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
+        "state_for": "encours",
         "normalized_input": "peinture interieure"
       }
     },
     {
       "metier": "peinture",
       "service_label": "Peinture salon",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$, _state_for=encours",
+      "matched_regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-        "flags": "i",
+        "regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
+        "state_for": "encours",
         "normalized_input": "peinture salon"
       }
     },
     {
       "metier": "peinture",
       "service_label": "Peinture chambre",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$, _state_for=encours",
+      "matched_regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-        "flags": "i",
+        "regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
+        "state_for": "encours",
         "normalized_input": "peinture chambre"
       }
     },
     {
       "metier": "peinture",
       "service_label": "Peinture cuisine",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$, _state_for=encours",
+      "matched_regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-        "flags": "i",
+        "regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
+        "state_for": "encours",
         "normalized_input": "peinture cuisine"
       }
     },
     {
       "metier": "peinture",
       "service_label": "Peinture couloir",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$, _state_for=encours",
+      "matched_regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-        "flags": "i",
+        "regex": "^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$",
+        "state_for": "encours",
         "normalized_input": "peinture couloir"
       }
     },

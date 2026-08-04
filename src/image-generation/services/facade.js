@@ -919,7 +919,58 @@ export const SITE_REALISM_FACADE = {
   peinture: {
     scenarios: [
 
-      // --- peinture intérieure (murs) ---
+      // --- peinture intérieure murs state-lock (encours) ---
+      // Covers: Peinture intérieure, Peinture salon, Peinture chambre, Peinture cuisine, Peinture couloir.
+      // Regex is exact so it cannot collide with plafond, papier peint, or exterior services.
+      {
+        _for:                             '^(peinture interieure|peinture salon|peinture chambre|peinture cuisine|peinture couloir)$',
+        _state_for:                       'encours',
+        _visual_family:                   'PEINTURE-INTERIOR-WALL-ROLLER',
+        _access_configuration:            'GROUND_LEVEL_INTERIOR_WALL_ROLLER',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        planned_worker_count:             1,
+        setting:                          'interior',
+        scene_reset_exclude:              true,
+        scene_note:    'residential interior wall being painted with a roller — one tradesperson standing stably on the floor, roller in contact with the vertical wall surface mid-stroke — fresh new colour on the upper section, old paint still clearly visible on the lower section — irregular but credible active paint boundary — roller tray with fresh paint on the drop cloth, masking tape or cut-in brush at the wall-ceiling junction',
+        scene_camera:  'standing in the room at a slight diagonal, framing the active roller mid-stroke on the wall — painter\'s feet and the drop cloth visible at the base — ceiling-wall junction and the paint boundary both in frame',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'canvas drop cloth covering the full floor below the painted wall — roller tray with fresh paint at the wall base on the cloth',
+          midground:  'one tradesperson standing steadily on the floor, roller pressed against the vertical wall surface, pushing upward in a steady stroke — fresh new colour on the upper painted section, old paint on the lower unpainted section — active paint boundary irregular and clearly visible',
+          background: 'room interior — door frame or window edge at the side, ceiling-wall junction with masking tape, no exterior context visible',
+        },
+        scene_debris:  'paint drip on the drop cloth below the roller line, thin wet brush stroke at the unpainted edge near the masking tape',
+        scene_exclude: [
+          'ceiling painting dominant — the primary surface being painted must be a vertical wall, not the ceiling',
+          'ladder used as a workstation — painter stands on the floor only, not on any ladder',
+          'step ladder used as a workstation — no folding or step ladder',
+          'scaffold — no scaffold structure in the room',
+          'worker standing on furniture — painter stands on the floor only',
+          'exterior facade painting — no outdoor context, no facade, no exterior window view',
+          'wallpaper installation or removal — no paste table, wallpaper rolls, or strips being applied',
+          'spray painting dominant — no paint spray gun as primary tool',
+          'completed wall with no active painting in progress',
+          'decorative plaster application — no enduit décoratif spread with a trowel',
+        ],
+        tools: [
+          'paint roller in contact with the vertical wall surface mid-stroke',
+          'roller tray with fresh paint on the drop cloth at the wall base',
+          'flat cut-in brush on the tray rim or at the wall-ceiling junction',
+        ],
+        protections: [
+          'canvas drop cloth spread across the full floor below the painted wall',
+          'masking tape along the ceiling-wall junction and skirting board',
+        ],
+        chantier_details: [
+          'fresh paint on the upper section of the wall — colour vivid and wet, roller texture marks visible at the active boundary',
+          'old paint clearly visible on the lower unpainted section — contrasting tone, no new colour',
+          'irregular but credible active paint boundary between the fresh and old sections',
+          'one tradesperson at floor level — roller raised, arm extended, pushing the stroke across the wall surface',
+        ],
+      },
+
+      // --- peinture intérieure (murs) générique (autres états et services non matchés) ---
       {
         _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
         setting:       'interior',

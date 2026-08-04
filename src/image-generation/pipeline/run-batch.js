@@ -259,6 +259,20 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
               render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
               single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
+              // Peinture intérieure gate fields
+              interior_room_visible:                              safety.interior_room_visible                              ?? null,
+              vertical_wall_plane_dominant:                       safety.vertical_wall_plane_dominant                       ?? null,
+              active_wall_roller_contact_visible:                 safety.active_wall_roller_contact_visible                 ?? null,
+              partial_painted_and_unpainted_wall_zones_visible:   safety.partial_painted_and_unpainted_wall_zones_visible   ?? null,
+              fresh_wall_paint_visible:                           safety.fresh_wall_paint_visible                           ?? null,
+              masking_or_cutting_in_tool_visible:                 safety.masking_or_cutting_in_tool_visible                 ?? null,
+              ceiling_painting_dominant:                          safety.ceiling_painting_dominant                          ?? null,
+              facade_painting_visible:                            safety.facade_painting_visible                            ?? null,
+              wallpaper_installation_visible:                     safety.wallpaper_installation_visible                     ?? null,
+              decorative_plaster_application_visible:             safety.decorative_plaster_application_visible             ?? null,
+              completed_wall_dominant:                            safety.completed_wall_dominant                            ?? null,
+              worker_on_step_ladder:                              safety.worker_on_step_ladder                              ?? null,
+              worker_standing_on_furniture:                       safety.worker_standing_on_furniture                       ?? null,
             }));
 
             if (safety.checkFailed) {

@@ -186,6 +186,20 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     active_brick_laying_visible:               obj.active_brick_laying_visible               ?? null,
     wall_alignment_tools_visible:              obj.wall_alignment_tools_visible              ?? null,
     stone_wall_visible:                        obj.stone_wall_visible                        ?? null,
+    // Peinture intérieure gate fields
+    interior_room_visible:                              obj.interior_room_visible                              ?? null,
+    vertical_wall_plane_dominant:                       obj.vertical_wall_plane_dominant                       ?? null,
+    active_wall_roller_contact_visible:                 obj.active_wall_roller_contact_visible                 ?? null,
+    partial_painted_and_unpainted_wall_zones_visible:   obj.partial_painted_and_unpainted_wall_zones_visible   ?? null,
+    fresh_wall_paint_visible:                           obj.fresh_wall_paint_visible                           ?? null,
+    masking_or_cutting_in_tool_visible:                 obj.masking_or_cutting_in_tool_visible                 ?? null,
+    ceiling_painting_dominant:                          obj.ceiling_painting_dominant                          ?? null,
+    facade_painting_visible:                            obj.facade_painting_visible                            ?? null,
+    wallpaper_installation_visible:                     obj.wallpaper_installation_visible                     ?? null,
+    decorative_plaster_application_visible:             obj.decorative_plaster_application_visible             ?? null,
+    completed_wall_dominant:                            obj.completed_wall_dominant                            ?? null,
+    worker_on_step_ladder:                              obj.worker_on_step_ladder                              ?? null,
+    worker_standing_on_furniture:                       obj.worker_standing_on_furniture                       ?? null,
   };
 }
 
