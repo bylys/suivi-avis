@@ -9,11 +9,16 @@
  *   SWI-EX1 : scene_reset_exclude absent → existing exclusions preserved
  *   SWI-EX2 : scene_reset_exclude = true → inherited exclusions cleared, scene_exclude applied
  *   SWI-EX3 : scene_reset_exclude isolation — second scenario without it unaffected
+ *   SWI-PL1 : _state_for:encours + state=encours → state-lock selected, _state_lock_used=true
+ *   SWI-PL2 : _state_for:encours + state=debut → state-locked scenario never selected
+ *   SWI-PL3 : scenario without _state_for + state=debut → still accessible via regular pool
  */
 
-const { _applySiteRealism } = await import('../resolution/service-resolver.js?bust=swi-infra1');
-const { _planBatchWorkerPresence } = await import('../planning/worker-planner.js?bust=swi-infra1');
-const { SITE_REALISM } = await import('../services/index.js?bust=swi-infra1');
+const { _applySiteRealism } = await import('../resolution/service-resolver.js?bust=swi-infra2');
+const { _planBatchWorkerPresence } = await import('../planning/worker-planner.js?bust=swi-infra2');
+// Import SITE_REALISM from the SAME URL the resolver uses (no bust), so mutations
+// in PL tests are visible to _applySiteRealism's own module-level reference.
+const { SITE_REALISM } = await import('../services/index.js');
 
 export async function runSceneWorkerInfraTests() {
   console.group('SWI tests — scene worker infrastructure');
@@ -25,11 +30,11 @@ export async function runSceneWorkerInfraTests() {
   function test(id, desc, fn) {
     try {
       fn();
-      _results.push({ id, desc, status: 'PASS' });
+      _results.push({ id, desc, ok: true });
       _pass++;
       console.log(`%c✓ ${id}: ${desc}`, 'color: green');
     } catch (e) {
-      _results.push({ id, desc, status: 'FAIL', reason: e.message });
+      _results.push({ id, desc, ok: false, error: e.message });
       _fail++;
       console.error(`✘ ${id}: ${desc}\n  ${e.message}`);
     }
@@ -166,6 +171,61 @@ export async function runSceneWorkerInfraTests() {
     const result = JSON.parse(_applySiteRealism(JSON.stringify(obj), 0));
     assert(result.exclude.includes('sentinel-salon'),
       `sentinel-salon was wiped — got: ${JSON.stringify(result.exclude)}`);
+  });
+
+  // ─── SWI-PL1: _state_for:encours + state=encours → state-lock active ────────
+  test('SWI-PL1', '_state_for:encours + state=encours → state-lock selected, _state_lock_used=true', () => {
+    const realismBackup = SITE_REALISM['peinture'];
+    SITE_REALISM['peinture'] = {
+      tools: [], protections: [], chantier_details: [],
+      scenarios: [
+        { _for: '^test.*service$', _state_for: 'encours', _visual_family: 'SWI-PL-STATE-LOCKED', _access_configuration: 'SWI_PL_LOCKED' },
+        { _for: '^test.*service$', _visual_family: 'SWI-PL-GENERIC', _access_configuration: 'SWI_PL_GENERIC' },
+      ],
+    };
+    const obj = { _matched_key: 'peinture', _matched_service: 'test service', state_level: 'encours', contexte: 'maison_individuelle' };
+    const result = JSON.parse(_applySiteRealism(JSON.stringify(obj), 0));
+    SITE_REALISM['peinture'] = realismBackup;
+    assert(result._visual_family === 'SWI-PL-STATE-LOCKED',
+      `Expected SWI-PL-STATE-LOCKED, got: ${result._visual_family}`);
+    assert(result._state_lock_used === true,
+      `Expected _state_lock_used=true, got: ${result._state_lock_used}`);
+  });
+
+  // ─── SWI-PL2: _state_for:encours + state=debut → state-locked scenario excluded ─
+  test('SWI-PL2', '_state_for:encours + state=debut → state-locked scenario never selected', () => {
+    const realismBackup = SITE_REALISM['peinture'];
+    SITE_REALISM['peinture'] = {
+      tools: [], protections: [], chantier_details: [],
+      scenarios: [
+        { _for: '^test.*service$', _state_for: 'encours', _visual_family: 'SWI-PL-STATE-LOCKED', _access_configuration: 'SWI_PL_LOCKED' },
+        { _for: '^test.*service$', _visual_family: 'SWI-PL-GENERIC', _access_configuration: 'SWI_PL_GENERIC' },
+      ],
+    };
+    const obj = { _matched_key: 'peinture', _matched_service: 'test service', state_level: 'debut', contexte: 'maison_individuelle' };
+    const result = JSON.parse(_applySiteRealism(JSON.stringify(obj), 0));
+    SITE_REALISM['peinture'] = realismBackup;
+    assert(result._visual_family !== 'SWI-PL-STATE-LOCKED',
+      `State-locked scenario must not be selected for state=debut — got: ${result._visual_family}`);
+    assert(result._access_configuration !== 'SWI_PL_LOCKED',
+      `_access_configuration must not be SWI_PL_LOCKED for state=debut — got: ${result._access_configuration}`);
+  });
+
+  // ─── SWI-PL3: scenario without _state_for + state=debut → accessible ─────────
+  test('SWI-PL3', 'scenario without _state_for + state=debut → still accessible via regular pool', () => {
+    const realismBackup = SITE_REALISM['peinture'];
+    SITE_REALISM['peinture'] = {
+      tools: [], protections: [], chantier_details: [],
+      scenarios: [
+        { _for: '^test.*service$', _state_for: 'encours', _visual_family: 'SWI-PL-STATE-LOCKED', _access_configuration: 'SWI_PL_LOCKED' },
+        { _for: '^test.*service$', _visual_family: 'SWI-PL-GENERIC', _access_configuration: 'SWI_PL_GENERIC' },
+      ],
+    };
+    const obj = { _matched_key: 'peinture', _matched_service: 'test service', state_level: 'debut', contexte: 'maison_individuelle' };
+    const result = JSON.parse(_applySiteRealism(JSON.stringify(obj), 0));
+    SITE_REALISM['peinture'] = realismBackup;
+    assert(result._visual_family === 'SWI-PL-GENERIC',
+      `Expected SWI-PL-GENERIC for debut (no-_state_for fallback), got: ${result._visual_family}`);
   });
 
   // ─── Summary ───────────────────────────────────────────────────────────────
