@@ -115,12 +115,8 @@ def _name_matches(expected, returned):
     return overlap >= max(1, min(len(a), len(b)) // 2)
 
 
-def search_by_text(name, coords=None):
-    """
-    Places API (New) — Text Search.
-    Retourne (userRatingCount, displayName) ou (None, None).
-    Vérifie que le résultat correspond bien au nom attendu.
-    """
+def _places_request(name, coords=None):
+    """Appel brut Places API searchText. Retourne la liste places."""
     body = {"textQuery": name}
     if coords:
         body["locationBias"] = {
@@ -138,8 +134,22 @@ def search_by_text(name, coords=None):
     req.add_header("X-Goog-Api-Key", PLACES_KEY)
     req.add_header("X-Goog-FieldMask", "places.userRatingCount,places.displayName")
     with urllib.request.urlopen(req) as r:
-        result = json.loads(r.read())
-    places = result.get("places", [])
+        return json.loads(r.read()).get("places", [])
+
+
+def search_by_text(name, coords=None):
+    """
+    Places API (New) — Text Search.
+    Retourne (userRatingCount, displayName) ou (None, None).
+    Vérifie que le résultat correspond bien au nom attendu.
+    Si 0 résultats avec locationBias, retente sans bias (SAB / adresse cachée).
+    """
+    places = _places_request(name, coords)
+
+    # Retry sans bias si pas de résultats (SAB ou business peu visible)
+    if not places and coords:
+        places = _places_request(name, None)
+
     if not places:
         return None, None
     p = places[0]
