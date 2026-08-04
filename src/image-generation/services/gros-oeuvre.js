@@ -168,6 +168,53 @@ export const WORK_SCENES_GROS_OEUVRE = {
 export const SITE_REALISM_GROS_OEUVRE = {
   terrassement: {
     scenarios: [
+      // --- excavation résidentielle encours state-lock (must be first — before generic decaiss|fouill|excavat) ---
+      {
+        _for:                             '^excavation$',
+        _state_for:                       'encours',
+        _visual_family:                   'TERRASSEMENT-ACTIVE-EXCAVATION-GROUND',
+        _access_configuration:            'MACHINE_OPERATED_OPEN_EXCAVATION',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        planned_worker_count:             0,
+        setting:                          'exterior',
+        scene_note:    'residential excavation in progress — compact mini-excavator actively scooping earth, bucket visibly in contact with the soil at the active cut face, fresh spoil pile growing at the side — machine operator visible inside the closed cab — no ground workers',
+        scene_camera:  'customer smartphone angle standing 5–8 m from the machine at slight diagonal — full machine profile visible with arm extended and bucket pressing into the cut face — open excavation pit or foundation cut clearly visible beside the machine',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'fresh spoil pile at the near excavation edge — raw earth clods and subsoil visible, colour distinctly different from topsoil',
+          midground:  'compact mini-excavator cab and articulated arm visible — bucket pressing into the active cut face — open excavation void visible beside and behind the machine',
+          background: 'individual house facade partially visible at a safe distance — garden fence or hedge marking the residential site boundary',
+        },
+        scene_debris:  'fresh earth clods and subsoil spoil at the excavation edge — machine track marks pressed into the soft ground beside the pile',
+        scene_exclude: [
+          'manual trench digging without a machine',
+          'worker measuring a trench with no active excavator',
+          'levelling or grading a flat surface only',
+          'backfilling operation',
+          'reinforcement rebar cage in trench',
+          'pipe or conduit being laid in trench',
+          'swimming pool already formed or lined',
+          'large industrial or commercial construction site',
+          'excavator bucket held stationary above ground with no active cut',
+        ],
+        tools: [
+          'mini-excavator arm extended — bucket pressing into the cut face at the active excavation front',
+          'machine operator clearly seated and visible inside the closed cab',
+          'track marks pressed into the soft ground beside the spoil pile',
+        ],
+        protections: [
+          'orange safety mesh along the open excavation perimeter',
+          'site boundary stakes with warning tape at the road edge',
+        ],
+        chantier_details: [
+          'open excavation pit visible — raw earth walls showing soil layer profile',
+          'fresh spoil pile at the edge — subsoil colour distinct from topsoil surface',
+          'machine track marks pressed into the ground beside the active work zone',
+          'house facade visible at safe distance in background — residential scale confirmed',
+        ],
+      },
+
       {
         _for:          'decaiss|fouill|excavat|percement|terrassem',
         scene_note:    'excavation work in progress — trench or pit being dug, raw earth walls visible, deep cut into the ground',

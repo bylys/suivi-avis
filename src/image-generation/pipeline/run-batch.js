@@ -259,6 +259,28 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
               render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
               single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
+              // Excavation gate fields
+              machine_operator_inside_cab_visible:              safety.machine_operator_inside_cab_visible              ?? null,
+              visible_ground_worker_count:                      safety.visible_ground_worker_count                      ?? null,
+              ground_worker_count_is_zero:                      safety.ground_worker_count_is_zero                      ?? null,
+              ground_worker_count_match:                        safety.ground_worker_count_match                        ?? null,
+              open_excavation_visible:                          safety.open_excavation_visible                          ?? null,
+              active_excavator_operation_visible:               safety.active_excavator_operation_visible               ?? null,
+              bucket_in_contact_with_soil:                      safety.bucket_in_contact_with_soil                      ?? null,
+              freshly_removed_soil_pile_visible:                safety.freshly_removed_soil_pile_visible                ?? null,
+              partial_excavation_progress_visible:              safety.partial_excavation_progress_visible              ?? null,
+              residential_groundworks_context_visible:          safety.residential_groundworks_context_visible          ?? null,
+              excavator_stable_on_level_ground:                 safety.excavator_stable_on_level_ground                 ?? null,
+              person_inside_open_excavation:                    safety.person_inside_open_excavation                    ?? null,
+              person_under_or_near_bucket:                      safety.person_under_or_near_bucket                      ?? null,
+              person_between_machine_and_excavation_edge:       safety.person_between_machine_and_excavation_edge       ?? null,
+              machine_dangerously_close_to_structure:           safety.machine_dangerously_close_to_structure           ?? null,
+              unsupported_vertical_deep_excavation_visible:     safety.unsupported_vertical_deep_excavation_visible     ?? null,
+              trench_utility_installation_dominant:             safety.trench_utility_installation_dominant             ?? null,
+              foundation_rebar_visible:                         safety.foundation_rebar_visible                         ?? null,
+              backfilling_dominant:                             safety.backfilling_dominant                             ?? null,
+              ground_leveling_only_visible:                     safety.ground_leveling_only_visible                     ?? null,
+              large_industrial_site_dominant:                   safety.large_industrial_site_dominant                   ?? null,
             }));
 
             if (safety.checkFailed) {

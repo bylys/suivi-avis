@@ -186,6 +186,28 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     active_brick_laying_visible:               obj.active_brick_laying_visible               ?? null,
     wall_alignment_tools_visible:              obj.wall_alignment_tools_visible              ?? null,
     stone_wall_visible:                        obj.stone_wall_visible                        ?? null,
+    // Excavation gate fields
+    machine_operator_inside_cab_visible:              obj.machine_operator_inside_cab_visible              ?? null,
+    visible_ground_worker_count:                      obj.visible_ground_worker_count                      ?? null,
+    ground_worker_count_is_zero:                      obj.ground_worker_count_is_zero                      ?? null,
+    ground_worker_count_match:                        obj.ground_worker_count_match                        ?? null,
+    open_excavation_visible:                          obj.open_excavation_visible                          ?? null,
+    active_excavator_operation_visible:               obj.active_excavator_operation_visible               ?? null,
+    bucket_in_contact_with_soil:                      obj.bucket_in_contact_with_soil                      ?? null,
+    freshly_removed_soil_pile_visible:                obj.freshly_removed_soil_pile_visible                ?? null,
+    partial_excavation_progress_visible:              obj.partial_excavation_progress_visible              ?? null,
+    residential_groundworks_context_visible:          obj.residential_groundworks_context_visible          ?? null,
+    excavator_stable_on_level_ground:                 obj.excavator_stable_on_level_ground                 ?? null,
+    person_inside_open_excavation:                    obj.person_inside_open_excavation                    ?? null,
+    person_under_or_near_bucket:                      obj.person_under_or_near_bucket                      ?? null,
+    person_between_machine_and_excavation_edge:       obj.person_between_machine_and_excavation_edge       ?? null,
+    machine_dangerously_close_to_structure:           obj.machine_dangerously_close_to_structure           ?? null,
+    unsupported_vertical_deep_excavation_visible:     obj.unsupported_vertical_deep_excavation_visible     ?? null,
+    trench_utility_installation_dominant:             obj.trench_utility_installation_dominant             ?? null,
+    foundation_rebar_visible:                         obj.foundation_rebar_visible                         ?? null,
+    backfilling_dominant:                             obj.backfilling_dominant                             ?? null,
+    ground_leveling_only_visible:                     obj.ground_leveling_only_visible                     ?? null,
+    large_industrial_site_dominant:                   obj.large_industrial_site_dominant                   ?? null,
   };
 }
 
