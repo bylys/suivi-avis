@@ -2882,9 +2882,7 @@ async function donutCreerProfil(ville, gmail, ficheNom) {
   const decodoPass = isMobile
     ? (localStorage.getItem('decodo_pass_mobile') || localStorage.getItem('decodo_pass') || '')
     : (localStorage.getItem('decodo_pass') || '');
-  const decodoUsername = isMobile
-    ? `${decodoUser}-city-paris-sessionduration-1440`
-    : `${decodoUser}-city-${citySlug}-sessionduration-1440`;
+  const decodoUsername = `${decodoUser}-city-${citySlug}-sessionduration-1440`;
 
   let proxyId = null;
   if (decodoUser && decodoPass) {

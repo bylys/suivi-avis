@@ -24,7 +24,7 @@ DECODO_PASS_MOBILE = os.environ.get("DECODO_PASS_MOBILE", "")  # mobile
 DECODO_PROXY_CONFIG = {
     "FR": ("gate.decodo.com", 10001,
            "user-VAteamR-country-fr-city-{city}-sessionduration-1440",
-           "user-VATeam-country-fr-city-paris-sessionduration-1440"),
+           "user-VATeam-country-fr-city-{city}-sessionduration-1440"),
     "BE": ("be.decodo.com",   40001,
            "user-VAteamR-sessionduration-1440",
            "user-VATeam-sessionduration-1440"),
@@ -143,13 +143,15 @@ def normalize_city_for_proxy(ville):
         ville = ville.replace('__', '_')
     return ville
 
-def build_proxy_config(pays, ville):
-    """Retourne le dict proxy Decodo selon le pays et la ville."""
+def build_proxy_config(pays, ville, mobile=False):
+    """Retourne le dict proxy Decodo selon le pays, la ville et le type."""
     cfg = DECODO_PROXY_CONFIG.get(pays, DECODO_PROXY_CONFIG["FR"])
     host, port, user_res, user_mob = cfg
     city_slug = normalize_city_for_proxy(ville)
-    username = user_res.replace("{city}", city_slug)
-    return {"host": host, "port": port, "username": username, "password": DECODO_PASS}
+    user_tpl = user_mob if mobile else user_res
+    username = user_tpl.replace("{city}", city_slug)
+    password = DECODO_PASS_MOBILE if mobile else DECODO_PASS
+    return {"host": host, "port": port, "username": username, "password": password}
 
 def extract_metier(fiche_nom):
     """Extrait le métier depuis le nom de fiche."""
