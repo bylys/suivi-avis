@@ -138,8 +138,10 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism.scene_camera)  obj.camera_position = realism.scene_camera;
           if (realism.scene_framing) obj.framing          = realism.scene_framing;
           if (realism.scene_debris)  obj.site_debris      = realism.scene_debris;
-          if (picked.scene_reset_exclude) obj.exclude = [];
-          if (Array.isArray(realism.scene_exclude)) obj.exclude = [...(obj.exclude || []), ...realism.scene_exclude];
+          if (Array.isArray(realism.scene_exclude)) {
+            if (picked.scene_reset_exclude) obj.exclude = [];
+            obj.exclude = [...(obj.exclude || []), ...realism.scene_exclude];
+          }
           if (realism.time_of_day) obj.time_of_day = realism.time_of_day;
           if (realism.setting)    obj.setting     = realism.setting;
           if (realism.work_surface)                      obj.work_surface     = realism.work_surface;
@@ -151,6 +153,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism._access_configuration_source !== undefined)     obj._access_configuration_source     = realism._access_configuration_source;
           if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
           if (picked._scaffold_variant !== undefined)                 obj._scaffold_variant                = picked._scaffold_variant;
+          if (Number.isInteger(picked.planned_worker_count))        obj._planned_worker_count            = picked.planned_worker_count;
           obj._selected_scenario_state_for = picked._state_for || null;
           obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
           if (Number.isInteger(picked.planned_worker_count)) obj._planned_worker_count = picked.planned_worker_count;

@@ -919,9 +919,58 @@ export const SITE_REALISM_FACADE = {
   peinture: {
     scenarios: [
 
-      // --- peinture intérieure (murs) ---
+      // --- pose papier peint (état encours uniquement — state-lock) ---
       {
-        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        _for:                             '^papier peint$',
+        _state_for:                       'encours',
+        _visual_family:                   'PEINTURE-WALLPAPER-INSTALLATION-INTERIOR',
+        _access_configuration:            'GROUND_LEVEL_WALLPAPER_INSTALLATION',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        planned_worker_count:             1,
+        setting:                          'interior',
+        scene_reset_exclude:              true,
+        scene_exclude: [
+          'paint roller applying liquid paint to a wall surface',
+          'paint tray with liquid paint',
+          'decorative plaster or enduit décoratif applied with a trowel as a continuous coat',
+          'ceiling as the primary work surface — work must be on a vertical wall',
+          'ladder used as a workstation — worker stands on the floor only',
+          'step ladder used as a workstation — no folding or step ladder',
+          'scaffold structure in the room',
+          'worker standing on furniture',
+          'exterior facade context — no outdoor view or facade work',
+          'completed wall fully covered with no active work in progress',
+        ],
+        tools: [
+          'wallpaper smoothing brush or plastic smoothing spatula pressed flat against the paper surface',
+          'wallpaper strip (lé) being positioned or smoothed against the wall — aligned at the vertical edge or seam',
+          'wallpaper roll or folded strip nearby as the next lé ready to be applied',
+        ],
+        protections: [
+          'canvas or plastic drop cloth spread across the full floor below the work area',
+          'paste bucket or wallpaper paste tray at the base of the wall',
+        ],
+        chantier_details: [
+          'one lé already adhered to the wall — seam or vertical edge clearly visible',
+          'second lé being positioned at the adjacent edge — active alignment in progress',
+          'smoothing strokes visible on the applied lé — working from centre toward the edges to chase bubbles',
+          'raw unpapered wall area beside the active lé — partial installation in progress',
+        ],
+        scene_note:    'interior wall being wallpapered — one lé already applied and smoothed, second lé being aligned at the adjacent vertical seam, paste bucket on the drop cloth below',
+        scene_camera:  'standing in the room, framing the half-papered wall with the active lé being smoothed and the raw wall section beside it',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'canvas drop cloth on the floor with paste bucket at the base of the wall',
+          midground:  'half-papered wall — one lé applied and smoothed on the left, raw unpainted wall to the right, vertical seam clearly visible',
+          background: 'room interior — door frame or window visible at the edge, small section of ceiling',
+        },
+        scene_debris:  'paste smear on the drop cloth at the base, trimmed edge strip of wallpaper beside the bucket',
+      },
+
+      // --- peinture intérieure (murs) générique (autres états et services non matchés) ---
+      {
+        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int',
         setting:       'interior',
         scene_note:    'interior wall being painted — roller working across a half-painted wall, fresh new colour on the upper half, old paint still visible on the lower half, roller tray on the drop cloth',
         scene_camera:  'standing in the room, framing the half-painted wall with the roller mid-stroke and the drop cloth on the floor',
@@ -950,7 +999,7 @@ export const SITE_REALISM_FACADE = {
         ],
       },
       {
-        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int',
         setting:       'interior',
         scene_note:    'room being prepared for painting — canvas drop cloth covering the full floor, masking tape along the skirting board edge, unpainted wall above ready, paint tin open on the cloth',
         scene_camera:  'standing in the doorway, framing the drop-cloth-covered room with masking tape along all edges and the open paint tin',
@@ -979,7 +1028,7 @@ export const SITE_REALISM_FACADE = {
         ],
       },
       {
-        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
+        _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int',
         setting:       'interior',
         scene_note:    'interior wall corner being cut in — flat brush cutting a precise line at the inside corner, both walls freshly painted around the angle, drop cloth on the floor',
         scene_camera:  'close-up at the inside corner, framing the brush at the angle making the cut-in line',

@@ -186,6 +186,26 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     active_brick_laying_visible:               obj.active_brick_laying_visible               ?? null,
     wall_alignment_tools_visible:              obj.wall_alignment_tools_visible              ?? null,
     stone_wall_visible:                        obj.stone_wall_visible                        ?? null,
+    // Papier peint gate fields
+    interior_wall_visible:                                    obj.interior_wall_visible                                    ?? null,
+    wallpaper_strip_attached_to_wall_visible:                 obj.wallpaper_strip_attached_to_wall_visible                 ?? null,
+    active_wallpaper_positioning_or_smoothing_visible:        obj.active_wallpaper_positioning_or_smoothing_visible        ?? null,
+    wallpaper_smoothing_tool_in_contact_visible:              obj.wallpaper_smoothing_tool_in_contact_visible              ?? null,
+    vertical_wallpaper_edge_or_seam_visible:                  obj.vertical_wallpaper_edge_or_seam_visible                  ?? null,
+    partial_installed_and_unfinished_wall_zones_visible:      obj.partial_installed_and_unfinished_wall_zones_visible      ?? null,
+    wallpaper_roll_paste_or_installation_materials_visible:   obj.wallpaper_roll_paste_or_installation_materials_visible   ?? null,
+    floor_drop_cloth_visible:                                 obj.floor_drop_cloth_visible                                 ?? null,
+    worker_stable_on_floor:                                   obj.worker_stable_on_floor                                   ?? null,
+    liquid_paint_roller_application_visible:                  obj.liquid_paint_roller_application_visible                  ?? null,
+    paint_tray_dominant:                                      obj.paint_tray_dominant                                      ?? null,
+    decorative_plaster_application_visible:                   obj.decorative_plaster_application_visible                   ?? null,
+    completed_wallpapered_wall_dominant:                      obj.completed_wallpapered_wall_dominant                      ?? null,
+    ceiling_wallpapering_dominant:                            obj.ceiling_wallpapering_dominant                            ?? null,
+    exterior_context_visible:                                 obj.exterior_context_visible                                 ?? null,
+    worker_on_ladder:                                         obj.worker_on_ladder                                         ?? null,
+    worker_on_step_ladder:                                    obj.worker_on_step_ladder                                    ?? null,
+    worker_on_scaffold:                                       obj.worker_on_scaffold                                       ?? null,
+    worker_standing_on_furniture:                             obj.worker_standing_on_furniture                             ?? null,
   };
 }
 

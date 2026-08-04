@@ -1,7 +1,7 @@
 {
   "summary": {
-    "STATE_LOCKED": 42,
-    "ROUTED_TO_SPECIFIC_SCENE": 115,
+    "STATE_LOCKED": 43,
+    "ROUTED_TO_SPECIFIC_SCENE": 114,
     "DEFERRED": 8,
     "PARTIAL_CONTEXTE": 7,
     "TOOLS_ONLY": 0,
@@ -965,12 +965,12 @@
       "service_label": "Peinture intérieure",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
         "flags": "i",
         "normalized_input": "peinture interieure"
       }
@@ -980,12 +980,12 @@
       "service_label": "Peinture salon",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
         "flags": "i",
         "normalized_input": "peinture salon"
       }
@@ -995,12 +995,12 @@
       "service_label": "Peinture chambre",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
         "flags": "i",
         "normalized_input": "peinture chambre"
       }
@@ -1010,12 +1010,12 @@
       "service_label": "Peinture cuisine",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
         "flags": "i",
         "normalized_input": "peinture cuisine"
       }
@@ -1025,12 +1025,12 @@
       "service_label": "Peinture couloir",
       "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
       "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
       "fallback_used": false,
       "routing_evidence": {
         "type": "regex_match",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int",
         "flags": "i",
         "normalized_input": "peinture couloir"
       }
@@ -1053,15 +1053,17 @@
     {
       "metier": "peinture",
       "service_label": "Papier peint",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-      "matched_regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: ^papier peint$ (_state_for=encours) → PEINTURE-WALLPAPER-INSTALLATION-INTERIOR / GROUND_LEVEL_WALLPAPER_INSTALLATION",
+      "matched_regex": "^papier peint$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"peinture\"]",
-        "regex": "interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint",
-        "flags": "i",
+        "regex": "^papier peint$",
+        "state_for": "encours",
+        "visual_family": "PEINTURE-WALLPAPER-INSTALLATION-INTERIOR",
+        "access_configuration": "GROUND_LEVEL_WALLPAPER_INSTALLATION",
         "normalized_input": "papier peint"
       }
     },

@@ -259,6 +259,26 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
               render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
               single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
+              // Papier peint gate fields
+              interior_wall_visible:                                    safety.interior_wall_visible                                    ?? null,
+              wallpaper_strip_attached_to_wall_visible:                 safety.wallpaper_strip_attached_to_wall_visible                 ?? null,
+              active_wallpaper_positioning_or_smoothing_visible:        safety.active_wallpaper_positioning_or_smoothing_visible        ?? null,
+              wallpaper_smoothing_tool_in_contact_visible:              safety.wallpaper_smoothing_tool_in_contact_visible              ?? null,
+              vertical_wallpaper_edge_or_seam_visible:                  safety.vertical_wallpaper_edge_or_seam_visible                  ?? null,
+              partial_installed_and_unfinished_wall_zones_visible:      safety.partial_installed_and_unfinished_wall_zones_visible      ?? null,
+              wallpaper_roll_paste_or_installation_materials_visible:   safety.wallpaper_roll_paste_or_installation_materials_visible   ?? null,
+              floor_drop_cloth_visible:                                 safety.floor_drop_cloth_visible                                 ?? null,
+              worker_stable_on_floor:                                   safety.worker_stable_on_floor                                   ?? null,
+              liquid_paint_roller_application_visible:                  safety.liquid_paint_roller_application_visible                  ?? null,
+              paint_tray_dominant:                                      safety.paint_tray_dominant                                      ?? null,
+              decorative_plaster_application_visible:                   safety.decorative_plaster_application_visible                   ?? null,
+              completed_wallpapered_wall_dominant:                      safety.completed_wallpapered_wall_dominant                      ?? null,
+              ceiling_wallpapering_dominant:                            safety.ceiling_wallpapering_dominant                            ?? null,
+              exterior_context_visible:                                 safety.exterior_context_visible                                 ?? null,
+              worker_on_ladder:                                         safety.worker_on_ladder                                         ?? null,
+              worker_on_step_ladder:                                    safety.worker_on_step_ladder                                    ?? null,
+              worker_on_scaffold:                                       safety.worker_on_scaffold                                       ?? null,
+              worker_standing_on_furniture:                             safety.worker_standing_on_furniture                             ?? null,
             }));
 
             if (safety.checkFailed) {
