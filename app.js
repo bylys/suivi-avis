@@ -1,6 +1,6 @@
 // ── DECODO PROXY ──
-const DECODO_PASS_RESIDENTIAL = '';  // mot de passe résidentiel (VAteamR)
-const DECODO_PASS_MOBILE      = '';  // mot de passe mobile (VATeam)
+const DECODO_PASS_RESIDENTIAL = 'ip+w63wR0kk5uBtAfS';  // mot de passe résidentiel (VAteamR)
+const DECODO_PASS_MOBILE      = '5mF_i90ueyEEo0rJsd';  // mot de passe mobile (VATeam)
 
 // ── SUPABASE REST API (sans CDN) ──
 const SUPABASE_URL = 'https://rrbvghxmnimusfyqixau.supabase.co';
