@@ -2903,7 +2903,8 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
   };
 
-  const proxyProtocol = ['http','https'][Math.floor(Math.random()*2)];
+  // gate.decodo.com:10001 est un endpoint HTTP (curl -x = proxy HTTP). https/socks5 échouent.
+  const proxyProtocol = 'http';
 
   const _creerProfil = async (extraBody = {}) => {
     // Flags pour désactiver la validation de connectivité proxy (cause du PROXY_NOT_WORKING)
