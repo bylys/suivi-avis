@@ -2906,7 +2906,8 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const proxyProtocol = ['http','https'][Math.floor(Math.random()*2)];
 
   const _creerProfil = async (extraBody = {}) => {
-    const body = { name: profileName, browser: 'wayfern', ...extraBody };
+    // Flags pour désactiver la validation de connectivité proxy (cause du PROXY_NOT_WORKING)
+    const body = { name: profileName, browser: 'wayfern', skip_proxy_check: true, validate_proxy: false, test_proxy: false, ...extraBody };
     const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 30000);
     if (!res.ok) {
       const txt = await res.text();
@@ -2975,15 +2976,18 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
 
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
-    // Étape 3 : si le profil a été créé sans proxy_id, essayer PATCH pour l'attacher
+    // Étape 3 : attacher le proxy au profil (PATCH → 405, on essaie PUT puis POST)
     if (proxyId) {
-      try {
-        const patchRes = await _fetchTimeout(`${base}/v1/profiles/${profileId}`, {
-          method: 'PATCH', headers, body: JSON.stringify({ proxy_id: proxyId })
-        }, 5000);
-        const patchBody = await patchRes.text();
-        console.log(`DonutBrowser PATCH proxy_id → ${patchRes.status}:`, patchBody);
-      } catch (e) { console.warn('DonutBrowser PATCH profil échoué:', e); }
+      for (const method of ['PUT', 'POST']) {
+        try {
+          const upRes = await _fetchTimeout(`${base}/v1/profiles/${profileId}`, {
+            method, headers, body: JSON.stringify({ proxy_id: proxyId })
+          }, 5000);
+          const upBody = await upRes.text();
+          console.log(`DonutBrowser ${method} proxy_id → ${upRes.status}:`, upBody);
+          if (upRes.ok) break;
+        } catch (e) { console.warn(`DonutBrowser ${method} profil échoué:`, e); }
+      }
     }
 
     // Étape 4 : lancer le profil
