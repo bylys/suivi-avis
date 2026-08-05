@@ -2925,47 +2925,79 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   };
 
   try {
+    // Étape 1 : récupérer ou créer un proxy_id valide dans DonutBrowser
+    let proxyId = null;
+
+    // Chercher un proxy Decodo existant (évite PROXY_NOT_WORKING sur recréation)
+    try {
+      const pxRes = await _fetchTimeout(`${base}/v1/proxies`, { method: 'GET', headers }, 5000);
+      if (pxRes.ok) {
+        const pxData = await pxRes.json();
+        const list = pxData.proxies || pxData.data || (Array.isArray(pxData) ? pxData : []);
+        console.log('DonutBrowser proxies existants:', list.length, list.map(p => p.name).join(', '));
+        const found = list.find(p => p.proxy_settings?.host?.includes('decodo.com') || p.name?.toLowerCase().includes('decodo'));
+        if (found) { proxyId = found.id; console.log('DonutBrowser: réutilise proxy existant:', proxyId, found.name); }
+      }
+    } catch (e) { console.warn('DonutBrowser GET proxies échoué:', e); }
+
+    // Si aucun proxy existant, en créer un nouveau (nom unique pour éviter les doublons)
+    if (!proxyId && decodoPass) {
+      const uniqueName = `Decodo_${isMobile ? 'mob' : 'res'}_${citySlug}_${Math.floor(Date.now()/1000)}`;
+      try {
+        const pxCreateRes = await _fetchTimeout(`${base}/v1/proxies`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ name: uniqueName, proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass } })
+        }, 10000);
+        const pxCreateBody = await pxCreateRes.text();
+        console.log(`DonutBrowser POST proxy → ${pxCreateRes.status}:`, pxCreateBody);
+        if (pxCreateRes.ok) {
+          const pd = JSON.parse(pxCreateBody);
+          proxyId = pd.id || pd.proxy?.id || null;
+        }
+      } catch (e) { console.warn('DonutBrowser proxy création échoué:', e); }
+    }
+
+    // Étape 2 : créer le profil avec proxy_settings (format correct) ou proxy_id si disponible
     let profileId = null;
-
-    // Tentative 1 : proxy inline ville
-    if (decodoPass) {
-      profileId = await _creerProfil({
-        proxy: { type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass }
-      });
+    if (proxyId) {
+      profileId = await _creerProfil({ proxy_id: proxyId });
     }
-
-    // Tentative 2 : proxy inline pays seulement
     if (!profileId && decodoPass) {
-      console.warn('DonutBrowser: retry proxy inline pays seulement');
+      // Format proxy_settings dans le body profil (même structure que POST /v1/proxies)
       profileId = await _creerProfil({
-        proxy: { type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernamePaysSeul, password: decodoPass }
+        proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass }
       });
     }
-
-    // Fallback : sans proxy
+    if (!profileId && decodoPass) {
+      profileId = await _creerProfil({
+        proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernamePaysSeul, password: decodoPass }
+      });
+    }
     if (!profileId) {
       console.warn('DonutBrowser: création sans proxy');
-      alert('⚠️ Proxy Decodo non valide. Le profil va s\'ouvrir SANS proxy.\nVérifie tes credentials Decodo dans app.js.');
       profileId = await _creerProfil({});
     }
 
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
-    // Vérifier que le profil existe bien dans DonutBrowser
-    try {
-      const chk = await _fetchTimeout(`${base}/v1/profiles/${profileId}`, { method: 'GET', headers }, 5000);
-      const chkBody = await chk.text();
-      console.log(`DonutBrowser GET profil ${profileId} → ${chk.status}:`, chkBody);
-    } catch (e) { console.warn('DonutBrowser: impossible de vérifier le profil:', e); }
+    // Étape 3 : si le profil a été créé sans proxy_id, essayer PATCH pour l'attacher
+    if (proxyId) {
+      try {
+        const patchRes = await _fetchTimeout(`${base}/v1/profiles/${profileId}`, {
+          method: 'PATCH', headers, body: JSON.stringify({ proxy_id: proxyId })
+        }, 5000);
+        const patchBody = await patchRes.text();
+        console.log(`DonutBrowser PATCH proxy_id → ${patchRes.status}:`, patchBody);
+      } catch (e) { console.warn('DonutBrowser PATCH profil échoué:', e); }
+    }
 
-    // Launch — /run attend probablement un body JSON, /launch peut avoir changé de méthode
-    const jsonBody = JSON.stringify({});
+    // Étape 4 : lancer le profil
+    const jb = JSON.stringify({});
     const launchEndpoints = [
-      { url: `${base}/v1/profiles/${profileId}/run`,    method: 'POST', body: jsonBody },
-      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'POST', body: jsonBody },
+      { url: `${base}/v1/profiles/${profileId}/run`,    method: 'POST', body: jb },
+      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'POST', body: jb },
       { url: `${base}/v1/profiles/${profileId}/launch`, method: 'GET',  body: null },
-      { url: `${base}/v1/profiles/${profileId}/open`,   method: 'POST', body: jsonBody },
-      { url: `${base}/v1/profiles/${profileId}/start`,  method: 'POST', body: jsonBody },
+      { url: `${base}/v1/profiles/${profileId}/open`,   method: 'POST', body: jb },
     ];
     let launched = false;
     for (const { url, method, body } of launchEndpoints) {
