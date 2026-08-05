@@ -2040,11 +2040,23 @@ async function genererAvis() {
 
   const tonLabel = { neutre: 'neutre et factuel', enthousiaste: 'enthousiaste et chaleureux', detaille: 'détaillé et précis', court: 'court et direct' }[ton] || 'neutre';
 
-  const prompt = `Tu es un vrai client français qui laisse un avis Google après une intervention à domicile.
+  // Le dépannage automobile n'est PAS une intervention à domicile : panne / remorquage
+  // au bord de la route. Le prompt générique (voisins, mobilier, chantier) ne colle pas.
+  const isAuto = detecterMetier(fiche) === 'auto';
+
+  const introRole = isAuto
+    ? 'Tu es un vrai client français qui laisse un avis Google après un dépannage automobile (panne, remorquage, intervention au bord de la route ou sur place).'
+    : 'Tu es un vrai client français qui laisse un avis Google après une intervention à domicile.';
+
+  const detailConcret = isAuto
+    ? 'Inclure au moins un détail concret propre au dépannage auto : délai d\'arrivée du dépanneur, réactivité (nuit, week-end, heure de pointe), diagnostic de la panne, dépannage sur place ou remorquage, tarif annoncé avant intervention, prise en charge rassurante. INTERDIT : voisins, mobilier, chantier, propreté du chantier, finitions, devis de travaux.'
+    : 'Inclure au moins un détail concret : voisins qui réagissent, propreté du chantier, ponctualité, conformité du devis, qualité des finitions, protection du mobilier';
+
+  const prompt = `${introRole}
 
 Informations :
 - Entreprise : ${fiche}
-- Travaux : ${travaux}
+- ${isAuto ? 'Intervention' : 'Travaux'} : ${travaux}
 - Ville : ${ville}
 - Ton : ${tonLabel}
 
@@ -2053,7 +2065,7 @@ Règles de rédaction strictes :
 2. Langage familier modéré OK ("les gars", "nickel", "rien à redire", "boulot", "sympa") — INTERDIT : "franchement", "le matos", "vachement", "trop bien", "au top"
 3. Tu PEUX commencer par le nom de l'entreprise suivi d'une observation directe (ex : "Super boulot de la part de [entreprise] !") ou par une situation concrète
 4. Structure narrative : situation ou observation → intervention → résultat → impression finale (varie l'ordre)
-5. Inclure au moins un détail concret : voisins qui réagissent, propreté du chantier, ponctualité, conformité du devis, qualité des finitions, protection du mobilier
+5. ${detailConcret}
 6. Les fautes de frappe légères et petites erreurs grammaticales sont acceptées et souhaitées pour l'authenticité
 7. Exclamations naturelles OK (1-2 max)
 8. Signaux d'authenticité Google : pas de superlatifs répétés, une observation précise et spécifique, nom de l'entreprise max 1-2 fois
@@ -2929,15 +2941,20 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     // Étape 1 : récupérer ou créer un proxy_id valide dans DonutBrowser
     let proxyId = null;
 
-    // Chercher un proxy Decodo existant (évite PROXY_NOT_WORKING sur recréation)
+    // Réutiliser UNIQUEMENT un proxy Decodo au bon format (username avec -session-).
+    // Les vieux proxies sans -session- sont cassés (no suitable exit node) → on les ignore.
     try {
       const pxRes = await _fetchTimeout(`${base}/v1/proxies`, { method: 'GET', headers }, 5000);
       if (pxRes.ok) {
         const pxData = await pxRes.json();
         const list = pxData.proxies || pxData.data || (Array.isArray(pxData) ? pxData : []);
         console.log('DonutBrowser proxies existants:', list.length, list.map(p => p.name).join(', '));
-        const found = list.find(p => p.proxy_settings?.host?.includes('decodo.com') || p.name?.toLowerCase().includes('decodo'));
-        if (found) { proxyId = found.id; console.log('DonutBrowser: réutilise proxy existant:', proxyId, found.name); }
+        const found = list.find(p =>
+          p.proxy_settings?.host?.includes('decodo.com') &&
+          p.proxy_settings?.username?.includes('-session-') &&
+          p.proxy_settings?.username?.includes(`city-${citySlug}-`)
+        );
+        if (found) { proxyId = found.id; console.log('DonutBrowser: réutilise proxy valide:', proxyId, found.name); }
       }
     } catch (e) { console.warn('DonutBrowser GET proxies échoué:', e); }
 
@@ -2996,28 +3013,23 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }
     }
 
-    // Étape 4 : lancer le profil
-    const jb = JSON.stringify({});
-    const launchEndpoints = [
-      { url: `${base}/v1/profiles/${profileId}/run`,    method: 'POST', body: jb },
-      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'POST', body: jb },
-      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'GET',  body: null },
-      { url: `${base}/v1/profiles/${profileId}/open`,   method: 'POST', body: jb },
-    ];
-    let launched = false;
-    for (const { url, method, body } of launchEndpoints) {
-      try {
-        const opts = body !== null ? { method, headers, body } : { method, headers };
-        const lr = await _fetchTimeout(url, opts, 8000);
-        const respBody = await lr.text();
-        console.log(`DonutBrowser launch ${method} ${url} → ${lr.status}:`, respBody);
-        if (lr.ok) { launched = true; break; }
-      } catch (e) { console.warn('DonutBrowser launch timeout:', url); }
-    }
-    if (launched) {
-      console.log('DonutBrowser profil lancé:', profileId, profileName);
-    } else {
-      console.error('DonutBrowser: tous les endpoints de launch ont échoué pour', profileId);
+    // Étape 4 : lancer le profil via /run (seul endpoint de launch — Pro DonutBrowser requis)
+    try {
+      const lr = await _fetchTimeout(`${base}/v1/profiles/${profileId}/run`, { method: 'POST', headers, body: JSON.stringify({}) }, 8000);
+      const respBody = await lr.text();
+      console.log(`DonutBrowser /run → ${lr.status}:`, respBody);
+      if (lr.ok) {
+        console.log('DonutBrowser profil lancé:', profileId, profileName);
+      } else if (lr.status === 402) {
+        // Le lancement par API nécessite DonutBrowser Pro. Le profil + proxy sont prêts.
+        alert(`✅ Profil "${profileName}" créé avec proxy.\n\n▶️ Lance-le à la main dans DonutBrowser (clic sur le profil).\n\n(Le lancement automatique nécessite DonutBrowser Pro.)`);
+      } else {
+        console.error('DonutBrowser /run échec:', lr.status, respBody);
+        alert(`⚠️ Profil "${profileName}" créé mais lancement échoué (${lr.status}).\nLance-le manuellement dans DonutBrowser.`);
+      }
+    } catch (e) {
+      console.warn('DonutBrowser /run timeout:', e);
+      alert(`✅ Profil "${profileName}" créé. Lance-le manuellement dans DonutBrowser.`);
     }
     return profileId;
   } catch (e) {
