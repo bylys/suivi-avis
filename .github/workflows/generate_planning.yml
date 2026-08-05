@@ -9,7 +9,7 @@ on:
       quota:
         description: "Nombre d'avis par opérateur"
         required: false
-        default: "50"
+        default: "45"
 
 jobs:
   planning:

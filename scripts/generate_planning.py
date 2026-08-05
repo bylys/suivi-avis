@@ -52,7 +52,7 @@ SLACK_OPERATEURS = {
 
 DELAI_GMAIL_JOURS  = 3   # délai min entre deux utilisations du même gmail
 DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
-QUOTA_PAR_OPERATEUR = int(os.environ.get("QUOTA_PAR_OPERATEUR", "50"))
+QUOTA_PAR_OPERATEUR = int(os.environ.get("QUOTA_PAR_OPERATEUR", "45"))
 OPERATEURS = ["Kevin", "Fifaliana", "Aina", "Kintana", "Korail", "Anjara"]
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
