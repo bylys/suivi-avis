@@ -2937,7 +2937,7 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const _creerProfil = async (pid) => {
     const body = { name: profileName, browser: 'wayfern' };
     if (pid) body.proxy_id = pid;
-    const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 10000);
+    const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 30000);
     if (!res.ok) { console.warn('DonutBrowser profil erreur:', await res.text()); return null; }
     const d = await res.json();
     return d.profile?.id || d.id || null;
