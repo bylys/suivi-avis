@@ -24,7 +24,16 @@ const _fakeSleep   = async () => {};
 const _fakeRewrite = async () => 'Mocked rewritten prompt.';
 
 const _mkImgResp  = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ data: [{ b64_json: 'dGVzdA==' }] }) });
-const _mkSafeResp = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ safe: true, severity: 'ok', reason: '' }) } }] }) });
+// Full structured response passing the "Réparation toiture" gate
+const _mkToitureSafeResp = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({
+  safe: true, severity: 'ok', reason: '',
+  hooked_roof_ladder_visible: true, ridge_hooks_visible: true, roof_ladder_stable: true,
+  worker_remains_on_ladder: true, worker_standing_freely_on_roof: false,
+  connected_harness_visible: true, second_worker_visible: true,
+  second_worker_outside_drop_zone: true, service_visual_match: true,
+  visible_worker_count: 2, worker_count_match: true,
+}) } }] }) });
+const _mkSafeResp = _mkToitureSafeResp;
 const _mkSafeFail = () => ({ ok: false, status: 500, text: async () => '' });
 const _mkSafeReject = () => ({ ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: JSON.stringify({ safe: false, severity: 'critical', reason: 'test reject' }) } }] }) });
 
@@ -85,7 +94,7 @@ export async function runTimingTests() {
       const s1 = createGenerationState({ runId: 'tim1', tasks: tasks1 });
       const mf1 = _mkFetch();
       const pipe1 = createImagePipeline({ state: s1, fetchImpl: mf1.fetchImpl, readResponseImpl: _fakeRead, rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep });
-      await pipe1.run(tasks1, 'sk-test');
+      await pipe1.runImageBatch(tasks1, 'sk-test');
       const t = tasks1[0];
       const issues = [];
       if (!t._timing)                                                           issues.push('_timing absent');
@@ -109,7 +118,7 @@ export async function runTimingTests() {
       let sleepCalled = false;
       const fakeSleep2 = async () => { sleepCalled = true; };
       const pipe2 = createImagePipeline({ state: s2, fetchImpl: mf2.fetchImpl, readResponseImpl: _fakeRead, rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: fakeSleep2 });
-      await pipe2.run(tasks2, 'sk-test');
+      await pipe2.runImageBatch(tasks2, 'sk-test');
       const t = tasks2[0];
       const issues = [];
       if (t._timing?.vision_attempts !== 2)                                    issues.push(`vision_attempts=${t._timing?.vision_attempts}`);
@@ -134,11 +143,12 @@ export async function runTimingTests() {
       task3._pre_assigned_composition     = 'medium_intervention';
       task3._pre_assigned_vehicle         = 'absent';
       task3._capture_defects_resolved     = [];
+      task3._batch_plan_id                = 'tim3-plan';
       const tasks3 = [task3];
       const s3 = createGenerationState({ runId: 'tim3', tasks: tasks3 });
       const mf3 = _mkFetch();
       const pipe3 = createImagePipeline({ state: s3, fetchImpl: mf3.fetchImpl, readResponseImpl: _fakeRead, rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep });
-      await pipe3.run(tasks3, 'sk-test');
+      await pipe3.runImageBatch(tasks3, 'sk-test');
       const t = tasks3[0];
       const issues = [];
       if (t._timing?.generation_attempts !== 0) issues.push(`generation_attempts=${t._timing?.generation_attempts}`);
@@ -155,7 +165,7 @@ export async function runTimingTests() {
       const s4 = createGenerationState({ runId: 'tim4', tasks: tasks4 });
       const mf4 = _mkFetch({ imgFn: () => ({ ok: false, status: 500, text: async () => '' }) });
       const pipe4 = createImagePipeline({ state: s4, fetchImpl: mf4.fetchImpl, readResponseImpl: _fakeRead, rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep });
-      await pipe4.run(tasks4, 'sk-test');
+      await pipe4.runImageBatch(tasks4, 'sk-test');
       const t = tasks4[0];
       const issues = [];
       if (t._failureType !== 'IMAGE_API_FAILURE')  issues.push(`_failureType=${t._failureType}`);
@@ -170,7 +180,7 @@ export async function runTimingTests() {
       const s5 = createGenerationState({ runId: 'tim5', tasks: tasks5 });
       const mf5 = _mkFetch({ visionFn: () => _mkSafeReject() });
       const pipe5 = createImagePipeline({ state: s5, fetchImpl: mf5.fetchImpl, readResponseImpl: _fakeRead, rewritePromptImpl: _fakeRewrite, uiAdapter: _mkUiAdapter().adapter, sleep: _fakeSleep });
-      await pipe5.run(tasks5, 'sk-test');
+      await pipe5.runImageBatch(tasks5, 'sk-test');
       const t = tasks5[0];
       const issues = [];
       if (t._failureType !== 'VISUAL_REJECT')       issues.push(`_failureType=${t._failureType}`);
