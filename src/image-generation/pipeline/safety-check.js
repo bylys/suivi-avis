@@ -186,6 +186,24 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     active_brick_laying_visible:               obj.active_brick_laying_visible               ?? null,
     wall_alignment_tools_visible:              obj.wall_alignment_tools_visible              ?? null,
     stone_wall_visible:                        obj.stone_wall_visible                        ?? null,
+    // Peinture façade gate fields
+    exterior_building_facade_visible:                 obj.exterior_building_facade_visible                 ?? null,
+    masonry_or_rendered_facade_surface_visible:       obj.masonry_or_rendered_facade_surface_visible       ?? null,
+    facade_surface_dominant:                          obj.facade_surface_dominant                          ?? null,
+    active_roller_contact_with_facade_visible:        obj.active_roller_contact_with_facade_visible        ?? null,
+    extension_pole_visible:                           obj.extension_pole_visible                           ?? null,
+    partial_painted_and_unpainted_facade_zones_visible: obj.partial_painted_and_unpainted_facade_zones_visible ?? null,
+    fresh_facade_paint_visible:                       obj.fresh_facade_paint_visible                       ?? null,
+    paint_bucket_or_tray_visible:                     obj.paint_bucket_or_tray_visible                     ?? null,
+    shutters_or_shutter_panels_dominant:              obj.shutters_or_shutter_panels_dominant              ?? null,
+    gate_or_fence_dominant:                           obj.gate_or_fence_dominant                           ?? null,
+    exterior_woodwork_painting_dominant:              obj.exterior_woodwork_painting_dominant              ?? null,
+    completed_facade_dominant:                        obj.completed_facade_dominant                        ?? null,
+    decorative_render_application_visible:            obj.decorative_render_application_visible            ?? null,
+    spray_painting_dominant:                          obj.spray_painting_dominant                          ?? null,
+    worker_on_ladder:                                 obj.worker_on_ladder                                 ?? null,
+    worker_on_step_ladder:                            obj.worker_on_step_ladder                            ?? null,
+    worker_on_scaffold:                               obj.worker_on_scaffold                               ?? null,
   };
 }
 

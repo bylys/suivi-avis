@@ -2890,26 +2890,48 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
 
   let proxyId = null;
   if (decodoPass) {
+    const proxyName = isMobile ? `Decodo_mob_${citySlug}` : `Decodo_res_${citySlug}`;
     try {
-      const proxyRes = await fetch(`${base}/v1/proxies`, {
-        method: 'POST', headers,
-        body: JSON.stringify({
-          name: isMobile ? `Decodo_mob_${citySlug}` : `Decodo_res_${citySlug}`,
-          proxy_settings: {
-            proxy_type: 'https',
-            host: cfg.host,
-            port: cfg.port,
-            username: decodoUsername,
-            password: decodoPass
-          }
-        })
-      });
-      if (proxyRes.ok) {
-        const p = await proxyRes.json();
-        proxyId = p.id;
+      // Chercher un proxy existant avec ce nom pour éviter les doublons
+      const listRes = await fetch(`${base}/v1/proxies`, { headers });
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const proxies = Array.isArray(listData) ? listData : (listData.proxies || listData.data || []);
+        const existing = proxies.find(p => p.name === proxyName);
+        if (existing) {
+          proxyId = existing.id;
+          console.log('DonutBrowser proxy existant réutilisé:', proxyName, proxyId);
+        }
       }
     } catch (e) {
-      console.warn('DonutBrowser proxy création échouée:', e);
+      console.warn('DonutBrowser liste proxies échouée:', e);
+    }
+
+    if (!proxyId) {
+      try {
+        const proxyRes = await fetch(`${base}/v1/proxies`, {
+          method: 'POST', headers,
+          body: JSON.stringify({
+            name: proxyName,
+            proxy_settings: {
+              proxy_type: 'https',
+              host: cfg.host,
+              port: cfg.port,
+              username: decodoUsername,
+              password: decodoPass
+            }
+          })
+        });
+        const proxyData = await proxyRes.json();
+        console.log('DonutBrowser proxy créé:', JSON.stringify(proxyData));
+        if (proxyRes.ok) {
+          proxyId = proxyData.id ?? proxyData.proxy?.id ?? proxyData.data?.id ?? null;
+        } else {
+          console.error('DonutBrowser proxy erreur:', proxyRes.status, JSON.stringify(proxyData));
+        }
+      } catch (e) {
+        console.warn('DonutBrowser proxy création échouée:', e);
+      }
     }
   }
 

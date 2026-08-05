@@ -1063,6 +1063,56 @@ export const SITE_REALISM_FACADE = {
         ],
       },
 
+      // --- peinture façade state-lock (encours) ---
+      {
+        _for:                             '^peinture facade$',
+        _state_for:                       'encours',
+        _visual_family:                   'PEINTURE-FACADE-MASONRY-ROLLER-EXTERIOR',
+        _access_configuration:            'GROUND_LEVEL_FACADE_ROLLER_EXTENSION',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        planned_worker_count:             1,
+        setting:                          'exterior',
+        scene_reset_exclude:              true,
+        scene_note:    'exterior masonry facade being painted with a long-handled extension roller — one tradesperson standing stably on firm flat ground, both arms raised, pushing the extension roller across the masonry or rendered facade surface — fresh new paint clearly visible on the upper section, old paint colour still showing on the lower unpainted section — clear horizontal progression line between fresh and old paint — paint tray or bucket on the ground at the base of the wall',
+        scene_camera:  'homeowner smartphone photograph — camera 4–6 m from the facade, straight-on or slight diagonal — one tradesperson at the wall visible from behind or at a three-quarter angle, extension roller in contact with the facade surface — fresh painted section above the active stroke, old paint below',
+        scene_framing: {
+          work_pct:   65,
+          foreground: 'paint tray or paint bucket on the ground at the base of the wall — drop cloth or tarp protecting the floor surface below the work zone',
+          midground:  'one tradesperson standing on firm flat ground, extension roller on a long pole pressed against the masonry facade surface — fresh new paint colour on the upper section, old paint colour clearly still visible on the lower section — clear horizontal boundary between painted and unpainted zones',
+          background: 'full facade width — windows protected with plastic sheeting or masking tape — sky above the roof edge or neighbouring facade visible',
+        },
+        scene_debris:  'paint drip at the leading edge of the fresh paint line on the facade surface',
+        scene_exclude: [
+          'shutters as the main subject',
+          'gate or fence as the main subject',
+          'exterior woodwork painting',
+          'ladder',
+          'step ladder',
+          'scaffold',
+          'spray painting',
+          'interior scene',
+          'render application',
+          'pressure washer',
+          'roofing',
+          'completed facade with no active work zone',
+        ],
+        tools: [
+          'extension roller on a long telescopic pole in contact with the masonry facade surface',
+          'paint tray or paint bucket on the ground at the wall base',
+        ],
+        protections: [
+          'plastic sheeting taped over the window glass',
+          'masking tape along the window frame edges',
+          'drop cloth or tarp on the ground below the wall',
+        ],
+        chantier_details: [
+          'fresh new paint colour on the upper facade section — wet, uniform, clean edge',
+          'old paint colour clearly visible on the lower section — work progression still in progress',
+          'clear horizontal boundary between freshly painted upper zone and unpainted lower zone',
+        ],
+      },
+
       // --- peinture extérieure ---
       {
         _for:          'exterieur|exterieure|facade.*peint|peinture.*facade|volet|portail|cloture|boiserie.*ext|sous.*face|soffit',

@@ -259,6 +259,27 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
               render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
               single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
+              // Peinture façade gate fields
+              exterior_building_facade_visible:                       safety.exterior_building_facade_visible                       ?? null,
+              masonry_or_rendered_facade_surface_visible:             safety.masonry_or_rendered_facade_surface_visible             ?? null,
+              facade_surface_dominant:                                safety.facade_surface_dominant                                ?? null,
+              active_roller_contact_with_facade_visible:              safety.active_roller_contact_with_facade_visible              ?? null,
+              extension_pole_visible:                                 safety.extension_pole_visible                                 ?? null,
+              partial_painted_and_unpainted_facade_zones_visible:     safety.partial_painted_and_unpainted_facade_zones_visible     ?? null,
+              fresh_facade_paint_visible:                             safety.fresh_facade_paint_visible                             ?? null,
+              paint_bucket_or_tray_visible:                           safety.paint_bucket_or_tray_visible                           ?? null,
+              shutters_or_shutter_panels_dominant:                    safety.shutters_or_shutter_panels_dominant                    ?? null,
+              gate_or_fence_dominant:                                 safety.gate_or_fence_dominant                                 ?? null,
+              exterior_woodwork_painting_dominant:                    safety.exterior_woodwork_painting_dominant                    ?? null,
+              interior_context_visible:                               safety.interior_context_visible                               ?? null,
+              completed_facade_dominant:                              safety.completed_facade_dominant                              ?? null,
+              decorative_render_application_visible:                  safety.decorative_render_application_visible                  ?? null,
+              spray_painting_dominant:                                safety.spray_painting_dominant                                ?? null,
+              worker_on_ladder:                                       safety.worker_on_ladder                                       ?? null,
+              worker_on_step_ladder:                                  safety.worker_on_step_ladder                                  ?? null,
+              worker_on_scaffold:                                     safety.worker_on_scaffold                                     ?? null,
+              worker_stable_on_ground:                                safety.worker_stable_on_ground                                ?? null,
+              worker_count_match:                                     safety.worker_count_match                                     ?? null,
             }));
 
             if (safety.checkFailed) {
