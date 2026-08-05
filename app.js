@@ -2888,26 +2888,29 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const decodoUsername = isMobile ? cfg.mob : cfg.res;
   const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
 
+  // Username avec ville, et fallback pays-seulement si la ville n'est pas supportée par Decodo
+  const usernameAvecVille   = isMobile ? cfg.mob : cfg.res;
+  const usernamePaysSeul    = isMobile
+    ? `user-VATeam-country-${pays.toLowerCase()}-sessionduration-1440`
+    : `user-VAteamR-country-${pays.toLowerCase()}-sessionduration-1440`;
+
+  const _creerProxy = async (username, suffixe) => {
+    const res = await fetch(`${base}/v1/proxies`, {
+      method: 'POST', headers,
+      body: JSON.stringify({
+        name: `Decodo_${isMobile ? 'mob' : 'res'}_${suffixe}`,
+        proxy_settings: { proxy_type: 'https', host: cfg.host, port: cfg.port, username, password: decodoPass }
+      })
+    });
+    if (!res.ok) return null;
+    const p = await res.json();
+    return p.id || null;
+  };
+
   let proxyId = null;
   if (decodoPass) {
     try {
-      const proxyRes = await fetch(`${base}/v1/proxies`, {
-        method: 'POST', headers,
-        body: JSON.stringify({
-          name: isMobile ? `Decodo_mob_${citySlug}` : `Decodo_res_${citySlug}`,
-          proxy_settings: {
-            proxy_type: 'https',
-            host: cfg.host,
-            port: cfg.port,
-            username: decodoUsername,
-            password: decodoPass
-          }
-        })
-      });
-      if (proxyRes.ok) {
-        const p = await proxyRes.json();
-        proxyId = p.id;
-      }
+      proxyId = await _creerProxy(usernameAvecVille, citySlug);
     } catch (e) {
       console.warn('DonutBrowser proxy création échouée:', e);
     }
@@ -2929,26 +2932,32 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
   };
 
-  try {
+  const _creerProfil = async (pid) => {
     const body = { name: profileName, browser: 'wayfern' };
-    if (proxyId) body.proxy_id = proxyId;
-    const profRes = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 8000);
-    if (!profRes.ok) {
-      console.error('DonutBrowser profil erreur:', await profRes.text());
-      return null;
+    if (pid) body.proxy_id = pid;
+    const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 10000);
+    if (!res.ok) { console.warn('DonutBrowser profil erreur:', await res.text()); return null; }
+    const d = await res.json();
+    return d.profile?.id || d.id || null;
+  };
+
+  try {
+    let profileId = proxyId ? await _creerProfil(proxyId) : null;
+
+    // Fallback : si la ville n'est pas supportée par Decodo → retry avec pays seulement
+    if (!profileId && proxyId && decodoPass) {
+      console.warn(`DonutBrowser: ville "${citySlug}" non supportée par Decodo, retry avec pays seulement`);
+      const proxyIdPays = await _creerProxy(usernamePaysSeul, pays.toLowerCase()).catch(() => null);
+      if (proxyIdPays) profileId = await _creerProfil(proxyIdPays);
     }
-    const prof = await profRes.json();
-    const profileId = prof.profile?.id || prof.id;
+
+    if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
     await _fetchTimeout(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers }, 5000);
     console.log('DonutBrowser profil lancé:', profileId, profileName);
     return profileId;
   } catch (e) {
-    if (e.name === 'AbortError') {
-      console.error('DonutBrowser timeout — vérifie les credentials Decodo sur le dashboard');
-    } else {
-      console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
-    }
+    console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
     return null;
   }
 }
