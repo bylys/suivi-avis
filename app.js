@@ -2883,10 +2883,15 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
   const baseUser   = isMobile ? 'user-VATeam' : 'user-VAteamR';
 
+  // sessionduration-1440 EXIGE un id de session avant lui, sinon "no suitable exit node".
+  // Session stable par ville (sticky IP 24h) + suffixe aléatoire pour l'unicité.
+  const sessionId = ('s' + citySlug.replace(/[^a-z0-9]/g, '') + Math.random().toString(36).slice(2, 8)).slice(0, 24);
+  const sessionSuffix = `-session-${sessionId}-sessionduration-1440`;
+
   // Ordre de tentative : ville → pays → base (correspond aux curl qui fonctionnent)
-  const usernameAvecVille = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}-sessionduration-1440`;
-  const usernameAvecPays  = `${baseUser}-country-${pays.toLowerCase()}-sessionduration-1440`;
-  const usernameBase      = `${baseUser}-sessionduration-1440`;
+  const usernameAvecVille = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
+  const usernameAvecPays  = `${baseUser}-country-${pays.toLowerCase()}${sessionSuffix}`;
+  const usernameBase      = `${baseUser}${sessionSuffix}`;
 
   const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
     : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
