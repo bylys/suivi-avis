@@ -2890,48 +2890,26 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
 
   let proxyId = null;
   if (decodoPass) {
-    const proxyName = isMobile ? `Decodo_mob_${citySlug}` : `Decodo_res_${citySlug}`;
     try {
-      // Chercher un proxy existant avec ce nom pour éviter les doublons
-      const listRes = await fetch(`${base}/v1/proxies`, { headers });
-      if (listRes.ok) {
-        const listData = await listRes.json();
-        const proxies = Array.isArray(listData) ? listData : (listData.proxies || listData.data || []);
-        const existing = proxies.find(p => p.name === proxyName);
-        if (existing) {
-          proxyId = existing.id;
-          console.log('DonutBrowser proxy existant réutilisé:', proxyName, proxyId);
-        }
+      const proxyRes = await fetch(`${base}/v1/proxies`, {
+        method: 'POST', headers,
+        body: JSON.stringify({
+          name: isMobile ? `Decodo_mob_${citySlug}` : `Decodo_res_${citySlug}`,
+          proxy_settings: {
+            proxy_type: 'https',
+            host: cfg.host,
+            port: cfg.port,
+            username: decodoUsername,
+            password: decodoPass
+          }
+        })
+      });
+      if (proxyRes.ok) {
+        const p = await proxyRes.json();
+        proxyId = p.id;
       }
     } catch (e) {
-      console.warn('DonutBrowser liste proxies échouée:', e);
-    }
-
-    if (!proxyId) {
-      try {
-        const proxyRes = await fetch(`${base}/v1/proxies`, {
-          method: 'POST', headers,
-          body: JSON.stringify({
-            name: proxyName,
-            proxy_settings: {
-              proxy_type: 'https',
-              host: cfg.host,
-              port: cfg.port,
-              username: decodoUsername,
-              password: decodoPass
-            }
-          })
-        });
-        const proxyData = await proxyRes.json();
-        console.log('DonutBrowser proxy créé:', JSON.stringify(proxyData));
-        if (proxyRes.ok) {
-          proxyId = proxyData.id ?? proxyData.proxy?.id ?? proxyData.data?.id ?? null;
-        } else {
-          console.error('DonutBrowser proxy erreur:', proxyRes.status, JSON.stringify(proxyData));
-        }
-      } catch (e) {
-        console.warn('DonutBrowser proxy création échouée:', e);
-      }
+      console.warn('DonutBrowser proxy création échouée:', e);
     }
   }
 
@@ -2945,49 +2923,25 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     : 'gmb';
   const profileName = `GMB_${metier}_${citySlug}`;
 
-  // 2. Créer le profil — sans proxy d'abord (toujours réussit)
-  // puis tenter d'attacher le proxy en update pour éviter PROXY_NOT_WORKING au create
-  let profileId = null;
   try {
-    const profRes = await fetch(`${base}/v1/profiles`, {
-      method: 'POST', headers,
-      body: JSON.stringify({ name: profileName, browser: 'wayfern' })
-    });
+    const body = { name: profileName, browser: 'wayfern' };
+    if (proxyId) body.proxy_id = proxyId;
+    const profRes = await fetch(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) });
     if (!profRes.ok) {
       console.error('DonutBrowser profil erreur:', await profRes.text());
       return null;
     }
     const prof = await profRes.json();
-    profileId = prof.profile?.id || prof.id;
+    const profileId = prof.profile?.id || prof.id;
+
+    // 3. Lancer le profil
+    await fetch(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers });
+    console.log('DonutBrowser profil lancé:', profileId, profileName);
+    return profileId;
   } catch (e) {
     console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
     return null;
   }
-
-  // 3. Attacher le proxy en update (séparé pour ne pas bloquer la création)
-  if (profileId && proxyId) {
-    try {
-      const updRes = await fetch(`${base}/v1/profiles/${profileId}`, {
-        method: 'PATCH', headers,
-        body: JSON.stringify({ proxy_id: proxyId })
-      });
-      if (!updRes.ok) {
-        const err = await updRes.text();
-        console.warn('DonutBrowser proxy attach échoué (profil créé sans proxy):', err);
-      }
-    } catch (e) {
-      console.warn('DonutBrowser proxy attach erreur:', e);
-    }
-  }
-
-  // 4. Lancer le profil
-  try {
-    await fetch(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers });
-    console.log('DonutBrowser profil lancé:', profileId, profileName);
-  } catch (e) {
-    console.warn('DonutBrowser launch erreur:', e);
-  }
-  return profileId;
 }
 
 async function planningGenerer(id, ficheNom, gmail) {
