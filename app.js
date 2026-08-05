@@ -2873,26 +2873,20 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
   const _rp = (b, n = 10) => b + Math.floor(Math.random() * n);
   const PROXY_CFG = {
-    FR: { host: 'gate.decodo.com', port: _rp(10001),
-          res: `user-VAteamR-country-fr-city-${citySlug}-sessionduration-1440`,
-          mob: `user-VATeam-country-fr-city-${citySlug}-sessionduration-1440` },
-    BE: { host: 'be.decodo.com', port: _rp(40001),
-          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
-    LU: { host: 'lu.decodo.com', port: _rp(25001),
-          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
-    CA: { host: 'ca.decodo.com', port: _rp(20001),
-          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
-    US: { host: 'us.decodo.com', port: _rp(10001),
-          res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
+    FR: { host: 'gate.decodo.com', port: _rp(10001) },
+    BE: { host: 'be.decodo.com',   port: _rp(40001) },
+    LU: { host: 'lu.decodo.com',   port: _rp(25001) },
+    CA: { host: 'ca.decodo.com',   port: _rp(20001) },
+    US: { host: 'us.decodo.com',   port: _rp(10001) },
   };
   const cfg = PROXY_CFG[pays] || PROXY_CFG['FR'];
-  const decodoUsername = isMobile ? cfg.mob : cfg.res;
   const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
+  const baseUser   = isMobile ? 'user-VATeam' : 'user-VAteamR';
 
-  const usernameAvecVille = isMobile ? cfg.mob : cfg.res;
-  const usernamePaysSeul  = isMobile
-    ? `user-VATeam-country-${pays.toLowerCase()}-sessionduration-1440`
-    : `user-VAteamR-country-${pays.toLowerCase()}-sessionduration-1440`;
+  // Ordre de tentative : ville → pays → base (correspond aux curl qui fonctionnent)
+  const usernameAvecVille = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}-sessionduration-1440`;
+  const usernameAvecPays  = `${baseUser}-country-${pays.toLowerCase()}-sessionduration-1440`;
+  const usernameBase      = `${baseUser}-sessionduration-1440`;
 
   const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
     : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
@@ -2940,38 +2934,39 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }
     } catch (e) { console.warn('DonutBrowser GET proxies échoué:', e); }
 
-    // Si aucun proxy existant, en créer un nouveau (nom unique pour éviter les doublons)
+    // Si aucun proxy existant, essayer de créer avec les 3 niveaux de ciblage
+    // (ville → pays → base) pour trouver lequel DonutBrowser accepte sans PROXY_NOT_WORKING
     if (!proxyId && decodoPass) {
-      const uniqueName = `Decodo_${isMobile ? 'mob' : 'res'}_${citySlug}_${Math.floor(Date.now()/1000)}`;
-      try {
-        const pxCreateRes = await _fetchTimeout(`${base}/v1/proxies`, {
-          method: 'POST', headers,
-          body: JSON.stringify({ name: uniqueName, proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass } })
-        }, 10000);
-        const pxCreateBody = await pxCreateRes.text();
-        console.log(`DonutBrowser POST proxy → ${pxCreateRes.status}:`, pxCreateBody);
-        if (pxCreateRes.ok) {
-          const pd = JSON.parse(pxCreateBody);
-          proxyId = pd.id || pd.proxy?.id || null;
-        }
-      } catch (e) { console.warn('DonutBrowser proxy création échoué:', e); }
+      const ts = Math.floor(Date.now() / 1000);
+      for (const [suffix, username] of [
+        [`${citySlug}_${ts}`, usernameAvecVille],
+        [`${pays.toLowerCase()}_${ts}`, usernameAvecPays],
+        [`base_${ts}`, usernameBase],
+      ]) {
+        try {
+          const pxRes = await _fetchTimeout(`${base}/v1/proxies`, {
+            method: 'POST', headers,
+            body: JSON.stringify({ name: `Decodo_${isMobile ? 'mob' : 'res'}_${suffix}`, proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username, password: decodoPass } })
+          }, 12000);
+          const pxBody = await pxRes.text();
+          console.log(`DonutBrowser POST proxy (${username}) → ${pxRes.status}:`, pxBody);
+          if (pxRes.ok) { const pd = JSON.parse(pxBody); proxyId = pd.id || pd.proxy?.id || null; break; }
+        } catch (e) { console.warn('DonutBrowser proxy création timeout:', e); }
+      }
     }
 
-    // Étape 2 : créer le profil avec proxy_settings (format correct) ou proxy_id si disponible
+    // Étape 2 : créer le profil avec proxy_id si obtenu, sinon proxy_settings inline
     let profileId = null;
     if (proxyId) {
       profileId = await _creerProfil({ proxy_id: proxyId });
     }
     if (!profileId && decodoPass) {
-      // Format proxy_settings dans le body profil (même structure que POST /v1/proxies)
-      profileId = await _creerProfil({
-        proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass }
-      });
-    }
-    if (!profileId && decodoPass) {
-      profileId = await _creerProfil({
-        proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernamePaysSeul, password: decodoPass }
-      });
+      for (const username of [usernameAvecVille, usernameAvecPays, usernameBase]) {
+        profileId = await _creerProfil({
+          proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username, password: decodoPass }
+        });
+        if (profileId) break;
+      }
     }
     if (!profileId) {
       console.warn('DonutBrowser: création sans proxy');
