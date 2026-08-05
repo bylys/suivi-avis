@@ -2871,19 +2871,17 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   // 1. Créer le proxy Decodo pour cette ville
   const citySlug = normalizeCityForProxy(ville);
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
-  // Port aléatoire dans la plage Decodo pour éviter la saturation d'un seul port
-  const _randPort = (base, count = 10) => base + Math.floor(Math.random() * count);
   const PROXY_CFG = {
-    FR: { host: 'gate.decodo.com', port: _randPort(10001),
+    FR: { host: 'gate.decodo.com', port: 10001,
           res: `user-VAteamR-country-fr-city-${citySlug}-sessionduration-1440`,
           mob: `user-VATeam-country-fr-city-${citySlug}-sessionduration-1440` },
-    BE: { host: 'be.decodo.com', port: _randPort(40001),
+    BE: { host: 'be.decodo.com', port: 40001,
           res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
-    LU: { host: 'lu.decodo.com', port: _randPort(25001),
+    LU: { host: 'lu.decodo.com', port: 25001,
           res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
-    CA: { host: 'ca.decodo.com', port: _randPort(20001),
+    CA: { host: 'ca.decodo.com', port: 20001,
           res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
-    US: { host: 'us.decodo.com', port: _randPort(10001),
+    US: { host: 'us.decodo.com', port: 10001,
           res: 'user-VAteamR-sessionduration-1440', mob: 'user-VATeam-sessionduration-1440' },
   };
   const cfg = PROXY_CFG[pays] || PROXY_CFG['FR'];
