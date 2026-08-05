@@ -2972,8 +2972,18 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
 
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
-    await _fetchTimeout(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers }, 5000);
-    console.log('DonutBrowser profil lancé:', profileId, profileName);
+    // Essai launch — certains endpoints varient selon version DonutBrowser
+    for (const launchUrl of [
+      `${base}/v1/profiles/${profileId}/launch`,
+      `${base}/v1/profiles/${profileId}/open`,
+      `${base}/v1/profiles/${profileId}/run`,
+    ]) {
+      try {
+        const lr = await _fetchTimeout(launchUrl, { method: 'POST', headers }, 5000);
+        if (lr.ok) { console.log('DonutBrowser profil lancé:', profileId, profileName, launchUrl); break; }
+        console.warn('DonutBrowser launch échec:', launchUrl, lr.status);
+      } catch (e) { console.warn('DonutBrowser launch timeout:', launchUrl); }
+    }
     return profileId;
   } catch (e) {
     console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
