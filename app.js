@@ -2951,19 +2951,29 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
 
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
-    // Launch — essai plusieurs endpoints + GET en fallback
+    // Vérifier que le profil existe bien dans DonutBrowser
+    try {
+      const chk = await _fetchTimeout(`${base}/v1/profiles/${profileId}`, { method: 'GET', headers }, 5000);
+      const chkBody = await chk.text();
+      console.log(`DonutBrowser GET profil ${profileId} → ${chk.status}:`, chkBody);
+    } catch (e) { console.warn('DonutBrowser: impossible de vérifier le profil:', e); }
+
+    // Launch — /run attend probablement un body JSON, /launch peut avoir changé de méthode
+    const jsonBody = JSON.stringify({});
     const launchEndpoints = [
-      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'POST' },
-      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'GET' },
-      { url: `${base}/v1/profiles/${profileId}/open`,   method: 'POST' },
-      { url: `${base}/v1/profiles/${profileId}/start`,  method: 'POST' },
+      { url: `${base}/v1/profiles/${profileId}/run`,    method: 'POST', body: jsonBody },
+      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'POST', body: jsonBody },
+      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'GET',  body: null },
+      { url: `${base}/v1/profiles/${profileId}/open`,   method: 'POST', body: jsonBody },
+      { url: `${base}/v1/profiles/${profileId}/start`,  method: 'POST', body: jsonBody },
     ];
     let launched = false;
-    for (const { url, method } of launchEndpoints) {
+    for (const { url, method, body } of launchEndpoints) {
       try {
-        const lr = await _fetchTimeout(url, { method, headers }, 8000);
-        const body = await lr.text();
-        console.log(`DonutBrowser launch ${method} ${url} → ${lr.status}:`, body);
+        const opts = body !== null ? { method, headers, body } : { method, headers };
+        const lr = await _fetchTimeout(url, opts, 8000);
+        const respBody = await lr.text();
+        console.log(`DonutBrowser launch ${method} ${url} → ${lr.status}:`, respBody);
         if (lr.ok) { launched = true; break; }
       } catch (e) { console.warn('DonutBrowser launch timeout:', url); }
     }
