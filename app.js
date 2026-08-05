@@ -2852,6 +2852,28 @@ async function renderPlanning() {
     </div>`).join('');
 }
 
+// ── Toast éphémère ────────────────────────────────────────────────────────────
+
+function showToast(message, type = 'success', ms = 4000) {
+  let wrap = document.getElementById('toast-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'toast-wrap';
+    wrap.style.cssText = 'position:fixed;top:16px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;';
+    document.body.appendChild(wrap);
+  }
+  const bg = type === 'error' ? '#ef4444' : type === 'warn' ? '#f59e0b' : '#22c55e';
+  const t = document.createElement('div');
+  t.style.cssText = `background:${bg};color:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.25);font-size:14px;max-width:340px;white-space:pre-line;opacity:0;transform:translateX(20px);transition:opacity .25s,transform .25s;`;
+  t.textContent = message;
+  wrap.appendChild(t);
+  requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateX(0)'; });
+  setTimeout(() => {
+    t.style.opacity = '0'; t.style.transform = 'translateX(20px)';
+    setTimeout(() => t.remove(), 300);
+  }, ms);
+}
+
 // ── DonutBrowser local API ────────────────────────────────────────────────────
 
 function getDonutBase() {
@@ -3020,16 +3042,17 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       console.log(`DonutBrowser /run → ${lr.status}:`, respBody);
       if (lr.ok) {
         console.log('DonutBrowser profil lancé:', profileId, profileName);
+        showToast(`✅ Profil "${profileName}" lancé`, 'success');
       } else if (lr.status === 402) {
         // Le lancement par API nécessite DonutBrowser Pro. Le profil + proxy sont prêts.
-        alert(`✅ Profil "${profileName}" créé avec proxy.\n\n▶️ Lance-le à la main dans DonutBrowser (clic sur le profil).\n\n(Le lancement automatique nécessite DonutBrowser Pro.)`);
+        showToast(`✅ Profil "${profileName}" prêt avec proxy.\n▶️ Lance-le dans DonutBrowser.`, 'success', 6000);
       } else {
         console.error('DonutBrowser /run échec:', lr.status, respBody);
-        alert(`⚠️ Profil "${profileName}" créé mais lancement échoué (${lr.status}).\nLance-le manuellement dans DonutBrowser.`);
+        showToast(`✅ Profil "${profileName}" prêt.\n▶️ Lance-le dans DonutBrowser.`, 'success', 6000);
       }
     } catch (e) {
       console.warn('DonutBrowser /run timeout:', e);
-      alert(`✅ Profil "${profileName}" créé. Lance-le manuellement dans DonutBrowser.`);
+      showToast(`✅ Profil "${profileName}" prêt.\n▶️ Lance-le dans DonutBrowser.`, 'success', 6000);
     }
     return profileId;
   } catch (e) {
