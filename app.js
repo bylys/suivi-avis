@@ -3571,7 +3571,7 @@ window.__GMB_IMAGE_CONTEXT__ = Object.freeze({
   getRows()   { return _imgRows; },
   addRow() {
     const id = ++_imgCounter;
-    _imgRows.unshift({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 3, status: 'pending', images: [] });
+    _imgRows.unshift({ id, fiche: '', metier: '', travaux: '', ville: '', contexte: 'maison', etat: 'encours', meteo: 'auto', nb: 1, status: 'pending', images: [] });
     renderImgPlanning();
   },
   removeRow(id) {
