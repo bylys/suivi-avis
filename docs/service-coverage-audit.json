@@ -1,6 +1,6 @@
 {
   "summary": {
-    "STATE_LOCKED": 42,
+    "STATE_LOCKED": 43,
     "ROUTED_TO_SPECIFIC_SCENE": 115,
     "DEFERRED": 8,
     "PARTIAL_CONTEXTE": 7,
@@ -1621,15 +1621,15 @@
     {
       "metier": "terrassement",
       "service_label": "Excavation",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: decaiss|fouill|excavat|percement|terrassem",
-      "matched_regex": "decaiss|fouill|excavat|percement|terrassem",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^excavation$, _state_for=encours",
+      "matched_regex": "^excavation$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"terrassement\"]",
-        "regex": "decaiss|fouill|excavat|percement|terrassem",
-        "flags": "i",
+        "regex": "^excavation$",
+        "state_for": "encours",
         "normalized_input": "excavation"
       }
     },
