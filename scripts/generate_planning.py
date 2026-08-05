@@ -399,11 +399,7 @@ def main():
         taches = [r for r in planning_rows if r['operateur'] == op]
         if not taches:
             continue
-        webhook = SLACK_OPERATEURS.get(op, SLACK_WEBHOOK)
-        if webhook:
-            blocks = build_slack_planning(op, taches, today_str)
-            send_slack(webhook, blocks, f"Planning GMB {today_str} — {len(taches)} tâches pour {op}")
-            print(f"Slack envoyé à {op} ({len(taches)} tâches)")
+        print(f"Planning {op} : {len(taches)} tâches")
 
     print("Done.")
 
