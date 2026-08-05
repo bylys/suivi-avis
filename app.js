@@ -2923,6 +2923,9 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     : 'gmb';
   const profileName = `GMB_${metier}_${citySlug}`;
 
+  // Laisser Decodo activer la session avant que DonutBrowser valide
+  if (proxyId) await new Promise(r => setTimeout(r, 3000));
+
   try {
     const body = { name: profileName, browser: 'wayfern' };
     if (proxyId) body.proxy_id = proxyId;
@@ -2934,7 +2937,6 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     const prof = await profRes.json();
     const profileId = prof.profile?.id || prof.id;
 
-    // 3. Lancer le profil
     await fetch(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers });
     console.log('DonutBrowser profil lancé:', profileId, profileName);
     return profileId;
