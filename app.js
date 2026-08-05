@@ -2900,7 +2900,7 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       method: 'POST', headers,
       body: JSON.stringify({
         name: `Decodo_${isMobile ? 'mob' : 'res'}_${suffixe}`,
-        proxy_settings: { proxy_type: 'https', host: cfg.host, port: cfg.port, username, password: decodoPass }
+        proxy_settings: { proxy_type: ['http','https','socks5'][Math.floor(Math.random()*3)], host: cfg.host, port: cfg.port, username, password: decodoPass }
       })
     });
     if (!res.ok) return null;
