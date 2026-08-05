@@ -283,6 +283,12 @@ async function syncFromSheet() {
 // ── SYNC GOOGLE SHEETS ──
 const SHEETS_SHEET_NAME = 'Sheet1';
 
+// Base du Worker proxy (même Worker que pour OpenAI). Vide = appels directs.
+// Quand défini, les clés Gemini/Sheets vivent côté serveur : le site n'en envoie plus.
+function _apiProxyBase() {
+  return String(window.OPENAI_PROXY_URL || '').replace(/\/+$/, '');
+}
+
 function getSheetsApiKey() {
   const el = document.getElementById('sheets-api-key');
   return el?.value.trim() || localStorage.getItem('sheets_api_key') || '';
@@ -2038,6 +2044,7 @@ async function genererAvis() {
   }
 
   let apiKey = getGeminiKey();
+  if (!apiKey && _apiProxyBase()) apiKey = 'via-proxy';
   if (!apiKey) {
     if (!promptGeminiKey()) return;
     apiKey = getGeminiKey();
@@ -2087,7 +2094,11 @@ Avis :`;
   document.getElementById('gen-copy-confirm').classList.add('hidden');
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    const _proxy = _apiProxyBase();
+    const _geminiUrl = _proxy
+      ? `${_proxy}/gemini/v1beta/models/gemini-2.5-flash:generateContent`
+      : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(_geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
