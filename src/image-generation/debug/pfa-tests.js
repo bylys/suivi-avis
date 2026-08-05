@@ -9,13 +9,16 @@
  *   PFA-MF1     : mandatory_fields — null field → structured_evidence_incomplete
  *   PFA-AL1..2  : alias resolution + condition counts
  *   PFA-RG1..2  : regression — metier ravalement, Peinture façade, gate compatible
+ *   PFA-TL1     : telemetry — 20 gate fields present in run-batch SAFETY TELEMETRY
  *   PFA-WP1..4  : worker planning — planned_worker_count=1 stamped
- *   PFA-PR1..4  : prompt — 8 exclusions prioritaires présentes, no_people=false
+ *   PFA-PR1..4  : prompt PromptBuilder — One tradesperson, 8 exclusions, no workers/people in Never include
  */
 
-const { _applySiteRealism }                              = await import('../resolution/service-resolver.js?bust=pfa-v1');
-const { _planBatchWorkerPresence }                       = await import('../planning/worker-planner.js?bust=pfa-v1');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=pfa-v1');
+const { _applySiteRealism }                              = await import('../resolution/service-resolver.js?bust=pfa-v2');
+const { _planBatchWorkerPresence }                       = await import('../planning/worker-planner.js?bust=pfa-v2');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=pfa-v2');
+const { PromptBuilder }                                  = await import('../prompt/prompt-builder.js?bust=pfa-v2');
+const { _sanitizeSceneForPrompt }                        = await import('../pipeline/prompt-scene-sanitizer.js?bust=pfa-v2');
 
 export async function runPfaTests() {
   console.group('PFA tests — Peinture façade scene-lock + gate');
@@ -295,6 +298,38 @@ export async function runPfaTests() {
       'mandatory_fields must include paint_bucket_or_tray_visible');
   });
 
+  // ─── PFA-TL: Telemetry — tous les champs obligatoires de la gate présents dans run-batch ─────
+
+  test('PFA-TL1', 'run-batch SAFETY TELEMETRY inclut les 20 champs de la gate Peinture façade', async () => {
+    const runBatchSrc = await fetch('./src/image-generation/pipeline/run-batch.js').then(r => r.text());
+    const REQUIRED = [
+      'exterior_building_facade_visible',
+      'masonry_or_rendered_facade_surface_visible',
+      'facade_surface_dominant',
+      'active_roller_contact_with_facade_visible',
+      'extension_pole_visible',
+      'partial_painted_and_unpainted_facade_zones_visible',
+      'fresh_facade_paint_visible',
+      'paint_bucket_or_tray_visible',
+      'shutters_or_shutter_panels_dominant',
+      'gate_or_fence_dominant',
+      'exterior_woodwork_painting_dominant',
+      'interior_context_visible',
+      'completed_facade_dominant',
+      'decorative_render_application_visible',
+      'spray_painting_dominant',
+      'worker_on_ladder',
+      'worker_on_step_ladder',
+      'worker_on_scaffold',
+      'worker_stable_on_ground',
+      'worker_count_match',
+    ];
+    for (const field of REQUIRED) {
+      assert(runBatchSrc.includes(field),
+        `run-batch.js SAFETY TELEMETRY missing field: ${field}`);
+    }
+  });
+
   // ─── PFA-AL: Alias resolution ───────────────────────────────────────────────
 
   test('PFA-AL1', 'Alias "peinture facade" → "Peinture façade" gate exists', () => {
@@ -395,28 +430,51 @@ export async function runPfaTests() {
     }
   });
 
-  // ─── PFA-PR: Exclusions et worker dans la scène résolue ─────────────────────
+  // ─── PFA-PR: Prompt PromptBuilder — exclusions et présence worker ────────────
 
-  test('PFA-PR1', 'Scene encours: obj.exclude contient "shutters as the main subject"', () => {
-    const r = resolvePeintureFacade('encours');
-    const ex = JSON.stringify(r.exclude || []);
-    assert(ex.toLowerCase().includes('shutter'),
-      'exclude must contain shutters exclusion. Got: ' + ex);
+  function buildPfaPrompt(state_level = 'encours', imageIndex = 0) {
+    const resolved = resolvePeintureFacade(state_level, imageIndex);
+    const task = { taskId: 'pfa-pr', _planBase: { ...resolved, _matched_key: 'peinture', _matched_service: 'Peinture façade' } };
+    _planBatchWorkerPresence([task], 'peinture');
+    const sanitized = _sanitizeSceneForPrompt(JSON.stringify(resolved));
+    return { prompt: PromptBuilder.build(sanitized), resolved };
+  }
+
+  test('PFA-PR1', 'Prompt encours contient "One tradesperson" (planned_worker_count=1, no_people=false)', () => {
+    const { prompt, resolved } = buildPfaPrompt('encours');
+    assert(!resolved.no_people,
+      `no_people must be false/absent on encours scene, got ${resolved.no_people}`);
+    assert(prompt.includes('One '),
+      'Prompt must contain "One " (tradesperson). Got: ' + prompt.substring(0, 200));
   });
 
-  test('PFA-PR2', 'Scene encours: obj.exclude contient "ladder"', () => {
-    const r = resolvePeintureFacade('encours');
-    const ex = JSON.stringify(r.exclude || []);
-    assert(ex.toLowerCase().includes('ladder'),
-      'exclude must contain ladder exclusion. Got: ' + ex);
+  test('PFA-PR2', 'Never include contient les 8 exclusions prioritaires (shutter, gate, woodwork, ladder, step ladder, scaffold, spray, interior)', () => {
+    const { prompt } = buildPfaPrompt('encours');
+    const neverInclude = prompt.match(/Never include: ([^.]+)\./)?.[1] ?? '';
+    const checks = [
+      ['shutter', 'shutters as the main subject'],
+      ['gate or fence', 'gate or fence as the main subject'],
+      ['exterior woodwork', 'exterior woodwork painting'],
+      ['ladder', 'ladder'],
+      ['step ladder', 'step ladder'],
+      ['scaffold', 'scaffold'],
+      ['spray painting', 'spray painting'],
+      ['interior scene', 'interior scene'],
+    ];
+    for (const [needle, label] of checks) {
+      assert(neverInclude.toLowerCase().includes(needle),
+        `Never include must contain "${label}". Got: ${neverInclude}`);
+    }
   });
 
-  test('PFA-PR3', 'Scene encours: "workers" et "people" absents de scene_exclude (non présents dans Never include)', () => {
-    const r = resolvePeintureFacade('encours');
-    const ex = JSON.stringify(r.exclude || []);
-    const noWorkersEntry = !(ex.toLowerCase().includes('"workers"') || ex.toLowerCase().includes('"people"'));
-    assert(noWorkersEntry,
-      'workers / people must NOT appear as standalone exclude entries. Got: ' + ex);
+  test('PFA-PR3', '"workers" et "people" absents de Never include (no_people=false → présence humaine requise)', () => {
+    const { prompt } = buildPfaPrompt('encours');
+    const neverInclude = prompt.match(/Never include: ([^.]+)\./)?.[1] ?? '';
+    assert(!neverInclude.toLowerCase().includes('"workers"') && !neverInclude.toLowerCase().includes('"people"'),
+      'workers / people must NOT appear in Never include. Got: ' + neverInclude);
+    const standalone = neverInclude.split(';').map(s => s.trim().toLowerCase());
+    assert(!standalone.includes('workers') && !standalone.includes('people'),
+      'workers / people must NOT be standalone Never include entries. Got: ' + neverInclude);
   });
 
   test('PFA-PR4', 'Peinture extérieure non affectée par scene_reset_exclude (exclude non vidé)', () => {
@@ -428,9 +486,10 @@ export async function runPfaTests() {
       exclude:          ['test_sentinel'],
     };
     const rPext = JSON.parse(_applySiteRealism(JSON.stringify(soPext), 0));
-    const excludeStr = JSON.stringify(rPext.exclude || []);
-    assert(excludeStr.includes('test_sentinel'),
-      `Peinture extérieure must not clear the exclude array (scene_reset_exclude=false). Got exclude=${excludeStr}`);
+    const sanitized = _sanitizeSceneForPrompt(JSON.stringify(rPext));
+    const prompt = PromptBuilder.build(sanitized);
+    assert(prompt.includes('test_sentinel'),
+      `Peinture extérieure must not clear the exclude array (scene_reset_exclude=false). Got prompt excerpt: ${prompt.substring(0, 300)}`);
   });
 
   // ─── Summary ───────────────────────────────────────────────────────────────
