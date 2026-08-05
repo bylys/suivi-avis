@@ -153,10 +153,9 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism._access_configuration_source !== undefined)     obj._access_configuration_source     = realism._access_configuration_source;
           if (realism._access_configuration_randomized !== undefined) obj._access_configuration_randomized = realism._access_configuration_randomized;
           if (picked._scaffold_variant !== undefined)                 obj._scaffold_variant                = picked._scaffold_variant;
-          if (Number.isInteger(picked.planned_worker_count))        obj._planned_worker_count            = picked.planned_worker_count;
+          if (Number.isInteger(picked.planned_worker_count)) obj._planned_worker_count = picked.planned_worker_count;
           obj._selected_scenario_state_for = picked._state_for || null;
           obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
-          if (Number.isInteger(picked.planned_worker_count)) obj._planned_worker_count = picked.planned_worker_count;
           // Always stamp _visual_family — never silently inherit an old value.
           // Fall back to a deterministic service-derived family when the scenario
           // doesn't declare one (guards against future scenarios missing the field).
