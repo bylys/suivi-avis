@@ -146,11 +146,7 @@ async function init() {
   if (savedOpenAI) {
     const el = document.getElementById('openai-key');
     if (el) el.value = savedOpenAI;
-    if (_configOpenAI) {
-      localStorage.setItem('openai_key', _configOpenAI);
-      const bar = document.querySelector('.img-api-bar');
-      if (bar) bar.style.display = 'none';
-    }
+    if (_configOpenAI) localStorage.setItem('openai_key', _configOpenAI);
   }
 
   // Restaurer config DonutBrowser
