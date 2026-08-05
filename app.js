@@ -2923,13 +2923,16 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     : 'gmb';
   const profileName = `GMB_${metier}_${citySlug}`;
 
-  // Laisser Decodo activer la session avant que DonutBrowser valide
-  if (proxyId) await new Promise(r => setTimeout(r, 3000));
+  const _fetchTimeout = (url, opts, ms = 8000) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
+  };
 
   try {
     const body = { name: profileName, browser: 'wayfern' };
     if (proxyId) body.proxy_id = proxyId;
-    const profRes = await fetch(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const profRes = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 8000);
     if (!profRes.ok) {
       console.error('DonutBrowser profil erreur:', await profRes.text());
       return null;
@@ -2937,11 +2940,15 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     const prof = await profRes.json();
     const profileId = prof.profile?.id || prof.id;
 
-    await fetch(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers });
+    await _fetchTimeout(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers }, 5000);
     console.log('DonutBrowser profil lancé:', profileId, profileName);
     return profileId;
   } catch (e) {
-    console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
+    if (e.name === 'AbortError') {
+      console.error('DonutBrowser timeout — vérifie les credentials Decodo sur le dashboard');
+    } else {
+      console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
+    }
     return null;
   }
 }
