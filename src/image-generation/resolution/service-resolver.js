@@ -124,8 +124,11 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (!s._state_for) return false;
           return Array.isArray(s._state_for) ? s._state_for.includes(obj.state_level) : s._state_for === obj.state_level;
         });
+        // Scenarios with _state_for must never join the regular pool when their state doesn't match.
+        // Only scenarios without _state_for are available as regular targeted fallbacks.
+        const regularTargeted = targeted.filter(s => !s._state_for);
         const _stateLockUsed = stateLocked.length > 0;
-        const pool      = _stateLockUsed ? stateLocked : (targeted.length ? targeted : fallback);
+        const pool      = stateLocked.length ? stateLocked : (regularTargeted.length ? regularTargeted : fallback);
         const picked    = pool.length ? _pick(pool, 1, scenSeed)[0] : null;
         obj._state_lock_used      = _stateLockUsed;
         obj._state_lock_pool_size = pool.length;
@@ -135,6 +138,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (realism.scene_camera)  obj.camera_position = realism.scene_camera;
           if (realism.scene_framing) obj.framing          = realism.scene_framing;
           if (realism.scene_debris)  obj.site_debris      = realism.scene_debris;
+          if (picked.scene_reset_exclude) obj.exclude = [];
           if (Array.isArray(realism.scene_exclude)) obj.exclude = [...(obj.exclude || []), ...realism.scene_exclude];
           if (realism.time_of_day) obj.time_of_day = realism.time_of_day;
           if (realism.setting)    obj.setting     = realism.setting;
@@ -149,6 +153,7 @@ function _applySiteRealism(jsonStr, imageIndex) {
           if (picked._scaffold_variant !== undefined)                 obj._scaffold_variant                = picked._scaffold_variant;
           obj._selected_scenario_state_for = picked._state_for || null;
           obj._selected_scenario_index     = realism.scenarios.indexOf(picked);
+          if (Number.isInteger(picked.planned_worker_count)) obj._planned_worker_count = picked.planned_worker_count;
           // Always stamp _visual_family — never silently inherit an old value.
           // Fall back to a deterministic service-derived family when the scenario
           // doesn't declare one (guards against future scenarios missing the field).
