@@ -2964,6 +2964,13 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       });
     }
 
+    // Fallback final : créer le profil sans proxy (le profil s'ouvre, proxy à configurer manuellement)
+    if (!profileId) {
+      console.warn('DonutBrowser: création sans proxy — mets à jour les passwords Decodo dans app.js');
+      alert('⚠️ Proxy Decodo non valide. Le profil va s\'ouvrir SANS proxy.\nVérifie tes credentials Decodo sur le dashboard et mets à jour app.js.');
+      profileId = await _creerProfil({});
+    }
+
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
     await _fetchTimeout(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers }, 5000);
