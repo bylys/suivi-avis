@@ -9,6 +9,7 @@
 # Données sensibles
 *.csv
 *.json.bak
+config.local.js
 
 # Python
 __pycache__/
