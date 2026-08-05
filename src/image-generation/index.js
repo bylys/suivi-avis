@@ -11,6 +11,7 @@
 
 import { createGenerationState, IMAGE_TASK_STATUS, TERMINAL_STATUSES } from './pipeline/state.js';
 import { fetchWithTimeout, readResponseOnce }                           from './pipeline/http.js';
+import { isProxyEnabled }                                               from './config/openai-endpoint.js';
 import { createImagePipeline }                                          from './pipeline/run-batch.js';
 import { retryFailedImages }                                            from './pipeline/retries.js';
 import { createImageUiAdapter, renderAnalyse }                          from './ui/img-ui.js?v=22';
@@ -49,7 +50,7 @@ async function _modGenerateAll() {
   if (_modRunActive) { console.warn('[Batch] génération déjà en cours — ignoré'); return; }
 
   const bridge = _bridge();
-  const key = document.getElementById('openai-key')?.value.trim();
+  const key = document.getElementById('openai-key')?.value.trim() || (isProxyEnabled() ? 'via-proxy' : '');
   if (!key) { alert('Renseigne ta clé API OpenAI (sk-...) en haut de la page.'); return; }
 
   const rows = bridge.getRows().filter(r => (r.travaux || '').trim());
@@ -166,7 +167,7 @@ async function _modGenerateAll() {
 // ─── _modRetryFailed ──────────────────────────────────────────────────────────
 async function _modRetryFailed() {
   if (_modRunActive) { console.warn('[Retry] génération déjà en cours'); return; }
-  const key         = _modLastApiKey || document.getElementById('openai-key')?.value.trim();
+  const key         = _modLastApiKey || document.getElementById('openai-key')?.value.trim() || (isProxyEnabled() ? 'via-proxy' : '');
   const failedTasks = _modLastTasks.filter(t => TERMINAL_STATUSES.has(t.status) && t.status !== IMAGE_TASK_STATUS.SUCCESS);
   if (!key || !failedTasks.length) return;
 
