@@ -2925,15 +2925,9 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   // 1. Créer le proxy Decodo pour cette ville
   const citySlug = normalizeCityForProxy(ville);
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
-  const _rp = (b, n = 10) => b + Math.floor(Math.random() * n);
-  const PROXY_CFG = {
-    FR: { host: 'gate.decodo.com', port: 10001 },
-    BE: { host: 'be.decodo.com',   port: _rp(40001) },
-    LU: { host: 'lu.decodo.com',   port: _rp(25001) },
-    CA: { host: 'ca.decodo.com',   port: _rp(20001) },
-    US: { host: 'us.decodo.com',   port: _rp(10001) },
-  };
-  const cfg = PROXY_CFG[pays] || PROXY_CFG['FR'];
+  // Gateway unique pour TOUS les pays — le pays est ciblé via country-XX dans le username
+  // (confirmé au curl : gate.decodo.com:10001 + country-fr/be/... fonctionne).
+  const cfg = { host: 'gate.decodo.com', port: 10001 };
   const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
   const baseUser   = isMobile ? 'user-VATeam' : 'user-VAteamR';
 
