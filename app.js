@@ -2945,25 +2945,49 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     : 'gmb';
   const profileName = `GMB_${metier}_${citySlug}`;
 
+  // 2. Créer le profil — sans proxy d'abord (toujours réussit)
+  // puis tenter d'attacher le proxy en update pour éviter PROXY_NOT_WORKING au create
+  let profileId = null;
   try {
-    const body = { name: profileName, browser: 'wayfern' };
-    if (proxyId) body.proxy_id = proxyId;
-    const profRes = await fetch(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) });
+    const profRes = await fetch(`${base}/v1/profiles`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ name: profileName, browser: 'wayfern' })
+    });
     if (!profRes.ok) {
       console.error('DonutBrowser profil erreur:', await profRes.text());
       return null;
     }
     const prof = await profRes.json();
-    const profileId = prof.profile?.id || prof.id;
-
-    // 3. Lancer le profil
-    await fetch(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers });
-    console.log('DonutBrowser profil lancé:', profileId, profileName);
-    return profileId;
+    profileId = prof.profile?.id || prof.id;
   } catch (e) {
     console.warn('DonutBrowser non disponible (normal si pas ouvert):', e);
     return null;
   }
+
+  // 3. Attacher le proxy en update (séparé pour ne pas bloquer la création)
+  if (profileId && proxyId) {
+    try {
+      const updRes = await fetch(`${base}/v1/profiles/${profileId}`, {
+        method: 'PATCH', headers,
+        body: JSON.stringify({ proxy_id: proxyId })
+      });
+      if (!updRes.ok) {
+        const err = await updRes.text();
+        console.warn('DonutBrowser proxy attach échoué (profil créé sans proxy):', err);
+      }
+    } catch (e) {
+      console.warn('DonutBrowser proxy attach erreur:', e);
+    }
+  }
+
+  // 4. Lancer le profil
+  try {
+    await fetch(`${base}/v1/profiles/${profileId}/launch`, { method: 'POST', headers });
+    console.log('DonutBrowser profil lancé:', profileId, profileName);
+  } catch (e) {
+    console.warn('DonutBrowser launch erreur:', e);
+  }
+  return profileId;
 }
 
 async function planningGenerer(id, ficheNom, gmail) {
