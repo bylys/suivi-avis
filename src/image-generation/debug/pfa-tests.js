@@ -300,9 +300,10 @@ export async function runPfaTests() {
 
   // ─── PFA-TL: Telemetry — tous les champs obligatoires de la gate présents dans run-batch ─────
 
-  test('PFA-TL1', 'run-batch SAFETY TELEMETRY inclut les 20 champs de la gate Peinture façade', async () => {
+  test('PFA-TL1', 'run-batch SAFETY TELEMETRY inclut les 22 champs de la gate Peinture façade', async () => {
     const runBatchSrc = await fetch('./src/image-generation/pipeline/run-batch.js').then(r => r.text());
     const REQUIRED = [
+      // 20 champs ajoutés dans bd4f711
       'exterior_building_facade_visible',
       'masonry_or_rendered_facade_surface_visible',
       'facade_surface_dominant',
@@ -323,6 +324,9 @@ export async function runPfaTests() {
       'worker_on_scaffold',
       'worker_stable_on_ground',
       'worker_count_match',
+      // 2 champs déjà présents avant ce commit
+      'pressure_washing_visible',
+      'service_visual_match',
     ];
     for (const field of REQUIRED) {
       assert(runBatchSrc.includes(field),
