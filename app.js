@@ -2951,9 +2951,55 @@ async function planningGenerer(id, ficheNom, gmail) {
   const row = document.getElementById(`planning-row-${id}`);
   const ville = row ? row.querySelector('td')?.textContent?.trim() : '';
 
+  // Dériver les travaux depuis le nom de la fiche (utilisé pour avis et images)
+  const _TRAVAUX_MAP = {
+    couvreur: 'réfection de toiture', toiture: 'réfection de toiture', couverture: 'travaux de couverture',
+    demoussage: 'démoussage toiture', hydrofuge: 'traitement hydrofuge toiture',
+    gouttieres: 'nettoyage gouttières',
+    etancheite: 'travaux d\'étanchéité',
+    paysagiste: 'aménagement paysager', jardinage: 'entretien jardin',
+    elagage: 'élagage et abattage d\'arbres',
+    ravalement: 'ravalement de façade', facade: 'ravalement de façade',
+    nettoyage: 'nettoyage haute pression',
+    peintre: 'travaux de peinture', peinture: 'travaux de peinture',
+    plombier: 'travaux de plomberie',
+    electricien: 'travaux d\'électricité',
+    macon: 'travaux de maçonnerie', carrelage: 'pose de carrelage',
+  };
+  const _travaux = Object.entries(_TRAVAUX_MAP).find(([k]) => ficheNom.toLowerCase().includes(k))?.[1] || 'travaux à domicile';
+
   // Créer et lancer le profil DonutBrowser si token configuré
   if (getDonutToken() && ville && ville !== '—') {
     await donutCreerProfil(ville, gmail, ficheNom);
+  }
+
+  // Pré-remplir une ligne dans le générateur d'images
+  const _metierMap = {
+    toiture: 'toiture', couvreur: 'toiture', charpente: 'toiture',
+    demoussage: 'nettoyage_toiture', demoussage: 'nettoyage_toiture', hydrofuge: 'nettoyage_toiture',
+    gouttieres: 'nettoyage_gouttieres', gouttiere: 'nettoyage_gouttieres',
+    etancheite: 'etancheite', etanch: 'etancheite', fuite: 'etancheite',
+    ravalement: 'ravalement', facade: 'ravalement',
+    peintre: 'peinture', peinture: 'peinture',
+    plombier: 'plomberie', plomberie: 'plomberie',
+    electricien: 'electricite',
+    paysagiste: 'paysagiste', jardinage: 'paysagiste', elagage: 'paysagiste',
+    nettoyage: 'nettoyage',
+  };
+  const _imgCtx = window.__GMB_IMAGE_CONTEXT__;
+  if (_imgCtx) {
+    _imgCtx.addRow();
+    const _newRow = _imgCtx.getRows()[0];
+    if (_newRow) {
+      const _nomL = ficheNom.toLowerCase();
+      const _metier = Object.entries(_metierMap).find(([k]) => _nomL.includes(k))?.[1] || '';
+      if (_metier) {
+        updateImgRow(_newRow.id, 'metier', _metier);
+        updateImgRow(_newRow.id, 'travaux', _travaux);
+      }
+      if (ville && ville !== '—') updateImgRow(_newRow.id, 'ville', ville);
+      updateImgRow(_newRow.id, 'fiche', ficheNom);
+    }
   }
 
   // Basculer vers le générateur d'avis
@@ -2970,29 +3016,11 @@ async function planningGenerer(id, ficheNom, gmail) {
   const auteurInput = document.getElementById('gen-auteur');
   if (auteurInput) auteurInput.value = gmail;
 
-  // Pré-remplir ville
+  // Pré-remplir ville et travaux dans le générateur d'avis
   const villeInput = document.getElementById('gen-ville');
   if (villeInput && ville) villeInput.value = ville;
-
-  // Dériver les travaux depuis le nom de la fiche
-  const TRAVAUX_MAP = {
-    couvreur: 'réfection de toiture', toiture: 'réfection de toiture', couverture: 'travaux de couverture',
-    paysagiste: 'aménagement paysager', jardinage: 'entretien jardin',
-    elagage: 'élagage et abattage d\'arbres', abattage: 'abattage d\'arbres',
-    carreleur: 'pose de carrelage', carrelage: 'pose de carrelage',
-    etancheite: 'travaux d\'étanchéité',
-    ravalement: 'ravalement de façade', facade: 'ravalement de façade',
-    nettoyage: 'nettoyage haute pression',
-    vitrier: 'remplacement de vitres',
-    macon: 'travaux de maçonnerie', terrassement: 'travaux de terrassement',
-    peintre: 'travaux de peinture', peinture: 'travaux de peinture',
-    plombier: 'travaux de plomberie',
-    electricien: 'travaux d\'électricité',
-  };
-  const nomLower = ficheNom.toLowerCase();
-  const travaux = Object.entries(TRAVAUX_MAP).find(([k]) => nomLower.includes(k))?.[1] || 'travaux à domicile';
   const travauxInput = document.getElementById('gen-travaux');
-  if (travauxInput) travauxInput.value = travaux;
+  if (travauxInput) travauxInput.value = _travaux;
 
   if (row) {
     const badge = row.querySelector('span[style*="border-radius:99px"]');
