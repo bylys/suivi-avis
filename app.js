@@ -2873,7 +2873,7 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
   const _rp = (b, n = 10) => b + Math.floor(Math.random() * n);
   const PROXY_CFG = {
-    FR: { host: 'gate.decodo.com', port: _rp(10001) },
+    FR: { host: 'gate.decodo.com', port: 10001 },
     BE: { host: 'be.decodo.com',   port: _rp(40001) },
     LU: { host: 'lu.decodo.com',   port: _rp(25001) },
     CA: { host: 'ca.decodo.com',   port: _rp(20001) },
