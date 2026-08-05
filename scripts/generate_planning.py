@@ -309,7 +309,7 @@ def main():
     used_pairs = set()
     for a in all_avis:
         if a['auteur'] and a['fiche_nom']:
-            used_pairs.add((a['auteur'].lower(), a['fiche_nom']))
+            used_pairs.add((a['auteur'].lower(), a['fiche_nom'].strip().lower()))
 
     # Fiches éligibles : pas postées depuis >= DELAI_FICHE_JOURS
     fiches_dispo = [
@@ -346,7 +346,7 @@ def main():
             g for g in gmails_dispo
             if gmail_ville.get(g) == ville
             and g not in gmails_utilises
-            and (g, fn) not in used_pairs
+            and (g, fn.strip().lower()) not in used_pairs
         ]
 
         if not candidats:
