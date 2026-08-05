@@ -1,7 +1,7 @@
 {
   "summary": {
-    "STATE_LOCKED": 42,
-    "ROUTED_TO_SPECIFIC_SCENE": 115,
+    "STATE_LOCKED": 43,
+    "ROUTED_TO_SPECIFIC_SCENE": 114,
     "DEFERRED": 8,
     "PARTIAL_CONTEXTE": 7,
     "TOOLS_ONLY": 0,
@@ -1726,15 +1726,15 @@
     {
       "metier": "terrassement",
       "service_label": "Création allée",
-      "routing_coverage": "ROUTED_TO_SPECIFIC_SCENE",
-      "routing_detail": "matched _for: allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee",
-      "matched_regex": "allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee",
+      "routing_coverage": "STATE_LOCKED",
+      "routing_detail": "state-lock: _for=^creation allee$, _state_for=encours",
+      "matched_regex": "^creation allee$",
       "fallback_used": false,
       "routing_evidence": {
-        "type": "regex_match",
+        "type": "state_lock",
         "source": "SITE_REALISM[\"terrassement\"]",
-        "regex": "allee|cour|chemin|dalle.*ext|pave|beton.*ext|surface.*ext|creation.*allee",
-        "flags": "i",
+        "regex": "^creation allee$",
+        "state_for": "encours",
         "normalized_input": "creation allee"
       }
     },
