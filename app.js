@@ -2966,17 +2966,23 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const proxyProtocol = 'http';
 
   const _creerProfil = async (extraBody = {}) => {
-    // Flags pour désactiver la validation de connectivité proxy (cause du PROXY_NOT_WORKING)
-    const body = { name: profileName, browser: 'wayfern', skip_proxy_check: true, validate_proxy: false, test_proxy: false, ...extraBody };
-    const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 30000);
-    if (!res.ok) {
-      const txt = await res.text();
-      console.warn('DonutBrowser profil erreur:', res.status, txt);
+    // Champs documentés uniquement (name, browser, proxy_id, tags).
+    // On crée SANS proxy pour éviter le hang de validation de connectivité (proxy attaché en PUT après).
+    const body = { name: profileName, browser: 'wayfern', ...extraBody };
+    try {
+      const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 12000);
+      if (!res.ok) {
+        const txt = await res.text();
+        console.warn('DonutBrowser profil erreur:', res.status, txt);
+        return null;
+      }
+      const d = await res.json();
+      console.log('DonutBrowser profil créé raw:', JSON.stringify(d));
+      return d.profile?.id || d.id || d.data?.id || null;
+    } catch (e) {
+      console.warn('DonutBrowser profil timeout/abort:', e.message || e);
       return null;
     }
-    const d = await res.json();
-    console.log('DonutBrowser profil créé raw:', JSON.stringify(d));
-    return d.profile?.id || d.id || d.data?.id || null;
   };
 
   try {
@@ -3021,37 +3027,21 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }
     }
 
-    // Étape 2 : créer le profil avec proxy_id si obtenu, sinon proxy_settings inline
-    let profileId = null;
-    if (proxyId) {
-      profileId = await _creerProfil({ proxy_id: proxyId });
-    }
-    if (!profileId && decodoPass) {
-      for (const username of [usernameAvecVille, usernameAvecPays, usernameBase]) {
-        profileId = await _creerProfil({
-          proxy_settings: { proxy_type: proxyProtocol, host: cfg.host, port: cfg.port, username, password: decodoPass }
-        });
-        if (profileId) break;
-      }
-    }
-    if (!profileId) {
-      console.warn('DonutBrowser: création sans proxy');
-      profileId = await _creerProfil({});
-    }
-
+    // Étape 2 : créer le profil SANS proxy (évite le hang de validation de connectivité)
+    const profileId = await _creerProfil({});
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
-    // Étape 3 : attacher le proxy au profil (PATCH → 405, on essaie PUT puis POST)
+    // Étape 3 : attacher le proxy au profil en PUT (proxy_id, méthode documentée)
     if (proxyId) {
       for (const method of ['PUT', 'POST']) {
         try {
           const upRes = await _fetchTimeout(`${base}/v1/profiles/${profileId}`, {
             method, headers, body: JSON.stringify({ proxy_id: proxyId })
-          }, 5000);
+          }, 8000);
           const upBody = await upRes.text();
           console.log(`DonutBrowser ${method} proxy_id → ${upRes.status}:`, upBody);
           if (upRes.ok) break;
-        } catch (e) { console.warn(`DonutBrowser ${method} profil échoué:`, e); }
+        } catch (e) { console.warn(`DonutBrowser ${method} proxy attach timeout:`, e.message || e); }
       }
     }
 
@@ -3105,9 +3095,11 @@ async function planningGenerer(id, ficheNom, gmail) {
   };
   const _travaux = Object.entries(_TRAVAUX_MAP).find(([k]) => ficheNom.toLowerCase().includes(k))?.[1] || 'travaux à domicile';
 
-  // Créer et lancer le profil DonutBrowser si token configuré
+  // Créer et lancer le profil DonutBrowser si token configuré.
+  // Isolé : une erreur/lenteur DonutBrowser ne doit JAMAIS bloquer la génération d'avis.
   if (getDonutToken() && ville && ville !== '—') {
-    await donutCreerProfil(ville, gmail, ficheNom);
+    try { await donutCreerProfil(ville, gmail, ficheNom); }
+    catch (e) { console.warn('DonutBrowser ignoré (erreur, avis continue):', e?.message || e); }
   }
 
   // Pré-remplir une ligne dans le générateur d'images
