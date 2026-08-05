@@ -1245,6 +1245,10 @@ async function renderDashboard() {
   document.getElementById('stat-total').textContent     = moisAvis.length;
   document.getElementById('stat-kevin').textContent     = moisAvis.filter(a => a.operateur?.toLowerCase() === 'kevin').length;
   document.getElementById('stat-fifaliana').textContent = moisAvis.filter(a => a.operateur?.toLowerCase() === 'fifaliana').length;
+  document.getElementById('stat-aina').textContent      = moisAvis.filter(a => a.operateur?.toLowerCase() === 'aina').length;
+  document.getElementById('stat-kintana').textContent   = moisAvis.filter(a => a.operateur?.toLowerCase() === 'kintana').length;
+  document.getElementById('stat-korail').textContent    = moisAvis.filter(a => a.operateur?.toLowerCase() === 'korail').length;
+  document.getElementById('stat-anjara').textContent    = moisAvis.filter(a => a.operateur?.toLowerCase() === 'anjara').length;
   const j30Count  = moisAvis.filter(a => a.statut === 'j30').length;
   const suppCount = moisAvis.filter(a => a.statut === 'supprime').length;
   const resolus = j30Count + suppCount;
