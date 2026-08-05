@@ -2889,35 +2889,11 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const decodoUsername = isMobile ? cfg.mob : cfg.res;
   const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
 
-  // Username avec ville, et fallback pays-seulement si la ville n'est pas supportée par Decodo
-  const usernameAvecVille   = isMobile ? cfg.mob : cfg.res;
-  const usernamePaysSeul    = isMobile
+  const usernameAvecVille = isMobile ? cfg.mob : cfg.res;
+  const usernamePaysSeul  = isMobile
     ? `user-VATeam-country-${pays.toLowerCase()}-sessionduration-1440`
     : `user-VAteamR-country-${pays.toLowerCase()}-sessionduration-1440`;
 
-  const _creerProxy = async (username, suffixe) => {
-    const res = await fetch(`${base}/v1/proxies`, {
-      method: 'POST', headers,
-      body: JSON.stringify({
-        name: `Decodo_${isMobile ? 'mob' : 'res'}_${suffixe}`,
-        proxy_settings: { proxy_type: ['http','https','socks5'][Math.floor(Math.random()*3)], host: cfg.host, port: cfg.port, username, password: decodoPass }
-      })
-    });
-    if (!res.ok) return null;
-    const p = await res.json();
-    return p.id || null;
-  };
-
-  let proxyId = null;
-  if (decodoPass) {
-    try {
-      proxyId = await _creerProxy(usernameAvecVille, citySlug);
-    } catch (e) {
-      console.warn('DonutBrowser proxy création échouée:', e);
-    }
-  }
-
-  // 2. Créer le profil
   const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
     : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
     : ficheNom.toLowerCase().includes('peintre') ? 'peintre'
@@ -2933,56 +2909,68 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
   };
 
+  const proxyProtocol = ['http','https'][Math.floor(Math.random()*2)];
+
   const _creerProfil = async (extraBody = {}) => {
     const body = { name: profileName, browser: 'wayfern', ...extraBody };
     const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 30000);
-    if (!res.ok) { console.warn('DonutBrowser profil erreur:', await res.text()); return null; }
+    if (!res.ok) {
+      const txt = await res.text();
+      console.warn('DonutBrowser profil erreur:', res.status, txt);
+      return null;
+    }
     const d = await res.json();
-    return d.profile?.id || d.id || null;
+    console.log('DonutBrowser profil créé raw:', JSON.stringify(d));
+    return d.profile?.id || d.id || d.data?.id || null;
   };
 
   try {
     let profileId = null;
 
-    // Tentative 1 : proxy_id (méthode standard)
-    if (proxyId) profileId = await _creerProfil({ proxy_id: proxyId });
-
-    // Tentative 2 : proxy inline dans le body (contourne la validation DonutBrowser)
-    if (!profileId && decodoPass) {
-      console.warn('DonutBrowser: retry proxy inline');
+    // Tentative 1 : proxy inline ville
+    if (decodoPass) {
       profileId = await _creerProfil({
-        proxy: { type: 'https', host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass }
+        proxy: { type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass }
       });
     }
 
-    // Tentative 3 : proxy inline pays seulement
+    // Tentative 2 : proxy inline pays seulement
     if (!profileId && decodoPass) {
       console.warn('DonutBrowser: retry proxy inline pays seulement');
       profileId = await _creerProfil({
-        proxy: { type: 'https', host: cfg.host, port: cfg.port, username: usernamePaysSeul, password: decodoPass }
+        proxy: { type: proxyProtocol, host: cfg.host, port: cfg.port, username: usernamePaysSeul, password: decodoPass }
       });
     }
 
-    // Fallback final : créer le profil sans proxy (le profil s'ouvre, proxy à configurer manuellement)
+    // Fallback : sans proxy
     if (!profileId) {
-      console.warn('DonutBrowser: création sans proxy — mets à jour les passwords Decodo dans app.js');
-      alert('⚠️ Proxy Decodo non valide. Le profil va s\'ouvrir SANS proxy.\nVérifie tes credentials Decodo sur le dashboard et mets à jour app.js.');
+      console.warn('DonutBrowser: création sans proxy');
+      alert('⚠️ Proxy Decodo non valide. Le profil va s\'ouvrir SANS proxy.\nVérifie tes credentials Decodo dans app.js.');
       profileId = await _creerProfil({});
     }
 
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
-    // Essai launch — certains endpoints varient selon version DonutBrowser
-    for (const launchUrl of [
-      `${base}/v1/profiles/${profileId}/launch`,
-      `${base}/v1/profiles/${profileId}/open`,
-      `${base}/v1/profiles/${profileId}/run`,
-    ]) {
+    // Launch — essai plusieurs endpoints + GET en fallback
+    const launchEndpoints = [
+      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'POST' },
+      { url: `${base}/v1/profiles/${profileId}/launch`, method: 'GET' },
+      { url: `${base}/v1/profiles/${profileId}/open`,   method: 'POST' },
+      { url: `${base}/v1/profiles/${profileId}/start`,  method: 'POST' },
+    ];
+    let launched = false;
+    for (const { url, method } of launchEndpoints) {
       try {
-        const lr = await _fetchTimeout(launchUrl, { method: 'POST', headers }, 5000);
-        if (lr.ok) { console.log('DonutBrowser profil lancé:', profileId, profileName, launchUrl); break; }
-        console.warn('DonutBrowser launch échec:', launchUrl, lr.status);
-      } catch (e) { console.warn('DonutBrowser launch timeout:', launchUrl); }
+        const lr = await _fetchTimeout(url, { method, headers }, 8000);
+        const body = await lr.text();
+        console.log(`DonutBrowser launch ${method} ${url} → ${lr.status}:`, body);
+        if (lr.ok) { launched = true; break; }
+      } catch (e) { console.warn('DonutBrowser launch timeout:', url); }
+    }
+    if (launched) {
+      console.log('DonutBrowser profil lancé:', profileId, profileName);
+    } else {
+      console.error('DonutBrowser: tous les endpoints de launch ont échoué pour', profileId);
     }
     return profileId;
   } catch (e) {
