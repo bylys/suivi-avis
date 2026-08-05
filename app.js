@@ -2934,9 +2934,8 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
   };
 
-  const _creerProfil = async (pid) => {
-    const body = { name: profileName, browser: 'wayfern' };
-    if (pid) body.proxy_id = pid;
+  const _creerProfil = async (extraBody = {}) => {
+    const body = { name: profileName, browser: 'wayfern', ...extraBody };
     const res = await _fetchTimeout(`${base}/v1/profiles`, { method: 'POST', headers, body: JSON.stringify(body) }, 30000);
     if (!res.ok) { console.warn('DonutBrowser profil erreur:', await res.text()); return null; }
     const d = await res.json();
@@ -2944,13 +2943,25 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   };
 
   try {
-    let profileId = proxyId ? await _creerProfil(proxyId) : null;
+    let profileId = null;
 
-    // Fallback : si la ville n'est pas supportée par Decodo → retry avec pays seulement
-    if (!profileId && proxyId && decodoPass) {
-      console.warn(`DonutBrowser: ville "${citySlug}" non supportée par Decodo, retry avec pays seulement`);
-      const proxyIdPays = await _creerProxy(usernamePaysSeul, pays.toLowerCase()).catch(() => null);
-      if (proxyIdPays) profileId = await _creerProfil(proxyIdPays);
+    // Tentative 1 : proxy_id (méthode standard)
+    if (proxyId) profileId = await _creerProfil({ proxy_id: proxyId });
+
+    // Tentative 2 : proxy inline dans le body (contourne la validation DonutBrowser)
+    if (!profileId && decodoPass) {
+      console.warn('DonutBrowser: retry proxy inline');
+      profileId = await _creerProfil({
+        proxy: { type: 'https', host: cfg.host, port: cfg.port, username: usernameAvecVille, password: decodoPass }
+      });
+    }
+
+    // Tentative 3 : proxy inline pays seulement
+    if (!profileId && decodoPass) {
+      console.warn('DonutBrowser: retry proxy inline pays seulement');
+      profileId = await _creerProfil({
+        proxy: { type: 'https', host: cfg.host, port: cfg.port, username: usernamePaysSeul, password: decodoPass }
+      });
     }
 
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
