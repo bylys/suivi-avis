@@ -22,8 +22,9 @@ import { SAFETY_CHECK_RULES } from '../safety/safety-rules.js';
 //   sleep            — replaces _sleep(ms)
 //   runImages        — array to push successful images into (default: [])
 async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl, rewritePromptImpl, uiAdapter, sleep, runImages = [] }) {
-  const total       = tasks.length;
-  const CONCURRENCY = 3;
+  const total           = tasks.length;
+  const CONCURRENCY     = 3;
+  const batchStartedAt  = performance.now();
   let doneCount = 0;
   let cursor    = 0;
 
@@ -35,6 +36,22 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
   updateProgress();
 
   const processTask = async (task) => {
+    const _now = () => performance.now();
+    const _timing = {
+      task_started_at:            _now(),
+      queue_wait_ms:              0,
+      generation_ms:              0,
+      generation_retry_sleep_ms:  0,
+      vision_ms:                  0,
+      vision_retry_sleep_ms:      0,
+      total_ms:                   0,
+      generation_attempts:        0,
+      vision_attempts:            0,
+      safety_rejections:          0,
+      technical_failures:         0,
+    };
+    _timing.queue_wait_ms = _timing.task_started_at - batchStartedAt;
+    let _failureType = null;
     try {
       // ── Outer loop: image generation (max MAX_IMAGE_ATTEMPTS API calls) ─────
       for (let imageAttempt = 1; imageAttempt <= MAX_IMAGE_ATTEMPTS; imageAttempt++) {
@@ -42,7 +59,9 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
         if (imageAttempt > 1) {
           task.status = IMAGE_TASK_STATUS.RETRYING;
           updateProgress();
+          const _genRetrySleepStart = _now();
           await sleep(imageAttempt * 2500);
+          _timing.generation_retry_sleep_ms += _now() - _genRetrySleepStart;
         } else {
           task.status = IMAGE_TASK_STATUS.GENERATING;
           updateProgress();
@@ -50,28 +69,41 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
 
         // Step 1: one image API call — throws on network/API error
         let imageResult;
-        try {
-          imageResult = await generateImageOnly(task, apiKey, state.runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl });
-        } catch(e) {
-          if (e._isPreflight) {
-            // Preflight divergence: no Images call was made, no retry is useful.
-            task.status = IMAGE_TASK_STATUS.FAILED;
-            task.error  = `preflight_worker_count_mismatch (planned=${e._plannedWC} prompt=${e._promptWC})`;
-            console.warn(`[PREFLIGHT BLOCK] taskId=${task.taskId} service=${task._planBase?._matched_service} planned=${e._plannedWC} prompt=${e._promptWC} — 0 Images calls, 0 retries`);
-            return;
+        {
+          const _genStart = _now();
+          try {
+            imageResult = await generateImageOnly(task, apiKey, state.runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl });
+            _timing.generation_attempts += 1;
+            _timing.generation_ms += _now() - _genStart;
+          } catch(e) {
+            if (e._isPreflight) {
+              // Preflight divergence: no Images call was made, no retry is useful.
+              _failureType = 'PREFLIGHT_FAILURE';
+              task.status = IMAGE_TASK_STATUS.FAILED;
+              task.error  = `preflight_worker_count_mismatch (planned=${e._plannedWC} prompt=${e._promptWC})`;
+              console.warn(`[PREFLIGHT BLOCK] taskId=${task.taskId} service=${task._planBase?._matched_service} planned=${e._plannedWC} prompt=${e._promptWC} — 0 Images calls, 0 retries`);
+              return;
+            }
+            _timing.generation_attempts += 1;
+            _timing.generation_ms += _now() - _genStart;
+            _timing.technical_failures += 1;
+            console.log('[IMAGE RETRY TELEMETRY]', JSON.stringify({
+              taskId: task.taskId,
+              image_attempt: imageAttempt,
+              original_task_worker_count: task._pre_assigned_worker_count ?? null,
+              retry_task_worker_count: task._pre_assigned_worker_count ?? null,
+              worker_count_source: 'batch_preassignment',
+              error: e.message,
+            }));
+            task.error = e.message;
+            task._imageRetryReason = 'retry_image_error';
+            if (imageAttempt === MAX_IMAGE_ATTEMPTS) {
+              _failureType = 'IMAGE_API_FAILURE';
+              task.status = IMAGE_TASK_STATUS.FAILED;
+              return;
+            }
+            continue; // retry image generation
           }
-          console.log('[IMAGE RETRY TELEMETRY]', JSON.stringify({
-            taskId: task.taskId,
-            image_attempt: imageAttempt,
-            original_task_worker_count: task._pre_assigned_worker_count ?? null,
-            retry_task_worker_count: task._pre_assigned_worker_count ?? null,
-            worker_count_source: 'batch_preassignment',
-            error: e.message,
-          }));
-          task.error = e.message;
-          task._imageRetryReason = 'retry_image_error';
-          if (imageAttempt === MAX_IMAGE_ATTEMPTS) { task.status = IMAGE_TASK_STATUS.FAILED; return; }
-          continue; // retry image generation
         }
 
         // Step 2: safety check — retry Vision only, never regenerate the image
@@ -89,7 +121,11 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             const _assignedWC  = Number(task._pre_assigned_worker_count);
             const _expectedWC  = (task._pre_assigned_worker_presence === 'workers' && Number.isInteger(_assignedWC) && _assignedWC >= 1)
               ? _assignedWC : 0;
+            const _visionStart = _now();
+            _timing.vision_attempts += 1;
             const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service, accessConfiguration: task._resolved_access_configuration || null });
+            const _visionMsThis = _now() - _visionStart;
+            _timing.vision_ms += _visionMsThis;
             const _safetyReasonCode = safety.checkFailed ? 'check_failed'
               : (!safety.safe && safety.reason === 'worker_count_mismatch')         ? 'worker_count_mismatch'
               : (!safety.safe && safety.reason === 'forbidden_roof_scene')          ? 'forbidden_roof_scene'
@@ -280,15 +316,22 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               worker_on_scaffold:                                     safety.worker_on_scaffold                                     ?? null,
               worker_stable_on_ground:                                safety.worker_stable_on_ground                                ?? null,
               worker_count_match:                                     safety.worker_count_match                                     ?? null,
+              vision_ms_this_attempt:                                 Math.round(_visionMsThis),
             }));
 
             if (safety.checkFailed) {
               if (safetyAttempt < MAX_SAFETY_ATTEMPTS_PER_IMAGE) {
+                const _visSleepStart = _now();
                 await sleep(safetyAttempt * 1500); // wait, then retry Vision on same image
+                _timing.vision_retry_sleep_ms += _now() - _visSleepStart;
                 continue;
               }
               // All Vision attempts failed — reject without new image generation
               state.counters.visionFailures++;
+              _timing.technical_failures += 1;
+              _failureType = safety.check_failed_type === 'structured_evidence_incomplete'
+                ? 'STRUCTURED_EVIDENCE_INCOMPLETE'
+                : 'VISION_TECHNICAL_FAILURE';
               task.status = IMAGE_TASK_STATUS.SAFETY_CHECK_FAILED;
               task.error  = safety.reason || 'safety check unavailable after 3 attempts';
               return;
@@ -296,6 +339,7 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
 
             if (!safety.safe && safety.severity === 'critical') {
               state.counters.criticalRejections++;
+              _timing.safety_rejections += 1;
               task.error = safety.reason || 'critical safety violation';
               break; // exit inner loop → outer loop regenerates
             }
@@ -307,20 +351,40 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
           if (!safetyPassed) {
             // Critical violation confirmed — regenerate a new image
             task._imageRetryReason = 'regenerate_after_safety_reject';
-            if (imageAttempt === MAX_IMAGE_ATTEMPTS) { task.status = IMAGE_TASK_STATUS.REJECTED_SAFETY; return; }
+            if (imageAttempt === MAX_IMAGE_ATTEMPTS) {
+              _failureType = 'VISUAL_REJECT';
+              task.status = IMAGE_TASK_STATUS.REJECTED_SAFETY;
+              return;
+            }
             continue; // outer loop: new image generation
           }
         }
 
         // Step 3: SUCCESS — deduplicate by taskId before pushing
         if (runImages.some(img => img.taskId === task.taskId)) return;
+        _failureType = 'SUCCESS';
         task.status = IMAGE_TASK_STATUS.SUCCESS;
         task.result = imageResult;
         state.counters.validated++;
         const imgEntry = { b64: imageResult.b64, url: imageResult.imgUrl, filename: imageResult.filename, taskId: task.taskId };
         runImages.push(imgEntry);
         uiAdapter.renderImage(imageResult.src, imageResult.filename, task.row?.fiche || task.row?.travaux || '');
-        console.log(`[IMAGE SUCCESS] runId=${state.runId} taskId=${task.taskId} imageAttempt=${imageAttempt} imageCalls=${state.counters.imageCalls} visionCalls=${state.counters.visionCalls}`);
+        console.log('[IMAGE SUCCESS]', JSON.stringify({
+          runId:                        state.runId,
+          taskId:                       task.taskId,
+          service:                      task._planBase?._matched_service,
+          imageAttempt,
+          imageCalls:                   state.counters.imageCalls,
+          visionCalls:                  state.counters.visionCalls,
+          failure_type:                 'SUCCESS',
+          generation_ms:                Math.round(_timing.generation_ms),
+          vision_ms:                    Math.round(_timing.vision_ms),
+          vision_retry_sleep_ms:        Math.round(_timing.vision_retry_sleep_ms),
+          generation_retry_sleep_ms:    Math.round(_timing.generation_retry_sleep_ms),
+          generation_attempts:          _timing.generation_attempts,
+          vision_attempts:              _timing.vision_attempts,
+          safety_rejections:            _timing.safety_rejections,
+        }));
         return;
       }
 
@@ -330,6 +394,26 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
         task.error  = task.error || 'all image attempts exhausted';
       }
     } finally {
+      _timing.total_ms  = _now() - _timing.task_started_at;
+      task._timing      = _timing;
+      task._failureType = _failureType;
+      if (_failureType && _failureType !== 'SUCCESS') {
+        console.log('[IMAGE FAILURE]', JSON.stringify({
+          runId:                        state.runId,
+          taskId:                       task.taskId,
+          service:                      task._planBase?._matched_service,
+          failure_type:                 _failureType,
+          total_ms:                     Math.round(_timing.total_ms),
+          generation_ms:                Math.round(_timing.generation_ms),
+          vision_ms:                    Math.round(_timing.vision_ms),
+          vision_retry_sleep_ms:        Math.round(_timing.vision_retry_sleep_ms),
+          generation_retry_sleep_ms:    Math.round(_timing.generation_retry_sleep_ms),
+          generation_attempts:          _timing.generation_attempts,
+          vision_attempts:              _timing.vision_attempts,
+          safety_rejections:            _timing.safety_rejections,
+          technical_failures:           _timing.technical_failures,
+        }));
+      }
       doneCount++;
       updateProgress();
       uiAdapter.onTaskDone(task, tasks);
@@ -351,6 +435,34 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
       task.status = IMAGE_TASK_STATUS.FAILED;
       task.error  = task.error || 'task did not complete';
     }
+  }
+
+  // Batch timing summary
+  const timedTasks = tasks.filter(t => t._timing);
+  if (timedTasks.length > 0) {
+    const vals = f => timedTasks.map(t => t._timing[f]).sort((a, b) => a - b);
+    const avg  = arr => Math.round(arr.reduce((s, v) => s + v, 0) / arr.length);
+    const pct  = (arr, p) => arr[Math.floor((p / 100) * (arr.length - 1))];
+    const genMs   = vals('generation_ms');
+    const visMs   = vals('vision_ms');
+    const totMs   = vals('total_ms');
+    console.log('[BATCH TIMING SUMMARY]', JSON.stringify({
+      runId:               state.runId,
+      task_count:          timedTasks.length,
+      batch_duration_ms:   Math.round(performance.now() - batchStartedAt),
+      generation_ms_avg:   avg(genMs),
+      generation_ms_max:   Math.round(genMs[genMs.length - 1]),
+      generation_ms_p50:   Math.round(pct(genMs, 50)),
+      generation_ms_p95:   Math.round(pct(genMs, 95)),
+      vision_ms_avg:       avg(visMs),
+      vision_ms_max:       Math.round(visMs[visMs.length - 1]),
+      vision_ms_p50:       Math.round(pct(visMs, 50)),
+      vision_ms_p95:       Math.round(pct(visMs, 95)),
+      total_ms_avg:        avg(totMs),
+      total_ms_max:        Math.round(totMs[totMs.length - 1]),
+      success_count:       timedTasks.filter(t => t._failureType === 'SUCCESS').length,
+      failure_count:       timedTasks.filter(t => t._failureType && t._failureType !== 'SUCCESS').length,
+    }));
   }
 
   return runImages;
