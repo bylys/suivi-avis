@@ -352,10 +352,12 @@ def main():
     fiches_utilisees_global = set()  # éviter de donner la même fiche à deux opérateurs le même jour
 
     for operateur in OPERATEURS:
-        # Pool de gmails de cet opérateur (ou sans opérateur assigné pour les anciens)
+        # Pool de gmails de cet opérateur (les anciens sans opérateur vont seulement à Kevin/Fifaliana)
+        OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
         gmails_op = {
             g for g in gmails_dispo
-            if gmail_operateur.get(g) == operateur or g not in gmail_operateur
+            if gmail_operateur.get(g) == operateur
+            or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
         }
 
         gmails_utilises = set()

@@ -3280,10 +3280,16 @@ async function renderGmails() {
     }
   });
 
-  const filterVille = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
-  const sort        = document.getElementById('gmail-filter-sort')?.value || 'az';
+  const filterVille    = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
+  const filterOp       = document.getElementById('gmail-filter-operateur')?.value || '';
+  const sort           = document.getElementById('gmail-filter-sort')?.value || 'az';
 
-  let list = gmails.filter(g => !filterVille || (g.ville || '').toLowerCase().includes(filterVille));
+  let list = gmails.filter(g => {
+    if (filterVille && !(g.ville || '').toLowerCase().includes(filterVille)) return false;
+    if (filterOp === '__none__' && g.operateur) return false;
+    if (filterOp && filterOp !== '__none__' && g.operateur !== filterOp) return false;
+    return true;
+  });
 
   if (sort === 'az')      list.sort((a, b) => a.email.localeCompare(b.email));
   if (sort === 'ville')   list.sort((a, b) => (a.ville || '').localeCompare(b.ville || ''));
