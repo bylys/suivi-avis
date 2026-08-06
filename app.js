@@ -2968,6 +2968,16 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       if (!res.ok) {
         const txt = await res.text();
         console.warn('DonutBrowser profil erreur:', res.status, txt);
+        // Erreur environnement Windows : DonutBrowser ne peut pas lancer son moteur Wayfern
+        if (/os error 14001|Visual C\+\+|côte-à-côte|spawn headless Wayfern|side-by-side/i.test(txt)) {
+          showToast(
+            '❌ DonutBrowser ne peut pas démarrer sur ce PC.\n' +
+            'Installe le Visual C++ Redistributable (x64) puis REDÉMARRE le PC :\n' +
+            'aka.ms/vs/17/release/vc_redist.x64.exe\n' +
+            'Si ça persiste : réinstalle DonutBrowser.',
+            'error', 12000
+          );
+        }
         return null;
       }
       const d = await res.json();
