@@ -3075,6 +3075,89 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   }
 }
 
+// Rafraîchit le proxy d'un profil existant : crée une IP fraîche (même pays/ville)
+// et l'attache au profil. Utile quand la session Decodo tombe (exit node déconnecté).
+async function donutRafraichirProxy() {
+  const token = getDonutToken();
+  if (!token) { showToast('Configure ton token DonutBrowser dans ⚙️ Config.', 'warn'); return; }
+  const base = getDonutBase();
+  const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  // 1. Récupérer profils + proxies
+  let profiles = [], proxies = [];
+  try {
+    const [pr, px] = await Promise.all([
+      fetch(`${base}/v1/profiles`, { headers }),
+      fetch(`${base}/v1/proxies`, { headers }),
+    ]);
+    const pd = await pr.json(); profiles = pd.profiles || pd.data || (Array.isArray(pd) ? pd : []);
+    const xd = await px.json(); proxies  = xd.proxies  || xd.data || (Array.isArray(xd) ? xd : []);
+  } catch (e) { showToast('DonutBrowser injoignable — ouvre l\'app.', 'error'); return; }
+
+  const gmb = profiles.filter(p => (p.name || '').startsWith('GMB_'));
+  if (!gmb.length) { showToast('Aucun profil GMB dans DonutBrowser.', 'warn'); return; }
+
+  // 2. Choix du profil (affiche le type de proxy actuel : mobile / résidentiel / aucun)
+  const typeOf = (p) => {
+    const px = proxies.find(x => x.id === p.proxy_id);
+    if (!px) return 'AUCUN proxy';
+    return (px.name || '').includes('_mob') ? 'MOBILE' : 'résidentiel';
+  };
+  const choix = prompt(
+    'Rafraîchir le proxy (nouvelle IP) de quel profil ?\n\n' +
+    gmb.map((p, i) => `${i + 1}. ${p.name}  [${typeOf(p)}]`).join('\n') +
+    '\n\nTape le numéro et OK :'
+  );
+  if (choix === null) return;
+  const prof = gmb[parseInt(choix, 10) - 1];
+  if (!prof) { showToast('Numéro invalide.', 'warn'); return; }
+
+  // 3. Nouveau proxy : repart de l'ancien (préserve pays/ville/type), sinon fallback FR + ville du nom
+  const sess = ('s' + Math.random().toString(36).slice(2, 10)).slice(0, 20);
+  const old = proxies.find(x => x.id === prof.proxy_id);
+  let settings;
+  if (old?.proxy_settings?.username) {
+    const s = old.proxy_settings;
+    const newUser = s.username.includes('-session-')
+      ? s.username.replace(/-session-[^-]+-/, `-session-${sess}-`)
+      : s.username.replace(/-sessionduration-/, `-session-${sess}-sessionduration-`);
+    settings = { proxy_type: s.proxy_type || 'http', host: s.host, port: s.port, username: newUser, password: s.password };
+  } else {
+    const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
+    const citySlug = prof.name.split('_').slice(2).join('_') || 'paris';
+    const baseUser = isMobile ? 'user-VATeam' : 'user-VAteamR';
+    settings = {
+      proxy_type: 'http', host: 'gate.decodo.com', port: 10001,
+      username: `${baseUser}-country-fr-city-${citySlug}-session-${sess}-sessionduration-1440`,
+      password: isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL,
+    };
+  }
+
+  // 4. Créer le proxy frais + l'attacher au profil
+  let proxyId = null;
+  try {
+    const r = await fetch(`${base}/v1/proxies`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ name: `Decodo_refresh_${Math.floor(Date.now() / 1000)}`, proxy_settings: settings }),
+    });
+    const d = await r.json(); proxyId = d.id || d.proxy?.id || null;
+  } catch (e) { /* ignore */ }
+  if (!proxyId) { showToast('Échec création du proxy frais.', 'error'); return; }
+
+  let ok = false;
+  for (const m of ['PUT', 'POST']) {
+    try {
+      const u = await fetch(`${base}/v1/profiles/${prof.id}`, { method: m, headers, body: JSON.stringify({ proxy_id: proxyId }) });
+      if (u.ok) { ok = true; break; }
+    } catch (e) { /* ignore */ }
+  }
+  showToast(
+    ok ? `✅ IP fraîche attachée à ${prof.name}.\n▶️ Relance le profil dans DonutBrowser.`
+       : `⚠️ Proxy créé mais attache échouée — sélectionne-le à la main dans DonutBrowser.`,
+    ok ? 'success' : 'warn', 8000
+  );
+}
+
 async function planningGenerer(id, ficheNom, gmail) {
   await sbUpdate('planning', id, { statut: 'generated' });
 

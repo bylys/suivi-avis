@@ -465,7 +465,11 @@
         <input type="number" id="donut-port-input" placeholder="Port (10108)"
           style="width:120px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
           oninput="localStorage.setItem('donut_port', this.value)" />
-        <span style="font-size:11px;color:#475569;width:100%">Seul le token DonutBrowser est propre à chaque machine.</span>
+        <button onclick="donutRafraichirProxy()"
+          style="padding:6px 14px;border-radius:6px;background:#8b5cf6;color:#fff;border:none;cursor:pointer;font-size:13px">
+          🔄 Rafraîchir le proxy d'un profil
+        </button>
+        <span style="font-size:11px;color:#475569;width:100%">Seul le token DonutBrowser est propre à chaque machine. « Rafraîchir » = nouvelle IP si la session est tombée (garde pays/ville).</span>
       </div>
     </details>
     <div id="planning-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
@@ -520,7 +524,7 @@
   </div>
 </div>
 
-<script src="app.js?v=37"></script>
+<script src="app.js?v=38"></script>
 <!-- Phase 7A.1 — readiness gate + stubs
      Ordre d'exécution garanti : app.js (classique) → ce script → index.js (module, différé).
      __IMAGE_GEN_READY__ résout quand index.js dispatch 'imagegen:ready'.
