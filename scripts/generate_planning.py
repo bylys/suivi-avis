@@ -305,11 +305,16 @@ def main():
             if fn not in last_fiche_date or d > last_fiche_date[fn]:
                 last_fiche_date[fn] = d
 
-    # Paires bloquées (gmail déjà posté sur cette fiche)
+    # Paires bloquées : avis saisis + planning déjà assigné (même non saisi)
     used_pairs = set()
     for a in all_avis:
         if a['auteur'] and a['fiche_nom']:
             used_pairs.add((a['auteur'].lower(), a['fiche_nom'].strip().lower()))
+    past_planning = sb_get_all("planning", "select=gmail,fiche_nom&statut=neq.skip")
+    for p in past_planning:
+        if p['gmail'] and p['fiche_nom']:
+            used_pairs.add((p['gmail'].lower(), p['fiche_nom'].strip().lower()))
+    print(f"Paires bloquées (avis + planning) : {len(used_pairs)}")
 
     # Fiches éligibles : pas postées depuis >= DELAI_FICHE_JOURS
     fiches_dispo = [
