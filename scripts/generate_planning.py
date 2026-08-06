@@ -287,7 +287,7 @@ def main():
     fiche_ville = {fn: Counter(v).most_common(1)[0][0]
                    for fn, v in fiche_villes_votes.items() if v}
 
-    # Dates dernière utilisation gmail
+    # Dates dernière utilisation gmail (avis saisis)
     last_gmail_date = {}
     for a in all_avis:
         g = (a['auteur'] or '').lower()
@@ -296,12 +296,27 @@ def main():
             if g not in last_gmail_date or d > last_gmail_date[g]:
                 last_gmail_date[g] = d
 
-    # Dates dernière utilisation fiche
+    # Compléter avec les assignations planning (cooldown même sans saisie)
+    past_planning = sb_get_all("planning", "select=gmail,fiche_nom,date&statut=neq.skip")
+    for p in past_planning:
+        if p['gmail'] and p['date']:
+            g = p['gmail'].lower()
+            d = date.fromisoformat(p['date'])
+            if g not in last_gmail_date or d > last_gmail_date[g]:
+                last_gmail_date[g] = d
+
+    # Dates dernière utilisation fiche (avis saisis + planning)
     last_fiche_date = {}
     for a in all_avis:
         fn = a['fiche_nom']
         if fn and a['date']:
             d = date.fromisoformat(a['date'])
+            if fn not in last_fiche_date or d > last_fiche_date[fn]:
+                last_fiche_date[fn] = d
+    for p in past_planning:
+        if p['fiche_nom'] and p['date']:
+            fn = p['fiche_nom']
+            d = date.fromisoformat(p['date'])
             if fn not in last_fiche_date or d > last_fiche_date[fn]:
                 last_fiche_date[fn] = d
 
