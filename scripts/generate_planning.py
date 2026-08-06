@@ -274,8 +274,9 @@ def main():
     all_avis = sb_get_all("avis", "select=auteur,fiche_nom,date,operateur")
     fiches_data = sb_get_all("fiches", "select=nom,pays")
     fiche_pays = {f['nom']: (f.get('pays') or 'FR') for f in fiches_data}
-    gmails_data = sb_get_all("gmails", "select=email,ville")
-    gmail_ville = {g['email'].lower(): g['ville'] for g in gmails_data if g['ville']}
+    gmails_data = sb_get_all("gmails", "select=email,ville,operateur")
+    gmail_ville    = {g['email'].lower(): g['ville']      for g in gmails_data if g['ville']}
+    gmail_operateur = {g['email'].lower(): g['operateur'] for g in gmails_data if g.get('operateur')}
 
     # Déduire la ville de chaque fiche depuis l'historique (vote majoritaire)
     fiche_villes_votes = defaultdict(list)
@@ -346,58 +347,60 @@ def main():
 
     print(f"Fiches dispo : {len(fiches_dispo)} | Gmails dispo : {len(gmails_dispo)}")
 
-    # Générer les assignations
-    gmails_utilises = set()
-    assignations = []
-
-    for fn in fiches_dispo:
-        if len(assignations) >= len(OPERATEURS) * QUOTA_PAR_OPERATEUR:
-            break
-
-        ville = fiche_ville[fn]
-
-        # Candidats : même ville, dispo, pas bloqués sur cette fiche
-        candidats = [
-            g for g in gmails_dispo
-            if gmail_ville.get(g) == ville
-            and g not in gmails_utilises
-            and (g, fn.strip().lower()) not in used_pairs
-        ]
-
-        if not candidats:
-            continue
-
-        # Choisir le gmail le moins récemment utilisé (ou jamais utilisé en priorité)
-        candidats.sort(key=lambda g: last_gmail_date.get(g, date.min))
-        gmail = candidats[0]
-
-        assignations.append({
-            'fiche_nom': fn,
-            'ville': ville,
-            'gmail': gmail,
-        })
-        gmails_utilises.add(gmail)
-
-    print(f"Assignations générées : {len(assignations)}")
-
-    # Répartir entre opérateurs (alternance)
+    # Générer les assignations par opérateur (chacun utilise ses propres gmails)
     planning_rows = []
-    for i, a in enumerate(assignations):
-        operateur = OPERATEURS[i % len(OPERATEURS)]
-        gologin_id = None  # GoLogin désactivé — générateur image pas encore prêt
-        pays = fiche_pays.get(a['fiche_nom'], 'FR')
-        row = {
-            'date': today_str,
-            'fiche_nom': a['fiche_nom'],
-            'ville': a['ville'],
-            'gmail': a['gmail'],
-            'operateur': operateur,
-            'statut': 'pending',
-            'pays': pays,
+    fiches_utilisees_global = set()  # éviter de donner la même fiche à deux opérateurs le même jour
+
+    for operateur in OPERATEURS:
+        # Pool de gmails de cet opérateur (ou sans opérateur assigné pour les anciens)
+        gmails_op = {
+            g for g in gmails_dispo
+            if gmail_operateur.get(g) == operateur or g not in gmail_operateur
         }
-        if gologin_id:
-            row['gologin_id'] = gologin_id
-        planning_rows.append(row)
+
+        gmails_utilises = set()
+        assignations_op = []
+
+        for fn in fiches_dispo:
+            if len(assignations_op) >= QUOTA_PAR_OPERATEUR:
+                break
+            if fn in fiches_utilisees_global:
+                continue
+
+            ville = fiche_ville[fn]
+
+            candidats = [
+                g for g in gmails_op
+                if gmail_ville.get(g) == ville
+                and g not in gmails_utilises
+                and (g, fn.strip().lower()) not in used_pairs
+            ]
+
+            if not candidats:
+                continue
+
+            candidats.sort(key=lambda g: last_gmail_date.get(g, date.min))
+            gmail = candidats[0]
+
+            assignations_op.append({'fiche_nom': fn, 'ville': ville, 'gmail': gmail})
+            gmails_utilises.add(gmail)
+            fiches_utilisees_global.add(fn)
+
+        print(f"  {operateur} : {len(assignations_op)} assignations")
+
+        for a in assignations_op:
+            pays = fiche_pays.get(a['fiche_nom'], 'FR')
+            planning_rows.append({
+                'date': today_str,
+                'fiche_nom': a['fiche_nom'],
+                'ville': a['ville'],
+                'gmail': a['gmail'],
+                'operateur': operateur,
+                'statut': 'pending',
+                'pays': pays,
+            })
+
+    print(f"Total assignations : {len(planning_rows)}")
 
     # Insérer par batch
     batch_size = 50
