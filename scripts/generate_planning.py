@@ -8,7 +8,7 @@ Génère le planning quotidien des avis GMB.
 - Envoie le planning sur Slack par opérateur
 """
 
-import os, sys, json, urllib.request, urllib.error
+import os, sys, json, urllib.request, urllib.error, urllib.parse
 from datetime import date
 from collections import defaultdict, Counter
 import random
@@ -97,6 +97,21 @@ def sb_delete(table, filter_):
         headers={
             "apikey": SB_KEY,
             "Authorization": f"Bearer {SB_KEY}",
+            "Prefer": "return=minimal"
+        }
+    )
+    with urllib.request.urlopen(req) as r:
+        return r.status
+
+def sb_update(table, filter_, payload):
+    data = json.dumps(payload).encode()
+    req = urllib.request.Request(
+        f"{SB_URL}/rest/v1/{table}?{filter_}",
+        data=data, method="PATCH",
+        headers={
+            "apikey": SB_KEY,
+            "Authorization": f"Bearer {SB_KEY}",
+            "Content-Type": "application/json",
             "Prefer": "return=minimal"
         }
     )
@@ -275,6 +290,7 @@ def main():
     fiches_data = sb_get_all("fiches", "select=nom,pays")
     fiche_pays = {f['nom']: (f.get('pays') or 'FR') for f in fiches_data}
     gmails_data = sb_get_all("gmails", "select=email,ville,operateur")
+    all_gmails      = [g['email'].lower() for g in gmails_data]
     gmail_ville    = {g['email'].lower(): g['ville']      for g in gmails_data if g['ville']}
     gmail_operateur = {g['email'].lower(): g['operateur'] for g in gmails_data if g.get('operateur')}
 
@@ -335,62 +351,89 @@ def main():
     # Trier par ancienneté décroissante (priorité aux fiches les plus anciennes)
     fiches_dispo.sort(key=lambda fn: (today - last_fiche_date[fn]).days, reverse=True)
 
-    # Gmails éligibles : pas utilisés depuis >= DELAI_GMAIL_JOURS
+    # Gmails éligibles : jamais utilisés OU cooldown passé
+    # (inclut les gmails SANS ville — rattachés à une ville lors de leur 1re utilisation)
     gmails_dispo = {
-        g for g, d in last_gmail_date.items()
-        if (today - d).days >= DELAI_GMAIL_JOURS and g in gmail_ville
+        g for g in all_gmails
+        if g not in last_gmail_date
+        or (today - last_gmail_date[g]).days >= DELAI_GMAIL_JOURS
     }
-    # Ajouter les gmails jamais utilisés
-    for g in gmail_ville:
-        if g not in last_gmail_date:
-            gmails_dispo.add(g)
 
     print(f"Fiches dispo : {len(fiches_dispo)} | Gmails dispo : {len(gmails_dispo)}")
 
-    # Générer les assignations par opérateur (chacun utilise ses propres gmails)
+    # Générer les assignations en round-robin (répartition équitable des fiches)
     planning_rows = []
-    fiches_utilisees_global = set()  # éviter de donner la même fiche à deux opérateurs le même jour
+    villes_a_persister = {}          # gmails neufs → ville rattachée (à écrire en base)
 
+    # Pool de gmails par opérateur (les nouveaux VA n'ont QUE leurs gmails assignés ;
+    # les anciens gmails sans opérateur ne vont qu'à Kevin/Fifaliana)
+    OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
+    pools = {}
     for operateur in OPERATEURS:
-        # Pool de gmails de cet opérateur (les anciens sans opérateur vont seulement à Kevin/Fifaliana)
-        OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
-        gmails_op = {
+        pools[operateur] = {
             g for g in gmails_dispo
             if gmail_operateur.get(g) == operateur
             or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
         }
 
-        gmails_utilises = set()
-        assignations_op = []
+    gmails_utilises = {op: set() for op in OPERATEURS}
+    assignations = {op: [] for op in OPERATEURS}
 
-        for fn in fiches_dispo:
-            if len(assignations_op) >= QUOTA_PAR_OPERATEUR:
-                break
-            if fn in fiches_utilisees_global:
-                continue
-
-            ville = fiche_ville[fn]
-
+    def pick_gmail(operateur, fn):
+        """Trouve le meilleur gmail de l'opérateur pour cette fiche (ou None)."""
+        ville = fiche_ville[fn]
+        fn_key = fn.strip().lower()
+        # 1. Priorité : gmails déjà rattachés à cette ville
+        candidats = [
+            g for g in pools[operateur]
+            if gmail_ville.get(g) == ville
+            and g not in gmails_utilises[operateur]
+            and (g, fn_key) not in used_pairs
+        ]
+        # 2. Fallback : gmails neufs (sans ville) — 1re utilisation
+        if not candidats:
             candidats = [
-                g for g in gmails_op
-                if gmail_ville.get(g) == ville
-                and g not in gmails_utilises
-                and (g, fn.strip().lower()) not in used_pairs
+                g for g in pools[operateur]
+                if g not in gmail_ville
+                and g not in gmails_utilises[operateur]
+                and (g, fn_key) not in used_pairs
             ]
+        if not candidats:
+            return None
+        candidats.sort(key=lambda g: last_gmail_date.get(g, date.min))
+        return candidats[0]
 
-            if not candidats:
+    # Fiches encore disponibles (une fiche = un seul opérateur par jour)
+    remaining = list(fiches_dispo)
+
+    # Tour par tour : chaque opérateur prend une fiche à chaque ronde, jusqu'à quota
+    active = True
+    while active:
+        active = False
+        for operateur in OPERATEURS:
+            if len(assignations[operateur]) >= QUOTA_PAR_OPERATEUR:
                 continue
+            picked_idx, picked_gmail = None, None
+            for idx, fn in enumerate(remaining):
+                g = pick_gmail(operateur, fn)
+                if g:
+                    picked_idx, picked_gmail = idx, g
+                    break
+            if picked_idx is None:
+                continue
+            fn = remaining.pop(picked_idx)
+            ville = fiche_ville[fn]
+            # Gmail neuf → rattachement définitif à cette ville
+            if picked_gmail not in gmail_ville:
+                gmail_ville[picked_gmail] = ville
+                villes_a_persister[picked_gmail] = ville
+            gmails_utilises[operateur].add(picked_gmail)
+            assignations[operateur].append({'fiche_nom': fn, 'ville': ville, 'gmail': picked_gmail})
+            active = True
 
-            candidats.sort(key=lambda g: last_gmail_date.get(g, date.min))
-            gmail = candidats[0]
-
-            assignations_op.append({'fiche_nom': fn, 'ville': ville, 'gmail': gmail})
-            gmails_utilises.add(gmail)
-            fiches_utilisees_global.add(fn)
-
-        print(f"  {operateur} : {len(assignations_op)} assignations")
-
-        for a in assignations_op:
+    for operateur in OPERATEURS:
+        print(f"  {operateur} : {len(assignations[operateur])} assignations")
+        for a in assignations[operateur]:
             pays = fiche_pays.get(a['fiche_nom'], 'FR')
             planning_rows.append({
                 'date': today_str,
@@ -413,6 +456,17 @@ def main():
         inserted += len(batch)
 
     print(f"Inséré dans planning : {inserted} lignes")
+
+    # Persister la ville des gmails neufs utilisés pour la 1re fois (rattachement définitif)
+    if villes_a_persister:
+        ok = 0
+        for gm, vl in villes_a_persister.items():
+            try:
+                sb_update("gmails", f"email=eq.{urllib.parse.quote(gm)}", {"ville": vl})
+                ok += 1
+            except Exception as e:
+                print(f"  MAJ ville échouée pour {gm}: {e}")
+        print(f"Villes rattachées : {ok}/{len(villes_a_persister)} gmails neufs")
 
     # Envoyer Slack par opérateur
     for op in OPERATEURS:
