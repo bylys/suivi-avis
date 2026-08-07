@@ -52,8 +52,12 @@ SLACK_OPERATEURS = {
 
 DELAI_GMAIL_JOURS  = 3   # délai min entre deux utilisations du même gmail
 DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
-QUOTA_PAR_OPERATEUR = int(os.environ.get("QUOTA_PAR_OPERATEUR", "45"))
+QUOTA_NOUVEAUX   = int(os.environ.get("QUOTA_PAR_OPERATEUR", "33"))  # Aina/Kintana/Korail/Anjara
+QUOTA_KEVIN_FIF  = int(os.environ.get("QUOTA_KEVIN_FIF", "50"))      # Kevin & Fifaliana
 OPERATEURS = ["Kevin", "Fifaliana", "Aina", "Kintana", "Korail", "Anjara"]
+OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]  # accès aux anciens gmails + fiches sans mail
+QUOTAS = {op: (QUOTA_KEVIN_FIF if op in OPERATEURS_ANCIENS_GMAILS else QUOTA_NOUVEAUX)
+          for op in OPERATEURS}
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 
@@ -367,7 +371,6 @@ def main():
 
     # Pool de gmails par opérateur (les nouveaux VA n'ont QUE leurs gmails assignés ;
     # les anciens gmails sans opérateur ne vont qu'à Kevin/Fifaliana)
-    OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
     pools = {}
     for operateur in OPERATEURS:
         pools[operateur] = {
@@ -406,12 +409,12 @@ def main():
     # Fiches encore disponibles (une fiche = un seul opérateur par jour)
     remaining = list(fiches_dispo)
 
-    # Tour par tour : chaque opérateur prend une fiche à chaque ronde, jusqu'à quota
+    # Phase 1 — tour par tour avec gmail : chaque opérateur prend une fiche/ronde, jusqu'à son quota
     active = True
     while active:
         active = False
         for operateur in OPERATEURS:
-            if len(assignations[operateur]) >= QUOTA_PAR_OPERATEUR:
+            if len(assignations[operateur]) >= QUOTAS[operateur]:
                 continue
             picked_idx, picked_gmail = None, None
             for idx, fn in enumerate(remaining):
@@ -429,6 +432,19 @@ def main():
                 villes_a_persister[picked_gmail] = ville
             gmails_utilises[operateur].add(picked_gmail)
             assignations[operateur].append({'fiche_nom': fn, 'ville': ville, 'gmail': picked_gmail})
+            active = True
+
+    # Phase 2 — Kevin/Fifaliana complètent jusqu'à leur quota avec les fiches restantes SANS gmail
+    # (ils choisiront eux-mêmes le mail à utiliser)
+    active = True
+    while active:
+        active = False
+        for operateur in OPERATEURS_ANCIENS_GMAILS:
+            if len(assignations[operateur]) >= QUOTAS[operateur] or not remaining:
+                continue
+            fn = remaining.pop(0)
+            ville = fiche_ville[fn]
+            assignations[operateur].append({'fiche_nom': fn, 'ville': ville, 'gmail': ''})
             active = True
 
     for operateur in OPERATEURS:
