@@ -117,17 +117,19 @@ export async function runAuditClassifierTests() {
       'matched_regex must still be recorded for traceability');
   });
 
-  // ─── AUD-CLASS4: DEFERRED (no _for match, fallback suppressed) ──────────
-  // peinture / Enduit décoratif is in DEFERRED_SERVICES — fallback must NOT win
+  // ─── AUD-CLASS4: Enduit décoratif → STATE_LOCKED (recovered Opus 4.8) ───────
+  // Recovered: dedicated interior state-lock (^enduit decoratif$), removed from
+  // DEFERRED_SERVICES. peinture is a non-gated métier, so there is no runtime Vision
+  // service-gate — only the visual state-lock. The DEFERRED-wins-over-suppressed-
+  // fallback branch remains in the classifier but is no longer exercised by any
+  // current catalog service.
 
-  test('AUD-CLASS4', 'Enduit décoratif (DEFERRED_SERVICES, no _for match) → DEFERRED wins over fallback', () => {
+  test('AUD-CLASS4', 'Enduit décoratif → STATE_LOCKED (dedicated interior state-lock, recovered)', () => {
     const r = classifyService('peinture', 'Enduit décoratif');
-    assert(r.routing_coverage === 'DEFERRED',
-      `Expected DEFERRED, got ${r.routing_coverage}`);
-    assert(r.fallback_used === false,
-      `Expected fallback_used=false (fallback suppressed by DEFERRED), got ${r.fallback_used}`);
-    assert(r.matched_regex === null,
-      `Expected matched_regex=null, got ${r.matched_regex}`);
+    assert(r.routing_coverage === 'STATE_LOCKED',
+      `Expected STATE_LOCKED, got ${r.routing_coverage}`);
+    assert(r.matched_regex === '^enduit decoratif$',
+      `Expected matched_regex="^enduit decoratif$", got ${r.matched_regex}`);
   });
 
   // ─── AUD-CLASS5: UNROUTED ─────────────────────────────────────────────────
@@ -155,12 +157,12 @@ export async function runAuditClassifierTests() {
       `Sum of categories (${computed}) ≠ TOTAL (${TOTAL})`);
   });
 
-  test('AUD-SUM2', 'summary: STATE_LOCKED=44, DEFERRED=7, ROUTED_TO_SPECIFIC_SCENE=114', () => {
+  test('AUD-SUM2', 'summary: STATE_LOCKED=45, DEFERRED=6, ROUTED_TO_SPECIFIC_SCENE=114', () => {
     const { summary } = generateServiceCoverageAudit();
-    assert(summary.STATE_LOCKED === 44,
-      `Expected STATE_LOCKED=44, got ${summary.STATE_LOCKED}`);
-    assert(summary.DEFERRED === 7,
-      `Expected DEFERRED=7, got ${summary.DEFERRED}`);
+    assert(summary.STATE_LOCKED === 45,
+      `Expected STATE_LOCKED=45, got ${summary.STATE_LOCKED}`);
+    assert(summary.DEFERRED === 6,
+      `Expected DEFERRED=6, got ${summary.DEFERRED}`);
     assert(summary.ROUTED_TO_SPECIFIC_SCENE === 114,
       `Expected ROUTED_TO_SPECIFIC_SCENE=114, got ${summary.ROUTED_TO_SPECIFIC_SCENE}`);
     assert(summary.TOTAL === 172,

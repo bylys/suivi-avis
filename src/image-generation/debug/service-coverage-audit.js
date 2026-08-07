@@ -31,8 +31,10 @@ const DEFERRED_SERVICES = new Set([
   // 'maçonnerie:Rejointoiement' — recovered (Opus 4.8): generic material-agnostic
   //   state-lock MACONNERIE-REJOINTOIEMENT-GENERIC + gate "Rejointoiement générique",
   //   real micro-test PASS + human visual validation.
+  // 'peinture:Enduit décoratif' — recovered (Opus 4.8): dedicated interior state-lock
+  //   PEINTURE-ENDUIT-DECORATIF-INTERIOR (peinture is a non-gated métier — no runtime
+  //   Vision gate), real generation PASS + human visual validation.
   'terrassement:Décaissement',
-  'peinture:Enduit décoratif',
 ]);
 
 // ─── Classify one service using the actual runtime logic ─────────────────────

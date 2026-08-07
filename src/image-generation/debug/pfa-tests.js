@@ -167,10 +167,15 @@ export async function runPfaTests() {
       `Peinture clôture must not activate the facade state-lock, got _state_lock_used=${r._state_lock_used}`);
   });
 
-  test('PFA-AC5', 'Enduit décoratif encours (peinture) → no state-lock scenario resolves', () => {
+  test('PFA-AC5', 'Enduit décoratif encours → own INTERIOR lock, NOT the facade PFA family', () => {
+    // Recovered Opus 4.8: Enduit décoratif now has its own interior state-lock
+    // (PEINTURE-ENDUIT-DECORATIF-INTERIOR). It must NOT hijack the peinture-façade
+    // PFA family (PEINTURE-FACADE-MASONRY-ROLLER-EXTERIOR).
     const r = resolveService('peinture', 'Enduit décoratif', 'encours');
-    assert(r._state_lock_used === false,
-      `Enduit décoratif must not activate the facade state-lock, got _state_lock_used=${r._state_lock_used}`);
+    assert(r._visual_family === 'PEINTURE-ENDUIT-DECORATIF-INTERIOR',
+      `Expected interior decorative-plaster family, got ${r._visual_family}`);
+    assert(r._visual_family !== 'PEINTURE-FACADE-MASONRY-ROLLER-EXTERIOR',
+      'Enduit décoratif must not activate the facade PFA state-lock');
   });
 
   // ─── PFA-GT: Generic gate reject_conditions ────────────────────────────────

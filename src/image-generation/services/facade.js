@@ -919,6 +919,48 @@ export const SITE_REALISM_FACADE = {
   peinture: {
     scenarios: [
 
+      // --- enduit décoratif intérieur encours state-lock (recovered Opus 4.8) ---
+      // Interior decorative plaster (béton ciré / stuc / tadelakt-like), NOT the
+      // FACADE-ENDUIT-GROUND family. Exact matcher ^enduit decoratif$ only — never
+      // captures enduit monocouche/hydraulique/crépi/enduit façade/rebouchage.
+      // Worker-first composition: the decorator applying plaster with a trowel IS the
+      // primary subject (avoids the Muret failure mode of an empty wall / no worker).
+      {
+        _for:                             '^enduit decoratif$',
+        _state_for:                       'encours',
+        _visual_family:                   'PEINTURE-ENDUIT-DECORATIF-INTERIOR',
+        _access_configuration:            'GROUND_LEVEL_DECORATIVE_PLASTER',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        setting:       'interior',
+        planned_worker_count:             1,
+        scene_note:    'The main visible action is ONE professional decorator actively applying decorative plaster to an interior residential wall with a stainless-steel trowel (platoir inox) — the worker is the central, clearly visible subject, standing or slightly leaning at the wall with both feet on the floor, the trowel physically in contact with the wall spreading fresh plaster in a smoothing pass. The wall is deliberately mid-work and shows three zones at once: a finished zone with a subtle decorative mineral/béton-ciré texture (soft trowel-mark nuance, irregular tonal variation, matte stone-like finish — NOT a flat paint colour, NOT a coarse exterior crépi), a still-raw/prepared zone not yet coated, and the active transition zone under the trowel where fresh plaster is being laid. A bucket of decorative plaster and a hawk/float sit on a small protective dust sheet on the floor beside the worker. Interior residential room (living room, entrance, or bedroom) — one dominant wall. NO ladder, NO scaffold, NO roller, NO paintbrush as the main tool.',
+        scene_camera:  'customer smartphone photo taken from a few metres inside the room at standing eye level, slight diagonal — the decorator and the trowel-in-contact action fill a clear central part of the frame, the worked wall visible from the finished textured zone through the active pass to the raw zone',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'bucket of decorative plaster and a stainless-steel hawk/float on a small dust sheet on the floor beside the worker',
+          midground:  'the decorator applying decorative plaster with a stainless-steel trowel — finished subtly-textured zone on one side, raw/prepared zone on the other, active fresh pass under the trowel',
+          background: 'interior residential room — door frame, window, or furniture edge under a protective sheet at the side',
+        },
+        scene_debris:  'faint plaster smears on the dust sheet below the active zone, a second trowel/lisseuse resting on the bucket rim',
+        scene_exclude: ['exterior facade', 'scaffold', 'ladder', 'paint roller as the main tool', 'paintbrush as the main tool', 'wallpaper', 'coarse exterior crépi texture', 'flat uniform painted wall', 'fully finished wall with no active work', 'crack being filled', 'patching compound only', 'no worker present'],
+        tools: [
+          'stainless-steel trowel (platoir inox) in contact with the wall spreading fresh decorative plaster',
+          'stainless-steel hawk or float (taloche / lisseuse) held in the other hand',
+          'bucket of decorative plaster mix on the dust sheet beside the worker',
+        ],
+        protections: [
+          'small canvas or plastic dust sheet on the floor below the worked wall',
+          'work gloves on the decorator',
+        ],
+        chantier_details: [
+          'subtle decorative mineral / béton-ciré texture on the finished zone — soft trowel-mark nuance and irregular tonal variation, matte and stone-like, clearly not flat paint and not coarse exterior crépi',
+          'raw or freshly prepared wall zone still uncoated, adjacent to the finished zone',
+          'active transition under the trowel where fresh plaster is being laid — partial, in progress',
+          'the decorator is the central visible subject, trowel physically touching the wall',
+        ],
+      },
+
       // --- peinture intérieure (murs) ---
       {
         _for:          'interieur|interieure|salon|chambre|cuisine|couloir|cage.*escal|boiserie.*int|papier.*peint',
