@@ -17,6 +17,7 @@ import { _validateWorkerScene, _assertFinalWorkerConsistency } from '../safety/w
 import { _validateQuality }               from '../validation/quality-validator.js';
 import { _assertTaskHasBatchPlan }        from '../validation/batch-validator.js';
 import { PromptBuilder, _USE_PROMPT_BUILDER } from '../prompt/prompt-builder.js';
+import { imageModeConfig, getImageMode }       from '../config/image-mode.js';
 import { _appendLockedFinalConstraints }  from '../prompt/locked-constraints.js';
 import { _sanitizeSceneForPrompt, _validateInteriorPayload } from './prompt-scene-sanitizer.js';
 import { SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY, RAVALEMENT_SCAFFOLD_RETRY, HYDROFUGE_SAFETY_RETRY } from '../safety/safety-rules.js';
@@ -24,7 +25,10 @@ import { SERVICE_VISUAL_MISMATCH_RETRY, SOLIN_SAFETY_RETRY, RAVALEMENT_SCAFFOLD_
 // ─── buildImageGenerationRequest ─────────────────────────────────────────────
 // Pure — verbatim params from app.js lines 13802–13806.
 // model: gpt-image-2, size: 1536×1024, quality: high, output_format: jpeg, compression: 85
-function buildImageGenerationRequest(prompt, apiKey) {
+function buildImageGenerationRequest(prompt, apiKey, mode) {
+  // Mode drives ONLY quality + client timeout. Everything else (model, n, size/ratio,
+  // format, compression, prompt) is identical across modes — see config/image-mode.js.
+  const cfg = imageModeConfig(mode);
   return {
     url:     'https://api.openai.com/v1/images/generations',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -32,12 +36,12 @@ function buildImageGenerationRequest(prompt, apiKey) {
       model:              'gpt-image-2',
       prompt,
       n:                  1,
-      size:               '1536x1024',
-      quality:            'high',
+      size:               cfg.size,
+      quality:            cfg.quality,
       output_format:      'jpeg',
       output_compression: 85,
     }),
-    timeout: 180000,
+    timeout: cfg.timeout,
   };
 }
 
@@ -48,7 +52,11 @@ function buildImageGenerationRequest(prompt, apiKey) {
 //   fetchImpl        — replaces _fetchWithTimeout
 //   readResponseImpl — replaces _readResponseOnce
 //   rewritePromptImpl— replaces _rewritePromptWithGPT(scene, key)
-async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl }) {
+async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl, mode, timings }) {
+  const _perf   = () => performance.now();
+  const _t0     = _perf();
+  const _mode   = mode || getImageMode();
+  const _tm     = timings || {};   // sub-timings sink (rewriter/api/decode), safe if absent
   const { jsonScene, presencePlan, i, slug, _planBase } = task;
   const realistScene   = _applySiteRealism(jsonScene, i);
 
@@ -105,9 +113,12 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
   if (_interiorIssues.length) {
     console.warn(`[InteriorValidate] ${_planBase._matched_key} #${i}: ${_interiorIssues.join(' | ')}`);
   }
+  _tm.planning_ms = _perf() - _t0;
+  const _tRw = _perf();
   const _gptPrompt = _USE_PROMPT_BUILDER
     ? PromptBuilder.build(_sceneForPrompt)
     : await rewritePromptImpl(_sceneForPrompt, apiKey);
+  _tm.prompt_rewriter_ms = _perf() - _tRw;
 
   const _finalSceneObj = JSON.parse(finalScene);
   _assertFinalWorkerConsistency(_finalSceneObj);
@@ -205,11 +216,16 @@ async function generateImageOnly(task, apiKey, runId, { state, fetchImpl, readRe
     optical_defect_selected: _opticalSelected,
   }));
 
-  const req = buildImageGenerationRequest(_finalPrompt, apiKey);
+  const req = buildImageGenerationRequest(_finalPrompt, apiKey, _mode);
+  _tm.image_mode = _mode;
   let parsed;
   {
+    const _tApi = _perf();
     const rawResp = await fetchImpl(req.url, { method: 'POST', headers: req.headers, body: req.body }, req.timeout);
+    _tm.image_api_ms = _perf() - _tApi;
+    const _tDec = _perf();
     parsed = await readResponseImpl(rawResp);
+    _tm.image_decode_ms = _perf() - _tDec;
   }
 
   if (!parsed.ok) {

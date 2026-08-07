@@ -10,6 +10,7 @@ import { IMAGE_TASK_STATUS, TERMINAL_STATUSES, MAX_IMAGE_ATTEMPTS, MAX_SAFETY_AT
 import { generateImageOnly } from './generate-image.js';
 import { checkImageSafety }  from './safety-check.js';
 import { SAFETY_CHECK_RULES } from '../safety/safety-rules.js';
+import { getImageMode, imageModeConfig } from '../config/image-mode.js';
 
 // ─── runImageBatch ────────────────────────────────────────────────────────────
 // Same behaviour as _runImageBatch — app.js lines 13836–13963
@@ -25,6 +26,9 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
   const total           = tasks.length;
   const CONCURRENCY     = 3;
   const batchStartedAt  = performance.now();
+  // Mode-driven image-attempt ceiling: production=3 (resilience), validation=1 (fast-fail).
+  // Falls back to the state.js default if the mode config omits it.
+  const _maxImageAttempts = imageModeConfig(getImageMode()).maxImageAttempts ?? MAX_IMAGE_ATTEMPTS;
   let doneCount = 0;
   let cursor    = 0;
 
@@ -53,26 +57,33 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
     _timing.queue_wait_ms = _timing.task_started_at - batchStartedAt;
     let _failureType = null;
     try {
-      // ── Outer loop: image generation (max MAX_IMAGE_ATTEMPTS API calls) ─────
-      for (let imageAttempt = 1; imageAttempt <= MAX_IMAGE_ATTEMPTS; imageAttempt++) {
+      // ── Outer loop: image generation (max _maxImageAttempts API calls) ──────
+      for (let imageAttempt = 1; imageAttempt <= _maxImageAttempts; imageAttempt++) {
         task.imageAttempt = imageAttempt;
+        // ── Per-attempt speed instrumentation (no effect on any pipeline decision) ──
+        const _attemptStart   = _now();
+        const _attemptTm      = {};   // filled by generateImageOnly: planning/rewriter/api/decode
+        let   _attemptRetryWait = 0;
+        let   _attemptVisionMs  = 0;
         if (imageAttempt > 1) {
           task.status = IMAGE_TASK_STATUS.RETRYING;
           updateProgress();
           const _genRetrySleepStart = _now();
           await sleep(imageAttempt * 2500);
-          _timing.generation_retry_sleep_ms += _now() - _genRetrySleepStart;
+          _attemptRetryWait = _now() - _genRetrySleepStart;
+          _timing.generation_retry_sleep_ms += _attemptRetryWait;
         } else {
           task.status = IMAGE_TASK_STATUS.GENERATING;
           updateProgress();
         }
 
+        try {
         // Step 1: one image API call — throws on network/API error
         let imageResult;
         {
           const _genStart = _now();
           try {
-            imageResult = await generateImageOnly(task, apiKey, state.runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl });
+            imageResult = await generateImageOnly(task, apiKey, state.runId, { state, fetchImpl, readResponseImpl, rewritePromptImpl, mode: getImageMode(), timings: _attemptTm });
             _timing.generation_attempts += 1;
             _timing.generation_ms += _now() - _genStart;
           } catch(e) {
@@ -97,7 +108,7 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             }));
             task.error = e.message;
             task._imageRetryReason = 'retry_image_error';
-            if (imageAttempt === MAX_IMAGE_ATTEMPTS) {
+            if (imageAttempt === _maxImageAttempts) {
               _failureType = 'IMAGE_API_FAILURE';
               task.status = IMAGE_TASK_STATUS.FAILED;
               return;
@@ -126,6 +137,7 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
             const safety = await checkImageSafety(imageResult.b64, task._planBase._matched_key, apiKey, { fetchImpl, readResponseImpl, expectedWorkerCount: _expectedWC, matchedService: task._planBase._matched_service, accessConfiguration: task._resolved_access_configuration || null });
             const _visionMsThis = _now() - _visionStart;
             _timing.vision_ms += _visionMsThis;
+            _attemptVisionMs += _visionMsThis;
             const _safetyReasonCode = safety.checkFailed ? 'check_failed'
               : (!safety.safe && safety.reason === 'worker_count_mismatch')         ? 'worker_count_mismatch'
               : (!safety.safe && safety.reason === 'forbidden_roof_scene')          ? 'forbidden_roof_scene'
@@ -359,7 +371,7 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
           if (!safetyPassed) {
             // Critical violation confirmed — regenerate a new image
             task._imageRetryReason = 'regenerate_after_safety_reject';
-            if (imageAttempt === MAX_IMAGE_ATTEMPTS) {
+            if (imageAttempt === _maxImageAttempts) {
               _failureType = 'VISUAL_REJECT';
               task.status = IMAGE_TASK_STATUS.REJECTED_SAFETY;
               return;
@@ -394,6 +406,20 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
           safety_rejections:            _timing.safety_rejections,
         }));
         return;
+        } finally {
+          // [SPEED] — one line per attempt, all exit paths. Pure logging, no decision impact.
+          console.log('[SPEED]', JSON.stringify({
+            mode:               _attemptTm.image_mode || getImageMode(),
+            attempt:            imageAttempt,
+            planning_ms:        Math.round(_attemptTm.planning_ms ?? 0),
+            prompt_rewriter_ms: Math.round(_attemptTm.prompt_rewriter_ms ?? 0),
+            image_api_ms:       Math.round(_attemptTm.image_api_ms ?? 0),
+            image_decode_ms:    Math.round(_attemptTm.image_decode_ms ?? 0),
+            vision_ms:          Math.round(_attemptVisionMs),
+            retry_wait_ms:      Math.round(_attemptRetryWait),
+            attempt_total_ms:   Math.round(_now() - _attemptStart),
+          }));
+        }
       }
 
       // Outer loop exhausted (only if every image attempt was a safety rejection)
@@ -470,6 +496,12 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
       total_ms_max:        Math.round(totMs[totMs.length - 1]),
       success_count:       timedTasks.filter(t => t._failureType === 'SUCCESS').length,
       failure_count:       timedTasks.filter(t => t._failureType && t._failureType !== 'SUCCESS').length,
+    }));
+    console.log('[SPEED BATCH]', JSON.stringify({
+      mode:                getImageMode(),
+      batch_total_ms:      Math.round(performance.now() - batchStartedAt),
+      image_attempt_count: state.counters.imageCalls,
+      vision_call_count:   state.counters.visionCalls,
     }));
   }
 
