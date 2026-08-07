@@ -204,6 +204,14 @@ function _commonGateFields(obj, computedWorkerMatch, visibleWC) {
     worker_on_ladder:                                 obj.worker_on_ladder                                 ?? null,
     worker_on_step_ladder:                            obj.worker_on_step_ladder                            ?? null,
     worker_on_scaffold:                               obj.worker_on_scaffold                               ?? null,
+    // Rejointoiement générique (material-agnostic) gate fields
+    masonry_wall_visible:                             obj.masonry_wall_visible                             ?? null,
+    old_joints_visible:                               obj.old_joints_visible                               ?? null,
+    repointing_action_visible:                        obj.repointing_action_visible                        ?? null,
+    fresh_joint_mortar_visible:                       obj.fresh_joint_mortar_visible                       ?? null,
+    masonry_faces_remain_uncovered:                   obj.masonry_faces_remain_uncovered                   ?? null,
+    new_wall_construction_visible:                    obj.new_wall_construction_visible                    ?? null,
+    continuous_coating_or_render_visible:             obj.continuous_coating_or_render_visible             ?? null,
   };
 }
 

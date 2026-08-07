@@ -97,14 +97,14 @@ export async function runAuditClassifierTests() {
       'matched_regex must still be recorded for traceability');
   });
 
-  test('AUD-CLASS3e', 'Rejointoiement → DEFERRED (pool contaminé, gate absente)', () => {
+  test('AUD-CLASS3e', 'Rejointoiement → STATE_LOCKED (recovered generic material-agnostic workflow)', () => {
     const r = classifyService('maçonnerie', 'Rejointoiement');
-    assert(r.routing_coverage === 'DEFERRED',
-      `Expected DEFERRED, got ${r.routing_coverage}`);
+    assert(r.routing_coverage === 'STATE_LOCKED',
+      `Expected STATE_LOCKED, got ${r.routing_coverage}`);
+    assert(r.matched_regex === '^rejointoiement$',
+      `Expected matched_regex="^rejointoiement$", got ${r.matched_regex}`);
     assert(r.fallback_used === false,
       `Expected fallback_used=false, got ${r.fallback_used}`);
-    assert(r.matched_regex !== null,
-      'matched_regex must still be recorded for traceability');
   });
 
   test('AUD-CLASS3f', 'Décaissement → DEFERRED (pool tranchée/fouille incorrect, aucune gate, aucun scénario raclage horizontal)', () => {
@@ -155,12 +155,12 @@ export async function runAuditClassifierTests() {
       `Sum of categories (${computed}) ≠ TOTAL (${TOTAL})`);
   });
 
-  test('AUD-SUM2', 'summary: STATE_LOCKED=43, DEFERRED=8, ROUTED_TO_SPECIFIC_SCENE=114', () => {
+  test('AUD-SUM2', 'summary: STATE_LOCKED=44, DEFERRED=7, ROUTED_TO_SPECIFIC_SCENE=114', () => {
     const { summary } = generateServiceCoverageAudit();
-    assert(summary.STATE_LOCKED === 43,
-      `Expected STATE_LOCKED=43, got ${summary.STATE_LOCKED}`);
-    assert(summary.DEFERRED === 8,
-      `Expected DEFERRED=8, got ${summary.DEFERRED}`);
+    assert(summary.STATE_LOCKED === 44,
+      `Expected STATE_LOCKED=44, got ${summary.STATE_LOCKED}`);
+    assert(summary.DEFERRED === 7,
+      `Expected DEFERRED=7, got ${summary.DEFERRED}`);
     assert(summary.ROUTED_TO_SPECIFIC_SCENE === 114,
       `Expected ROUTED_TO_SPECIFIC_SCENE=114, got ${summary.ROUTED_TO_SPECIFIC_SCENE}`);
     assert(summary.TOTAL === 172,

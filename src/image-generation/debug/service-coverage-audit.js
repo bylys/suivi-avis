@@ -28,7 +28,9 @@ const DEFERRED_SERVICES = new Set([
   'maçonnerie:Percement mur',
   'maçonnerie:Muret',
   'maçonnerie:Construction mur',
-  'maçonnerie:Rejointoiement',
+  // 'maçonnerie:Rejointoiement' — recovered (Opus 4.8): generic material-agnostic
+  //   state-lock MACONNERIE-REJOINTOIEMENT-GENERIC + gate "Rejointoiement générique",
+  //   real micro-test PASS + human visual validation.
   'terrassement:Décaissement',
   'peinture:Enduit décoratif',
 ]);

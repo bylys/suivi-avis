@@ -295,6 +295,14 @@ async function runImageBatch(tasks, apiKey, { state, fetchImpl, readResponseImpl
               new_stone_wall_construction_visible:       safety.new_stone_wall_construction_visible       ?? null,
               render_or_plaster_application_visible:     safety.render_or_plaster_application_visible     ?? null,
               single_crack_repair_visible:               safety.single_crack_repair_visible               ?? null,
+              // Rejointoiement générique (material-agnostic) gate fields
+              masonry_wall_visible:                      safety.masonry_wall_visible                      ?? null,
+              old_joints_visible:                        safety.old_joints_visible                        ?? null,
+              repointing_action_visible:                 safety.repointing_action_visible                 ?? null,
+              fresh_joint_mortar_visible:                safety.fresh_joint_mortar_visible                ?? null,
+              masonry_faces_remain_uncovered:            safety.masonry_faces_remain_uncovered            ?? null,
+              new_wall_construction_visible:             safety.new_wall_construction_visible             ?? null,
+              continuous_coating_or_render_visible:      safety.continuous_coating_or_render_visible      ?? null,
               // Peinture façade gate fields
               exterior_building_facade_visible:                       safety.exterior_building_facade_visible                       ?? null,
               masonry_or_rendered_facade_surface_visible:             safety.masonry_or_rendered_facade_surface_visible             ?? null,

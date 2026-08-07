@@ -7,8 +7,8 @@
  *   REP-REG1..5: regression — Réparation fissure, Rejointoiement générique, Mur parpaing, Dalle béton unchanged
  */
 
-const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=rep-tests1');
-const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=rep-tests1');
+const { _applySiteRealism }   = await import('../resolution/service-resolver.js?bust=rep-tests2');
+const { SERVICE_VISUAL_GATE_RULES, _SERVICE_GATE_ALIASES } = await import('../safety/safety-rules.js?bust=rep-tests2');
 
 export async function runRepointingPierreTests() {
   console.group('REP tests — Rejointoiement pierre state-lock + gate');
@@ -196,10 +196,14 @@ export async function runRepointingPierreTests() {
       `Réparation fissure must not gain a state-lock, got state_lock_used=${r._state_lock_used}`);
   });
 
-  test('REP-REG2', 'Rejointoiement encours → state_lock_used=false (no collision with pierre lock)', () => {
+  test('REP-REG2', 'Rejointoiement encours → generic state-lock (NOT pierre/stone family)', () => {
     const r = resolveScene('Rejointoiement', 'encours');
-    assert(r._state_lock_used === false,
-      `Rejointoiement générique must not hit pierre state-lock, got state_lock_used=${r._state_lock_used}`);
+    assert(r._state_lock_used === true,
+      `Rejointoiement générique must now resolve to its own state-lock, got state_lock_used=${r._state_lock_used}`);
+    assert(r._visual_family === 'MACONNERIE-REJOINTOIEMENT-GENERIC',
+      `Rejointoiement générique must NOT be routed to the stone family — got ${r._visual_family}`);
+    assert(r._visual_family !== 'MACONNERIE-STONE-REPOINTING-GROUND',
+      'Rejointoiement générique must never inherit the stone-specific family (anti-artificial-routing guard)');
   });
 
   test('REP-REG3', 'Mur parpaing encours → state_lock_used=true (unchanged)', () => {
@@ -218,6 +222,124 @@ export async function runRepointingPierreTests() {
     const r = resolveScene('Rejointoiement pierre', 'debut');
     assert(r._state_lock_used === false,
       `Rejointoiement pierre début must not hit state-lock, got state_lock_used=${r._state_lock_used}`);
+  });
+
+  // ─── REP-GEN: Rejointoiement générique (material-agnostic) ──────────────────
+
+  function evalGenGate(fields) {
+    const gate = SERVICE_VISUAL_GATE_RULES['Rejointoiement générique'];
+    if (!gate) throw new Error('Gate "Rejointoiement générique" not found in SERVICE_VISUAL_GATE_RULES');
+    for (const cond of gate.reject_conditions) {
+      if ('value' in cond && fields[cond.field] === cond.value) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+      if (cond.not_exactly_true && fields[cond.field] !== true) {
+        return { safe: false, first_failed: cond.field, reason: cond.reason };
+      }
+    }
+    return { safe: true };
+  }
+
+  const GEN_PASS_FIELDS = {
+    masonry_wall_visible:              true,
+    old_joints_visible:                true,
+    repointing_action_visible:         true,
+    fresh_joint_mortar_visible:        true,
+    partial_work_state_visible:        true,
+    masonry_faces_remain_uncovered:    true,
+    worker_stable_on_ground:           true,
+    work_area_reachable_from_ground:   true,
+    new_wall_construction_visible:     false,
+    continuous_coating_or_render_visible: false,
+    single_crack_repair_visible:       false,
+    service_visual_match:              true,
+    worker_count_match:                true,
+  };
+
+  test('REP-GEN1', 'Rejointoiement encours → _state_lock_used=true', () => {
+    const r = resolveScene('Rejointoiement', 'encours');
+    assert(r._state_lock_used === true, `_state_lock_used expected true, got ${r._state_lock_used}`);
+  });
+
+  test('REP-GEN2', 'Rejointoiement encours → _state_lock_pool_size=1', () => {
+    const r = resolveScene('Rejointoiement', 'encours');
+    assert(r._state_lock_pool_size === 1, `_state_lock_pool_size expected 1, got ${r._state_lock_pool_size}`);
+  });
+
+  test('REP-GEN3', 'Rejointoiement encours → _visual_family=MACONNERIE-REJOINTOIEMENT-GENERIC', () => {
+    const r = resolveScene('Rejointoiement', 'encours');
+    assert(r._visual_family === 'MACONNERIE-REJOINTOIEMENT-GENERIC',
+      `_visual_family expected MACONNERIE-REJOINTOIEMENT-GENERIC, got ${r._visual_family}`);
+  });
+
+  test('REP-GEN4', 'Rejointoiement encours → _access_configuration=GROUND_LEVEL_REPOINTING', () => {
+    const r = resolveScene('Rejointoiement', 'encours');
+    assert(r._access_configuration === 'GROUND_LEVEL_REPOINTING',
+      `_access_configuration expected GROUND_LEVEL_REPOINTING, got ${r._access_configuration}`);
+  });
+
+  test('REP-GEN5', 'Alias "rejointoiement" → gate "Rejointoiement générique" exists', () => {
+    const canonical = _SERVICE_GATE_ALIASES['rejointoiement'];
+    assert(canonical === 'Rejointoiement générique', `Expected "Rejointoiement générique", got "${canonical}"`);
+    assert(SERVICE_VISUAL_GATE_RULES[canonical] !== undefined,
+      'Gate "Rejointoiement générique" must exist in SERVICE_VISUAL_GATE_RULES');
+  });
+
+  test('REP-GEN6', 'Generic gate — full masonry PASS_FIELDS → PASS', () => {
+    const r = evalGenGate(GEN_PASS_FIELDS);
+    assert(r.safe === true, `Expected PASS, got REJECT on ${r.first_failed} (${r.reason})`);
+  });
+
+  test('REP-GEN7', 'Generic gate accepts brick/block (no natural_stone requirement)', () => {
+    const gate = SERVICE_VISUAL_GATE_RULES['Rejointoiement générique'];
+    const fields = gate.reject_conditions.map(c => c.field);
+    assert(!fields.includes('natural_stone_wall_visible'),
+      'Generic gate must NOT require natural_stone_wall_visible');
+    assert(!fields.includes('stone_wall_visible'),
+      'Generic gate must NOT reject on stone_wall_visible');
+  });
+
+  test('REP-GEN8', 'masonry_wall_visible=false → REJECT service_visual_mismatch', () => {
+    const r = evalGenGate({ ...GEN_PASS_FIELDS, masonry_wall_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch', `got ${r.reason}`);
+  });
+
+  test('REP-GEN9', 'repointing_action_visible=false → REJECT service_visual_mismatch', () => {
+    const r = evalGenGate({ ...GEN_PASS_FIELDS, repointing_action_visible: false });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch', `got ${r.reason}`);
+  });
+
+  test('REP-GEN10', 'partial_work_state_visible=false (fully done) → REJECT state_mismatch', () => {
+    const r = evalGenGate({ ...GEN_PASS_FIELDS, partial_work_state_visible: false });
+    assert(r.safe === false && r.reason === 'state_mismatch', `got ${r.reason}`);
+  });
+
+  test('REP-GEN11', 'continuous_coating_or_render_visible=true (enduit complet) → REJECT', () => {
+    const r = evalGenGate({ ...GEN_PASS_FIELDS, continuous_coating_or_render_visible: true });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch', `got ${r.reason}`);
+  });
+
+  test('REP-GEN12', 'single_crack_repair_visible=true → REJECT service_visual_mismatch', () => {
+    const r = evalGenGate({ ...GEN_PASS_FIELDS, single_crack_repair_visible: true });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch', `got ${r.reason}`);
+  });
+
+  test('REP-GEN13', 'new_wall_construction_visible=true → REJECT service_visual_mismatch', () => {
+    const r = evalGenGate({ ...GEN_PASS_FIELDS, new_wall_construction_visible: true });
+    assert(r.safe === false && r.reason === 'service_visual_mismatch', `got ${r.reason}`);
+  });
+
+  test('REP-GEN14', 'worker_stable_on_ground=false → REJECT access_violation', () => {
+    const r = evalGenGate({ ...GEN_PASS_FIELDS, worker_stable_on_ground: false });
+    assert(r.safe === false && r.reason === 'access_violation', `got ${r.reason}`);
+  });
+
+  test('REP-GEN15', 'Pierre state-lock unchanged after generic added (pool_size=1, stone family)', () => {
+    const r = resolveScene('Rejointoiement pierre', 'encours');
+    assert(r._state_lock_used === true && r._state_lock_pool_size === 1,
+      `pierre lock must stay pool_size=1, got used=${r._state_lock_used} size=${r._state_lock_pool_size}`);
+    assert(r._visual_family === 'MACONNERIE-STONE-REPOINTING-GROUND',
+      `pierre must keep stone family, got ${r._visual_family}`);
   });
 
   // ─── Summary ───────────────────────────────────────────────────────────────

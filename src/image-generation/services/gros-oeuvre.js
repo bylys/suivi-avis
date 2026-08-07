@@ -1353,6 +1353,49 @@ export const SITE_REALISM_GROS_OEUVRE = {
         ],
       },
 
+      // --- rejointoiement générique encours state-lock (material-agnostic) ---
+      // Placed BEFORE the generic fissure/rejointoi scenarios so the coverage-audit
+      // classifier (first-_for-match wins) reports "Rejointoiement" as STATE_LOCKED,
+      // matching the runtime resolver (which prefers the state-locked scenario).
+      // Recovered in the Opus 4.8 deferred-services pass. Material is deliberately
+      // NOT forced to natural stone: stone, brick, or block masonry are all valid
+      // as long as mortar joints are visibly being repointed at ground level.
+      {
+        _for:                             '^rejointoiement$',
+        _state_for:                       'encours',
+        _visual_family:                   'MACONNERIE-REJOINTOIEMENT-GENERIC',
+        _access_configuration:            'GROUND_LEVEL_REPOINTING',
+        _access_configuration_source:     'state_lock',
+        _access_configuration_randomized: false,
+        scene_note:    'masonry wall repointing in progress at ground level on a residential house — the wall is existing masonry with clearly visible mortar joints (it may be natural stone, red/orange clay brick, or grey concrete block — the material is whatever the house wall is made of, not forced to any one type) — Worker 1 crouched or kneeling directly in front of the low section of the wall, a pointing trowel physically pressed into an open joint between two masonry units, fresh grey mortar visible immediately behind the trowel tip — several adjacent joints already refilled with fresh pale mortar, nearby joints still raked out, recessed and dark, awaiting mortar — the masonry faces themselves remain visible and uncovered, mortar applied only inside the joints — worked zone extends from the soubassement up to about 1.2 m — NO ladder, NO scaffold — worker has both feet firmly on the ground',
+        scene_camera:  'customer smartphone angle, standing 1.5–2 m from the wall at standing eye level, slight diagonal — full worked section visible from the base to about 1.2 m — worker visible crouched at the wall with the pointing trowel in contact with a joint — both freshly pointed and still-open joints visible in the same frame',
+        scene_framing: {
+          work_pct:   70,
+          foreground: 'mortar trough (auge) or small bucket with fresh grey mortar mix on the ground at the wall base beside the worker',
+          midground:  'Worker 1 crouched at the wall face, pointing trowel pressed into an open joint — fresh pale mortar in the joints already done, dark recessed old joints still open in the adjacent section — the masonry units (stone, brick, or block) clearly identifiable and uncovered',
+          background: 'garden, courtyard or driveway extending behind the worker — house wall continuing left and right',
+        },
+        scene_debris:  'old mortar fragments on the ground at the wall base from the joint raking — small pile of rubble beside the mortar trough',
+        scene_exclude: ['smooth rendered wall with no visible joints', 'continuous render or plaster coat over the wall face', 'crack in plaster or render being filled', 'new wall construction with units being laid', 'freshly painted wall', 'pressure washer', 'scaffold', 'ladder', 'fully finished wall with no open joints and no active work'],
+        tools: [
+          'pointing trowel pressed into an open masonry joint — fresh mortar visible immediately behind the tip',
+          'small mortar trough (auge) or bucket with fresh grey mortar at the worker\'s side',
+          'cold chisel on the ground — used for raking out the old mortar',
+          'small finishing brush leaning against the mortar trough — secondary tool',
+        ],
+        protections: [
+          'work gloves on the worker',
+          'safety glasses resting on the mortar trough',
+        ],
+        chantier_details: [
+          'existing masonry units clearly visible and uncovered — stone, brick, or block surface texture identifiable',
+          'fresh pale grey mortar in the filled joints — flush or slightly recessed, applied only inside the joints, not over the unit faces',
+          'old dark recessed joints in the remaining open section — clearly depleted',
+          'sharp demarcation between the freshly pointed section and the unfinished section',
+          'old mortar fragments on the ground from the raking preparation',
+        ],
+      },
+
       // --- fissures / rejointoiement ---
       {
         _for:          'fissure|rejointoi|pierre.*join|joint.*pierre|reprise.*macon|rejoint',
