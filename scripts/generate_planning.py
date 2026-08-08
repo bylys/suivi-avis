@@ -64,6 +64,10 @@ QUOTAS = {op: (QUOTA_KEVIN_FIF if op in OPERATEURS_ANCIENS_GMAILS else QUOTA_NOU
 AINA_SOLO_DATES  = {"2026-08-08", "2026-08-09", "2026-08-15", "2026-08-29", "2026-08-30"}
 # Jours d'absence d'Aina : elle est exclue du planning ces jours-là (le reste de l'équipe travaille)
 AINA_SKIP_DATES  = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"}
+# Quota réduit les jours de rattrapage : 25/jour → 25 samedi + 25 dimanche (répartition équitable)
+AINA_SOLO_QUOTA  = 25
+# Nouveaux VA (hors Kevin/Fifaliana) : Aina peut emprunter leurs gmails le week-end (ils sont inactifs)
+NOUVEAUX_VA = ["Aina", "Kintana", "Korail", "Anjara"]
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 
@@ -395,13 +399,27 @@ def main():
 
     # Pool de gmails par opérateur (les nouveaux VA n'ont QUE leurs gmails assignés ;
     # les anciens gmails sans opérateur ne vont qu'à Kevin/Fifaliana)
+    is_solo_aina = today_str in AINA_SOLO_DATES
     pools = {}
     for operateur in operateurs_actifs:
-        pools[operateur] = {
-            g for g in gmails_dispo
-            if gmail_operateur.get(g) == operateur
-            or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
-        }
+        if is_solo_aina and operateur == "Aina":
+            # Rattrapage week-end : Aina emprunte aussi les gmails des autres nouveaux VA
+            # (inactifs le week-end). Le filtre cooldown (gmails_dispo) exclut déjà ceux utilisés récemment.
+            pools[operateur] = {
+                g for g in gmails_dispo
+                if gmail_operateur.get(g) in NOUVEAUX_VA
+            }
+        else:
+            pools[operateur] = {
+                g for g in gmails_dispo
+                if gmail_operateur.get(g) == operateur
+                or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
+            }
+
+    # Quotas du jour (rattrapage Aina : 25 pour équilibrer samedi/dimanche)
+    quotas_jour = dict(QUOTAS)
+    if is_solo_aina:
+        quotas_jour["Aina"] = AINA_SOLO_QUOTA
 
     gmails_utilises = {op: set() for op in operateurs_actifs}
     assignations = {op: [] for op in operateurs_actifs}
@@ -438,7 +456,7 @@ def main():
     while active:
         active = False
         for operateur in operateurs_actifs:
-            if len(assignations[operateur]) >= QUOTAS[operateur]:
+            if len(assignations[operateur]) >= quotas_jour[operateur]:
                 continue
             picked_idx, picked_gmail = None, None
             for idx, fn in enumerate(remaining):
@@ -466,7 +484,7 @@ def main():
         for operateur in OPERATEURS_ANCIENS_GMAILS:
             if operateur not in assignations:
                 continue
-            if len(assignations[operateur]) >= QUOTAS[operateur] or not remaining:
+            if len(assignations[operateur]) >= quotas_jour[operateur] or not remaining:
                 continue
             fn = remaining.pop(0)
             ville = fiche_ville[fn]
