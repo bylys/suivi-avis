@@ -60,9 +60,9 @@ QUOTAS = {op: (QUOTA_KEVIN_FIF if op in OPERATEURS_ANCIENS_GMAILS else QUOTA_NOU
           for op in OPERATEURS}
 
 # ── Rattrapage Aina (absence semaine 17-21 août, rattrapée sur les week-ends) ──
-# Dimanches exceptionnellement travaillés (le cron tourne sinon Lun-Sam seulement)
-AINA_EXTRA_DATES = {"2026-08-09", "2026-08-30"}
-# Jours d'absence d'Aina : elle est exclue du planning ces jours-là
+# Jours de rattrapage : planning UNIQUEMENT pour Aina (le reste de l'équipe n'a rien ces jours-là)
+AINA_SOLO_DATES  = {"2026-08-08", "2026-08-09", "2026-08-15", "2026-08-29", "2026-08-30"}
+# Jours d'absence d'Aina : elle est exclue du planning ces jours-là (le reste de l'équipe travaille)
 AINA_SKIP_DATES  = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"}
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
@@ -292,19 +292,21 @@ def main():
     is_sunday = today.weekday() == 6
 
     # Déterminer les opérateurs actifs ce jour-là
-    if is_sunday:
-        # Le dimanche, planning uniquement pour Aina et seulement sur ses dates de rattrapage
-        if today_str not in AINA_EXTRA_DATES:
-            print(f"{today_str} (dimanche) — aucun planning prévu.")
-            sb_delete("planning", f"date=eq.{today_str}")
-            return
+    if today_str in AINA_SOLO_DATES:
+        # Jour de rattrapage : uniquement Aina
         operateurs_actifs = ["Aina"]
-        print(f"{today_str} (dimanche) — planning rattrapage Aina uniquement.")
+        print(f"{today_str} — jour de rattrapage : Aina uniquement.")
+    elif is_sunday:
+        # Dimanche normal : aucun planning pour personne
+        print(f"{today_str} (dimanche) — aucun planning prévu.")
+        sb_delete("planning", f"date=eq.{today_str}")
+        return
+    elif today_str in AINA_SKIP_DATES:
+        # Absence d'Aina : le reste de l'équipe travaille
+        operateurs_actifs = [op for op in OPERATEURS if op != "Aina"]
+        print(f"{today_str} — Aina absente (rattrapage), exclue du planning.")
     else:
-        operateurs_actifs = [op for op in OPERATEURS
-                             if not (op == "Aina" and today_str in AINA_SKIP_DATES)]
-        if "Aina" not in operateurs_actifs:
-            print(f"{today_str} — Aina absente (rattrapage), exclue du planning.")
+        operateurs_actifs = list(OPERATEURS)
 
     # Supprimer le planning existant pour aujourd'hui (recalcul propre)
     sb_delete("planning", f"date=eq.{today_str}")
