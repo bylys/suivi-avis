@@ -59,6 +59,12 @@ OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]  # accès aux anciens gmails 
 QUOTAS = {op: (QUOTA_KEVIN_FIF if op in OPERATEURS_ANCIENS_GMAILS else QUOTA_NOUVEAUX)
           for op in OPERATEURS}
 
+# ── Rattrapage Aina (absence semaine 17-21 août, rattrapée sur les week-ends) ──
+# Dimanches exceptionnellement travaillés (le cron tourne sinon Lun-Sam seulement)
+AINA_EXTRA_DATES = {"2026-08-09", "2026-08-30"}
+# Jours d'absence d'Aina : elle est exclue du planning ces jours-là
+AINA_SKIP_DATES  = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"}
+
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 
 def sb_get(path):
@@ -283,11 +289,27 @@ def build_slack_planning(operateur, taches, today_str):
 def main():
     today = date.today()
     today_str = today.isoformat()
+    is_sunday = today.weekday() == 6
+
+    # Déterminer les opérateurs actifs ce jour-là
+    if is_sunday:
+        # Le dimanche, planning uniquement pour Aina et seulement sur ses dates de rattrapage
+        if today_str not in AINA_EXTRA_DATES:
+            print(f"{today_str} (dimanche) — aucun planning prévu.")
+            sb_delete("planning", f"date=eq.{today_str}")
+            return
+        operateurs_actifs = ["Aina"]
+        print(f"{today_str} (dimanche) — planning rattrapage Aina uniquement.")
+    else:
+        operateurs_actifs = [op for op in OPERATEURS
+                             if not (op == "Aina" and today_str in AINA_SKIP_DATES)]
+        if "Aina" not in operateurs_actifs:
+            print(f"{today_str} — Aina absente (rattrapage), exclue du planning.")
 
     # Supprimer le planning existant pour aujourd'hui (recalcul propre)
     sb_delete("planning", f"date=eq.{today_str}")
 
-    print(f"Génération du planning pour {today_str}...")
+    print(f"Génération du planning pour {today_str} — opérateurs : {', '.join(operateurs_actifs)}")
 
     # Charger les données
     all_avis = sb_get_all("avis", "select=auteur,fiche_nom,date,operateur")
@@ -372,15 +394,15 @@ def main():
     # Pool de gmails par opérateur (les nouveaux VA n'ont QUE leurs gmails assignés ;
     # les anciens gmails sans opérateur ne vont qu'à Kevin/Fifaliana)
     pools = {}
-    for operateur in OPERATEURS:
+    for operateur in operateurs_actifs:
         pools[operateur] = {
             g for g in gmails_dispo
             if gmail_operateur.get(g) == operateur
             or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
         }
 
-    gmails_utilises = {op: set() for op in OPERATEURS}
-    assignations = {op: [] for op in OPERATEURS}
+    gmails_utilises = {op: set() for op in operateurs_actifs}
+    assignations = {op: [] for op in operateurs_actifs}
 
     def pick_gmail(operateur, fn):
         """Trouve le meilleur gmail de l'opérateur pour cette fiche (ou None)."""
@@ -413,7 +435,7 @@ def main():
     active = True
     while active:
         active = False
-        for operateur in OPERATEURS:
+        for operateur in operateurs_actifs:
             if len(assignations[operateur]) >= QUOTAS[operateur]:
                 continue
             picked_idx, picked_gmail = None, None
@@ -440,6 +462,8 @@ def main():
     while active:
         active = False
         for operateur in OPERATEURS_ANCIENS_GMAILS:
+            if operateur not in assignations:
+                continue
             if len(assignations[operateur]) >= QUOTAS[operateur] or not remaining:
                 continue
             fn = remaining.pop(0)
@@ -447,7 +471,7 @@ def main():
             assignations[operateur].append({'fiche_nom': fn, 'ville': ville, 'gmail': ''})
             active = True
 
-    for operateur in OPERATEURS:
+    for operateur in operateurs_actifs:
         print(f"  {operateur} : {len(assignations[operateur])} assignations")
         for a in assignations[operateur]:
             pays = fiche_pays.get(a['fiche_nom'], 'FR')
@@ -485,7 +509,7 @@ def main():
         print(f"Villes rattachées : {ok}/{len(villes_a_persister)} gmails neufs")
 
     # Envoyer Slack par opérateur
-    for op in OPERATEURS:
+    for op in operateurs_actifs:
         taches = [r for r in planning_rows if r['operateur'] == op]
         if not taches:
             continue
