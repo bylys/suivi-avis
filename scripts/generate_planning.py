@@ -66,8 +66,6 @@ AINA_SOLO_DATES  = {"2026-08-08", "2026-08-09", "2026-08-15", "2026-08-29", "202
 AINA_SKIP_DATES  = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"}
 # Quota réduit les jours de rattrapage : 25/jour → 25 samedi + 25 dimanche (répartition équitable)
 AINA_SOLO_QUOTA  = 25
-# Nouveaux VA (hors Kevin/Fifaliana) : Aina peut emprunter leurs gmails le week-end (ils sont inactifs)
-NOUVEAUX_VA = ["Aina", "Kintana", "Korail", "Anjara"]
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 
@@ -402,19 +400,11 @@ def main():
     is_solo_aina = today_str in AINA_SOLO_DATES
     pools = {}
     for operateur in operateurs_actifs:
-        if is_solo_aina and operateur == "Aina":
-            # Rattrapage week-end : Aina emprunte aussi les gmails des autres nouveaux VA
-            # (inactifs le week-end). Le filtre cooldown (gmails_dispo) exclut déjà ceux utilisés récemment.
-            pools[operateur] = {
-                g for g in gmails_dispo
-                if gmail_operateur.get(g) in NOUVEAUX_VA
-            }
-        else:
-            pools[operateur] = {
-                g for g in gmails_dispo
-                if gmail_operateur.get(g) == operateur
-                or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
-            }
+        pools[operateur] = {
+            g for g in gmails_dispo
+            if gmail_operateur.get(g) == operateur
+            or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
+        }
 
     # Quotas du jour (rattrapage Aina : 25 pour équilibrer samedi/dimanche)
     quotas_jour = dict(QUOTAS)
