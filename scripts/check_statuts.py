@@ -59,53 +59,69 @@ def get_orange_avis(limit=None):
         return orange[:limit]
     return orange
 
-def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
+def is_review_deleted(page, url, texte_avis=None, fiche_nom=None, auteur_nom=None):
     """
     Retourne (True, raison) si supprimé, (False, raison) si en ligne.
-    Détection universelle et infaillible basée sur les mots uniques du texte de l'auteur.
+    Utilise le texte VISIBLE de la page (pas le HTML/JS brut).
     """
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
-        page_content = page.content().lower()
 
-        # 1. Signaux de suppression explicites envoyés par Google
-        supprime_signals = [
-            "cet avis a été supprimé",
-            "this review has been deleted",
-            "review has been removed",
-            "avis supprimé",
-        ]
-        for signal in supprime_signals:
-            if signal in page_content:
-                return True, f"Signal de suppression détecté: '{signal}'"
+        # Attendre que Google Maps rende le contenu JS (les avis sont chargés via AJAX)
+        try:
+            page.wait_for_selector('.wiI7pd, .MyEned, [data-review-id]', timeout=5000)
+        except Exception:
+            # Si rien n'apparaît en 5s, on attend un peu plus au cas où
+            page.wait_for_timeout(2000)
+
+        # Récupérer le texte VISIBLE uniquement (exclut le JS/CSS interne de Google)
+        try:
+            visible_text = page.inner_text('body').lower()
+        except Exception:
+            visible_text = ""
 
         import re, unicodedata
         def strip_accents(s):
             return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
 
-        clean_page = strip_accents(page_content)
+        clean_visible = strip_accents(visible_text)
 
-        # 2. Si le texte de l'avis est renseigné, on vérifie la présence de ses mots
+        # 1. Signaux de suppression explicites
+        supprime_signals = [
+            "cet avis a ete supprime",
+            "this review has been deleted",
+            "review has been removed",
+        ]
+        for signal in supprime_signals:
+            if signal in clean_visible:
+                return True, f"Signal de suppression détecté: '{signal}'"
+
+        # 2. Vérification par mots uniques de l'auteur dans le texte visible
         if texte_avis and len(texte_avis.strip()) > 5:
             clean_author_text = strip_accents(texte_avis.lower())
-            
-            # Récupérer tous les mots significatifs (>= 3 lettres) de l'auteur
-            words_author = set(re.findall(r'\b[a-z]{3,}\b', clean_author_text))
 
-            # Exclure uniquement les mots contenus dans le titre du GMB
+            # Mots de >= 4 lettres de l'auteur
+            words_author = set(re.findall(r'\b[a-z]{4,}\b', clean_author_text))
+
+            # Exclure les mots du titre de la fiche GMB
             if fiche_nom:
-                words_fiche = set(re.findall(r'\b[a-z]{3,}\b', strip_accents(fiche_nom.lower())))
+                words_fiche = set(re.findall(r'\b[a-z]{4,}\b', strip_accents(fiche_nom.lower())))
                 words_author = words_author - words_fiche
 
-            # Chercher si l'un de ces mots est présent dans le HTML de la page
-            mots_trouves = [w for w in words_author if w in clean_page]
+            # Exclure les mots du nom/email de l'auteur
+            if auteur_nom:
+                words_auteur = set(re.findall(r'\b[a-z]{4,}\b', strip_accents(auteur_nom.lower().split('@')[0])))
+                words_author = words_author - words_auteur
+
+            # Chercher dans le texte visible de la page
+            mots_trouves = [w for w in words_author if w in clean_visible]
 
             if mots_trouves:
-                return False, f"Avis trouvé sur la page (mots: {mots_trouves[:3]})"
+                return False, f"Avis trouvé (mots: {mots_trouves[:3]})"
 
-            return True, f"Aucun mot du texte présent sur la page"
+            return True, f"Aucun mot de l'auteur visible sur la page"
 
-        # 3. Fallback si l'avis n'a pas de texte enregistré
+        # 3. Fallback si pas de texte enregistré
         has_review_element = page.query_selector('.wiI7pd, .MyEned, [data-review-id]') is not None
         if has_review_element:
             return False, "Carte d'avis présente sur la page"
@@ -170,7 +186,7 @@ def main():
                     continue
 
             try:
-                deleted, raison = is_review_deleted(page, lien, texte_avis=avis.get('texte'), fiche_nom=avis.get('fiche_nom'))
+                deleted, raison = is_review_deleted(page, lien, texte_avis=avis.get('texte'), fiche_nom=avis.get('fiche_nom'), auteur_nom=avis.get('auteur'))
             except Exception as e:
                 print(f"  Erreur context/page : {e}")
                 deleted, raison = None, str(e)
