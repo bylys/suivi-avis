@@ -40,13 +40,13 @@ def get_orange_avis(limit=None):
     recheck = os.environ.get("RECHECK_TODAY") == "true"
     if recheck:
         today_str = today.isoformat()
-        rows = sb_get(f"avis?select=id,auteur,statut,date,lien,texte&statut_date=eq.{today_str}&lien=not.is.null&limit=2000")
+        rows = sb_get(f"avis?select=id,auteur,statut,date,lien,texte,fiche_nom&statut_date=eq.{today_str}&lien=not.is.null&limit=2000")
         print(f"Mode re-vérification activé (avis modifiés aujourd'hui) : {len(rows)} trouvés")
         if limit and limit > 0:
             return rows[:limit]
         return rows
 
-    rows = sb_get("avis?select=id,auteur,statut,date,lien,texte&statut=not.in.(supprime,j30)&lien=not.is.null&limit=2000")
+    rows = sb_get("avis?select=id,auteur,statut,date,lien,texte,fiche_nom&statut=not.in.(supprime,j30)&lien=not.is.null&limit=2000")
     orange = []
     for a in rows:
         seuil = SEUILS.get(a['statut'])
@@ -59,9 +59,11 @@ def get_orange_avis(limit=None):
         return orange[:limit]
     return orange
 
-def is_review_deleted(page, url, texte_avis=None):
+def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
     """
     Retourne (True, raison) si supprimé, (False, raison) si en ligne.
+    Vérification basée sur la présence d'expressions exactes du texte de l'avis,
+    en ignorant dynamiquement le titre de la fiche GMB.
     """
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
@@ -81,24 +83,53 @@ def is_review_deleted(page, url, texte_avis=None):
             if signal in page_content:
                 return True, f"Signal de suppression détecté: '{signal}'"
 
-        # 2. Vérification par les MOTS CLES du texte de l'avis
-        if texte_avis and len(texte_avis.strip()) > 5:
+        # 2. Vérification par SÉQUENCES EXACTES (3 mots consécutifs du texte)
+        if texte_avis and len(texte_avis.strip()) > 10:
             import re
-            mots = [m.lower() for m in re.findall(r'\w{4,}', texte_avis) if len(m) >= 4]
-            if mots:
-                mots_trouves = [m for m in mots if m in page_content]
-                ratio = len(mots_trouves) / len(mots)
-                if len(mots_trouves) >= 2 or ratio >= 0.30:
-                    return False, f"Trouvé ({len(mots_trouves)}/{len(mots)} mots: {mots_trouves[:3]})"
-                else:
-                    return True, f"Non trouvé sur la page ({len(mots_trouves)}/{len(mots)} mots: cherche {mots[:3]})"
+            # Nettoyer le texte et extraire les mots significatifs (hors ponctuation)
+            clean_words = re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{3,}\b', texte_avis.lower())
 
-        # 3. Si l'avis n'avait pas de texte (juste une note) : présence de l'élément d'avis Google
+            # Mots parasites et vocabulaire générique BTP/GMB très fréquents sur les fiches à exclure
+            STOP_WORDS = {
+                'plus', 'sans', 'tout', 'très', 'avec', 'pour', 'dans', 'cette', 'fait', 'sont', 'bien',
+                'aussi', 'sent', 'client', 'travail', 'equipe', 'équipe', 'entreprise', 'artisan', 'recommande',
+                'recommandons', 'soigne', 'soigné', 'professionnel', 'professionnels', 'societe', 'société',
+                'chantier', 'chantiers', 'service', 'services', 'prestation', 'prestations', 'intervention',
+                'rapide', 'efficace', 'reactif', 'réactif', 'impeccable', 'parfait', 'qualite', 'qualité'
+            }
+            # Éliminer automatiquement tous les mots du nom de la fiche GMB
+            if fiche_nom:
+                mots_fiche = re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{3,}\b', fiche_nom.lower())
+                STOP_WORDS.update(mots_fiche)
+
+            filtered_words = [w for w in clean_words if w not in STOP_WORDS]
+
+            # Construire des n-grammes de 3 mots consécutifs du texte de l'avis
+            phrases = []
+            for i in range(len(filtered_words) - 2):
+                phrase = f"{filtered_words[i]} {filtered_words[i+1]} {filtered_words[i+2]}"
+                phrases.append(phrase)
+
+            if phrases:
+                phrases_trouvees = [p for p in phrases if p in page_content]
+                if phrases_trouvees:
+                    return False, f"Expression trouvée sur la page: '{phrases_trouvees[0]}'"
+                else:
+                    return True, f"Expression introuvable (cherche ex: '{phrases[0]}')"
+
+            # Si le texte est très court (moins de 3 mots filtrés), fallback sur 2 mots uniques
+            if len(filtered_words) >= 2:
+                phrase = f"{filtered_words[0]} {filtered_words[1]}"
+                if phrase in page_content:
+                    return False, f"Expression courte trouvée: '{phrase}'"
+                return True, f"Expression courte introuvable: '{phrase}'"
+
+        # 3. Si l'avis n'avait pas de texte : présence de l'élément d'avis Google
         has_review_element = page.query_selector('[data-review-id]') is not None
         if has_review_element:
-            return False, "Élément data-review-id trouvé sur la page"
+            return False, "Élément data-review-id trouvé"
 
-        return True, "Pas de texte d'avis ni d'élément d'avis sur la page"
+        return True, "Texte d'avis introuvable sur la page"
 
     except Exception as e:
         return None, f"Erreur chargement page: {e}"
@@ -142,7 +173,7 @@ def main():
 
             page = context.new_page()
             try:
-                deleted, raison = is_review_deleted(page, lien, texte_avis=avis.get('texte'))
+                deleted, raison = is_review_deleted(page, lien, texte_avis=avis.get('texte'), fiche_nom=avis.get('fiche_nom'))
             except Exception as e:
                 print(f"  Erreur context/page : {e}")
                 deleted, raison = None, str(e)
