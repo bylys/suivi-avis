@@ -108,7 +108,7 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
 
             unique_words = [w for w in words_author if w not in STOP_WORDS]
 
-            # Recherche stricte et exclusive dans les conteneurs de cartes d'avis réels (.wiI7pd, .MyEned)
+            # 1. Recherche ciblée dans les cartes d'avis réels (.wiI7pd, .MyEned)
             review_elements = page.query_selector_all('.wiI7pd, .MyEned')
             clean_reviews_html = " ".join([strip_accents(el.text_content().lower()) for el in review_elements if el.text_content()])
 
@@ -116,7 +116,12 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
             if mots_trouves_carte:
                 return False, f"Avis trouvé dans carte review (mots: {mots_trouves_carte[:2]})"
 
-            return True, f"Mots clés introuvables dans les cartes d'avis ({unique_words[:2]})"
+            # 2. Fallback de sécurité : si .wiI7pd n'était pas encore rendu mais que les mots uniques de >= 5 lettres de l'auteur sont sur la page
+            mots_page = [w for w in unique_words if len(w) >= 5 and w in clean_page]
+            if len(mots_page) >= 2:
+                return False, f"Avis trouvé sur la page (mots: {mots_page[:2]})"
+
+            return True, f"Mots clés introuvables ({unique_words[:2]})"
 
         # Fallback si pas de texte : présence d'un élément HTML d'avis
         has_review_element = page.query_selector('.wiI7pd, .MyEned, [data-review-id]') is not None
