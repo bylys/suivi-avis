@@ -62,19 +62,15 @@ def get_orange_avis(limit=None):
 def is_review_deleted(page, url, texte_avis=None):
     """
     Retourne True si l'avis est supprimé, False s'il est toujours en ligne.
-    Logique robuste :
-    1. Si l'URL contient un identifiant direct d'avis (!1s... / contrib / reviews) -> EN LIGNE
-    2. Si des mots clés du texte de l'avis apparaissent sur la page -> EN LIGNE
-    3. Si aucun signal d'avis et message de suppression -> SUPPRIMÉ
+    Vérification stricte basée UNIQUEMENT sur la présence réelle du texte de l'avis sur la page.
     """
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
         page.wait_for_timeout(3000)
 
         page_content = page.content().lower()
-        final_url = page.url.lower()
 
-        # 1. Signaux de suppression explicites
+        # 1. Signaux de suppression explicites dans le HTML
         supprime_signals = [
             "cet avis a été supprimé",
             "this review has been deleted",
@@ -86,24 +82,20 @@ def is_review_deleted(page, url, texte_avis=None):
             if signal in page_content:
                 return True
 
-        # 2. Vérification par MOTS CLES du texte de l'avis (tolérant aux coupures / accents)
+        # 2. Vérification par les MOTS CLES du texte de l'avis
         if texte_avis and len(texte_avis.strip()) > 5:
-            # Extraire les mots de plus de 3 lettres
             import re
             mots = [m.lower() for m in re.findall(r'\w{4,}', texte_avis) if len(m) >= 4]
             if mots:
                 mots_trouves = [m for m in mots if m in page_content]
-                # Si au moins 20% des mots significatifs (ou au moins 2 mots) sont présents -> EN LIGNE
                 ratio = len(mots_trouves) / len(mots)
-                if len(mots_trouves) >= 2 or ratio >= 0.25:
-                    return False  # Avis trouvé !
+                # Si au moins 2 mots significatifs OU 30% des mots sont sur la page -> EN LIGNE
+                if len(mots_trouves) >= 2 or ratio >= 0.30:
+                    return False  # L'avis est BIEN EN LIGNE
+                else:
+                    return True   # Texte introuvable sur la page -> SUPPRIMÉ
 
-        # 3. Vérification de l'URL Google Maps d'origine / finale
-        # Les liens d'avis direct contiennent '!1sCi9...' ou '/reviews/' ou 'contrib'
-        if "!1s" in url or "contrib" in final_url or "/reviews" in final_url or "data=!3m1" in final_url:
-            # Si l'URL est spécifique à un avis et qu'aucun message de suppression n'est présent
-            return False
-
+        # 3. Si l'avis n'avait pas de texte (juste une note) : présence de l'élément d'avis Google
         has_review_element = page.query_selector('[data-review-id]') is not None
         if has_review_element:
             return False
