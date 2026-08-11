@@ -50,7 +50,7 @@ SLACK_OPERATEURS = {
     "Anjara":    os.environ.get("SLACK_WEBHOOK_ANJARA", SLACK_WEBHOOK),
 }
 
-DELAI_GMAIL_JOURS  = 2   # repos min d'1 jour complet entre deux posts du même gmail (posté lundi → réutilisable mercredi)
+DELAI_GMAIL_JOURS  = 3   # cooldown 3 j entre deux posts du même gmail (≥ minimum 1 j de repos exigé — stratégie Kevin)
 DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
 QUOTA_NOUVEAUX   = int(os.environ.get("QUOTA_PAR_OPERATEUR", "33"))  # Aina/Kintana/Korail/Anjara
 QUOTA_KEVIN_FIF  = int(os.environ.get("QUOTA_KEVIN_FIF", "50"))      # Kevin & Fifaliana
