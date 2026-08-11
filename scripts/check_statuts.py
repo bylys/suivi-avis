@@ -87,33 +87,38 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
         reviews_texts = [el.text_content().lower() for el in review_elements if el.text_content()]
 
         if texte_avis and len(texte_avis.strip()) > 5:
-            import re
-            # Extraire les mots significatifs de plus de 4 lettres
-            words_author = set(re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{5,}\b', texte_avis.lower()))
+            import re, unicodedata
+            def strip_accents(s):
+                return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
 
-            # Exclure les mots parasites et le nom de la fiche GMB
+            clean_page = strip_accents(page_content)
+            clean_author_text = strip_accents(texte_avis.lower())
+
+            # Extraire les mots significatifs de plus de 4 lettres
+            words_author = set(re.findall(r'\b[a-z]{4,}\b', clean_author_text))
+
+            # Exclure les mots parasites ultra-génériques
             STOP_WORDS = {
                 'plus', 'sans', 'tout', 'très', 'avec', 'pour', 'dans', 'cette', 'fait', 'sont', 'bien',
-                'aussi', 'sent', 'client', 'travail', 'equipe', 'équipe', 'entreprise', 'artisan', 'recommande',
-                'recommandons', 'soigne', 'soigné', 'professionnel', 'professionnels', 'societe', 'société',
-                'chantier', 'chantiers', 'service', 'services', 'prestation', 'prestations', 'intervention',
-                'rapide', 'efficace', 'reactif', 'réactif', 'impeccable', 'parfait', 'qualite', 'qualité'
+                'aussi', 'sent', 'client', 'travail', 'equipe', 'entreprise', 'artisan', 'recommande',
+                'soigne', 'professionnel', 'societe', 'chantier', 'service', 'prestation', 'intervention',
+                'rapide', 'efficace', 'reactif', 'impeccable', 'parfait', 'qualite'
             }
             if fiche_nom:
-                STOP_WORDS.update(re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{3,}\b', fiche_nom.lower()))
+                STOP_WORDS.update(re.findall(r'\b[a-z]{3,}\b', strip_accents(fiche_nom.lower())))
 
             unique_words = [w for w in words_author if w not in STOP_WORDS]
 
-            # A. Recherche dans les textes d'avis ciblés (.wiI7pd)
-            for review_text in reviews_texts:
-                mots_trouves = [w for w in unique_words if w in review_text]
-                if len(mots_trouves) >= 2 or (len(unique_words) <= 2 and len(mots_trouves) >= 1):
-                    return False, f"Avis trouvé dans .wiI7pd (mots: {mots_trouves[:3]})"
+            # A. Si au moins 1 mot significatif propre à l'auteur est présent sur la page -> EN LIGNE !
+            mots_trouves = [w for w in unique_words if w in clean_page]
+            if mots_trouves:
+                return False, f"Avis trouvé (mot significatif: '{mots_trouves[0]}')"
 
-            # B. Recherche globale dans la page (au cas où .wiI7pd est traduit ou plié)
-            mots_page = [w for w in unique_words if w in page_content]
-            if len(mots_trouves := mots_page) >= 2:
-                return False, f"Avis trouvé sur la page (mots: {mots_trouves[:3]})"
+            # B. Si l'auteur a utilisé des mots courts (ex: "super boulot")
+            short_words = set(re.findall(r'\b[a-z]{3,}\b', clean_author_text)) - STOP_WORDS
+            short_found = [w for w in short_words if w in clean_page]
+            if len(short_found) >= 2:
+                return False, f"Avis trouvé (mots courts: {short_found[:2]})"
 
             if unique_words:
                 return True, f"Mots clés de l'auteur introuvables ({unique_words[:3]})"
@@ -187,7 +192,23 @@ def main():
                 new_statut = "supprime"
                 results["supprime"] += 1
             else:
-                new_statut = NEXT_STATUT.get(statut, "j30")
+                # Calculer le bon statut J+ selon l'âge réel de l'avis
+                try:
+                    age = (date.today() - date.fromisoformat(avis['date'])).days
+                except Exception:
+                    age = 0
+                
+                if age >= 31:
+                    new_statut = 'j30'
+                elif age >= 22:
+                    new_statut = 'j21'
+                elif age >= 15:
+                    new_statut = 'j14'
+                elif age >= 8:
+                    new_statut = 'j7'
+                else:
+                    new_statut = 'j0'
+
                 results["avance"] += 1
 
             print(f"  → {statut} → {new_statut} [{raison}]")
