@@ -109,19 +109,16 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
 
             unique_words = [w for w in words_author if w not in STOP_WORDS]
 
-            # A. Si au moins 1 mot significatif propre à l'auteur est présent sur la page -> EN LIGNE !
-            mots_trouves = [w for w in unique_words if w in clean_page]
-            if mots_trouves:
-                return False, f"Avis trouvé (mot significatif: '{mots_trouves[0]}')"
+            # Préparer le texte des avis réels présents dans la page (.wiI7pd) sans accents
+            clean_reviews_html = " ".join([strip_accents(el.text_content().lower()) for el in review_elements if el.text_content()])
 
-            # B. Si l'auteur a utilisé des mots courts (ex: "super boulot")
-            short_words = set(re.findall(r'\b[a-z]{3,}\b', clean_author_text)) - STOP_WORDS
-            short_found = [w for w in short_words if w in clean_page]
-            if len(short_found) >= 2:
-                return False, f"Avis trouvé (mots courts: {short_found[:2]})"
+            # A. Si au moins 2 mots significatifs (ou 1 mot long de >= 6 lettres) sont présents DANS UN AVIS REEL (.wiI7pd) -> EN LIGNE !
+            mots_trouves = [w for w in unique_words if w in clean_reviews_html]
+            if len(mots_trouves) >= 2 or (mots_trouves and any(len(w) >= 6 for w in mots_trouves)):
+                return False, f"Avis trouvé dans .wiI7pd (mots: {mots_trouves[:2]})"
 
             if unique_words:
-                return True, f"Mots clés de l'auteur introuvables ({unique_words[:3]})"
+                return True, f"Mots clés introuvables dans les avis ({unique_words[:3]})"
 
         # 3. Fallback : présence d'un bloc d'avis [data-review-id]
         has_review_element = page.query_selector('[data-review-id]') is not None
