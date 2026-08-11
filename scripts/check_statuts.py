@@ -37,7 +37,7 @@ def sb_patch(table, id_, payload):
 
 def get_orange_avis(limit=None):
     today = date.today()
-    rows = sb_get("avis?select=id,auteur,statut,date,lien&statut=not.in.(supprime,j30)&lien=not.is.null&limit=2000")
+    rows = sb_get("avis?select=id,auteur,statut,date,lien,texte&statut=not.in.(supprime,j30)&lien=not.is.null&limit=2000")
     orange = []
     for a in rows:
         seuil = SEUILS.get(a['statut'])
@@ -50,41 +50,49 @@ def get_orange_avis(limit=None):
         return orange[:limit]
     return orange
 
-def is_review_deleted(page, url):
+def is_review_deleted(page, url, texte_avis=None):
     """
     Retourne True si l'avis est supprimé, False s'il est toujours en ligne.
-    Logique :
-    - Si la page redirige vers une URL sans fragment review → supprimé
-    - Si la page contient des indicateurs de suppression → supprimé
-    - Si la page charge normalement avec contenu d'avis → en ligne
+    Vérification stricte basée sur le contenu du texte de l'avis.
     """
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
-        page.wait_for_timeout(3000)  # laisse 3s à la redirection JS/Maps pour se stabiliser
-        final_url = page.url
+        page.wait_for_timeout(3000)  # laisse 3s à la redirection/rendu JS de Maps
 
-        # URL finale — si le lien court redirige vers la fiche sans ancre review
-        # les liens de review contiennent typiquement 'contrib' ou un hash d'avis
-        if "contrib" not in final_url and "/reviews" not in final_url:
-            content = page.content()
-            supprime_signals = [
-                "cet avis a été supprimé",
-                "this review has been deleted",
-                "review has been removed",
-                "avis supprimé",
-            ]
-            for signal in supprime_signals:
-                if signal.lower() in content.lower():
-                    return True
+        page_content = page.content()
+
+        # 1. Signaux de suppression explicites
+        supprime_signals = [
+            "cet avis a été supprimé",
+            "this review has been deleted",
+            "review has been removed",
+            "avis supprimé",
+        ]
+        for signal in supprime_signals:
+            if signal.lower() in page_content.lower():
+                return True
+
+        # 2. Vérification par le CONTENU DU TEXTE DE L'AVIS (méthode infaillible)
+        if texte_avis and len(texte_avis.strip()) > 5:
+            # On nettoie et prend les 30 premiers caractères significatifs
+            clean_texte = texte_avis.strip().lower()
+            snippet = clean_texte[:30]
+            if snippet in page_content.lower():
+                return False  # Le texte de l'avis est bien présent sur la page -> EN LIGNE
+            else:
+                # Si le texte est introuvable sur la page -> SUPPRIMÉ
+                return True
+
+        # 3. Fallback si l'avis n'a pas de texte (juste une note avec étoiles)
+        final_url = page.url
+        if "contrib" in final_url or "/reviews" in final_url:
+            return False  # lien direct vers l'avis conservé
 
         has_review_element = page.query_selector('[data-review-id]') is not None
         if has_review_element:
-            return False  # avis toujours en ligne
+            return False
 
-        if "contrib" not in final_url and "/reviews" not in final_url:
-            return True
-
-        return False
+        return True
 
     except Exception as e:
         print(f"  Erreur chargement page : {e}")
@@ -129,7 +137,7 @@ def main():
 
             page = context.new_page()
             try:
-                deleted = is_review_deleted(page, lien)
+                deleted = is_review_deleted(page, lien, texte_avis=avis.get('texte'))
             except Exception as e:
                 print(f"  Erreur context/page : {e}")
                 deleted = None
