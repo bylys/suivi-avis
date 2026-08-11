@@ -113,6 +113,10 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None, auteur_nom=Non
                 words_auteur = set(re.findall(r'\b[a-z]{4,}\b', strip_accents(auteur_nom.lower().split('@')[0])))
                 words_author = words_author - words_auteur
 
+            # DEBUG: Afficher ce que Browserless voit
+            print(f"    [DEBUG] Texte visible ({len(clean_visible)} chars): {clean_visible[:200]}...")
+            print(f"    [DEBUG] Mots cherchés ({len(words_author)}): {sorted(list(words_author))[:10]}")
+
             # Chercher dans le texte visible de la page
             mots_trouves = [w for w in words_author if w in clean_visible]
 
