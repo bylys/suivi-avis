@@ -62,25 +62,20 @@ def get_orange_avis(limit=None):
 def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
     """
     Retourne (True, raison) si supprimé, (False, raison) si en ligne.
-    Vérification infaillible par redirection d'URL Google Maps + inspection HTML.
+    Détection universelle et infaillible basée sur les mots uniques du texte de l'auteur.
     """
     try:
-        response = page.goto(url, wait_until="domcontentloaded", timeout=15000)
-        final_url = page.url
-
-        # 1. Analyse de l'URL de redirection finale de Google Maps
-        # Quand un lien d'avis est supprimé, Google redirige vers l'URL générique du lieu (sans hash de review !1s... ou CAIQAC)
-        has_review_hash = "!1sci" in final_url.lower() or "caiqac" in final_url.lower() or "/reviews/" in final_url.lower()
-
+        page.goto(url, wait_until="domcontentloaded", timeout=15000)
         page_content = page.content().lower()
 
-        # Signaux de suppression explicites dans le HTML
+        # 1. Signaux de suppression explicites envoyés par Google
         supprime_signals = [
             "cet avis a été supprimé",
             "this review has been deleted",
             "review has been removed",
             "avis supprimé",
-            "impossible de trouver",
+            "impossible de trouver la page",
+            "404",
         ]
         for signal in supprime_signals:
             if signal in page_content:
@@ -92,43 +87,32 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
 
         clean_page = strip_accents(page_content)
 
-        # 2. Vérification ciblée par mots clés uniques du texte de l'auteur
+        # 2. Si le texte de l'avis est renseigné, on vérifie la présence de ses mots
         if texte_avis and len(texte_avis.strip()) > 5:
             clean_author_text = strip_accents(texte_avis.lower())
-            words_author = set(re.findall(r'\b[a-z]{4,}\b', clean_author_text))
+            
+            # Récupérer tous les mots significatifs (>= 3 lettres) de l'auteur
+            words_author = set(re.findall(r'\b[a-z]{3,}\b', clean_author_text))
 
-            STOP_WORDS = {
-                'plus', 'sans', 'tout', 'très', 'avec', 'pour', 'dans', 'cette', 'fait', 'sont', 'bien',
-                'aussi', 'sent', 'client', 'travail', 'equipe', 'entreprise', 'artisan', 'recommande',
-                'soigne', 'professionnel', 'societe', 'chantier', 'service', 'prestation', 'intervention',
-                'rapide', 'efficace', 'reactif', 'impeccable', 'parfait', 'qualite'
-            }
+            # Exclure uniquement les mots contenus dans le titre du GMB
             if fiche_nom:
-                STOP_WORDS.update(re.findall(r'\b[a-z]{3,}\b', strip_accents(fiche_nom.lower())))
+                words_fiche = set(re.findall(r'\b[a-z]{3,}\b', strip_accents(fiche_nom.lower())))
+                words_author = words_author - words_fiche
 
-            unique_words = [w for w in words_author if w not in STOP_WORDS]
+            # Chercher si l'un de ces mots est présent dans le HTML de la page
+            mots_trouves = [w for w in words_author if w in clean_page]
 
-            # 1. Recherche ciblée dans les cartes d'avis réels (.wiI7pd, .MyEned)
-            review_elements = page.query_selector_all('.wiI7pd, .MyEned')
-            clean_reviews_html = " ".join([strip_accents(el.text_content().lower()) for el in review_elements if el.text_content()])
+            if mots_trouves:
+                return False, f"Avis trouvé sur la page (mots: {mots_trouves[:3]})"
 
-            mots_trouves_carte = [w for w in unique_words if w in clean_reviews_html]
-            if mots_trouves_carte:
-                return False, f"Avis trouvé dans carte review (mots: {mots_trouves_carte[:2]})"
+            return True, f"Aucun mot du texte présent sur la page"
 
-            # 2. Fallback de sécurité : si .wiI7pd n'était pas encore rendu mais que les mots uniques de >= 5 lettres de l'auteur sont sur la page
-            mots_page = [w for w in unique_words if len(w) >= 5 and w in clean_page]
-            if len(mots_page) >= 2:
-                return False, f"Avis trouvé sur la page (mots: {mots_page[:2]})"
-
-            return True, f"Mots clés introuvables ({unique_words[:2]})"
-
-        # Fallback si pas de texte : présence d'un élément HTML d'avis
+        # 3. Fallback si l'avis n'a pas de texte enregistré
         has_review_element = page.query_selector('.wiI7pd, .MyEned, [data-review-id]') is not None
         if has_review_element:
             return False, "Carte d'avis présente sur la page"
 
-        return True, "Aucune carte d'avis trouvée sur la page (Avis supprimé)"
+        return True, "Aucun élément d'avis trouvé"
 
     except Exception as e:
         return None, f"Erreur chargement page: {e}"
