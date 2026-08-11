@@ -83,46 +83,40 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
             if signal in page_content:
                 return True, f"Signal de suppression détecté: '{signal}'"
 
-        # 2. Vérification par SÉQUENCES EXACTES (3 mots consécutifs du texte)
+        # 2. Vérification par de VRAIES sous-phrases naturelles tirées du texte Supabase (4 mots consécutifs)
         if texte_avis and len(texte_avis.strip()) > 10:
             import re
-            # Nettoyer le texte et extraire les mots significatifs (hors ponctuation)
-            clean_words = re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{3,}\b', texte_avis.lower())
+            # Extraire la séquence naturelle exacte de tous les mots du texte brut
+            all_words = re.findall(r'\b[a-zA-Zàâäéèêëîïôöùûüç0-9]+\b', texte_avis.lower())
 
-            # Mots parasites et vocabulaire générique BTP/GMB très fréquents sur les fiches à exclure
-            STOP_WORDS = {
-                'plus', 'sans', 'tout', 'très', 'avec', 'pour', 'dans', 'cette', 'fait', 'sont', 'bien',
-                'aussi', 'sent', 'client', 'travail', 'equipe', 'équipe', 'entreprise', 'artisan', 'recommande',
-                'recommandons', 'soigne', 'soigné', 'professionnel', 'professionnels', 'societe', 'société',
-                'chantier', 'chantiers', 'service', 'services', 'prestation', 'prestations', 'intervention',
-                'rapide', 'efficace', 'reactif', 'réactif', 'impeccable', 'parfait', 'qualite', 'qualité'
-            }
-            # Éliminer automatiquement tous les mots du nom de la fiche GMB
-            if fiche_nom:
-                mots_fiche = re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{3,}\b', fiche_nom.lower())
-                STOP_WORDS.update(mots_fiche)
+            # Préparer les mots du titre GMB à exclure des phrases
+            mots_fiche = set(re.findall(r'\b[a-zA-Zàâäéèêëîïôöùûüç0-9]{3,}\b', fiche_nom.lower())) if fiche_nom else set()
 
-            filtered_words = [w for w in clean_words if w not in STOP_WORDS]
-
-            # Construire des n-grammes de 3 mots consécutifs du texte de l'avis
+            # Créer de vraies sous-phrases authentiques de 4 mots consécutifs issus du texte Supabase
             phrases = []
-            for i in range(len(filtered_words) - 2):
-                phrase = f"{filtered_words[i]} {filtered_words[i+1]} {filtered_words[i+2]}"
-                phrases.append(phrase)
+            for i in range(len(all_words) - 3):
+                phrase = " ".join(all_words[i:i+4])
+                # On exclut la phrase si elle ne contient QUE des mots du titre GMB
+                words_in_phrase = set(all_words[i:i+4])
+                if words_in_phrase.issubset(mots_fiche):
+                    continue
+                # On s'assure que la phrase contient au moins un mot d'au moins 4 lettres (pas juste des petits mots)
+                if any(len(w) >= 4 for w in all_words[i:i+4]):
+                    phrases.append(phrase)
 
             if phrases:
+                # Tester si au moins une vraie sous-phrase de l'auteur est sur la page
                 phrases_trouvees = [p for p in phrases if p in page_content]
                 if phrases_trouvees:
-                    return False, f"Expression trouvée sur la page: '{phrases_trouvees[0]}'"
+                    return False, f"Vraie phrase trouvée sur la page: '{phrases_trouvees[0]}'"
                 else:
-                    return True, f"Expression introuvable (cherche ex: '{phrases[0]}')"
+                    return True, f"Phrase introuvable (cherche ex: '{phrases[0]}')"
 
-            # Si le texte est très court (moins de 3 mots filtrés), fallback sur 2 mots uniques
-            if len(filtered_words) >= 2:
-                phrase = f"{filtered_words[0]} {filtered_words[1]}"
-                if phrase in page_content:
-                    return False, f"Expression courte trouvée: '{phrase}'"
-                return True, f"Expression courte introuvable: '{phrase}'"
+            # Fallback pour les textes très courts (< 4 mots) : recherche de la phrase complète exacte
+            clean_short = " ".join(all_words)
+            if clean_short and clean_short in page_content:
+                return False, f"Texte court trouvé: '{clean_short}'"
+            return True, f"Texte court introuvable: '{clean_short}'"
 
         # 3. Si l'avis n'avait pas de texte : présence de l'élément d'avis Google
         has_review_element = page.query_selector('[data-review-id]') is not None
