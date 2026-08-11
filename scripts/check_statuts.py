@@ -65,8 +65,11 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None, auteur_nom=Non
     Utilise le texte VISIBLE de la page (pas le HTML/JS brut).
     """
     try:
-        page.goto(url, wait_until="domcontentloaded", timeout=15000)
+        # Forcer la langue française via l'URL pour empêcher Google de traduire l'avis en anglais (ex: "what a joy to find...")
+        separator = "&" if "?" in url else "?"
+        url_fr = url + f"{separator}hl=fr"
 
+        page.goto(url_fr, wait_until="domcontentloaded", timeout=15000)
         # Attendre que Google Maps rende le contenu JS (les avis sont chargés via AJAX)
         try:
             page.wait_for_selector('.wiI7pd, .MyEned, [data-review-id]', timeout=5000)
@@ -86,9 +89,10 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None, auteur_nom=Non
 
         clean_visible = strip_accents(visible_text)
 
-        # 1. Signaux de suppression explicites
+        # 1. Signaux de suppression explicites (FR + EN)
         supprime_signals = [
             "cet avis a ete supprime",
+            "this review is no longer available",
             "this review has been deleted",
             "review has been removed",
         ]
@@ -153,10 +157,14 @@ def main():
     with sync_playwright() as p:
         bl_token = os.environ.get("BROWSERLESS_TOKEN")
         if bl_token:
-            print("Connexion à Browserless.io (mode stealth)...")
+            print("Connexion à Browserless.io (mode stealth, locale fr-FR)...")
             ws_url = f"wss://chrome.browserless.io?token={bl_token}&stealth=true"
             browser = p.chromium.connect_over_cdp(ws_url)
-            context = browser.contexts[0] if browser.contexts else browser.new_context()
+            # Créer un NOUVEAU contexte avec locale française pour éviter la traduction automatique des avis
+            context = browser.new_context(
+                locale="fr-FR",
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
         else:
             print("Pas de BROWSERLESS_TOKEN détecté, lancement local de Chromium...")
             browser = p.chromium.launch(headless=True)
@@ -179,7 +187,10 @@ def main():
                 try:
                     if bl_token:
                         browser = p.chromium.connect_over_cdp(ws_url)
-                        context = browser.contexts[0] if browser.contexts else browser.new_context()
+                        context = browser.new_context(
+                            locale="fr-FR",
+                            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        )
                     else:
                         browser = p.chromium.launch(headless=True)
                         context = browser.new_context(user_agent="Mozilla/5.0", locale="fr-FR")
