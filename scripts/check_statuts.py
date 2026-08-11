@@ -62,8 +62,7 @@ def get_orange_avis(limit=None):
 def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
     """
     Retourne (True, raison) si supprimé, (False, raison) si en ligne.
-    Vérification basée sur la présence d'expressions exactes du texte de l'avis,
-    en ignorant dynamiquement le titre de la fiche GMB.
+    Recherche ciblée dans les balises HTML réelles de Google Maps (.wiI7pd / [data-review-id]).
     """
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
@@ -83,47 +82,48 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
             if signal in page_content:
                 return True, f"Signal de suppression détecté: '{signal}'"
 
-        # 2. Vérification par de VRAIES sous-phrases naturelles tirées du texte Supabase (4 mots consécutifs)
-        if texte_avis and len(texte_avis.strip()) > 10:
+        # 2. Inspection des éléments de texte d'avis réels Google Maps (class="wiI7pd")
+        review_elements = page.query_selector_all('.wiI7pd')
+        reviews_texts = [el.text_content().lower() for el in review_elements if el.text_content()]
+
+        if texte_avis and len(texte_avis.strip()) > 5:
             import re
-            # Extraire la séquence naturelle exacte de tous les mots du texte brut
-            all_words = re.findall(r'\b[a-zA-Zàâäéèêëîïôöùûüç0-9]+\b', texte_avis.lower())
+            # Extraire les mots significatifs de plus de 4 lettres
+            words_author = set(re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{5,}\b', texte_avis.lower()))
 
-            # Préparer les mots du titre GMB à exclure des phrases
-            mots_fiche = set(re.findall(r'\b[a-zA-Zàâäéèêëîïôöùûüç0-9]{3,}\b', fiche_nom.lower())) if fiche_nom else set()
+            # Exclure les mots parasites et le nom de la fiche GMB
+            STOP_WORDS = {
+                'plus', 'sans', 'tout', 'très', 'avec', 'pour', 'dans', 'cette', 'fait', 'sont', 'bien',
+                'aussi', 'sent', 'client', 'travail', 'equipe', 'équipe', 'entreprise', 'artisan', 'recommande',
+                'recommandons', 'soigne', 'soigné', 'professionnel', 'professionnels', 'societe', 'société',
+                'chantier', 'chantiers', 'service', 'services', 'prestation', 'prestations', 'intervention',
+                'rapide', 'efficace', 'reactif', 'réactif', 'impeccable', 'parfait', 'qualite', 'qualité'
+            }
+            if fiche_nom:
+                STOP_WORDS.update(re.findall(r'\b[a-zàâäéèêëîïôöùûüç]{3,}\b', fiche_nom.lower()))
 
-            # Créer de vraies sous-phrases authentiques de 4 mots consécutifs issus du texte Supabase
-            phrases = []
-            for i in range(len(all_words) - 3):
-                phrase = " ".join(all_words[i:i+4])
-                # On exclut la phrase si elle ne contient QUE des mots du titre GMB
-                words_in_phrase = set(all_words[i:i+4])
-                if words_in_phrase.issubset(mots_fiche):
-                    continue
-                # On s'assure que la phrase contient au moins un mot d'au moins 4 lettres (pas juste des petits mots)
-                if any(len(w) >= 4 for w in all_words[i:i+4]):
-                    phrases.append(phrase)
+            unique_words = [w for w in words_author if w not in STOP_WORDS]
 
-            if phrases:
-                # Tester si au moins une vraie sous-phrase de l'auteur est sur la page
-                phrases_trouvees = [p for p in phrases if p in page_content]
-                if phrases_trouvees:
-                    return False, f"Vraie phrase trouvée sur la page: '{phrases_trouvees[0]}'"
-                else:
-                    return True, f"Phrase introuvable (cherche ex: '{phrases[0]}')"
+            # A. Recherche dans les textes d'avis ciblés (.wiI7pd)
+            for review_text in reviews_texts:
+                mots_trouves = [w for w in unique_words if w in review_text]
+                if len(mots_trouves) >= 2 or (len(unique_words) <= 2 and len(mots_trouves) >= 1):
+                    return False, f"Avis trouvé dans .wiI7pd (mots: {mots_trouves[:3]})"
 
-            # Fallback pour les textes très courts (< 4 mots) : recherche de la phrase complète exacte
-            clean_short = " ".join(all_words)
-            if clean_short and clean_short in page_content:
-                return False, f"Texte court trouvé: '{clean_short}'"
-            return True, f"Texte court introuvable: '{clean_short}'"
+            # B. Recherche globale dans la page (au cas où .wiI7pd est traduit ou plié)
+            mots_page = [w for w in unique_words if w in page_content]
+            if len(mots_trouves := mots_page) >= 2:
+                return False, f"Avis trouvé sur la page (mots: {mots_trouves[:3]})"
 
-        # 3. Si l'avis n'avait pas de texte : présence de l'élément d'avis Google
+            if unique_words:
+                return True, f"Mots clés de l'auteur introuvables ({unique_words[:3]})"
+
+        # 3. Fallback : présence d'un bloc d'avis [data-review-id]
         has_review_element = page.query_selector('[data-review-id]') is not None
         if has_review_element:
-            return False, "Élément data-review-id trouvé"
+            return False, "Bloc [data-review-id] trouvé sur la page"
 
-        return True, "Texte d'avis introuvable sur la page"
+        return True, "Aucun élément d'avis sur la page"
 
     except Exception as e:
         return None, f"Erreur chargement page: {e}"
