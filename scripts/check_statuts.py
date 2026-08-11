@@ -109,13 +109,19 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
 
             unique_words = [w for w in words_author if w not in STOP_WORDS]
 
-            # Préparer le texte des avis réels présents dans la page (.wiI7pd) sans accents
+            # Inspecter toutes les balises de texte d'avis réels (.wiI7pd, .MyEned, [data-review-id])
+            review_elements = page.query_selector_all('.wiI7pd, .MyEned, [data-review-id]')
             clean_reviews_html = " ".join([strip_accents(el.text_content().lower()) for el in review_elements if el.text_content()])
 
-            # A. Si au moins 2 mots significatifs (ou 1 mot long de >= 6 lettres) sont présents DANS UN AVIS REEL (.wiI7pd) -> EN LIGNE !
+            # A. Recherche ciblée dans les blocs d'avis
             mots_trouves = [w for w in unique_words if w in clean_reviews_html]
-            if len(mots_trouves) >= 2 or (mots_trouves and any(len(w) >= 6 for w in mots_trouves)):
-                return False, f"Avis trouvé dans .wiI7pd (mots: {mots_trouves[:2]})"
+            if mots_trouves:
+                return False, f"Avis trouvé dans bloc review (mots: {mots_trouves[:2]})"
+
+            # B. Recherche dans toute la page pour les mots spécifiques de >= 5 lettres (si le texte était tronqué par 'Plus')
+            mots_page = [w for w in unique_words if len(w) >= 5 and w in clean_page]
+            if mots_page:
+                return False, f"Avis trouvé sur la page (mot: '{mots_page[0]}')"
 
             if unique_words:
                 return True, f"Mots clés introuvables dans les avis ({unique_words[:3]})"
