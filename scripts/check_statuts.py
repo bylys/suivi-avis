@@ -109,22 +109,17 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
 
             unique_words = [w for w in words_author if w not in STOP_WORDS]
 
-            # Inspecter toutes les balises de texte d'avis réels (.wiI7pd, .MyEned, [data-review-id])
-            review_elements = page.query_selector_all('.wiI7pd, .MyEned, [data-review-id]')
+            # Inspecter uniquement les balises de texte d'avis réels (.wiI7pd, .MyEned)
+            review_elements = page.query_selector_all('.wiI7pd, .MyEned')
             clean_reviews_html = " ".join([strip_accents(el.text_content().lower()) for el in review_elements if el.text_content()])
 
-            # A. Recherche ciblée dans les blocs d'avis
+            # Recherche strictement ciblée dans les cartes d'avis réels
             mots_trouves = [w for w in unique_words if w in clean_reviews_html]
             if mots_trouves:
                 return False, f"Avis trouvé dans bloc review (mots: {mots_trouves[:2]})"
 
-            # B. Recherche dans toute la page pour les mots spécifiques de >= 5 lettres (si le texte était tronqué par 'Plus')
-            mots_page = [w for w in unique_words if len(w) >= 5 and w in clean_page]
-            if mots_page:
-                return False, f"Avis trouvé sur la page (mot: '{mots_page[0]}')"
-
             if unique_words:
-                return True, f"Mots clés introuvables dans les avis ({unique_words[:3]})"
+                return True, f"Mots clés introuvables dans les cartes d'avis ({unique_words[:3]})"
 
         # 3. Fallback : présence d'un bloc d'avis [data-review-id]
         has_review_element = page.query_selector('[data-review-id]') is not None
