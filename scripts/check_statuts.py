@@ -74,8 +74,6 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
             "this review has been deleted",
             "review has been removed",
             "avis supprimé",
-            "impossible de trouver la page",
-            "404",
         ]
         for signal in supprime_signals:
             if signal in page_content:
