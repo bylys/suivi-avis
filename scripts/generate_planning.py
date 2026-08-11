@@ -50,7 +50,7 @@ SLACK_OPERATEURS = {
     "Anjara":    os.environ.get("SLACK_WEBHOOK_ANJARA", SLACK_WEBHOOK),
 }
 
-DELAI_GMAIL_JOURS  = 3   # délai min entre deux utilisations du même gmail
+DELAI_GMAIL_JOURS  = 2   # repos min d'1 jour complet entre deux posts du même gmail (posté lundi → réutilisable mercredi)
 DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
 QUOTA_NOUVEAUX   = int(os.environ.get("QUOTA_PAR_OPERATEUR", "33"))  # Aina/Kintana/Korail/Anjara
 QUOTA_KEVIN_FIF  = int(os.environ.get("QUOTA_KEVIN_FIF", "50"))      # Kevin & Fifaliana
@@ -395,15 +395,16 @@ def main():
     planning_rows = []
     villes_a_persister = {}          # gmails neufs → ville rattachée (à écrire en base)
 
-    # Pool de gmails par opérateur (les nouveaux VA n'ont QUE leurs gmails assignés ;
-    # les anciens gmails sans opérateur ne vont qu'à Kevin/Fifaliana)
+    # Pool de gmails par opérateur — stratégie Kevin généralisée :
+    # chaque VA pioche dans SES gmails perso + le pool commun des gmails "AUCUN"
+    # (anciens comptes réutilisables, partagés par toute l'équipe).
     is_solo_aina = today_str in AINA_SOLO_DATES
     pools = {}
     for operateur in operateurs_actifs:
         pools[operateur] = {
             g for g in gmails_dispo
-            if gmail_operateur.get(g) == operateur
-            or (g not in gmail_operateur and operateur in OPERATEURS_ANCIENS_GMAILS)
+            if gmail_operateur.get(g) == operateur   # ses gmails perso
+            or g not in gmail_operateur              # + pool commun (gmails sans opérateur)
         }
 
     # Quotas du jour (rattrapage Aina : 25 pour équilibrer samedi/dimanche)
@@ -412,6 +413,7 @@ def main():
         quotas_jour["Aina"] = AINA_SOLO_QUOTA
 
     gmails_utilises = {op: set() for op in operateurs_actifs}
+    gmails_used_today = set()   # garde-fou global : un gmail ne sert qu'une fois par jour, tous VA confondus
     assignations = {op: [] for op in operateurs_actifs}
 
     def pick_gmail(operateur, fn):
@@ -422,7 +424,7 @@ def main():
         candidats = [
             g for g in pools[operateur]
             if gmail_ville.get(g) == ville
-            and g not in gmails_utilises[operateur]
+            and g not in gmails_used_today
             and (g, fn_key) not in used_pairs
         ]
         # 2. Fallback : gmails neufs (sans ville) — 1re utilisation
@@ -430,7 +432,7 @@ def main():
             candidats = [
                 g for g in pools[operateur]
                 if g not in gmail_ville
-                and g not in gmails_utilises[operateur]
+                and g not in gmails_used_today
                 and (g, fn_key) not in used_pairs
             ]
         if not candidats:
@@ -463,6 +465,7 @@ def main():
                 gmail_ville[picked_gmail] = ville
                 villes_a_persister[picked_gmail] = ville
             gmails_utilises[operateur].add(picked_gmail)
+            gmails_used_today.add(picked_gmail)   # réserve le gmail pour toute la journée (tous VA confondus)
             assignations[operateur].append({'fiche_nom': fn, 'ville': ville, 'gmail': picked_gmail})
             active = True
 
