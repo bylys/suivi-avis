@@ -37,6 +37,15 @@ def sb_patch(table, id_, payload):
 
 def get_orange_avis(limit=None):
     today = date.today()
+    recheck = os.environ.get("RECHECK_TODAY") == "true"
+    if recheck:
+        today_str = today.isoformat()
+        rows = sb_get(f"avis?select=id,auteur,statut,date,lien,texte&statut_date=eq.{today_str}&lien=not.is.null&limit=2000")
+        print(f"Mode re-vérification activé (avis modifiés aujourd'hui) : {len(rows)} trouvés")
+        if limit and limit > 0:
+            return rows[:limit]
+        return rows
+
     rows = sb_get("avis?select=id,auteur,statut,date,lien,texte&statut=not.in.(supprime,j30)&lien=not.is.null&limit=2000")
     orange = []
     for a in rows:
