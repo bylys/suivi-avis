@@ -173,7 +173,23 @@ def main():
 
             print(f"[{i+1}/{len(orange)}] {auteur} | {statut} | {lien}")
 
-            page = context.new_page()
+            try:
+                page = context.new_page()
+            except Exception:
+                # Si le context Browserless s'est fermé, on le réouvre proprement
+                try:
+                    if bl_token:
+                        browser = p.chromium.connect_over_cdp(ws_url)
+                        context = browser.contexts[0] if browser.contexts else browser.new_context()
+                    else:
+                        browser = p.chromium.launch(headless=True)
+                        context = browser.new_context(user_agent="Mozilla/5.0", locale="fr-FR")
+                    page = context.new_page()
+                except Exception as e_init:
+                    print(f"  → Erreur init context: {e_init}")
+                    results["skip"] += 1
+                    continue
+
             try:
                 deleted, raison = is_review_deleted(page, lien, texte_avis=avis.get('texte'), fiche_nom=avis.get('fiche_nom'))
             except Exception as e:
