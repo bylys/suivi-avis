@@ -59,15 +59,14 @@ def is_review_deleted(page, url):
     - Si la page charge normalement avec contenu d'avis → en ligne
     """
     try:
-        response = page.goto(url, wait_until="networkidle", timeout=30000)
+        page.goto(url, wait_until="domcontentloaded", timeout=15000)
+        page.wait_for_timeout(3000)  # laisse 3s à la redirection JS/Maps pour se stabiliser
         final_url = page.url
 
         # URL finale — si le lien court redirige vers la fiche sans ancre review
         # les liens de review contiennent typiquement 'contrib' ou un hash d'avis
         if "contrib" not in final_url and "/reviews" not in final_url:
-            # Vérifier quand même si la page contient un avis visible
             content = page.content()
-            # Indicateurs de suppression sur Google Maps
             supprime_signals = [
                 "cet avis a été supprimé",
                 "this review has been deleted",
@@ -78,17 +77,10 @@ def is_review_deleted(page, url):
                 if signal.lower() in content.lower():
                     return True
 
-        # Vérifier le title — si c'est juste la fiche sans mention d'avis
-        title = page.title()
-
-        # Essayer de trouver un contenu d'avis sur la page
-        # Les avis Google Maps ont des éléments avec data-review-id
         has_review_element = page.query_selector('[data-review-id]') is not None
         if has_review_element:
             return False  # avis toujours en ligne
 
-        # Fallback : si la page ne charge pas de contenu d'avis visible
-        # et que le lien ne contient pas d'ancre de review → supprimé
         if "contrib" not in final_url and "/reviews" not in final_url:
             return True
 
@@ -127,8 +119,6 @@ def main():
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 locale="fr-FR"
             )
-        page = context.new_page()
-
         for i, avis in enumerate(orange):
             avis_id  = avis['id']
             statut   = avis['statut']
@@ -137,7 +127,17 @@ def main():
 
             print(f"[{i+1}/{len(orange)}] {auteur} | {statut} | {lien}")
 
-            deleted = is_review_deleted(page, lien)
+            page = context.new_page()
+            try:
+                deleted = is_review_deleted(page, lien)
+            except Exception as e:
+                print(f"  Erreur context/page : {e}")
+                deleted = None
+            finally:
+                try:
+                    page.close()
+                except Exception:
+                    pass
 
             if deleted is None:
                 print(f"  → Indéterminé, skip")
