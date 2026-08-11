@@ -35,7 +35,7 @@ def sb_patch(table, id_, payload):
     with urllib.request.urlopen(req) as r:
         return r.status
 
-def get_orange_avis():
+def get_orange_avis(limit=None):
     today = date.today()
     rows = sb_get("avis?select=id,auteur,statut,date,lien&statut=not.in.(supprime,j30)&lien=not.is.null&limit=2000")
     orange = []
@@ -46,6 +46,8 @@ def get_orange_avis():
         age = (today - date.fromisoformat(a['date'])).days
         if age >= seuil:
             orange.append(a)
+    if limit and limit > 0:
+        return orange[:limit]
     return orange
 
 def is_review_deleted(page, url):
@@ -100,8 +102,9 @@ def is_review_deleted(page, url):
 def main():
     from playwright.sync_api import sync_playwright
 
-    orange = get_orange_avis()
-    print(f"Avis orange à vérifier : {len(orange)}")
+    max_check = int(os.environ.get("MAX_CHECK", "10"))
+    orange = get_orange_avis(limit=max_check)
+    print(f"Avis orange à vérifier (limite de test : {max_check}) : {len(orange)}")
 
     if not orange:
         print("Rien à faire.")
@@ -111,11 +114,19 @@ def main():
     results = {"supprime": 0, "avance": 0, "skip": 0, "errors": []}
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            locale="fr-FR"
-        )
+        bl_token = os.environ.get("BROWSERLESS_TOKEN")
+        if bl_token:
+            print("Connexion à Browserless.io (mode stealth)...")
+            ws_url = f"wss://chrome.browserless.io?token={bl_token}&stealth=true"
+            browser = p.chromium.connect_over_cdp(ws_url)
+            context = browser.contexts[0] if browser.contexts else browser.new_context()
+        else:
+            print("Pas de BROWSERLESS_TOKEN détecté, lancement local de Chromium...")
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                locale="fr-FR"
+            )
         page = context.new_page()
 
         for i, avis in enumerate(orange):

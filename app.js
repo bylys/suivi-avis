@@ -1107,7 +1107,10 @@ function buildAvisRow(a, rappelsDus, aVerif) {
   const st = STATUT_LABELS[a.statut] || { label: a.statut || '–', color: '#999' };
   const needsVerif = aVerif.includes(a.id);
   const verifLabel = needsVerif ? rappelsDus.find(d => d.avis.id === a.id)?.label : null;
-  return `<tr class="${needsVerif ? 'avis-a-verifier avis-orange' : ''}">
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isAutoUpdatedToday = a.statut_date === todayStr && !needsVerif && a.statut !== 'j0';
+  
+  return `<tr class="${needsVerif ? 'avis-a-verifier avis-orange' : isAutoUpdatedToday ? 'avis-auto-updated' : ''}">
     <td data-label="Date" class="avis-date">
       <input type="date" class="date-inline" value="${a.date}" onchange="updateDate('${a.id}', this.value)" />
     </td>
@@ -1122,7 +1125,7 @@ function buildAvisRow(a, rappelsDus, aVerif) {
         ).join('')}
       </select>
     </td>
-    <td data-label="Rappel">${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : ''}</td>
+    <td data-label="Rappel">${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : isAutoUpdatedToday ? `<span class="avis-auto-badge">🤖 Auto ${st.label}</span>` : ''}</td>
     <td data-label="Photo/Lien" class="td-photo-lien">${a.photo ? '📷' : ''}${a.lien ? `&nbsp;<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
     <td data-label="Avis" class="col-texte">${a.texte || ''}</td>
     <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>

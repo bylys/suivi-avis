@@ -233,6 +233,10 @@ form select option { background: #1e293b; color: #f1f5f9; }
 .avis-a-verifier { background: #1c1a08 !important; }
 .avis-a-verifier td:first-child { border-left: 3px solid #fbbf24; padding-left: calc(0.9rem - 3px); }
 
+.avis-auto-updated { background: #064e3b22 !important; }
+.avis-auto-updated td:first-child { border-left: 3px solid #10b981; padding-left: calc(0.9rem - 3px); }
+.avis-auto-badge { font-size: 0.7rem; font-weight: 700; color: #a7f3d0; background: #064e3b; border: 1px solid #10b981; padding: 2px 7px; border-radius: 20px; }
+
 /* ── STATUT INLINE ── */
 .date-inline {
   background: transparent;
