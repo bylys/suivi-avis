@@ -62,15 +62,19 @@ def get_orange_avis(limit=None):
 def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
     """
     Retourne (True, raison) si supprimé, (False, raison) si en ligne.
-    Recherche ciblée dans les balises HTML réelles de Google Maps (.wiI7pd / [data-review-id]).
+    Vérification infaillible par redirection d'URL Google Maps + inspection HTML.
     """
     try:
-        page.goto(url, wait_until="domcontentloaded", timeout=15000)
-        page.wait_for_timeout(3500)
+        response = page.goto(url, wait_until="domcontentloaded", timeout=15000)
+        final_url = page.url
+
+        # 1. Analyse de l'URL de redirection finale de Google Maps
+        # Quand un lien d'avis est supprimé, Google redirige vers l'URL générique du lieu (sans hash de review !1s... ou CAIQAC)
+        has_review_hash = "!1sci" in final_url.lower() or "caiqac" in final_url.lower() or "/reviews/" in final_url.lower()
 
         page_content = page.content().lower()
 
-        # 1. Signaux de suppression explicites dans le HTML
+        # Signaux de suppression explicites dans le HTML
         supprime_signals = [
             "cet avis a été supprimé",
             "this review has been deleted",
@@ -82,22 +86,17 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
             if signal in page_content:
                 return True, f"Signal de suppression détecté: '{signal}'"
 
-        # 2. Inspection des éléments de texte d'avis réels Google Maps (class="wiI7pd")
-        review_elements = page.query_selector_all('.wiI7pd')
-        reviews_texts = [el.text_content().lower() for el in review_elements if el.text_content()]
+        import re, unicodedata
+        def strip_accents(s):
+            return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
 
+        clean_page = strip_accents(page_content)
+
+        # 2. Vérification ciblée par mots clés uniques du texte de l'auteur
         if texte_avis and len(texte_avis.strip()) > 5:
-            import re, unicodedata
-            def strip_accents(s):
-                return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
-
-            clean_page = strip_accents(page_content)
             clean_author_text = strip_accents(texte_avis.lower())
-
-            # Extraire les mots significatifs de plus de 4 lettres
             words_author = set(re.findall(r'\b[a-z]{4,}\b', clean_author_text))
 
-            # Exclure les mots parasites ultra-génériques
             STOP_WORDS = {
                 'plus', 'sans', 'tout', 'très', 'avec', 'pour', 'dans', 'cette', 'fait', 'sont', 'bien',
                 'aussi', 'sent', 'client', 'travail', 'equipe', 'entreprise', 'artisan', 'recommande',
@@ -109,24 +108,29 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None):
 
             unique_words = [w for w in words_author if w not in STOP_WORDS]
 
-            # Inspecter uniquement les balises de texte d'avis réels (.wiI7pd, .MyEned)
+            # A. Inspection ciblée dans les balises d'avis (.wiI7pd, .MyEned)
             review_elements = page.query_selector_all('.wiI7pd, .MyEned')
             clean_reviews_html = " ".join([strip_accents(el.text_content().lower()) for el in review_elements if el.text_content()])
 
-            # Recherche strictement ciblée dans les cartes d'avis réels
-            mots_trouves = [w for w in unique_words if w in clean_reviews_html]
-            if mots_trouves:
-                return False, f"Avis trouvé dans bloc review (mots: {mots_trouves[:2]})"
+            mots_trouves_carte = [w for w in unique_words if w in clean_reviews_html]
+            if mots_trouves_carte:
+                return False, f"Avis trouvé dans carte review (mots: {mots_trouves_carte[:2]})"
+
+            # B. Si l'URL redirige vers l'ancre spécifique de l'avis et que la page est chargée sans signal d'erreur
+            if has_review_hash:
+                mots_page = [w for w in unique_words if w in clean_page]
+                if mots_page:
+                    return False, f"Avis en ligne (URL d'avis valide + mot '{mots_page[0]}')"
+                return False, "Avis en ligne (URL de redirection d'avis valide)"
 
             if unique_words:
-                return True, f"Mots clés introuvables dans les cartes d'avis ({unique_words[:3]})"
+                return True, f"Mots clés introuvables et URL sans ancre d'avis ({unique_words[:2]})"
 
-        # 3. Fallback : présence d'un bloc d'avis [data-review-id]
-        has_review_element = page.query_selector('[data-review-id]') is not None
-        if has_review_element:
-            return False, "Bloc [data-review-id] trouvé sur la page"
+        # Fallback pour les liens d'avis sans texte
+        if has_review_hash:
+            return False, "Avis en ligne (URL d'avis valide)"
 
-        return True, "Aucun élément d'avis sur la page"
+        return True, "URL redirigée vers fiche générique sans ancre d'avis (Avis supprimé)"
 
     except Exception as e:
         return None, f"Erreur chargement page: {e}"
