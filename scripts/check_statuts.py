@@ -61,12 +61,11 @@ def get_orange_avis(limit=None):
 
 def is_review_deleted(page, url, texte_avis=None):
     """
-    Retourne True si l'avis est supprimé, False s'il est toujours en ligne.
-    Vérification stricte basée UNIQUEMENT sur la présence réelle du texte de l'avis sur la page.
+    Retourne (True, raison) si supprimé, (False, raison) si en ligne.
     """
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=15000)
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(3500)
 
         page_content = page.content().lower()
 
@@ -80,7 +79,7 @@ def is_review_deleted(page, url, texte_avis=None):
         ]
         for signal in supprime_signals:
             if signal in page_content:
-                return True
+                return True, f"Signal de suppression détecté: '{signal}'"
 
         # 2. Vérification par les MOTS CLES du texte de l'avis
         if texte_avis and len(texte_avis.strip()) > 5:
@@ -89,22 +88,20 @@ def is_review_deleted(page, url, texte_avis=None):
             if mots:
                 mots_trouves = [m for m in mots if m in page_content]
                 ratio = len(mots_trouves) / len(mots)
-                # Si au moins 2 mots significatifs OU 30% des mots sont sur la page -> EN LIGNE
                 if len(mots_trouves) >= 2 or ratio >= 0.30:
-                    return False  # L'avis est BIEN EN LIGNE
+                    return False, f"Trouvé ({len(mots_trouves)}/{len(mots)} mots: {mots_trouves[:3]})"
                 else:
-                    return True   # Texte introuvable sur la page -> SUPPRIMÉ
+                    return True, f"Non trouvé sur la page ({len(mots_trouves)}/{len(mots)} mots: cherche {mots[:3]})"
 
         # 3. Si l'avis n'avait pas de texte (juste une note) : présence de l'élément d'avis Google
         has_review_element = page.query_selector('[data-review-id]') is not None
         if has_review_element:
-            return False
+            return False, "Élément data-review-id trouvé sur la page"
 
-        return True
+        return True, "Pas de texte d'avis ni d'élément d'avis sur la page"
 
     except Exception as e:
-        print(f"  Erreur chargement page : {e}")
-        return None  # indéterminé, on skip
+        return None, f"Erreur chargement page: {e}"
 
 
 def main():
@@ -145,10 +142,10 @@ def main():
 
             page = context.new_page()
             try:
-                deleted = is_review_deleted(page, lien, texte_avis=avis.get('texte'))
+                deleted, raison = is_review_deleted(page, lien, texte_avis=avis.get('texte'))
             except Exception as e:
                 print(f"  Erreur context/page : {e}")
-                deleted = None
+                deleted, raison = None, str(e)
             finally:
                 try:
                     page.close()
@@ -156,9 +153,9 @@ def main():
                     pass
 
             if deleted is None:
-                print(f"  → Indéterminé, skip")
+                print(f"  → Indéterminé, skip ({raison})")
                 results["skip"] += 1
-                results["errors"].append({"id": avis_id, "lien": lien, "raison": "indéterminé"})
+                results["errors"].append({"id": avis_id, "lien": lien, "raison": raison})
                 continue
 
             if deleted:
@@ -168,7 +165,7 @@ def main():
                 new_statut = NEXT_STATUT.get(statut, "j30")
                 results["avance"] += 1
 
-            print(f"  → {statut} → {new_statut}")
+            print(f"  → {statut} → {new_statut} [{raison}]")
             try:
                 sb_patch("avis", avis_id, {"statut": new_statut, "statut_date": today_str})
             except Exception as e:
