@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       quota:
-        description: "Nombre d'avis par opérateur"
+        description: "Quota des nouveaux VA (Korail/Anjara/Kintana/Aina) — Kevin/Fif restent à 50"
         required: false
-        default: "45"
+        default: "40"
 
 jobs:
   planning:
@@ -32,5 +32,5 @@ jobs:
           DECODO_USER_MOBILE: ${{ secrets.DECODO_USER_MOBILE }}
           DECODO_PASS_MOBILE: ${{ secrets.DECODO_PASS_MOBILE }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          QUOTA_PAR_OPERATEUR: ${{ github.event.inputs.quota || '50' }}
+          QUOTA_PAR_OPERATEUR: ${{ github.event.inputs.quota || '40' }}
         run: python scripts/generate_planning.py

@@ -52,8 +52,8 @@ SLACK_OPERATEURS = {
 
 DELAI_GMAIL_JOURS  = 3   # cooldown 3 j entre deux posts du même gmail (≥ minimum 1 j de repos exigé — stratégie Kevin)
 DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
-QUOTA_NOUVEAUX   = int(os.environ.get("QUOTA_PAR_OPERATEUR", "33"))  # Aina/Kintana/Korail/Anjara
-QUOTA_KEVIN_FIF  = int(os.environ.get("QUOTA_KEVIN_FIF", "50"))      # Kevin & Fifaliana
+QUOTA_NOUVEAUX   = int(os.environ.get("QUOTA_PAR_OPERATEUR", "40"))  # Aina/Kintana/Korail/Anjara : max 40/jour
+QUOTA_KEVIN_FIF  = int(os.environ.get("QUOTA_KEVIN_FIF", "50"))      # Kevin & Fifaliana : max 50/jour
 OPERATEURS = ["Kevin", "Fifaliana", "Aina", "Kintana", "Korail", "Anjara"]
 OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]  # accès aux anciens gmails + fiches sans mail
 QUOTAS = {op: (QUOTA_KEVIN_FIF if op in OPERATEURS_ANCIENS_GMAILS else QUOTA_NOUVEAUX)
