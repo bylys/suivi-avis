@@ -170,22 +170,8 @@ def main():
 
     with sync_playwright() as p:
         bl_token = os.environ.get("BROWSERLESS_TOKEN")
-        if bl_token:
-            print("Connexion à Browserless.io (mode stealth, locale fr-FR, timeout étendu)...")
-            ws_url = f"wss://chrome.browserless.io?token={bl_token}&stealth=true&timeout=300000"
-            browser = p.chromium.connect_over_cdp(ws_url)
-            # Créer un NOUVEAU contexte avec locale française pour éviter la traduction automatique des avis
-            context = browser.new_context(
-                locale="fr-FR",
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            )
-        else:
-            print("Pas de BROWSERLESS_TOKEN détecté, lancement local de Chromium...")
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                locale="fr-FR"
-            )
+        ws_url = f"wss://chrome.browserless.io?token={bl_token}&stealth=true" if bl_token else None
+
         for i, avis in enumerate(orange):
             avis_id  = avis['id']
             statut   = avis['statut']
@@ -195,25 +181,22 @@ def main():
             print(f"[{i+1}/{len(orange)}] {auteur} | {statut} | {lien}")
 
             try:
+                # Créer un NOUVEAU contexte pour chaque avis pour éviter la limite de session d'une minute de Browserless
+                if bl_token:
+                    browser = p.chromium.connect_over_cdp(ws_url)
+                else:
+                    browser = p.chromium.launch(headless=True)
+                
+                context = browser.new_context(
+                    locale="fr-FR",
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                )
                 page = context.new_page()
-            except Exception:
-                # Si le context Browserless s'est fermé, on le réouvre proprement
-                try:
-                    if bl_token:
-                        ws_url_fallback = f"wss://chrome.browserless.io?token={bl_token}&stealth=true&timeout=300000"
-                        browser = p.chromium.connect_over_cdp(ws_url_fallback)
-                        context = browser.new_context(
-                            locale="fr-FR",
-                            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                        )
-                    else:
-                        browser = p.chromium.launch(headless=True)
-                        context = browser.new_context(user_agent="Mozilla/5.0", locale="fr-FR")
-                    page = context.new_page()
-                except Exception as e_init:
-                    print(f"  → Erreur init context: {e_init}")
-                    results["skip"] += 1
-                    continue
+            except Exception as e_init:
+                print(f"  → Erreur init context: {e_init}")
+                results["skip"] += 1
+                results["errors"].append({"id": avis_id, "lien": lien, "raison": str(e_init)})
+                continue
 
             try:
                 deleted, raison = is_review_deleted(page, lien, texte_avis=avis.get('texte'), fiche_nom=avis.get('fiche_nom'), auteur_nom=avis.get('auteur'))
@@ -223,6 +206,14 @@ def main():
             finally:
                 try:
                     page.close()
+                except Exception:
+                    pass
+                try:
+                    context.close()
+                except Exception:
+                    pass
+                try:
+                    browser.close()
                 except Exception:
                     pass
 
