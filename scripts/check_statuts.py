@@ -156,9 +156,10 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None, auteur_nom=Non
 def main():
     from playwright.sync_api import sync_playwright
 
-    max_check = int(os.environ.get("MAX_CHECK", "10"))
+    max_check = int(os.environ.get("MAX_CHECK", "0"))
     orange = get_orange_avis(limit=max_check)
-    print(f"Avis orange à vérifier (limite de test : {max_check}) : {len(orange)}")
+    limite_text = f"limite de test : {max_check}" if max_check > 0 else "sans limite"
+    print(f"Avis orange à vérifier ({limite_text}) : {len(orange)}")
 
     if not orange:
         print("Rien à faire.")
