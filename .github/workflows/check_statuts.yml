@@ -28,5 +28,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
-          MAX_CHECK: "20"
         run: python scripts/check_statuts.py
