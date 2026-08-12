@@ -7,7 +7,7 @@ Vérifie automatiquement le statut des avis GMB orange (palier atteint).
 """
 
 import os, sys, json, urllib.request, urllib.error
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 SB_URL = os.environ["SUPABASE_URL"]
 SB_KEY = os.environ["SUPABASE_KEY"]
@@ -37,11 +37,15 @@ def sb_patch(table, id_, payload):
 
 def get_orange_avis(limit=None):
     today = date.today()
-    recheck = os.environ.get("RECHECK_TODAY") == "true"
-    if recheck:
-        today_str = today.isoformat()
-        rows = sb_get(f"avis?select=id,auteur,statut,date,lien,texte,fiche_nom&statut_date=eq.{today_str}&lien=not.is.null&limit=2000")
-        print(f"Mode re-vérification activé (avis modifiés aujourd'hui) : {len(rows)} trouvés")
+    recheck_today = os.environ.get("RECHECK_TODAY") == "true"
+    recheck_yesterday = os.environ.get("RECHECK_YESTERDAY") == "true"
+    
+    if recheck_today or recheck_yesterday:
+        target_date = today if recheck_today else (today - timedelta(days=1))
+        target_date_str = target_date.isoformat()
+        rows = sb_get(f"avis?select=id,auteur,statut,date,lien,texte,fiche_nom&statut_date=eq.{target_date_str}&lien=not.is.null&limit=2000")
+        day_label = "aujourd'hui" if recheck_today else "hier"
+        print(f"Mode re-vérification activé (avis modifiés {day_label}) : {len(rows)} trouvés")
         if limit and limit > 0:
             return rows[:limit]
         return rows
