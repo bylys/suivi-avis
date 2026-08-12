@@ -171,8 +171,8 @@ def main():
     with sync_playwright() as p:
         bl_token = os.environ.get("BROWSERLESS_TOKEN")
         if bl_token:
-            print("Connexion à Browserless.io (mode stealth, locale fr-FR)...")
-            ws_url = f"wss://chrome.browserless.io?token={bl_token}&stealth=true"
+            print("Connexion à Browserless.io (mode stealth, locale fr-FR, timeout étendu)...")
+            ws_url = f"wss://chrome.browserless.io?token={bl_token}&stealth=true&timeout=300000"
             browser = p.chromium.connect_over_cdp(ws_url)
             # Créer un NOUVEAU contexte avec locale française pour éviter la traduction automatique des avis
             context = browser.new_context(
@@ -200,7 +200,8 @@ def main():
                 # Si le context Browserless s'est fermé, on le réouvre proprement
                 try:
                     if bl_token:
-                        browser = p.chromium.connect_over_cdp(ws_url)
+                        ws_url_fallback = f"wss://chrome.browserless.io?token={bl_token}&stealth=true&timeout=300000"
+                        browser = p.chromium.connect_over_cdp(ws_url_fallback)
                         context = browser.new_context(
                             locale="fr-FR",
                             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
