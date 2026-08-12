@@ -91,6 +91,7 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None, auteur_nom=Non
 
         # 1. Signaux de suppression explicites (FR + EN)
         supprime_signals = [
+            "cet avis n'est plus disponible",
             "cet avis a ete supprime",
             "this review is no longer available",
             "this review has been deleted",
@@ -116,6 +117,14 @@ def is_review_deleted(page, url, texte_avis=None, fiche_nom=None, auteur_nom=Non
             if auteur_nom:
                 words_auteur = set(re.findall(r'\b[a-z]{4,}\b', strip_accents(auteur_nom.lower().split('@')[0])))
                 words_author = words_author - words_auteur
+
+            # Exclure les Stop Words (mots très courants de l'UI Google Maps)
+            stop_words = {
+                "avis", "plus", "disponible", "cette", "page", "google", "maps", 
+                "etoile", "etoiles", "lire", "suite", "traduit", "traduction", 
+                "original", "afficher", "masquer", "signaler", "partager", "aimer"
+            }
+            words_author = words_author - stop_words
 
             # DEBUG: Afficher ce que Browserless voit
             print(f"    [DEBUG] Texte visible ({len(clean_visible)} chars): {clean_visible[:200]}...")
