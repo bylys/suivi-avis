@@ -1,0 +1,19 @@
+name: Archive avis anciens
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Dimanche 3h UTC
+  workflow_dispatch:       # Lancement manuel possible
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/archive_avis.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}

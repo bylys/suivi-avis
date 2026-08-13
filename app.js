@@ -113,6 +113,17 @@ function invalidateAvisCache() {
   _avisFetching = null;
 }
 
+let _statsArchiveCache = null;
+async function getStatsArchive() {
+  if (_statsArchiveCache) return _statsArchiveCache;
+  _statsArchiveCache = await sbGet('stats_mensuelles', 'select=*&order=mois.desc');
+  return _statsArchiveCache;
+}
+
+async function getAvisArchives(mois) {
+  return await sbGet('avis_archives', `select=*&date=gte.${mois}-01&date=lt.${mois}-32&order=date.desc`);
+}
+
 let _fichesCache = null;
 async function getFiches() {
   if (_fichesCache) return _fichesCache;
@@ -1233,38 +1244,57 @@ async function deleteAvis(id) {
 let chartVolume, chartNote;
 
 async function renderDashboard() {
-  let avis = await getAvis();
+  const [avisRecents, statsArchive] = await Promise.all([getAvis(), getStatsArchive()]);
   const fiche = document.getElementById('dash-fiche')?.value.trim() || '';
   const year  = parseInt(document.getElementById('dash-year')?.value || new Date().getFullYear());
   const month = document.getElementById('dash-month')?.value || '';
+  const selectedMonth = month ? `${year}-${month}` : '';
 
+  // Avis récents filtrés
+  let avis = avisRecents;
   if (fiche) avis = avis.filter(a => a.fiche_nom === fiche);
   avis = avis.filter(a => parseInt(a.date.slice(0, 4)) === year);
-
-  const selectedMonth = month ? `${year}-${month}` : '';
   const moisAvis = selectedMonth ? avis.filter(a => a.date.startsWith(selectedMonth)) : avis;
-  const moyenne = moisAvis.length ? (moisAvis.reduce((s,a) => s+a.note, 0) / moisAvis.length).toFixed(1) : '–';
 
-  document.getElementById('stat-total').textContent     = moisAvis.length;
-  document.getElementById('stat-kevin').textContent     = moisAvis.filter(a => a.operateur?.toLowerCase() === 'kevin').length;
-  document.getElementById('stat-fifaliana').textContent = moisAvis.filter(a => a.operateur?.toLowerCase() === 'fifaliana').length;
-  document.getElementById('stat-aina').textContent      = moisAvis.filter(a => a.operateur?.toLowerCase() === 'aina').length;
-  document.getElementById('stat-kintana').textContent   = moisAvis.filter(a => a.operateur?.toLowerCase() === 'kintana').length;
-  document.getElementById('stat-korail').textContent    = moisAvis.filter(a => a.operateur?.toLowerCase() === 'korail').length;
-  document.getElementById('stat-anjara').textContent    = moisAvis.filter(a => a.operateur?.toLowerCase() === 'anjara').length;
-  const j30Count  = moisAvis.filter(a => a.statut === 'j30').length;
-  const suppCount = moisAvis.filter(a => a.statut === 'supprime').length;
-  const resolus = j30Count + suppCount;
-  const tauxSurvie = resolus > 0 ? Math.round((j30Count / resolus) * 100) + ' %' : '–';
+  // Stats archivées filtrées sur l'année (et mois/fiche si sélectionnés)
+  let archFiltered = statsArchive.filter(s => s.mois.startsWith(String(year)));
+  if (fiche) archFiltered = archFiltered.filter(s => s.fiche_nom === fiche);
+  if (selectedMonth) archFiltered = archFiltered.filter(s => s.mois === selectedMonth);
 
-  document.getElementById('stat-j30').textContent       = j30Count;
-  document.getElementById('stat-supprimes').textContent = suppCount;
+  // Totaux combinés (récents + archives)
+  const totalAvis = moisAvis.length + archFiltered.reduce((s, r) => s + r.nb_avis, 0);
+  const totalJ30  = moisAvis.filter(a => a.statut === 'j30').length + archFiltered.reduce((s, r) => s + r.nb_j30, 0);
+  const totalSupp = moisAvis.filter(a => a.statut === 'supprime').length + archFiltered.reduce((s, r) => s + r.nb_supprimes, 0);
+  const resolus = totalJ30 + totalSupp;
+  const tauxSurvie = resolus > 0 ? Math.round((totalJ30 / resolus) * 100) + ' %' : '–';
+
+  // Compteurs par opérateur (récents + archives)
+  const VAS = ['kevin','fifaliana','aina','kintana','korail','anjara'];
+  VAS.forEach(va => {
+    const fromRecent  = moisAvis.filter(a => a.operateur?.toLowerCase() === va).length;
+    const fromArchive = archFiltered.filter(s => s.operateur === va).reduce((s, r) => s + r.nb_avis, 0);
+    const el = document.getElementById('stat-' + va);
+    if (el) el.textContent = fromRecent + fromArchive;
+  });
+
+  document.getElementById('stat-total').textContent     = totalAvis;
+  document.getElementById('stat-j30').textContent       = totalJ30;
+  document.getElementById('stat-supprimes').textContent = totalSupp;
   document.getElementById('stat-survie').textContent    = tauxSurvie;
 
+  // Graphiques : combiner récents + archives par mois
   const months = Array.from({length: 12}, (_, i) => `${year}-${String(i+1).padStart(2,'0')}`);
   const labels = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Aoû','Sep','Oct','Nov','Déc'];
-  const volumes   = months.map(m => avis.filter(a => a.date.startsWith(m)).length);
-  const supprimes = months.map(m => avis.filter(a => a.date.startsWith(m) && a.statut === 'supprime').length);
+  const volumes = months.map(m => {
+    const fromRecent  = avis.filter(a => a.date.startsWith(m)).length;
+    const fromArchive = archFiltered.filter(s => s.mois === m).reduce((s, r) => s + r.nb_avis, 0);
+    return fromRecent + fromArchive;
+  });
+  const supprimes = months.map(m => {
+    const fromRecent  = avis.filter(a => a.date.startsWith(m) && a.statut === 'supprime').length;
+    const fromArchive = archFiltered.filter(s => s.mois === m).reduce((s, r) => s + r.nb_supprimes, 0);
+    return fromRecent + fromArchive;
+  });
   if (chartVolume) chartVolume.destroy();
   chartVolume = new Chart(document.getElementById('chart-volume'), {
     type: 'bar',
@@ -1279,17 +1309,23 @@ async function renderDashboard() {
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
   });
 
-  // Top 5 fiches avec le plus d'avis supprimés (sur la période filtrée, toutes fiches)
-  const allAvis = await getAvis();
-  const allFiltered = allAvis.filter(a =>
+  // Top 5 fiches avec le plus d'avis supprimés (récents + archives)
+  const fichesMap = {};
+  // Depuis les avis récents
+  const allFiltered = avisRecents.filter(a =>
     parseInt(a.date.slice(0,4)) === year &&
     (!selectedMonth || a.date.startsWith(selectedMonth))
   );
-  const fichesMap = {};
   allFiltered.forEach(a => {
     if (!fichesMap[a.fiche_nom]) fichesMap[a.fiche_nom] = { total: 0, supprimes: 0 };
     fichesMap[a.fiche_nom].total++;
     if (a.statut === 'supprime') fichesMap[a.fiche_nom].supprimes++;
+  });
+  // Depuis les archives
+  archFiltered.forEach(s => {
+    if (!fichesMap[s.fiche_nom]) fichesMap[s.fiche_nom] = { total: 0, supprimes: 0 };
+    fichesMap[s.fiche_nom].total += s.nb_avis;
+    fichesMap[s.fiche_nom].supprimes += s.nb_supprimes;
   });
   const top5 = Object.entries(fichesMap)
     .map(([nom, d]) => ({ nom, ...d }))
