@@ -1178,7 +1178,18 @@ async function renderListe(openMonths = null) {
     if (!byMonth[m]) byMonth[m] = [];
     byMonth[m].push(a);
   });
-  const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+  // Inclure les mois archivés (stats_mensuelles) qui ne sont pas déjà dans les avis récents
+  const statsArchive = await getStatsArchive();
+  const archByMonth = {};
+  statsArchive.forEach(s => {
+    if (!archByMonth[s.mois]) archByMonth[s.mois] = { nb_avis: 0, nb_j30: 0, nb_supprimes: 0 };
+    archByMonth[s.mois].nb_avis += s.nb_avis;
+    archByMonth[s.mois].nb_j30 += s.nb_j30;
+    archByMonth[s.mois].nb_supprimes += s.nb_supprimes;
+  });
+  // Fusionner : mois récents + mois archives-only
+  const allMonths = new Set([...Object.keys(byMonth), ...Object.keys(archByMonth)]);
+  const sortedMonths = [...allMonths].sort((a, b) => b.localeCompare(a));
 
   const tableHead = `<table class="avis-table">
     <thead><tr>
@@ -1189,26 +1200,67 @@ async function renderListe(openMonths = null) {
   el.innerHTML = sortedMonths.map((m, idx) => {
     const [year, mo] = m.split('-');
     const label = `${MOIS_LABELS[parseInt(mo)-1]} ${year}`;
-    const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
-    const suppCount = byMonth[m].filter(a => a.statut === 'supprime').length;
-    const j30Count  = byMonth[m].filter(a => a.statut === 'j30').length;
-    // Ouvert si : état précédent connu → respecter, sinon premier mois ouvert par défaut
-    const isOpen = openMonths ? openMonths.has(m) : idx === 0;
+    const hasRecent  = byMonth[m] && byMonth[m].length > 0;
+    const hasArchive = archByMonth[m] && archByMonth[m].nb_avis > 0;
+
+    if (hasRecent) {
+      const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
+      const suppCount = byMonth[m].filter(a => a.statut === 'supprime').length;
+      const j30Count  = byMonth[m].filter(a => a.statut === 'j30').length;
+      const isOpen = openMonths ? openMonths.has(m) : idx === 0;
+      return `<details class="month-group" data-month="${m}" ${isOpen ? 'open' : ''}>
+        <summary class="month-summary">
+          <span class="month-label">📅 ${label}</span>
+          <span class="month-badges">
+            <span class="badge-total">${byMonth[m].length} avis</span>
+            <span class="badge-supprime">${suppCount} supprimés</span>
+            <span class="badge-j30">${j30Count} J+30</span>
+          </span>
+        </summary>
+        ${tableHead}<tbody>${rows}</tbody></table>
+      </details>`;
+    }
+
+    // Mois archivé uniquement
+    const a = archByMonth[m];
+    const isOpen = openMonths ? openMonths.has(m) : false;
     return `<details class="month-group" data-month="${m}" ${isOpen ? 'open' : ''}>
       <summary class="month-summary">
-        <span class="month-label">📅 ${label}</span>
+        <span class="month-label">📅 ${label} <span style="color:#94a3b8;font-size:12px;margin-left:6px">📦 archivé</span></span>
         <span class="month-badges">
-          <span class="badge-total">${byMonth[m].length} avis</span>
-          <span class="badge-supprime">${suppCount} supprimés</span>
-          <span class="badge-j30">${j30Count} J+30</span>
+          <span class="badge-total">${a.nb_avis} avis</span>
+          <span class="badge-supprime">${a.nb_supprimes} supprimés</span>
+          <span class="badge-j30">${a.nb_j30} J+30</span>
         </span>
       </summary>
-      ${tableHead}<tbody>${rows}</tbody></table>
+      <div id="archive-${m}" style="padding:16px;text-align:center;">
+        <p style="color:#94a3b8;margin-bottom:12px;">📦 ${a.nb_avis} avis archivés</p>
+        <button onclick="loadArchivedMonth('${m}')" style="background:#6366f1;color:white;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;font-size:14px;">Voir les détails</button>
+      </div>
     </details>`;
   }).join('');
 
   renderRappelsBanner(rappelsDus);
 }
+
+async function loadArchivedMonth(mois) {
+  const container = document.getElementById('archive-' + mois);
+  if (!container) return;
+  container.innerHTML = '<p style="color:#94a3b8;">Chargement...</p>';
+  const archived = await getAvisArchives(mois);
+  if (!archived.length) {
+    container.innerHTML = '<p style="color:#94a3b8;">Aucun avis archivé pour ce mois.</p>';
+    return;
+  }
+  const tableHead = `<table class="avis-table">
+    <thead><tr>
+      <th>Date</th><th>Fiche GMB</th><th>Opérateur</th><th>Gmail</th><th>Note</th>
+      <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
+    </tr></thead>`;
+  const rows = archived.map(a => buildAvisRow(a, [], [])).join('');
+  container.innerHTML = tableHead + '<tbody>' + rows + '</tbody></table>';
+}
+window.loadArchivedMonth = loadArchivedMonth;
 
 async function updateDate(id, newDate) {
   await sbUpdate('avis', id, { date: newDate });
