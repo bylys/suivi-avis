@@ -65,7 +65,7 @@ AINA_SOLO_DATES  = {"2026-08-08", "2026-08-09", "2026-08-15", "2026-08-29", "202
 # Jours d'absence d'Aina : elle est exclue du planning ces jours-là (le reste de l'équipe travaille)
 AINA_SKIP_DATES  = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"}
 # Quota réduit les jours de rattrapage : 25/jour → 25 samedi + 25 dimanche (répartition équitable)
-AINA_SOLO_QUOTA  = 25
+AINA_SOLO_QUOTA  = 40
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 
