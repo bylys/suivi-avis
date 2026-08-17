@@ -8,6 +8,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const BROWSERLESS_TOKEN = process.env.BROWSERLESS_TOKEN;
 const CHATGPT_CONVERSATION_URL = process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+const CHATGPT_IMAGE_PROMPT = process.env.CHATGPT_IMAGE_PROMPT || 'Génère une photo ultra-réaliste pour illustrer un avis client sur une fiche Google My Business. Ne mets aucun texte sur l\'image.';
 
 // Initialize Supabase
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -152,7 +153,15 @@ async function main() {
             console.log(`Traitement de l'avis ID ${task.id} pour le VA : ${task.operateur}`);
             
             // Generate prompt based on task data (Adapt to your needs)
-            const prompt = `Génère une photo ultra-réaliste pour illustrer un avis client sur une fiche Google My Business. Le contexte est le suivant : ${task.fiche_nom}, type d'intervention : ${task.metier || 'général'}, ville : ${task.ville || 'non précisée'}. Ne mets aucun texte sur l'image.`;
+            // Construction du prompt final : on remplace les placeholders du template
+            const prompt = CHATGPT_IMAGE_PROMPT
+                .replace(/[""]department[""]|"department"/gi, task.departement || task.ville || 'la région')
+                .replace(/[""]region[""]|"region"/gi, task.region || task.ville || 'France')
+                .replace(/[""]country[""]|"country"/gi, task.pays || 'France')
+                .replace(/[""]Fiche GMB[""]|"Fiche GMB"/gi, task.fiche_nom || '')
+                .replace(/[""]regional[""]|"regional"/gi, task.region || 'local');
+            
+            console.log(`Prompt généré : ${prompt.substring(0, 100)}...`);
             
             try {
                 // Generate Image

@@ -30,4 +30,5 @@ jobs:
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
           CHATGPT_COOKIES: ${{ secrets.CHATGPT_COOKIES }}
           CHATGPT_CONVERSATION_URL: ${{ secrets.CHATGPT_CONVERSATION_URL }}
+          CHATGPT_IMAGE_PROMPT: ${{ secrets.CHATGPT_IMAGE_PROMPT }}
         run: node index.js
