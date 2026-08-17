@@ -160,7 +160,7 @@ async function main() {
                 .replace(/[""]country[""]|"country"/gi, task.pays || 'France')
                 .replace(/[""]Fiche GMB[""]|"Fiche GMB"/gi, task.fiche_nom || '')
                 .replace(/[""]regional[""]|"regional"/gi, task.region || 'local')
-                + (task.metier ? `\n\n[ADAPTATION REQUIRED: Replace ALL trade-specific elements (tools, equipment, worker clothing, protective gear, work descriptions, environment details) to match this specific profession: ${task.metier}${task.sous_metier ? ` — ${task.sous_metier}` : ''}. Keep the photo style, composition, location setting and all non-trade-specific elements strictly identical.]` : '');
+                + (task.metier ? `\n\n[ADAPTATION REQUIRED: Replace ALL trade-specific elements (tools, equipment, worker clothing, protective gear, work descriptions, environment details) to match this specific profession: ${task.metier}${task.travaux ? ` — specific service: ${task.travaux}` : ''}. Keep the photo style, composition, location setting and all non-trade-specific elements strictly identical.]` : '');
             
             console.log(`Prompt généré : ${prompt.substring(0, 100)}...`);
             
