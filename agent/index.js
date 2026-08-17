@@ -110,6 +110,11 @@ async function main() {
         
         console.log(`Recherche des avis planifiés pour le : ${tomorrowStr}`);
         
+        // --- DEBUG: Afficher toutes les lignes présentes dans la base ---
+        const { data: debugTasks } = await supabase.from('planning').select('date, fiche_nom');
+        console.log("DEBUG - Voici les dates et fiches actuellement dans la table :", debugTasks);
+        // ----------------------------------------------------------------
+        
         // IMPORTANT: Adjust table name and columns based on your screenshot!
         const { data: tasks, error } = await supabase
             .from('planning')
