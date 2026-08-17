@@ -1,67 +1,18 @@
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const { chromium } = require('playwright');
-const { google } = require('googleapis');
 const fs = require('fs');
-const { Readable } = require('stream');
 
 // --- Configuration ---
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const BROWSERLESS_TOKEN = process.env.BROWSERLESS_TOKEN;
-const GOOGLE_DRIVE_CREDENTIALS = process.env.GOOGLE_DRIVE_CREDENTIALS; // Service account JSON string
-const DRIVE_PARENT_FOLDER_ID = process.env.DRIVE_PARENT_FOLDER_ID; // The root folder for VAs
+const CHATGPT_CONVERSATION_URL = process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 
 // Initialize Supabase
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function getDriveAuth() {
-    const credentials = JSON.parse(GOOGLE_DRIVE_CREDENTIALS);
-    const auth = new google.auth.GoogleAuth({
-        credentials,
-        scopes: ['https://www.googleapis.com/auth/drive.file']
-    });
-    return google.drive({ version: 'v3', auth });
-}
-
-async function uploadToDrive(drive, fileName, folderId, buffer) {
-    const fileMetadata = {
-        name: fileName,
-        parents: [folderId]
-    };
-    const media = {
-        mimeType: 'image/png',
-        body: Readable.from(buffer)
-    };
-    const res = await drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id, webViewLink'
-    });
-    return res.data;
-}
-
-async function getOrCreateFolder(drive, parentId, folderName) {
-    const res = await drive.files.list({
-        q: `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and '${parentId}' in parents and trashed=false`,
-        fields: 'files(id, name)',
-    });
-    if (res.data.files.length > 0) {
-        return res.data.files[0].id;
-    } else {
-        const fileMetadata = {
-            name: folderName,
-            mimeType: 'application/vnd.google-apps.folder',
-            parents: [parentId]
-        };
-        const folder = await drive.files.create({
-            resource: fileMetadata,
-            fields: 'id'
-        });
-        return folder.data.id;
-    }
-}
-
+// --- Fonctions utilitaires retirées (Google Drive n'est plus utilisé) ---
 async function generateImageWithChatGPT(prompt, cookies) {
     console.log("Connexion à Browserless avec le mode Stealth activé...");
     // Le forfait gratuit limite à 60 secondes max.
@@ -72,8 +23,8 @@ async function generateImageWithChatGPT(prompt, cookies) {
     await context.addCookies(cookies);
     
     const page = await context.newPage();
-    console.log("Ouverture de ChatGPT...");
-    await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
+    console.log("Ouverture de la conversation ChatGPT globale...");
+    await page.goto(CHATGPT_CONVERSATION_URL, { waitUntil: 'domcontentloaded' });
     
     console.log("URL de la page :", page.url());
     console.log("Titre de la page :", await page.title());
@@ -178,8 +129,8 @@ async function main() {
             return;
         }
 
-        // Setup Drive and ChatGPT
-        const drive = await getDriveAuth();
+        // Configuration des cookies
+
         let cookies = JSON.parse(process.env.CHATGPT_COOKIES);
         
         // Normalisation du format sameSite pour Playwright
@@ -194,12 +145,8 @@ async function main() {
             return c;
         });
 
-        // Date calculations for Drive folders
-        const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-        const currentMonth = monthNames[tomorrow.getMonth()];
-        // Approximative week of month
-        const weekOfMonth = Math.ceil(tomorrow.getDate() / 7);
-        const weekName = `Semaine ${weekOfMonth}`;
+        // Formatage de la date pour le nom du fichier Supabase
+        const dateFormat = `${tomorrow.getDate().toString().padStart(2, '0')}-${(tomorrow.getMonth()+1).toString().padStart(2, '0')}-${tomorrow.getFullYear()}`;
 
         for (const task of tasksToGenerate) {
             console.log(`Traitement de l'avis ID ${task.id} pour le VA : ${task.operateur}`);
@@ -211,22 +158,37 @@ async function main() {
                 // Generate Image
                 const imageBuffer = await generateImageWithChatGPT(prompt, cookies);
                 
-                // Drive Folders setup (Root -> VA -> Mois -> Semaine)
-                const vaFolderId = await getOrCreateFolder(drive, DRIVE_PARENT_FOLDER_ID, task.operateur || 'VA_Inconnu');
-                const monthFolderId = await getOrCreateFolder(drive, vaFolderId, currentMonth);
-                const weekFolderId = await getOrCreateFolder(drive, monthFolderId, weekName);
+                // Construction du nom de fichier
+                const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
+                const fileName = `${safeOpName}_${dateFormat}_${task.id}.png`;
                 
-                // Upload to Drive
-                const fileName = `GMB_${task.id}_${Date.now()}.png`;
-                const uploadedFile = await uploadToDrive(drive, fileName, weekFolderId, imageBuffer);
-                console.log(`Image uploadée avec succès sur Drive: ${uploadedFile.webViewLink}`);
+                // Upload to Supabase Storage
+                const { data: storageData, error: storageError } = await supabase.storage
+                    .from('images')
+                    .upload(fileName, imageBuffer, {
+                        contentType: 'image/png',
+                        upsert: true
+                    });
+                    
+                if (storageError) {
+                    console.error("Erreur lors de l'upload sur Supabase Storage :", storageError);
+                    throw storageError;
+                }
                 
-                // Mettre à jour Supabase
+                // Récupération de l'URL publique
+                const { data: publicUrlData } = supabase.storage
+                    .from('images')
+                    .getPublicUrl(fileName);
+                    
+                const publicUrl = publicUrlData.publicUrl;
+                console.log(`Image uploadée avec succès sur Supabase : ${publicUrl}`);
+                
+                // Mettre à jour la base de données Supabase
                 await supabase
                     .from('planning')
                     .update({ 
-                        statut: 'image_generated', // Optionnel : à adapter selon tes statuts réels
-                        // drive_link: uploadedFile.webViewLink // Ajoute la colonne drive_link si tu veux sauvegarder le lien
+                        statut: 'image_generated',
+                        url_image: publicUrl // Stockage du lien de l'image
                     })
                     .eq('id', task.id);
                     
