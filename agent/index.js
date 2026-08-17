@@ -109,22 +109,26 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.waitForSelector(imageSelector, { timeout: 40000 });
     } catch (e) {
         console.log("Le sélecteur d'image n'a pas été trouvé après 40 secondes.");
-        console.log("Prise d'une capture d'écran pour voir ce qui bloque l'écran de ChatGPT...");
-        
+        console.log("Analyse de ce qui bloque...");
         try {
-            const screenshotBuffer = await page.screenshot();
-            // L'upload Google Drive plante (pas de quota), on utilise un service temporaire gratuit pour le debug
-            const response = await fetch('https://transfer.sh/screenshot.png', {
-                method: 'PUT',
-                body: screenshotBuffer
-            });
-            const url = await response.text();
-            console.log(`========================================================`);
-            console.log(`🚨 CAPTURE D'ÉCRAN DE DEBUGGAGE 🚨`);
-            console.log(`Lien direct (valable 14 jours) : ${url}`);
-            console.log(`========================================================`);
-        } catch (screenshotError) {
-            console.log("Impossible de sauvegarder la capture d'écran :", screenshotError);
+            const assistantMessages = await page.$$('div[data-message-author-role="assistant"]');
+            if (assistantMessages.length > 0) {
+                const lastMessage = assistantMessages[assistantMessages.length - 1];
+                const text = await lastMessage.innerText();
+                console.log("========================================================");
+                console.log("RÉPONSE TEXTUELLE DE CHATGPT (au lieu d'une image) :");
+                console.log(text);
+                console.log("========================================================");
+            } else {
+                console.log("========================================================");
+                console.log("Aucune réponse de ChatGPT trouvée.");
+                console.log("Voici tout le texte visible sur la page (pour voir s'il y a un popup bloquant) :");
+                const bodyText = await page.locator('body').innerText();
+                console.log(bodyText.substring(0, 1500));
+                console.log("========================================================");
+            }
+        } catch (textError) {
+            console.log("Impossible de récupérer le texte :", textError);
         }
         
         throw e;
