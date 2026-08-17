@@ -114,8 +114,8 @@ async function generateImageWithChatGPT(prompt, cookies) {
         try {
             const screenshotBuffer = await page.screenshot();
             const drive = await getDriveAuth();
-            const vaFolderId = await getOrCreateFolder(drive, DRIVE_PARENT_FOLDER_ID, task.operateur || 'VA_Inconnu');
-            const debugFolderId = await getOrCreateFolder(drive, vaFolderId, 'DEBUG_ERRORS');
+            // Créer le dossier DEBUG_ERRORS à la racine pour éviter d'utiliser la variable task
+            const debugFolderId = await getOrCreateFolder(drive, DRIVE_PARENT_FOLDER_ID, 'DEBUG_ERRORS');
             const uploadedScreenshot = await uploadToDrive(drive, `DEBUG_screenshot_${Date.now()}.png`, debugFolderId, screenshotBuffer);
             console.log(`========================================================`);
             console.log(`🚨 CAPTURE D'ÉCRAN SAUVEGARDÉE SUR TON GOOGLE DRIVE 🚨`);
