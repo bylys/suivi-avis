@@ -73,7 +73,8 @@ async function generateImageWithChatGPT(prompt, cookies) {
     
     const page = await context.newPage();
     console.log("Ouverture de ChatGPT...");
-    await page.goto('https://chatgpt.com', { waitUntil: 'domcontentloaded' });
+    await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
+    
     console.log("URL de la page :", page.url());
     console.log("Titre de la page :", await page.title());
     
