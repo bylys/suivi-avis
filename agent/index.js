@@ -110,11 +110,6 @@ async function main() {
         
         console.log(`Recherche des avis planifiés pour le : ${tomorrowStr}`);
         
-        // --- DEBUG: Afficher toutes les lignes présentes dans la base ---
-        const { data: debugTasks } = await supabase.from('planning').select('date, fiche_nom');
-        console.log("DEBUG - Voici les dates et fiches actuellement dans la table :", debugTasks);
-        // ----------------------------------------------------------------
-        
         // IMPORTANT: Adjust table name and columns based on your screenshot!
         const { data: tasks, error } = await supabase
             .from('planning')
@@ -137,7 +132,19 @@ async function main() {
 
         // Setup Drive and ChatGPT
         const drive = await getDriveAuth();
-        const cookies = JSON.parse(process.env.CHATGPT_COOKIES);
+        let cookies = JSON.parse(process.env.CHATGPT_COOKIES);
+        
+        // Normalisation du format sameSite pour Playwright
+        cookies = cookies.map(c => {
+            if (c.sameSite) {
+                const s = c.sameSite.toLowerCase();
+                if (s === 'strict') c.sameSite = 'Strict';
+                else if (s === 'lax') c.sameSite = 'Lax';
+                else if (s === 'none' || s === 'no_restriction' || s === 'unspecified') c.sameSite = 'None';
+                else delete c.sameSite;
+            }
+            return c;
+        });
 
         // Date calculations for Drive folders
         const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
