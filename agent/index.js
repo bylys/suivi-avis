@@ -80,7 +80,7 @@ async function generateImageWithChatGPT(prompt, cookies) {
     // Wait for the chat input box
     console.log("Recherche du champ de texte...");
     try {
-        await page.waitForSelector('#prompt-textarea', { timeout: 15000 });
+        await page.waitForSelector('#prompt-textarea', { timeout: 30000 });
     } catch (e) {
         console.log("Le champ de texte (#prompt-textarea) n'a pas été trouvé.");
         console.log("Aperçu de ce que le robot voit (code HTML de la page) :");
