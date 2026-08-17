@@ -63,8 +63,8 @@ async function getOrCreateFolder(drive, parentId, folderName) {
 }
 
 async function generateImageWithChatGPT(prompt, cookies) {
-    console.log("Connexion à Browserless...");
-    const browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}`);
+    console.log("Connexion à Browserless avec le mode Stealth activé...");
+    const browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
     const context = await browser.newContext();
     
     // Inject saved cookies to bypass login
