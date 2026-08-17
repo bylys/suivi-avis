@@ -72,12 +72,21 @@ async function generateImageWithChatGPT(prompt, cookies) {
     
     const page = await context.newPage();
     console.log("Ouverture de ChatGPT...");
-    await page.goto('https://chatgpt.com');
+    await page.goto('https://chatgpt.com', { waitUntil: 'domcontentloaded' });
+    console.log("URL de la page :", page.url());
+    console.log("Titre de la page :", await page.title());
     
     // Wait for the chat input box
-    await page.waitForSelector('#prompt-textarea');
-    
-    console.log("Rédaction du prompt...");
+    console.log("Recherche du champ de texte...");
+    try {
+        await page.waitForSelector('#prompt-textarea', { timeout: 15000 });
+    } catch (e) {
+        console.log("Le champ de texte (#prompt-textarea) n'a pas été trouvé.");
+        console.log("Aperçu de ce que le robot voit (code HTML de la page) :");
+        const html = await page.content();
+        console.log(html.substring(0, 1500)); // Afficher les premiers caractères pour comprendre où il est bloqué
+        throw e;
+    }
     await page.fill('#prompt-textarea', prompt);
     await page.press('#prompt-textarea', 'Enter');
     
