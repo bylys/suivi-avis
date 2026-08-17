@@ -113,13 +113,15 @@ async function generateImageWithChatGPT(prompt, cookies) {
         
         try {
             const screenshotBuffer = await page.screenshot();
-            const drive = await getDriveAuth();
-            // Créer le dossier DEBUG_ERRORS à la racine pour éviter d'utiliser la variable task
-            const debugFolderId = await getOrCreateFolder(drive, DRIVE_PARENT_FOLDER_ID, 'DEBUG_ERRORS');
-            const uploadedScreenshot = await uploadToDrive(drive, `DEBUG_screenshot_${Date.now()}.png`, debugFolderId, screenshotBuffer);
+            // L'upload Google Drive plante (pas de quota), on utilise un service temporaire gratuit pour le debug
+            const response = await fetch('https://transfer.sh/screenshot.png', {
+                method: 'PUT',
+                body: screenshotBuffer
+            });
+            const url = await response.text();
             console.log(`========================================================`);
-            console.log(`🚨 CAPTURE D'ÉCRAN SAUVEGARDÉE SUR TON GOOGLE DRIVE 🚨`);
-            console.log(`Lien direct : ${uploadedScreenshot.webViewLink}`);
+            console.log(`🚨 CAPTURE D'ÉCRAN DE DEBUGGAGE 🚨`);
+            console.log(`Lien direct (valable 14 jours) : ${url}`);
             console.log(`========================================================`);
         } catch (screenshotError) {
             console.log("Impossible de sauvegarder la capture d'écran :", screenshotError);
