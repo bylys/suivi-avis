@@ -89,6 +89,7 @@ async function generateImageWithChatGPT(prompt, cookies) {
         throw e;
     }
     await page.fill('#prompt-textarea', prompt);
+    await page.type('#prompt-textarea', ' '); // Simule une frappe clavier pour forcer React à détecter le texte
     // Le simple bouton "Entrée" ne suffit parfois plus sur ChatGPT. On clique sur le vrai bouton.
     await page.waitForTimeout(1000); 
     try {
@@ -108,16 +109,22 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.waitForSelector(imageSelector, { timeout: 40000 });
     } catch (e) {
         console.log("Le sélecteur d'image n'a pas été trouvé après 40 secondes.");
-        console.log("Voici le HTML du dernier message de ChatGPT pour qu'on puisse l'analyser :");
-        // Récupérer le HTML de la zone de chat
-        const chatHtml = await page.evaluate(() => {
-            const elements = document.querySelectorAll('div[data-message-author-role="assistant"]');
-            if (elements.length > 0) {
-                return elements[elements.length - 1].innerHTML;
-            }
-            return document.body.innerHTML.substring(0, 2000);
-        });
-        console.log(chatHtml);
+        console.log("Prise d'une capture d'écran pour voir ce qui bloque l'écran de ChatGPT...");
+        
+        try {
+            const screenshotBuffer = await page.screenshot();
+            const drive = await getDriveAuth();
+            const vaFolderId = await getOrCreateFolder(drive, DRIVE_PARENT_FOLDER_ID, task.operateur || 'VA_Inconnu');
+            const debugFolderId = await getOrCreateFolder(drive, vaFolderId, 'DEBUG_ERRORS');
+            const uploadedScreenshot = await uploadToDrive(drive, `DEBUG_screenshot_${Date.now()}.png`, debugFolderId, screenshotBuffer);
+            console.log(`========================================================`);
+            console.log(`🚨 CAPTURE D'ÉCRAN SAUVEGARDÉE SUR TON GOOGLE DRIVE 🚨`);
+            console.log(`Lien direct : ${uploadedScreenshot.webViewLink}`);
+            console.log(`========================================================`);
+        } catch (screenshotError) {
+            console.log("Impossible de sauvegarder la capture d'écran :", screenshotError);
+        }
+        
         throw e;
     }
     
