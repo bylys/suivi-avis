@@ -33,7 +33,7 @@ const VISUAL_RULES_BY_SERVICE = {
   'Mur brique': `VISUAL: Red or orange bricks, mortar between joints, worker laying bricks at ground level.`,
   'Rejointoiement': `VISUAL: Joints between elements visible, grouting gun or trowel in use, no paint on facade.`,
   'Rejointoiement pierre': `VISUAL: Natural stone wall, targeted joints, mortar tool visible.`,
-  'Coulage dalle': `VISUAL: Liquid concrete being poured from pump hose, wooden formwork, rebar mesh visible, minimum 2 workers, worker NEVER in fresh concrete.`,
+  'Coulage dalle': `VISUAL: Liquid concrete being poured, wooden formwork, rebar mesh visible, minimum 2 workers, worker NEVER in fresh concrete. If a pump hose or chute is shown, it must be realistically connected to a visible concrete truck or mixer chute, NEVER floating in mid-air from nowhere.`,
   'Dalle beton': `VISUAL: Concrete slab, formwork, rebar or mesh preparation, worker at ground level.`,
   'Fondation': `VISUAL: Excavation visible, reinforcement or poured concrete in foundation.`,
   'Semelle beton': `VISUAL: Footing trench visible, reinforcement or poured concrete.`,
@@ -75,7 +75,7 @@ function getCompositionRules(etatChantier) {
     pointDeVueRule = '"neighbour" viewpoint: slightly from the side, as if taken discreetly from behind a fence.';
   }
 
-  // 1 chance sur 3 (33%) d'ajouter une imperfection physique marquée (doigt, verre gras, poussière)
+  // 1 chance sur 3 (33%) d'ajouter une imperfection physique marquée
   const hasDefect = Math.random() < 0.33;
   const cameraDefect = hasDefect
     ? CAMERA_IMPERFECTIONS[Math.floor(Math.random() * CAMERA_IMPERFECTIONS.length)]
