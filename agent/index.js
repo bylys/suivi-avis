@@ -186,13 +186,18 @@ async function main() {
             const travauxLabel = task.travaux || task.metier || 'travaux de rénovation';
             
             // Construction du prompt final
+            const paysLabel = task.pays || 'France';
             const prompt = CHATGPT_IMAGE_PROMPT
-                // Placeholders de localisation
-                .replace(/\[?[""]?department[""]?\]?/gi, task.departement || task.ville || 'France')
-                .replace(/\[?[""]?region[""]?\]?/gi,     task.region || task.ville || 'France')
-                .replace(/\[?[""]?country[""]?\]?/gi,    task.pays || 'France')
-                .replace(/\[?[""]?Fiche GMB[""]?\]?/gi,  task.fiche_nom || '')
-                .replace(/\[?[""]?regional[""]?\]?/gi,   task.region || 'local')
+                // Placeholders de localisation — format [placeholder] ou "placeholder"
+                .replace(/\[pays\]/gi,                                task.pays || 'France')
+                .replace(/\[ville\]/gi,                               task.ville || '')
+                .replace(/\[?[""]?department[""]?\]?/gi,              task.departement || task.ville || 'France')
+                .replace(/\[?[""]?region[""]?\]?/gi,                  task.region || task.ville || 'France')
+                .replace(/\[?[""]?country[""]?\]?/gi,                 paysLabel)
+                .replace(/\[?[""]?Fiche GMB[""]?\]?/gi,               task.fiche_nom || '')
+                .replace(/\[?[""]?regional[""]?\]?/gi,                task.region || 'local')
+                // Remplacement du "en France" hardcodé dans le template de base
+                .replace(/\ben France\b/gi, `en ${paysLabel}`)
                 // Placeholders du nouveau template
                 .replace(/\[type de travaux\]/gi,         travauxLabel)
                 .replace(/\[maison individuelle \/ immeuble \/ commerce\]/gi, contexteLabel)
