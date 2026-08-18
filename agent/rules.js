@@ -75,12 +75,15 @@ function getCompositionRules(etatChantier) {
     pointDeVueRule = '"neighbour" viewpoint: slightly from the side, as if taken discreetly from behind a fence.';
   }
 
-  // Tirage d'une imperfection d'appareil photo
-  const cameraDefect = CAMERA_IMPERFECTIONS[Math.floor(Math.random() * CAMERA_IMPERFECTIONS.length)];
+  // 1 chance sur 3 (33%) d'ajouter une imperfection physique marquée (doigt, verre gras, poussière)
+  const hasDefect = Math.random() < 0.33;
+  const cameraDefect = hasDefect
+    ? CAMERA_IMPERFECTIONS[Math.floor(Math.random() * CAMERA_IMPERFECTIONS.length)]
+    : 'standard realistic smartphone camera quality with natural lighting';
 
   return {
     showWorker,
-    compositionRule: `COMPOSITION & REALISM: ${pointDeVueRule} Real smartphone camera imperfections: ${cameraDefect}, motion blur on active hands, subtle digital noise in shadows. NEVER too clean, HDR, sharp or perfectly framed.`,
+    compositionRule: `COMPOSITION & REALISM: ${pointDeVueRule} Camera detail: ${cameraDefect}, motion blur on active hands, subtle digital noise in shadows. NEVER too clean, HDR, sharp or perfectly framed.`,
   };
 }
 
