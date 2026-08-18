@@ -124,20 +124,36 @@ async function main() {
         
         let isTestFallback = false;
         
-        // Fallback de test : si aucun avis pour demain, on prend le plus récent sans image
+        // Mode test sécurisé : si aucun avis pour demain, on crée une fausse tâche de test temporaire
         if (tasks.length === 0) {
-            console.log("Aucun avis planifié pour demain. Mode test : recherche des avis récents dans la base...");
-            const { data: fallbackTasks, error: fallbackError } = await supabase
-                .from('planning')
-                .select('*')
-                .or('url_image.is.null,url_image.eq.""')
-                .order('id', { ascending: false })
-                .limit(2);
-                
-            if (!fallbackError && fallbackTasks && fallbackTasks.length > 0) {
-                tasks = fallbackTasks;
-                isTestFallback = true;
-                console.log(`MODE TEST : ${tasks.length} avis récupéré(s) pour effectuer la génération sans modifier leur statut !`);
+            console.log("Aucun avis planifié pour demain. Mode test : création d'un FAUX avis de démonstration...");
+            const fakeTask = {
+                fiche_nom: 'TEST - Plomberie Atlanta Service',
+                metier: 'plomberie',
+                travaux: 'Réparation fuite',
+                ville: 'Atlanta',
+                pays: 'USA',
+                contexte: 'maison',
+                operateur: 'TEST_ROBOT',
+                date: tomorrowStr,
+                statut: 'pending_test'
+            };
+            
+            try {
+                const { data: inserted, error: insertErr } = await supabase
+                    .from('planning')
+                    .insert([fakeTask])
+                    .select();
+                    
+                if (!insertErr && inserted && inserted.length > 0) {
+                    tasks = inserted;
+                    isTestFallback = true;
+                    console.log(`🎯 Faux avis de test créé avec succès (ID: ${tasks[0].id}) — Aucune vraie donnée ne sera touchée !`);
+                } else {
+                    console.log("Impossible d'insérer le faux avis de test, poursuite sans données.");
+                }
+            } catch (errTest) {
+                console.log("Erreur lors de la création de l'avis de test :", errTest.message);
             }
         }
         
