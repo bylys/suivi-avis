@@ -53,16 +53,16 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.press('#prompt-textarea', 'Enter');
     }
     
-    console.log("Attente de la génération de l'image (peut prendre ~1 min)...");
+    console.log("Attente de la génération de l'image DALL-E (délai étendu à 2 minutes)...");
     
     // Selecteur élargi pour intercepter l'image même si elle a changé de nom
     const imageSelector = 'img[alt*="DALL"], img[src*="files.oaiusercontent.com"]';
     
     try {
-        // Timeout de 40 secondes pour être sûr d'attraper l'erreur avant que Browserless (60s) ne coupe le fil
-        await page.waitForSelector(imageSelector, { timeout: 40000 });
+        // Timeout de 120 secondes (2 min) grâce au plan Browserless 15 minutes
+        await page.waitForSelector(imageSelector, { timeout: 120000 });
     } catch (e) {
-        console.log("Le sélecteur d'image n'a pas été trouvé après 40 secondes.");
+        console.log("Le sélecteur d'image n'a pas été trouvé après 2 minutes (120 secondes).");
         console.log("Analyse de ce qui bloque...");
         try {
             const assistantMessages = await page.$$('div[data-message-author-role="assistant"]');
