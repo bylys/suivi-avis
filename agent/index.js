@@ -192,16 +192,26 @@ async function main() {
 
         let cookies = JSON.parse(process.env.CHATGPT_COOKIES);
         
-        // Normalisation du format sameSite pour Playwright
+        // Sanitisation stricte des cookies pour Playwright (retrait de partitionKey, storeId, hostOnly, etc.)
         cookies = cookies.map(c => {
-            if (c.sameSite) {
-                const s = c.sameSite.toLowerCase();
-                if (s === 'strict') c.sameSite = 'Strict';
-                else if (s === 'lax') c.sameSite = 'Lax';
-                else if (s === 'none' || s === 'no_restriction' || s === 'unspecified') c.sameSite = 'None';
-                else delete c.sameSite;
+            const clean = {
+                name: c.name,
+                value: c.value,
+                domain: c.domain,
+                path: c.path || '/',
+                secure: Boolean(c.secure),
+                httpOnly: Boolean(c.httpOnly),
+            };
+            if (typeof c.expires === 'number') {
+                clean.expires = c.expires;
             }
-            return c;
+            if (c.sameSite && typeof c.sameSite === 'string') {
+                const s = c.sameSite.toLowerCase();
+                if (s === 'strict') clean.sameSite = 'Strict';
+                else if (s === 'lax') clean.sameSite = 'Lax';
+                else if (s === 'none' || s === 'no_restriction') clean.sameSite = 'None';
+            }
+            return clean;
         });
 
         // Formatage de la date pour le nom du fichier Supabase
