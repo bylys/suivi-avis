@@ -152,17 +152,55 @@ async function main() {
         for (const task of tasksToGenerate) {
             console.log(`Traitement de l'avis ID ${task.id} pour le VA : ${task.operateur}`);
             
-            // Generate prompt based on task data (Adapt to your needs)
-            // Construction du prompt final : on remplace les placeholders du template
-            const prompt = CHATGPT_IMAGE_PROMPT
-                .replace(/[""]department[""]|"department"/gi, task.departement || task.ville || 'la région')
-                .replace(/[""]region[""]|"region"/gi, task.region || task.ville || 'France')
-                .replace(/[""]country[""]|"country"/gi, task.pays || 'France')
-                .replace(/[""]Fiche GMB[""]|"Fiche GMB"/gi, task.fiche_nom || '')
-                .replace(/[""]regional[""]|"regional"/gi, task.region || 'local')
-                + (task.metier ? `\n\n[ADAPTATION REQUIRED: Replace ALL trade-specific elements (tools, equipment, worker clothing, protective gear, work descriptions, environment details) to match this specific profession: ${task.metier}${task.travaux ? ` — specific service: ${task.travaux}` : ''}. Keep the photo style, composition, location setting and all non-trade-specific elements strictly identical.]` : '');
+            // Valeurs aléatoires pour varier les photos
+            const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
             
-            console.log(`Prompt généré : ${prompt.substring(0, 100)}...`);
+            const etatChantier   = pick(['début de chantier', 'travaux en cours', 'travaux quasi-terminés']);
+            const nbOuvriers     = pick(['1 ouvrier', '2 ouvriers']);
+            const lumiere        = pick([
+                'ciel légèrement voilé, lumière diffuse de milieu de matinée',
+                'ciel couvert, lumière douce et uniforme',
+                'soleil de milieu de journée, légères ombres portées',
+                'lumière rasante de fin d\'après-midi, teintes chaudes'
+            ]);
+            
+            // Contexte de la fiche (maison, immeuble, commerce...)
+            const contexteMap = {
+                maison:         'maison individuelle',
+                appartement:    'appartement',
+                immeuble:       'immeuble résidentiel',
+                commerce:       'local commercial',
+                professionnel:  'local professionnel',
+                entrepot:       'entrepôt',
+                agricole:       'bâtiment agricole',
+            };
+            const contexteLabel = contexteMap[task.contexte] || 'maison individuelle';
+            
+            // Point de vue selon le contexte
+            const pointDeVue = (task.contexte === 'commerce' || task.contexte === 'professionnel')
+                ? pick(['depuis le trottoir', 'depuis la rue en angle oblique'])
+                : pick(['depuis le jardin', 'depuis l\'allée du jardin', 'depuis la rue en face']);
+            
+            // Travaux = sous-métier (task.travaux) ou métier principal
+            const travauxLabel = task.travaux || task.metier || 'travaux de rénovation';
+            
+            // Construction du prompt final
+            const prompt = CHATGPT_IMAGE_PROMPT
+                // Placeholders de localisation
+                .replace(/\[?[""]?department[""]?\]?/gi, task.departement || task.ville || 'France')
+                .replace(/\[?[""]?region[""]?\]?/gi,     task.region || task.ville || 'France')
+                .replace(/\[?[""]?country[""]?\]?/gi,    task.pays || 'France')
+                .replace(/\[?[""]?Fiche GMB[""]?\]?/gi,  task.fiche_nom || '')
+                .replace(/\[?[""]?regional[""]?\]?/gi,   task.region || 'local')
+                // Placeholders du nouveau template
+                .replace(/\[type de travaux\]/gi,         travauxLabel)
+                .replace(/\[maison individuelle \/ immeuble \/ commerce\]/gi, contexteLabel)
+                .replace(/\[début \/ en cours \/ quasi-fini\]/gi,             etatChantier)
+                .replace(/\[1 ou 2 ouvriers?\]/gi,        nbOuvriers)
+                .replace(/\[depuis le jardin \/ depuis la rue \/ légèrement en hauteur\]/gi, pointDeVue)
+                .replace(/\[ciel couvert \/ soleil de milieu de journée \/ lumière rasante d'après-midi\]/gi, lumiere);
+            
+            console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${prompt.substring(0, 120)}...`);
             
             try {
                 // Generate Image
