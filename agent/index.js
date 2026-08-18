@@ -187,17 +187,20 @@ async function main() {
             
             // Construction du prompt final
             const paysLabel = task.pays || 'France';
-            const prompt = CHATGPT_IMAGE_PROMPT
+            const villeLabel = task.ville || '';
+            const locationStr = task.ville ? `${task.ville} (${paysLabel})` : paysLabel;
+
+            let prompt = CHATGPT_IMAGE_PROMPT
                 // Placeholders de localisation — format [placeholder] ou "placeholder"
-                .replace(/\[pays\]/gi,                                task.pays || 'France')
-                .replace(/\[ville\]/gi,                               task.ville || '')
-                .replace(/\[?[""]?department[""]?\]?/gi,              task.departement || task.ville || 'France')
-                .replace(/\[?[""]?region[""]?\]?/gi,                  task.region || task.ville || 'France')
+                .replace(/\[ville\]/gi,                               villeLabel)
+                .replace(/\[pays\]/gi,                                paysLabel)
+                .replace(/\[?[""]?department[""]?\]?/gi,              task.departement || villeLabel || 'France')
+                .replace(/\[?[""]?region[""]?\]?/gi,                  task.region || villeLabel || 'France')
                 .replace(/\[?[""]?country[""]?\]?/gi,                 paysLabel)
                 .replace(/\[?[""]?Fiche GMB[""]?\]?/gi,               task.fiche_nom || '')
                 .replace(/\[?[""]?regional[""]?\]?/gi,                task.region || 'local')
-                // Remplacement du "en France" hardcodé dans le template de base
-                .replace(/\ben France\b/gi, `en ${paysLabel}`)
+                // Remplacement du "en France" hardcodé dans le template de base par la localisation précise
+                .replace(/\ben France\b/gi, task.ville ? `à ${task.ville} (${paysLabel})` : `en ${paysLabel}`)
                 // Placeholders du nouveau template
                 .replace(/\[type de travaux\]/gi,         travauxLabel)
                 .replace(/\[maison individuelle \/ immeuble \/ commerce\]/gi, contexteLabel)
@@ -205,6 +208,11 @@ async function main() {
                 .replace(/\[1 ou 2 ouvriers?\]/gi,        nbOuvriers)
                 .replace(/\[depuis le jardin \/ depuis la rue \/ légèrement en hauteur\]/gi, pointDeVue)
                 .replace(/\[ciel couvert \/ soleil de milieu de journée \/ lumière rasante d'après-midi\]/gi, lumiere);
+
+            // Si la ville n'était pas dans le template via [ville], on s'assure qu'elle est bien spécifiée dans le contexte
+            if (task.ville && !CHATGPT_IMAGE_PROMPT.includes('[ville]')) {
+                prompt += ` Localisation du chantier : ${locationStr}.`;
+            }
             
             // Injection des règles de sécurité et visuelles selon le métier et le service
             const rulesBlock = buildRulesBlock(task.metier, task.travaux, etatChantier);
