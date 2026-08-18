@@ -182,6 +182,9 @@ async function main() {
                 ? pick(['depuis le trottoir', 'depuis la rue en angle oblique'])
                 : pick(['depuis le jardin', 'depuis l\'allée du jardin', 'depuis la rue en face']);
             
+            // Format / Orientation (tirage aléatoire : 60% paysage, 40% portrait)
+            const orientation    = pick(['3:2 paysage', '4:3 paysage', '3:4 portrait', '9:16 portrait']);
+
             // Travaux = sous-métier (task.travaux) ou métier principal
             const travauxLabel = task.travaux || task.metier || 'travaux de rénovation';
             
@@ -207,7 +210,9 @@ async function main() {
                 .replace(/\[début \/ en cours \/ quasi-fini\]/gi,             etatChantier)
                 .replace(/\[1 ou 2 ouvriers?\]/gi,        nbOuvriers)
                 .replace(/\[depuis le jardin \/ depuis la rue \/ légèrement en hauteur\]/gi, pointDeVue)
-                .replace(/\[ciel couvert \/ soleil de milieu de journée \/ lumière rasante d'après-midi\]/gi, lumiere);
+                .replace(/\[ciel couvert \/ soleil de milieu de journée \/ lumière rasante d'après-midi\]/gi, lumiere)
+                .replace(/\[paysage \/ portrait\]/gi,     orientation)
+                .replace(/3:2 paysage/gi,                orientation);
 
             // Si la ville n'était pas dans le template via [ville], on s'assure qu'elle est bien spécifiée dans le contexte
             if (task.ville && !CHATGPT_IMAGE_PROMPT.includes('[ville]')) {
