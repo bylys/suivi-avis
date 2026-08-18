@@ -81,16 +81,16 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.press('#prompt-textarea', 'Enter');
     }
     
-    console.log("Attente de la génération de l'image DALL-E (délai étendu à 2 minutes)...");
+    console.log("Attente de la génération de l'image DALL-E (délai étendu à 5 minutes)...");
     
     // Selecteur élargi pour intercepter l'image même si elle a changé de nom
     const imageSelector = 'img[alt*="DALL"], img[src*="files.oaiusercontent.com"]';
     
     try {
-        // Timeout de 120 secondes (2 min) grâce au plan Browserless 15 minutes
-        await page.waitForSelector(imageSelector, { timeout: 120000 });
+        // Timeout de 5 minutes (300 000 ms) grâce au plan Browserless 15 minutes
+        await page.waitForSelector(imageSelector, { timeout: 300000 });
     } catch (e) {
-        console.log("Le sélecteur d'image n'a pas été trouvé après 2 minutes (120 secondes).");
+        console.log("Le sélecteur d'image n'a pas été trouvé après 5 minutes (300 secondes).");
         console.log("Analyse de ce qui bloque...");
         try {
             const assistantMessages = await page.$$('div[data-message-author-role="assistant"]');
@@ -224,7 +224,13 @@ async function main() {
             const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
             
             const etatChantier   = pick(['début de chantier', 'travaux en cours', 'travaux quasi-terminés']);
-            const nbOuvriers     = pick(['1 ouvrier', '2 ouvriers']);
+            
+            // Règle du nombre d'ouvriers : Métiers dangereux (élagage, toiture, ravalement, terrassement, maçonnerie, vitrier, débarras, travaux extérieurs) = 2 ouvriers minimum.
+            const metierText = ((task.metier || '') + ' ' + (task.travaux || '')).toLowerCase();
+            const isDangerousTrade = ['elagage', 'élagage', 'abattage', 'toiture', 'ravalement', 'terrassement', 'maçonnerie', 'maconnerie', 'vitrier', 'débarras', 'debarras', 'extérieu', 'exterieu', 'façade', 'facade']
+                .some(k => metierText.includes(k));
+                
+            const nbOuvriers = isDangerousTrade ? pick(['2 ouvriers', '2 ouvriers', '3 ouvriers']) : pick(['1 ouvrier', '1 ouvrier', '2 ouvriers']);
             const lumiere        = pick([
                 'ciel légèrement voilé, lumière diffuse de milieu de matinée',
                 'ciel couvert, lumière douce et uniforme',
