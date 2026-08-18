@@ -371,24 +371,44 @@ async function syncFromSheets() {
       return '';
     };
 
-    // Trouver indices depuis la ligne header
+function extractGoogleSignature(url) {
+  if (!url) return null;
+  try {
+    const decoded = decodeURIComponent(url);
+    const m1 = decoded.match(/(0x[0-9a-fA-F]+:0x[0-9a-fA-F]+)/);
+    if (m1) return m1[1].toLowerCase();
+    const m2 = decoded.match(/(ChIJ[a-zA-Z0-9_-]+)/);
+    if (m2) return m2[1];
+    const m3 = decoded.match(/[?&]cid=(\d+)/);
+    if (m3) return 'cid_' + m3[1];
+    const clean = decoded.split('?')[0].split('#')[0].replace(/\/$/, '').toLowerCase();
+    return clean.length > 20 ? clean : null;
+  } catch (e) {
+    return url.split('?')[0].toLowerCase();
+  }
+}
+
+    // Trouver indices depuis la ligne header (avec support multilignes)
     const headerRow = gridData[0]?.values || [];
-    const headers = headerRow.map(c => cellText(c).toLowerCase());
+    const headers = headerRow.map(c => cellText(c).toLowerCase().replace(/[\r\n]+/g, ' '));
     const idx = {
-      siteUrl:      1, // Colonne B : URL du site
-      nomSite:      headers.findIndex(h => h === 'nom site' || h.includes('nom site')),
-      etat:         headers.findIndex(h => h.includes('etat gmb')),
-      nomGmb:       headers.findIndex(h => h.includes('nom du gmb')),
-      lien:         headers.findIndex(h => h.includes('lien du gmb')),
-      dateOuv:      headers.findIndex(h => h.includes("date d'ouverture")),
-      avisInitiaux: headers.findIndex(h => h.includes('reviews') || h.includes('# reviews')),
+      siteUrl:      headers.findIndex(h => h.includes('url') && !h.includes('gmb')),
+      nomSite:      headers.findIndex(h => h.includes('nom site')),
+      etat:         headers.findIndex(h => h.includes('provider') || h.includes('etat') || h.includes('état') || h.includes('statut')),
+      nomGmb:       headers.findIndex(h => h.includes('nom du gmb') || h.includes('nom gmb')),
+      lien:         headers.findIndex(h => h.includes('lien du gmb') || h.includes('lien gmb') || h.includes('lien')),
+      dateOuv:      headers.findIndex(h => h.includes("date d'ouverture") || h.includes("date ouverture")),
+      avisInitiaux: headers.findIndex(h => h.includes('reviews') || h.includes('avis')),
+      pays:         headers.findIndex(h => h === 'pays' || h.includes('pays'))
     };
+    if (idx.siteUrl < 0)      idx.siteUrl = 1;
     if (idx.nomSite < 0)      idx.nomSite = 0;
-    if (idx.etat < 0)         idx.etat = 9;
-    if (idx.nomGmb < 0)       idx.nomGmb = 10;
-    if (idx.lien < 0)         idx.lien = 11;
-    if (idx.dateOuv < 0)      idx.dateOuv = 13;
-    if (idx.avisInitiaux < 0) idx.avisInitiaux = 14;
+    if (idx.etat < 0)         idx.etat = 9;  // Col J (Provider)
+    if (idx.nomGmb < 0)       idx.nomGmb = 10; // Col K
+    if (idx.lien < 0)         idx.lien = 11; // Col L
+    if (idx.dateOuv < 0)      idx.dateOuv = 13; // Col N
+    if (idx.avisInitiaux < 0) idx.avisInitiaux = 14; // Col O
+    if (idx.pays < 0)         idx.pays = 4; // Col E
 
     // Parser les lignes éligibles
     const fromSheet = [];
@@ -399,6 +419,7 @@ async function syncFromSheets() {
       const nomGmb  = cellText(cells[idx.nomGmb])
                    || (formulaRows[i] ? (formulaRows[i][idx.nomGmb] || '').toString().trim() : '');
       const nom     = nomGmb || nomSite;
+      const pays    = (cellText(cells[idx.pays]) || 'FR').toUpperCase();
       const siteUrl = cellLink(cells[idx.siteUrl]) || cellText(cells[idx.siteUrl]) || '';
       // Extraire URL : cellLink (hyperlink/richtext) puis fallback formule brute
       let lien = cellLink(cells[idx.lien]);
@@ -408,7 +429,6 @@ async function syncFromSheets() {
         if (m) lien = m[1];
         else if (raw.startsWith('http')) lien = raw;
       }
-      console.log(`[SYNC DEBUG] row ${i} | nomSite="${cellText(cells[idx.nomSite])}" | nomGmb="${cellText(cells[idx.nomGmb])}" | nom="${nom}" | lien="${lien}" | etat="${cellText(cells[idx.etat])}" | idxNomGmb=${idx.nomGmb}`);;
 
       const dateRaw = cellText(cells[idx.dateOuv]);
 
@@ -416,51 +436,62 @@ async function syncFromSheets() {
       const avisRaw = parseInt(cellText(cells[idx.avisInitiaux]) || '0', 10);
       fromSheet.push({
         nom,
+        nomGmb,
         nomSite,
         siteUrl,
         lien,
+        pays,
         date_ouverture: dateRaw || null,
         avis_initiaux:  isNaN(avisRaw) ? 0 : avisRaw,
         etat:           etat.trim(),
       });
     }
 
-    // Upsert : lien > nom exact > mots-clés (ville + métier)
+    // Upsert : signature Google Maps > nom exact > nomSite > mots-clés
     const existantes = await getFiches();
-    const normLien = l => l.trim().toLowerCase().replace(/\/$/, '');
-    const normStr  = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ');
-    const existantesParLien = {};
-    const existantesParNom  = {};
+    const normStr  = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').trim();
+    const existantesParSig = {};
+    const existantesParNom = {};
     existantes.forEach(f => {
-      if (f.lien) existantesParLien[normLien(f.lien)] = f;
-      existantesParNom[normStr(f.nom)] = f;
+      if (f.lien) {
+        const sig = extractGoogleSignature(f.lien);
+        if (sig) existantesParSig[sig] = f;
+      }
+      if (f.nom) {
+        existantesParNom[normStr(f.nom)] = f;
+      }
     });
 
     function findMatch(f) {
-      if (f.lien && existantesParLien[normLien(f.lien)]) return existantesParLien[normLien(f.lien)];
-      if (existantesParNom[normStr(f.nom)]) return existantesParNom[normStr(f.nom)];
-      // Match par mots-clés : tous les mots du nomSite dans le nom Supabase
-      const words = normStr(f.nomSite).split(/\s+/).filter(w => w.length > 2);
-      if (words.length < 2) return null;
-      const candidates = existantes.filter(sb => {
-        const sbNorm = normStr(sb.nom);
-        return words.every(w => sbNorm.includes(w));
-      });
-      if (candidates.length === 0) return null;
-      if (candidates.length === 1) return candidates[0];
-      // Plusieurs candidats : départager avec l'URL du site (colonne B)
-      if (f.siteUrl) {
-        const siteWords = normStr(f.siteUrl).split(/\s+|\/|\.|-/).filter(w => w.length > 3);
-        let best = null, bestScore = -1;
-        for (const sb of candidates) {
-          const sbNorm = normStr(sb.nom);
-          const score = siteWords.filter(w => sbNorm.includes(w)).length;
-          if (score > bestScore) { bestScore = score; best = sb; }
-        }
-        if (best) return best;
+      if (f.lien) {
+        const sig = extractGoogleSignature(f.lien);
+        if (sig && existantesParSig[sig]) return existantesParSig[sig];
       }
-      return candidates[0];
+      if (f.nom && existantesParNom[normStr(f.nom)]) return existantesParNom[normStr(f.nom)];
+      if (f.nomSite && existantesParNom[normStr(f.nomSite)]) return existantesParNom[normStr(f.nomSite)];
+
+      const searchTarget = f.nomGmb || f.nomSite;
+      const words = normStr(searchTarget).split(/\s+/).filter(w => w.length > 2);
+      if (words.length >= 2) {
+        const candidates = existantes.filter(sb => {
+          const sbNorm = normStr(sb.nom);
+          return words.every(w => sbNorm.includes(w));
+        });
+        if (candidates.length === 1) return candidates[0];
+        if (candidates.length > 1 && f.siteUrl) {
+          const siteWords = normStr(f.siteUrl).split(/\s+|\/|\.|-/).filter(w => w.length > 3);
+          let best = candidates[0], bestScore = -1;
+          for (const sb of candidates) {
+            const sbNorm = normStr(sb.nom);
+            const score = siteWords.filter(w => sbNorm.includes(w)).length;
+            if (score > bestScore) { bestScore = score; best = sb; }
+          }
+          return best;
+        }
+      }
+      return null;
     }
+
 
     const aInserer = [];
     const aUpdater = [];
