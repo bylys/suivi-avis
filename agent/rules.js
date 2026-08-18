@@ -9,7 +9,7 @@ const SAFETY_RULES = {
   etancheite: `SAFETY RULES — Waterproofing: NEVER: worker on parapet wall, blowtorch toward another worker, roller blocking access hatch, worker less than 2m from edge without harness. Floor/terrace/balcony: no harness required.`,
   ravalement: `SAFETY RULES — Facade rendering: Scaffold above 2m: mandatory guardrail on void side. NEVER: worker leaning beyond guardrail.`,
   maconnerie: `SAFETY RULES — Masonry: NEVER: worker above unfinished wall at more than 1.5m without scaffold. All workers ground level beside wall (max 1.0-1.2m during block construction).`,
-  elagage: `SAFETY RULES — Tree pruning: Climber: harness + ropes visible and connected. NEVER: person in fall zone of branch being cut.`,
+  elagage: `SAFETY RULES — Tree pruning: Climber: harness + climbing ropes visible, anchored to crotch. NEVER: person in fall zone of branch being cut. Realistic human-to-tree scale mandatory.`,
   abattage: `SAFETY RULES — Tree felling: Operator beside trunk, never in frontal fall zone. NEVER: chainsaw above head height, bystander on other side of trunk.`,
   terrassement: `SAFETY RULES — Earthworks: NEVER: person in open trench under bucket, person between rotating cab and trench edge. Ground signaller required near structures.`,
   paysagiste: `SAFETY RULES — Landscaping: NEVER: lawnmower on steep slope, chainsaw without visible leg protection.`,
@@ -21,9 +21,9 @@ const SAFETY_RULES = {
 
 const VISUAL_RULES_BY_SERVICE = {
   'Taille de haie': `VISUAL: Hedge trimmer visible and active, hedge in frame, worker cutting.`,
-  'Taille arbre haute tige': `VISUAL: Ladder or climbing ropes visible, large tree in frame, worker pruning upper branches.`,
-  'Elagage arbre': `VISUAL: Climbing harness and ropes visible, tree in frame, worker actively pruning.`,
-  'Elalgage en hauteur': `VISUAL: Climbing harness and ropes visible, tree in frame, worker actively pruning.`,
+  'Taille arbre haute tige': `VISUAL: Climbing harness + ropes anchored to main crotch. If a ladder is present, it must reach a solid main fork or be omitted. Realistic human-to-tree scale mandatory.`,
+  'Elagage arbre': `VISUAL: Climbing harness + ropes visible and anchored to main crotch. If an aluminum ladder is shown, it must rest securely against a main branch fork, NEVER stopping awkwardly mid-trunk far below the worker.`,
+  'Elalgage en hauteur': `VISUAL: Climbing harness + ropes visible and anchored to main crotch. If an aluminum ladder is shown, it must rest securely against a main branch fork, NEVER stopping awkwardly mid-trunk far below the worker.`,
   'Reparation toiture': `VISUAL: Hooked roof ladder on ridge (NOT against gutter). Damaged tiles visible.`,
   'Nettoyage gouttieres': `VISUAL: Gutter visible and accessible, active intervention at gutter or downpipe level.`,
   'Debouchage gouttieres': `VISUAL: Gutter and downpipe visible, active intervention at downpipe level.`,
@@ -72,7 +72,7 @@ function getCompositionRules(etatChantier) {
   } else if (rand < 0.95) {
     pointDeVueRule = '"tradesman" viewpoint: normal worksite photo taken by worker or colleague.';
   } else {
-    pointDeVueRule = '"neighbour" viewpoint: slightly from the side, as if taken discreetly from behind a fence.';
+    pointDeVueRule = `"neighbour" viewpoint: slightly from the side, as if taken discreetly from behind a fence.`;
   }
 
   // 1 chance sur 3 (33%) d'ajouter une imperfection physique marquée
