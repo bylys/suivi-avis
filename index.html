@@ -384,6 +384,9 @@
           <option value="US">🇺🇸 États-Unis</option>
         </select>
         <button type="submit" class="btn-primary">Ajouter manuellement</button>
+        <button type="button" id="btn-sync-dataforseo-top" onclick="syncAllFichesDataForSEO()" class="btn-sync-gmb" title="Mettre à jour le nombre d'avis Google pour toutes les fiches via DataForSEO">
+          🔄 Sync Avis GMB
+        </button>
       </div>
     </form>
     <div class="fiches-search-bar">
@@ -401,7 +404,13 @@
         <option value="no-lien">Sans lien</option>
         <option value="no-avis-google">Sans avis Google</option>
       </select>
+      <button id="btn-sync-dataforseo" onclick="syncAllFichesDataForSEO()" class="btn-sync-gmb" title="Mettre à jour le nombre d'avis Google pour toutes les fiches via DataForSEO">
+        🔄 Sync Avis GMB
+      </button>
     </div>
+
+
+
     <ul id="liste-fiches"></ul>
 
     <!-- ── SYNC GOOGLE SHEETS ── -->

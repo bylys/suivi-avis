@@ -521,7 +521,29 @@ details[open] .month-summary::before { transform: rotate(90deg); }
   cursor: pointer; transition: border-color .15s, color .15s;
 }
 .btn-merge:hover { border-color: #f59e0b; color: #fbbf24; }
+.btn-dataforseo {
+  background: #0284c7; border: 1px solid #0369a1; color: #ffffff;
+  border-radius: 6px; padding: 0.25rem 0.6rem; font-size: 0.78rem;
+  font-weight: 500; cursor: pointer; transition: all .15s ease;
+}
+.btn-dataforseo:hover {
+  background: #0369a1; border-color: #38bdf8; color: #ffffff;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+.btn-sync-gmb {
+  background: linear-gradient(135deg, #0284c7, #2563eb); color: #ffffff;
+  border: none; border-radius: 8px; padding: 0.5rem 0.9rem;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all 0.2s ease;
+}
+.btn-sync-gmb:hover {
+  background: linear-gradient(135deg, #0369a1, #1d4ed8);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35); transform: translateY(-1px);
+}
+.btn-sync-gmb:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .fiches-search-bar { margin: 1rem 0; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; background: #0f172a; border: 1.5px solid #1e293b; border-radius: 12px; padding: 0.6rem 0.8rem; }
+
 .fiches-search-bar input { flex: 1; min-width: 200px; padding: 0.5rem 0.9rem 0.5rem 2rem; background: #1e293b; border: 1.5px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 0.9rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 0.6rem center; }
 .fiches-search-bar input:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56,189,248,0.1); }
 .fiches-search-bar input::placeholder { color: #475569; }

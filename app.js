@@ -714,6 +714,13 @@ function buildFicheLi(f, fiches, avis) {
   btnDate.textContent = '📅 Date';
   btnDate.onclick = () => toggleDateEdit(f.id);
 
+  const btnDataSEO = document.createElement('button');
+  btnDataSEO.className = 'btn-dataforseo';
+  btnDataSEO.textContent = '🔍 DataForSEO';
+  btnDataSEO.title = 'Mettre à jour cette fiche via DataForSEO';
+  btnDataSEO.onclick = () => syncSingleFicheDataForSEO(f.id, f.nom, f.pays);
+
+
   const btnMerge = document.createElement('button');
   btnMerge.className = 'btn-merge';
   btnMerge.textContent = '🔀 Fusionner';
@@ -724,7 +731,8 @@ function buildFicheLi(f, fiches, avis) {
   btnDel.textContent = '🗑';
   btnDel.onclick = () => deleteFiche(f.nom);
 
-  actions.append(countSpan, btnNom, btnLien, btnDate, btnMerge, btnDel);
+  actions.append(countSpan, btnNom, btnLien, btnDate, btnDataSEO, btnMerge, btnDel);
+
   row.append(nomSpan, actions);
 
   const statsBar = document.createElement('div');
@@ -936,6 +944,142 @@ function filterFiches(q) {
     if (query && anyVisible) details.open = true;
   });
 }
+
+// ── DATAFORSEO API INTEGRATION ──
+
+async function callDataForSEOMapsLive(keyword, countryCode = 'FR') {
+  const auth = (window._APP_CONFIG && window._APP_CONFIG.dataforseo_auth)
+    || 'bWFydmluQGFsbG8tY2hhbnRpZXJzLmZyOjg4MDdmYjNlYzg4MzUxZTU=';
+  const locationCodes = { FR: 2250, BE: 2056, LU: 2442, CA: 2124, US: 2840 };
+  const locCode = locationCodes[countryCode] || 2250;
+
+  const response = await fetch('https://api.dataforseo.com/v3/serp/google/maps/live/advanced', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify([{
+      keyword: keyword,
+      location_code: locCode,
+      language_code: 'fr'
+    }])
+  });
+
+  if (!response.ok) {
+    throw new Error(`DataForSEO HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const tasks = data.tasks || [];
+  if (!tasks.length || !tasks[0].result || !tasks[0].result.length) {
+    return null;
+  }
+
+  const items = tasks[0].result[0].items || [];
+  if (!items.length) return null;
+
+  const mapsItems = items.filter(i => i.type === 'maps_search');
+  if (!mapsItems.length) return null;
+
+  const targetTokens = keyword.toLowerCase().split(/\s+/);
+  let bestMatch = mapsItems[0];
+  let bestScore = -1;
+
+  mapsItems.forEach(item => {
+    const titleTokens = (item.title || '').toLowerCase().split(/\s+/);
+    let overlap = 0;
+    targetTokens.forEach(t => { if (titleTokens.includes(t)) overlap++; });
+    if (overlap > bestScore) {
+      bestScore = overlap;
+      bestMatch = item;
+    }
+  });
+
+  return bestMatch;
+}
+
+async function syncSingleFicheDataForSEO(ficheId, ficheNom, pays = 'FR') {
+  showToast(`🔍 Recherche DataForSEO pour "${ficheNom}"...`, 'info');
+  try {
+    const match = await callDataForSEOMapsLive(ficheNom, pays);
+    if (!match || !match.rating || match.rating.votes_count == null) {
+      showToast(`⚠️ Aucune fiche DataForSEO trouvée pour "${ficheNom}"`, 'warn');
+      return;
+    }
+
+    const nbAvis = match.rating.votes_count;
+    const ratingVal = match.rating.value || 0;
+    const today = new Date().toISOString().split('T')[0];
+
+    const ok = await sbUpdate('fiches', ficheId, {
+      nb_avis_google: nbAvis,
+      nb_avis_updated_at: today
+    });
+
+    if (ok) {
+      showToast(`✅ ${match.title || ficheNom} : ${nbAvis} avis Google (${ratingVal}⭐) mis à jour !`, 'success');
+      renderFiches();
+    } else {
+      showToast(`❌ Échec de la mise à jour Supabase pour "${ficheNom}"`, 'error');
+    }
+  } catch (err) {
+    console.error('Erreur DataForSEO:', err);
+    showToast(`❌ Erreur DataForSEO: ${err.message}`, 'error');
+  }
+}
+
+async function syncAllFichesDataForSEO() {
+  const btn1 = document.getElementById('btn-sync-dataforseo');
+  const btn2 = document.getElementById('btn-sync-dataforseo-top');
+  if (btn1) { btn1.disabled = true; btn1.textContent = '⌛ Sync en cours...'; }
+  if (btn2) { btn2.disabled = true; btn2.textContent = '⌛ Sync en cours...'; }
+
+  try {
+    const fiches = await sbGet('fiches');
+    if (!fiches || !fiches.length) {
+      showToast('Aucune fiche à synchroniser.', 'warn');
+      return;
+    }
+
+    showToast(`🚀 Lancement de la sync DataForSEO pour ${fiches.length} fiches...`, 'info');
+
+    let updated = 0;
+    let failed = 0;
+    const today = new Date().toISOString().split('T')[0];
+
+    for (let i = 0; i < fiches.length; i++) {
+      const f = fiches[i];
+      try {
+        const match = await callDataForSEOMapsLive(f.nom, f.pays || 'FR');
+        if (match && match.rating && match.rating.votes_count != null) {
+          await sbUpdate('fiches', f.id, {
+            nb_avis_google: match.rating.votes_count,
+            nb_avis_updated_at: today
+          });
+          updated++;
+        } else {
+          failed++;
+        }
+      } catch (e) {
+        console.warn(`DataForSEO error on ${f.nom}:`, e);
+        failed++;
+      }
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    showToast(`✅ Sync DataForSEO terminée ! ${updated} fiches mises à jour (${failed} non trouvées/ignorées).`, 'success');
+    renderFiches();
+  } catch (err) {
+    console.error('Erreur sync DataForSEO:', err);
+    showToast(`❌ Erreur lors de la sync DataForSEO: ${err.message}`, 'error');
+  } finally {
+    if (btn1) { btn1.disabled = false; btn1.textContent = '🔄 Sync Avis GMB'; }
+    if (btn2) { btn2.disabled = false; btn2.textContent = '🔄 Sync Avis GMB'; }
+  }
+}
+
+
 
 function toggleMerge(id) {
   const div = document.getElementById(`merge-edit-${id}`);
