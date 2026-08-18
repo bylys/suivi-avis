@@ -124,16 +124,24 @@ async function main() {
         
         let isTestFallback = false;
         
-        // Mode test sécurisé : si aucun avis pour demain, on crée une fausse tâche de test temporaire
+        // Mode test sécurisé : si aucun avis pour demain, on tire au sort un scénario de test réaliste
         if (tasks.length === 0) {
             console.log("Aucun avis planifié pour demain. Mode test : création d'un FAUX avis de démonstration...");
+            
+            const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            const testScenarios = [
+                { fiche_nom: 'Élagage & Abattage Quimper', metier: 'élagage', travaux: 'Taille arbre haute tige', ville: 'Quimper', pays: 'France', contexte: 'maison' },
+                { fiche_nom: 'Nettoyage & Démoussage Toiture Valence', metier: 'nettoyage_toiture', travaux: 'Démoussage toiture', ville: 'Valence', pays: 'France', contexte: 'maison' },
+                { fiche_nom: 'Ravalement & Nettoyage Façade Nantes', metier: 'ravalement', travaux: 'Ravalement façade', ville: 'Nantes', pays: 'France', contexte: 'maison' },
+                { fiche_nom: 'Augusta Tree Service - Tree Removal', metier: 'abattage', travaux: 'Abattage arbre', ville: 'Augusta', pays: 'USA', contexte: 'maison' },
+                { fiche_nom: 'Sandy Springs Concrete Atlanta', metier: 'maçonnerie', travaux: 'Coulage dalle', ville: 'Atlanta', pays: 'USA', contexte: 'maison' },
+                { fiche_nom: 'Miami Roof Cleaning & Pressure Wash', metier: 'nettoyage_toiture', travaux: 'Nettoyage toiture', ville: 'Miami', pays: 'USA', contexte: 'maison' },
+                { fiche_nom: 'Dallas Facade & Wall Masonry', metier: 'maçonnerie', travaux: 'Mur parpaing', ville: 'Dallas', pays: 'USA', contexte: 'commerce' },
+            ];
+            
+            const selectedScenario = pick(testScenarios);
             const fakeTask = {
-                fiche_nom: 'TEST - Plomberie Atlanta Service',
-                metier: 'plomberie',
-                travaux: 'Réparation fuite',
-                ville: 'Atlanta',
-                pays: 'USA',
-                contexte: 'maison',
+                ...selectedScenario,
                 operateur: 'TEST_ROBOT',
                 date: tomorrowStr,
                 statut: 'pending_test'
@@ -148,7 +156,7 @@ async function main() {
                 if (!insertErr && inserted && inserted.length > 0) {
                     tasks = inserted;
                     isTestFallback = true;
-                    console.log(`🎯 Faux avis de test créé avec succès (ID: ${tasks[0].id}) — Aucune vraie donnée ne sera touchée !`);
+                    console.log(`🎯 Faux avis de test (${selectedScenario.fiche_nom} - ${selectedScenario.ville}, ${selectedScenario.pays}) créé avec succès !`);
                 } else {
                     console.log("Impossible d'insérer le faux avis de test, poursuite sans données.");
                 }
