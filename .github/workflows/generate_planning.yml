@@ -1,10 +1,6 @@
 name: Génération planning quotidien GMB
 
 on:
-  schedule:
-    # Chaque matin à 6h00 heure de Paris (UTC+2 été = 4h UTC)
-    # Tous les jours (le script gère : rien le dimanche sauf dates de rattrapage Aina)
-    - cron: "0 4 * * *"
   workflow_dispatch:
     inputs:
       quota:
