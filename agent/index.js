@@ -122,6 +122,8 @@ async function main() {
         
         console.log(`${tasks.length} avis trouvés pour demain (${tomorrowStr}).`);
         
+        let isTestFallback = false;
+        
         // Fallback de test : si aucun avis pour demain, on prend le plus récent sans image
         if (tasks.length === 0) {
             console.log("Aucun avis planifié pour demain. Mode test : recherche des avis récents dans la base...");
@@ -134,7 +136,8 @@ async function main() {
                 
             if (!fallbackError && fallbackTasks && fallbackTasks.length > 0) {
                 tasks = fallbackTasks;
-                console.log(`MODE TEST : ${tasks.length} avis récupéré(s) pour effectuer la génération !`);
+                isTestFallback = true;
+                console.log(`MODE TEST : ${tasks.length} avis récupéré(s) pour effectuer la génération sans modifier leur statut !`);
             }
         }
         
@@ -270,13 +273,15 @@ async function main() {
                 const publicUrl = publicUrlData.publicUrl;
                 console.log(`Image uploadée avec succès sur Supabase : ${publicUrl}`);
                 
-                // Mettre à jour la base de données Supabase
+                // Mettre à jour la base de données Supabase sans toucher au statut en mode test
+                const updatePayload = { url_image: publicUrl };
+                if (!isTestFallback) {
+                    updatePayload.statut = 'image_generated';
+                }
+                
                 await supabase
                     .from('planning')
-                    .update({ 
-                        statut: 'image_generated',
-                        url_image: publicUrl // Stockage du lien de l'image
-                    })
+                    .update(updatePayload)
                     .eq('id', task.id);
                     
                 console.log(`Supabase mis à jour pour l'avis ID ${task.id}`);
