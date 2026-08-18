@@ -33,8 +33,8 @@ const VISUAL_RULES_BY_SERVICE = {
   'Mur brique': `VISUAL: Red or orange bricks, mortar between joints, worker laying bricks at ground level.`,
   'Rejointoiement': `VISUAL: Joints between elements visible, grouting gun or trowel in use, no paint on facade.`,
   'Rejointoiement pierre': `VISUAL: Natural stone wall, targeted joints, mortar tool visible.`,
-  'Coulage dalle': `VISUAL: Liquid concrete being poured, minimum 2 workers, worker NEVER in fresh concrete.`,
-  'Dalle beton': `VISUAL: Reinforcement or slab preparation, worker at ground level.`,
+  'Coulage dalle': `VISUAL: Liquid concrete being poured from pump hose, wooden formwork, rebar mesh visible, minimum 2 workers, worker NEVER in fresh concrete.`,
+  'Dalle beton': `VISUAL: Concrete slab, formwork, rebar or mesh preparation, worker at ground level.`,
   'Fondation': `VISUAL: Excavation visible, reinforcement or poured concrete in foundation.`,
   'Semelle beton': `VISUAL: Footing trench visible, reinforcement or poured concrete.`,
   'Ferraillage': `VISUAL: Metal rebar, tie wire, worker assembling bars.`,
@@ -45,6 +45,15 @@ const VISUAL_RULES_BY_SERVICE = {
   'Dessouchage': `VISUAL: Stump and roots visible, stump grinder or digging equipment, wood chips around.`,
   'Abattage arbre': `VISUAL: Operator beside trunk, chainsaw visible, protective clothing, felled sections on ground.`,
 };
+
+// Imperfections physiques d'appareil photo smartphone (doigt, verre gras, poussière...)
+const CAMERA_IMPERFECTIONS = [
+  'slight blur on extreme corner as if a fingertip is partially blocking the lens edge',
+  'slightly smudged or greasy lens causing soft light bloom around highlights',
+  'subtle dust speck or water droplet mark on the camera lens',
+  'minor lens flare and slight overexposure from natural sunlight',
+  'slightly crooked horizon and candid hand-held tilt',
+];
 
 function getCompositionRules(etatChantier) {
   const workerPresenceMap = {
@@ -66,9 +75,12 @@ function getCompositionRules(etatChantier) {
     pointDeVueRule = '"neighbour" viewpoint: slightly from the side, as if taken discreetly from behind a fence.';
   }
 
+  // Tirage d'une imperfection d'appareil photo
+  const cameraDefect = CAMERA_IMPERFECTIONS[Math.floor(Math.random() * CAMERA_IMPERFECTIONS.length)];
+
   return {
     showWorker,
-    compositionRule: `COMPOSITION: ${pointDeVueRule} NEVER too clean, HDR or perfectly framed. Always slightly imperfect — slight tilt, motion blur on active hands, subtle digital noise in shadows.`,
+    compositionRule: `COMPOSITION & REALISM: ${pointDeVueRule} Real smartphone camera imperfections: ${cameraDefect}, motion blur on active hands, subtle digital noise in shadows. NEVER too clean, HDR, sharp or perfectly framed.`,
   };
 }
 
