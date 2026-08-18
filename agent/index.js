@@ -28,8 +28,36 @@ async function generateImageWithChatGPT(prompt, cookies) {
     console.log("Ouverture de la conversation ChatGPT globale...");
     await page.goto(CHATGPT_CONVERSATION_URL, { waitUntil: 'domcontentloaded' });
     
+    let title = await page.title();
     console.log("URL de la page :", page.url());
-    console.log("Titre de la page :", await page.title());
+    console.log("Titre de la page :", title);
+    
+    // Gestion du challenge Cloudflare Turnstile ("Just a moment...")
+    if (title.includes('Just a moment')) {
+        console.log("⚠️ Challenge Cloudflare Turnstile détecté ! Tentative de contournement automatique...");
+        await page.waitForTimeout(5000);
+        
+        try {
+            // Tenter de cliquer sur la case Turnstile si elle est dans un iframe
+            const turnstileFrame = page.frames().find(f => f.url().includes('challenges.cloudflare.com'));
+            if (turnstileFrame) {
+                console.log("Iframe Turnstile trouvé. Tentative de clic sur la vérification...");
+                const checkbox = await turnstileFrame.waitForSelector('input[type="checkbox"], .mark', { timeout: 5000 });
+                if (checkbox) await checkbox.click();
+            }
+        } catch (cfErr) {
+            console.log("Attente de la résolution automatique par le mode Stealth Browserless...");
+        }
+        
+        // Attente jusqu'à 15 secondes que Cloudflare laisse passer
+        try {
+            await page.waitForFunction(() => !document.title.includes('Just a moment'), { timeout: 15000 });
+            console.log("✅ Cloudflare dépassé ! Titre actuel :", await page.title());
+        } catch (e) {
+            console.log("❌ Bloqué par le challenge Cloudflare Turnstile.");
+            console.log("💡 CONSEIL : Tes cookies ChatGPT (notamment cf_clearance) ont probablement expiré. Re-exporte tes cookies depuis ton navigateur et mets à jour le secret CHATGPT_COOKIES dans GitHub.");
+        }
+    }
     
     // Wait for the chat input box
     console.log("Recherche du champ de texte...");
