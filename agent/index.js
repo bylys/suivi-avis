@@ -140,29 +140,15 @@ async function main() {
             ];
             
             const selectedScenario = pick(testScenarios);
-            const fakeTask = {
+            tasks = [{
+                id: 999999,
                 ...selectedScenario,
                 operateur: 'TEST_ROBOT',
                 date: tomorrowStr,
                 statut: 'pending_test'
-            };
-            
-            try {
-                const { data: inserted, error: insertErr } = await supabase
-                    .from('planning')
-                    .insert([fakeTask])
-                    .select();
-                    
-                if (!insertErr && inserted && inserted.length > 0) {
-                    tasks = inserted;
-                    isTestFallback = true;
-                    console.log(`🎯 Faux avis de test (${selectedScenario.fiche_nom} - ${selectedScenario.ville}, ${selectedScenario.pays}) créé avec succès !`);
-                } else {
-                    console.log("Impossible d'insérer le faux avis de test, poursuite sans données.");
-                }
-            } catch (errTest) {
-                console.log("Erreur lors de la création de l'avis de test :", errTest.message);
-            }
+            }];
+            isTestFallback = true;
+            console.log(`🎯 Faux avis de test (${selectedScenario.fiche_nom} - ${selectedScenario.ville}, ${selectedScenario.pays}) créé EN MÉMOIRE !`);
         }
         
         // Filter: 1 out of 2 reviews gets an image (en mode test ou prod)
@@ -297,16 +283,23 @@ async function main() {
                 const publicUrl = publicUrlData.publicUrl;
                 console.log(`Image uploadée avec succès sur Supabase : ${publicUrl}`);
                 
-                // Mettre à jour la base de données Supabase sans toucher au statut en mode test
-                const updatePayload = { url_image: publicUrl };
-                if (!isTestFallback) {
-                    updatePayload.statut = 'image_generated';
+                // Mettre à jour la base de données Supabase (uniquement en mode prod)
+                if (isTestFallback) {
+                    console.log(`========================================================`);
+                    console.log(`🎉 TEST RÉUSSI AU MAXIMUM ! 🎉`);
+                    console.log(`Lien de l'image de test sur Supabase Storage : ${publicUrl}`);
+                    console.log(`(Aucune ligne de la base de données n'a été modifiée)`);
+                    console.log(`========================================================`);
+                } else {
+                    await supabase
+                        .from('planning')
+                        .update({
+                            statut: 'image_generated',
+                            url_image: publicUrl
+                        })
+                        .eq('id', task.id);
+                    console.log(`Supabase mis à jour pour l'avis ID ${task.id}`);
                 }
-                
-                await supabase
-                    .from('planning')
-                    .update(updatePayload)
-                    .eq('id', task.id);
                     
                 console.log(`Supabase mis à jour pour l'avis ID ${task.id}`);
                 
