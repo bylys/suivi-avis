@@ -112,22 +112,38 @@ async function main() {
         console.log(`Recherche des avis planifiés pour le : ${tomorrowStr}`);
         
         // IMPORTANT: Adjust table name and columns based on your screenshot!
-        const { data: tasks, error } = await supabase
+        let { data: tasks, error } = await supabase
             .from('planning')
             .select('*')
             .eq('date', tomorrowStr)
-            .order('id', { ascending: true }); // Order to reliably pick 1 out of 2
+            .order('id', { ascending: true });
             
         if (error) throw error;
         
-        console.log(`${tasks.length} avis trouvés pour demain.`);
+        console.log(`${tasks.length} avis trouvés pour demain (${tomorrowStr}).`);
         
-        // Filter: 1 out of 2 reviews gets an image
+        // Fallback de test : si aucun avis pour demain, on prend le plus récent sans image
+        if (tasks.length === 0) {
+            console.log("Aucun avis planifié pour demain. Mode test : recherche des avis récents dans la base...");
+            const { data: fallbackTasks, error: fallbackError } = await supabase
+                .from('planning')
+                .select('*')
+                .or('url_image.is.null,url_image.eq.""')
+                .order('id', { ascending: false })
+                .limit(2);
+                
+            if (!fallbackError && fallbackTasks && fallbackTasks.length > 0) {
+                tasks = fallbackTasks;
+                console.log(`MODE TEST : ${tasks.length} avis récupéré(s) pour effectuer la génération !`);
+            }
+        }
+        
+        // Filter: 1 out of 2 reviews gets an image (en mode test ou prod)
         const tasksToGenerate = tasks.filter((_, index) => index % 2 === 0);
-        console.log(`${tasksToGenerate.length} avis sélectionnés pour la génération d'image.`);
+        console.log(`${tasksToGenerate.length} avis sélectionné(s) pour la génération d'image.`);
         
         if (tasksToGenerate.length === 0) {
-            console.log("Aucune image à générer aujourd'hui.");
+            console.log("Aucune tâche trouvée dans la base de données.");
             return;
         }
 
