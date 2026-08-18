@@ -976,13 +976,33 @@ function filterFiches(q) {
   });
 }
 
-// ── DATAFORSEO API INTEGRATION ──
+// ── DATAFORSEO API INTEGRATION (PRECISION CIBLÉE) ──
 
-async function callDataForSEOMapsLive(keyword, countryCode = 'FR') {
+async function resolveShortUrl(lien) {
+  if (!lien) return '';
+  if (!lien.includes('goo.gl')) return lien;
+  try {
+    const res = await fetch(lien, { method: 'HEAD', redirect: 'follow' });
+    return res.url || lien;
+  } catch (e) {
+    return lien;
+  }
+}
+
+async function callDataForSEOMapsLive(fiche, countryCode = 'FR') {
   const auth = (window._APP_CONFIG && window._APP_CONFIG.dataforseo_auth)
     || 'bWFydmluQGFsbG8tY2hhbnRpZXJzLmZyOjg4MDdmYjNlYzg4MzUxZTU=';
   const locationCodes = { FR: 2250, BE: 2056, LU: 2442, CA: 2124, US: 2840 };
   const locCode = locationCodes[countryCode] || 2250;
+
+  const nom = typeof fiche === 'string' ? fiche : (fiche?.nom || '');
+  const lien = typeof fiche === 'object' ? fiche?.lien : null;
+
+  // Si URL Google Maps présente, la résoudre et l'utiliser en cible exacte
+  let searchTarget = nom;
+  if (lien && (lien.includes('google.com/maps') || lien.includes('goo.gl'))) {
+    searchTarget = await resolveShortUrl(lien);
+  }
 
   const response = await fetch('https://api.dataforseo.com/v3/serp/google/maps/live/advanced', {
     method: 'POST',
@@ -991,7 +1011,7 @@ async function callDataForSEOMapsLive(keyword, countryCode = 'FR') {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify([{
-      keyword: keyword,
+      keyword: searchTarget,
       location_code: locCode,
       language_code: 'fr'
     }])
@@ -1013,12 +1033,20 @@ async function callDataForSEOMapsLive(keyword, countryCode = 'FR') {
   const mapsItems = items.filter(i => i.type === 'maps_search');
   if (!mapsItems.length) return null;
 
-  const targetTokens = keyword.toLowerCase().split(/\s+/);
-  let bestMatch = mapsItems[0];
+  // Si recherche par URL exacte -> le 1er résultat est la fiche cible 100% exacte
+  if (searchTarget.includes('google.com/maps')) {
+    return mapsItems[0];
+  }
+
+  // Recherche par nom générique : vérification stricte des jetons pour éviter les faux positifs
+  const normStr = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').trim();
+  const targetTokens = normStr(nom).split(/\s+/).filter(w => w.length > 2);
+
+  let bestMatch = null;
   let bestScore = -1;
 
   mapsItems.forEach(item => {
-    const titleTokens = (item.title || '').toLowerCase().split(/\s+/);
+    const titleTokens = normStr(item.title).split(/\s+/).filter(w => w.length > 2);
     let overlap = 0;
     targetTokens.forEach(t => { if (titleTokens.includes(t)) overlap++; });
     if (overlap > bestScore) {
@@ -1027,20 +1055,28 @@ async function callDataForSEOMapsLive(keyword, countryCode = 'FR') {
     }
   });
 
+  if (targetTokens.length > 0 && bestScore < 1) {
+    return null; // Évite de prendre une entreprise concurrente au hasard
+  }
+
   return bestMatch;
 }
 
 async function syncSingleFicheDataForSEO(ficheId, ficheNom, pays = 'FR') {
   showToast(`🔍 Recherche DataForSEO pour "${ficheNom}"...`, 'info');
   try {
-    const match = await callDataForSEOMapsLive(ficheNom, pays);
-    if (!match || !match.rating || match.rating.votes_count == null) {
-      showToast(`⚠️ Aucune fiche DataForSEO trouvée pour "${ficheNom}"`, 'warn');
+    const fiches = await sbGet('fiches', `id=eq.${ficheId}`);
+    const targetFiche = (fiches && fiches.length) ? fiches[0] : { id: ficheId, nom: ficheNom, pays: pays };
+
+    const match = await callDataForSEOMapsLive(targetFiche, targetFiche.pays || pays);
+    if (!match) {
+      showToast(`⚠️ Aucune fiche DataForSEO correspondante trouvée pour "${ficheNom}"`, 'warn');
       return;
     }
 
-    const nbAvis = match.rating.votes_count;
-    const ratingVal = match.rating.value || 0;
+    const ratingInfo = match.rating || {};
+    const nbAvis = ratingInfo.votes_count != null ? ratingInfo.votes_count : 0;
+    const ratingVal = ratingInfo.value || 0;
     const today = new Date().toISOString().split('T')[0];
 
     const ok = await sbUpdate('fiches', ficheId, {
@@ -1082,10 +1118,12 @@ async function syncAllFichesDataForSEO() {
     for (let i = 0; i < fiches.length; i++) {
       const f = fiches[i];
       try {
-        const match = await callDataForSEOMapsLive(f.nom, f.pays || 'FR');
-        if (match && match.rating && match.rating.votes_count != null) {
+        const match = await callDataForSEOMapsLive(f, f.pays || 'FR');
+        if (match) {
+          const ratingInfo = match.rating || {};
+          const nbAvis = ratingInfo.votes_count != null ? ratingInfo.votes_count : 0;
           await sbUpdate('fiches', f.id, {
-            nb_avis_google: match.rating.votes_count,
+            nb_avis_google: nbAvis,
             nb_avis_updated_at: today
           });
           updated++;
@@ -1109,6 +1147,7 @@ async function syncAllFichesDataForSEO() {
     if (btn2) { btn2.disabled = false; btn2.textContent = '🔄 Sync Avis GMB'; }
   }
 }
+
 
 
 

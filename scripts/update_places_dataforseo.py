@@ -62,6 +62,18 @@ def sb_patch(table, id_, payload):
     with urllib.request.urlopen(req) as r:
         return r.status
 
+def resolve_url(lien):
+    if not lien:
+        return None
+    if 'goo.gl' not in lien:
+        return lien
+    try:
+        req = urllib.request.Request(lien, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=3) as r:
+            return r.url
+    except Exception:
+        return lien
+
 def query_dataforseo_maps_live(keyword, country_code='FR'):
     url = "https://api.dataforseo.com/v3/serp/google/maps/live/advanced"
     location_code = LOCATION_CODES.get(country_code, 2250)
@@ -89,11 +101,14 @@ def query_dataforseo_maps_live(keyword, country_code='FR'):
         return None
         
     items = result[0].get("items", [])
-    return items
+    return [i for i in items if i.get("type") == "maps_search"]
 
-def extract_best_match(items, search_name):
+def extract_best_match(items, search_name, is_url_target=False):
     if not items:
         return None
+        
+    if is_url_target:
+        return items[0]
         
     def normalize(s):
         return set(re.sub(r'[^\w]', ' ', (s or '').lower()).split())
@@ -103,8 +118,6 @@ def extract_best_match(items, search_name):
     best_score = -1
     
     for item in items:
-        if item.get("type") != "maps_search":
-            continue
         title = item.get("title", "")
         title_tokens = normalize(title)
         
@@ -116,13 +129,10 @@ def extract_best_match(items, search_name):
             best_score = overlap
             best_item = item
             
-    # Si aucun titre partagé, prendre le 1er item maps_search par défaut si présent
-    if not best_item:
-        for item in items:
-            if item.get("type") == "maps_search":
-                return item
-                
-    return best_item
+    if target_tokens and best_score < 1:
+        return None
+        
+    return best_item or items[0]
 
 def main():
     force = len(sys.argv) > 1 and sys.argv[1] == "force"
@@ -135,42 +145,48 @@ def main():
 
     ok, skip, errors = 0, 0, 0
     for i, f in enumerate(fiches):
-        nom = f["nom"]
+        nom  = f["nom"]
+        lien = f.get("lien")
         pays = f.get("pays") or "FR"
         
-        print(f"[{i+1}/{len(fiches)}] Recherche DataForSEO pour '{nom}' ({pays})...", flush=True)
+        search_target = nom
+        is_url = False
+        if lien and ('google.com/maps' in lien or 'goo.gl' in lien):
+            resolved = resolve_url(lien)
+            if resolved and 'google.com/maps' in resolved:
+                search_target = resolved
+                is_url = True
+
+        print(f"[{i+1}/{len(fiches)}] DataForSEO pour '{nom}' ({'URL' if is_url else 'Nom'})...", flush=True)
         try:
-            items = query_dataforseo_maps_live(nom, country_code=pays)
-            match = extract_best_match(items, nom)
+            items = query_dataforseo_maps_live(search_target, country_code=pays)
+            match = extract_best_match(items, nom, is_url_target=is_url)
             
-            if not match or "rating" not in match or match["rating"] is None:
-                print(f"  ⚠️ Aucune fiche trouvée / pas d'avis pour '{nom}'", flush=True)
+            if not match:
+                print(f"  ⚠️ Aucune fiche trouvée pour '{nom}'", flush=True)
                 skip += 1
                 time.sleep(0.3)
                 continue
                 
-            rating_info = match.get("rating", {})
-            votes_count = rating_info.get("votes_count")
-            rating_value = rating_info.get("value")
+            rating_info = match.get("rating") or {}
+            votes_count = rating_info.get("votes_count") if rating_info.get("votes_count") is not None else 0
+            rating_value = rating_info.get("value") or 0
             matched_title = match.get("title", nom)
             
-            if votes_count is not None:
-                patch_payload = {
-                    "nb_avis_google": votes_count,
-                    "nb_avis_updated_at": TODAY
-                }
-                sb_patch("fiches", f["id"], patch_payload)
-                print(f"  ✓ Trouvé '{matched_title}' -> {votes_count} avis ({rating_value}⭐)", flush=True)
-                ok += 1
-            else:
-                print(f"  ⚠️ votes_count non disponible pour '{nom}'", flush=True)
-                skip += 1
+            patch_payload = {
+                "nb_avis_google": votes_count,
+                "nb_avis_updated_at": TODAY
+            }
+            sb_patch("fiches", f["id"], patch_payload)
+            print(f"  ✓ Trouvé '{matched_title}' -> {votes_count} avis ({rating_value}⭐)", flush=True)
+            ok += 1
                 
         except Exception as e:
             print(f"  ❌ Erreur DataForSEO pour '{nom}': {e}", flush=True)
             errors += 1
             
         time.sleep(0.3)
+
 
     print(f"\n🎉 Terminé ! Mis à jour: {ok} | Ignorés: {skip} | Erreurs: {errors}", flush=True)
 
