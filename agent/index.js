@@ -2,6 +2,7 @@ require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const { chromium } = require('playwright');
 const fs = require('fs');
+const { buildRulesBlock } = require('./rules');
 
 // --- Configuration ---
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -200,11 +201,15 @@ async function main() {
                 .replace(/\[depuis le jardin \/ depuis la rue \/ légèrement en hauteur\]/gi, pointDeVue)
                 .replace(/\[ciel couvert \/ soleil de milieu de journée \/ lumière rasante d'après-midi\]/gi, lumiere);
             
-            console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${prompt.substring(0, 120)}...`);
+            // Injection des règles de sécurité et visuelles selon le métier et le service
+            const rulesBlock = buildRulesBlock(task.metier, task.travaux, etatChantier);
+            const finalPrompt = prompt + rulesBlock;
+            
+            console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 120)}...`);
             
             try {
                 // Generate Image
-                const imageBuffer = await generateImageWithChatGPT(prompt, cookies);
+                const imageBuffer = await generateImageWithChatGPT(finalPrompt, cookies);
                 
                 // Construction du nom de fichier
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
