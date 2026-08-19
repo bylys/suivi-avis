@@ -282,37 +282,41 @@ async function generateImageWithChatGPT(prompt, cookies) {
 
     await page.waitForTimeout(3000); // Petite pause pour s'assurer que les pixels HD sont chargés
     
-    // 4. Extraction sécurisée du buffer de l'image (Canvas + Element Screenshot)
-    console.log("Extraction des pixels de l'image (Canvas / Element Screenshot)...");
+    // 4. Extraction haute définition des pixels de l'image (Playwright CDP Screenshot)
+    console.log("Extraction haute définition des pixels de l'image (Playwright CDP Screenshot)...");
     
-    let imageBuffer;
+    let imageBuffer = null;
     
-    // Rendu Canvas in-page (qualité originale sans passer par des requêtes HTTP backend)
-    const canvasBase64 = await page.evaluate((url) => {
-        const imgs = Array.from(document.querySelectorAll('img'));
-        const img = imgs.find(i => i.src === url || i.src.includes('estuary') || i.src.includes('oaiusercontent')) || 
-                    imgs.find(i => (i.naturalWidth > 150 || i.width > 150) && !i.src.includes('avatar'));
-                    
-        if (!img) return null;
-        try {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || img.width || 1024;
-            canvas.height = img.naturalHeight || img.height || 1024;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            return canvas.toDataURL('image/png').split(',')[1];
-        } catch (e) {
-            return null;
-        }
-    }, foundUrl);
-
-    if (canvasBase64 && canvasBase64.length > 2000) {
-        console.log("✅ Buffer PNG extrait avec succès via Canvas !");
-        imageBuffer = Buffer.from(canvasBase64, 'base64');
-    } else {
-        console.log("📸 Fallback : Capture d'écran Playwright haute définition de l'élément image...");
-        const imgLocator = page.locator('div[data-message-author-role="assistant"] img, img[src*="estuary"], img[src*="oaiusercontent"]').first();
+    try {
+        const imgLocator = page.locator('div[data-message-author-role="assistant"] img, img[src*="estuary"], img[src*="oaiusercontent"], img[alt*="DALL"]').last();
+        await imgLocator.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(1500);
         imageBuffer = await imgLocator.screenshot({ type: 'png' });
+        console.log(`✅ Photo HD capturée avec succès ! (Taille du buffer : ${imageBuffer.length} octets)`);
+    } catch (err) {
+        console.log("Erreur lors de la capture d'écran d'élément :", err.message);
+    }
+    
+    // Fallback: Fetch in-page si le screenshot échoue
+    if (!imageBuffer || imageBuffer.length < 5000) {
+        console.log("Fallback : Récupération in-page via fetch avec credentials...");
+        const base64Data = await page.evaluate(async (url) => {
+            try {
+                const res = await fetch(url, { credentials: 'include' });
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (e) {
+                return null;
+            }
+        }, foundUrl);
+
+        if (base64Data) {
+            imageBuffer = Buffer.from(base64Data, 'base64');
+        }
     }
     
     await browser.close();
