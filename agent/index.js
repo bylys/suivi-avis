@@ -63,6 +63,7 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
 
     let res;
     try {
+        console.log(`Diagnostic Drive : Tentative de création avec folderId="${folderId}"...`);
         res = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
@@ -71,7 +72,15 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
             fields: 'id, webViewLink, webContentLink'
         });
     } catch (driveErr) {
-        if (driveErr.message?.includes('storageQuotaExceeded') || driveErr.message?.includes('File not found') || driveErr.code === 404 || driveErr.code === 403) {
+        console.error("🔍 Détails bruts erreur Drive :", driveErr.code, driveErr.message);
+        if (driveErr.errors && driveErr.errors.length > 0) {
+            console.error("🔍 Cause exacte :", JSON.stringify(driveErr.errors));
+        }
+        
+        if (driveErr.message?.includes('storageQuotaExceeded')) {
+            console.error("❌ Google Drive API Quota Error : Le Service Account Google n'a pas de quota propre.");
+            console.error("👉 Pour corriger : Le dossier Google Drive doit être dans un 'Drive Partagé' (Shared Drive) Google Workspace, ou utilisez Supabase Storage.");
+        } else if (driveErr.message?.includes('File not found') || driveErr.code === 404 || driveErr.code === 403) {
             console.error("❌ Erreur Google Drive : Le dossier cible est introuvable ou non partagé avec l'email du robot.");
             console.error(`👉 POUR ACTIVER GOOGLE DRIVE : Ouvre ton dossier Google Drive (${folderId}) et partage-le avec cet email :`);
             console.error(`👉 📧 ${credentials.client_email || 'votre service account email'}`);
