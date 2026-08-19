@@ -18,8 +18,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- Google Drive Upload Function ---
 async function uploadToGoogleDrive(fileName, imageBuffer) {
-    const credentialsRaw = process.env.GOOGLE_DRIVE_CREDENTIALS;
-    const folderId = process.env.DRIVE_PARENT_FOLDER_ID;
+    let folderId = process.env.DRIVE_PARENT_FOLDER_ID ? process.env.DRIVE_PARENT_FOLDER_ID.trim() : '';
+    // Extraction propre de l'ID si une URL complète a été collée dans GitHub Secrets
+    if (folderId.includes('/folders/')) {
+        folderId = folderId.split('/folders/')[1].split('?')[0].split('/')[0];
+    }
     
     if (!credentialsRaw || !folderId) {
         throw new Error("❌ Secret GOOGLE_DRIVE_CREDENTIALS ou DRIVE_PARENT_FOLDER_ID manquant.");
