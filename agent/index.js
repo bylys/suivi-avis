@@ -81,16 +81,16 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.press('#prompt-textarea', 'Enter');
     }
     
-    console.log("Attente de la génération de l'image DALL-E (délai étendu à 5 minutes)...");
+    console.log("Attente de la génération de l'image DALL-E (délai 90 secondes)...");
     
-    // Selecteur élargi pour intercepter l'image même si elle a changé de nom
-    const imageSelector = 'img[alt*="DALL"], img[src*="files.oaiusercontent.com"]';
+    // Sélecteur universel : n'importe quelle image dans le dernier message de l'assistant ChatGPT
+    const imageSelector = 'div[data-message-author-role="assistant"] img, img[src*="oaiusercontent"], img[alt*="DALL"]';
     
+    let imageElement;
     try {
-        // Timeout de 5 minutes (300 000 ms) grâce au plan Browserless 15 minutes
-        await page.waitForSelector(imageSelector, { timeout: 300000 });
+        imageElement = await page.waitForSelector(imageSelector, { timeout: 90000 });
     } catch (e) {
-        console.log("Le sélecteur d'image n'a pas été trouvé après 5 minutes (300 secondes).");
+        console.log("Le sélecteur d'image n'a pas été trouvé au bout de 90 secondes.");
         console.log("Analyse de ce qui bloque...");
         try {
             const assistantMessages = await page.$$('div[data-message-author-role="assistant"]');
@@ -116,12 +116,21 @@ async function generateImageWithChatGPT(prompt, cookies) {
         throw e;
     }
     
-    const imageUrl = await page.getAttribute(imageSelector, 'src');
-    console.log("Image générée :", imageUrl);
+    const imageUrl = await imageElement.getAttribute('src');
+    console.log("Image générée avec succès ! URL de l'image :", imageUrl);
     
-    // Download the image buffer
-    const response = await page.goto(imageUrl);
-    const imageBuffer = await response.body();
+    // Téléchargement sécurisé du buffer de l'image directement dans le contexte de la page
+    const imageBase64 = await page.evaluate(async (url) => {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+        });
+    }, imageUrl);
+    
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
     
     await browser.close();
     return imageBuffer;
