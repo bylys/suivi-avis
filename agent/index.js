@@ -362,8 +362,15 @@ async function main() {
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
                 const fileName = `${safeOpName}_${dateFormat}_${task.id}.png`;
                 
+                // Tenter de créer le bucket 'images' s'il n'existe pas encore
+                try {
+                    await supabase.storage.createBucket('images', { public: true });
+                } catch (bErr) {
+                    // Ignorer si le bucket existe déjà
+                }
+
                 // Upload to Supabase Storage
-                const { data: storageData, error: storageError } = await supabase.storage
+                let { data: storageData, error: storageError } = await supabase.storage
                     .from('images')
                     .upload(fileName, imageBuffer, {
                         contentType: 'image/png',
@@ -371,7 +378,12 @@ async function main() {
                     });
                     
                 if (storageError) {
-                    console.error("Erreur lors de l'upload sur Supabase Storage :", storageError);
+                    if (storageError.code === 'NoSuchBucket' || storageError.message?.includes('Bucket not found')) {
+                        console.error("❌ Le bucket Storage 'images' n'existe pas sur ton projet Supabase !");
+                        console.error("👉 Solution : Connecte-toi sur Supabase > Storage > New bucket > Nomme-le 'images' et coche 'Public bucket'.");
+                    } else {
+                        console.error("Erreur lors de l'upload sur Supabase Storage :", storageError);
+                    }
                     throw storageError;
                 }
                 
