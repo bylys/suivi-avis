@@ -231,21 +231,11 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.keyboard.press('Enter');
     }
     
-    console.log("Attente de la fin de la génération DALL-E sur ChatGPT...");
-
-    // 1. Attendre que le bouton "Stop generating" disparaisse (signe que DALL-E a fini de travailler)
-    try {
-        await page.waitForSelector('button[aria-label*="Stop"], button[data-testid="stop-button"], .btn-neutral', { timeout: 10000 });
-        console.log("Génération DALL-E en cours... attente du rendu final...");
-        await page.waitForSelector('button[aria-label*="Stop"], button[data-testid="stop-button"], .btn-neutral', { state: 'detached', timeout: 120000 });
-        console.log("✅ DALL-E a terminé la création de l'image !");
-    } catch(e) {
-        console.log("Bouton de chargement non détecté ou déjà terminé, vérification directe des images...");
-    }
-
-    await page.waitForTimeout(3000); // Pause pour le rendu HD final
+    console.log("⏳ Pause obligatoire de 60 secondes pour laisser à DALL-E le temps de générer la photo HD complète...");
+    await page.waitForTimeout(60000);
     
-    // 2. Scanneur d'image complet (validation strict: complete + naturalWidth > 300)
+    // 2. Scanneur d'image final HD (validation stricte naturalWidth >= 600 et naturalHeight >= 600)
+    console.log("Recherche et validation de la photo finale HD...");
     const startTime = Date.now();
     let foundUrl = null;
 
@@ -254,13 +244,12 @@ async function generateImageWithChatGPT(prompt, cookies) {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
                 const src = img.src || '';
-                const alt = img.alt || '';
                 
-                // Exclure les avatars et petites icônes
+                // Exclure les avatars, icônes et logos
                 if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
                 
-                // Détecter uniquement l'image FINALE (chargée à 100% et de grande taille)
-                if (img.complete && (img.naturalWidth >= 300 || img.width >= 300)) {
+                // Détecter UNIQUEMENT la vraie photo HD finale (naturalWidth >= 600)
+                if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600) {
                     return src;
                 }
             }
@@ -269,18 +258,17 @@ async function generateImageWithChatGPT(prompt, cookies) {
 
         if (candidate) {
             foundUrl = candidate;
-            console.log("📸 Image finale HD validée à l'écran ! URL :", foundUrl.substring(0, 100));
+            console.log("📸 Vraie photo HD finale validée à l'écran ! URL :", foundUrl.substring(0, 100));
             break;
         }
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(3000);
     }
 
     if (!foundUrl) {
-        console.log("❌ Aucune image trouvée après 2 minutes de scan.");
-        throw new Error("Timeout: Image not found after active scan");
+        console.log("⚠️ Aucune image de taille > 600px trouvée après 60s de scan. Tentative de capture de la meilleure image disponible...");
     }
 
-    await page.waitForTimeout(3000); // Petite pause pour s'assurer que les pixels HD sont chargés
+    await page.waitForTimeout(3000); // Petite pause de stabilisation du rendu visual
     
     // 4. Extraction haute définition des pixels de l'image (Playwright CDP Screenshot)
     console.log("Extraction haute définition des pixels de l'image (Playwright CDP Screenshot)...");
