@@ -1755,6 +1755,8 @@ function extraireVilleFiche(nomFiche) {
   }
 
   return str;
+}
+
 function obtenirContexteMeteoSaisonnier(meteoSelectVal) {
   if (meteoSelectVal && meteoSelectVal !== 'auto') {
     if (meteoSelectVal === 'soleil') return 'Période estivale ensoleillée, forte chaleur ou entretien d\'été';
