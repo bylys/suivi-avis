@@ -241,14 +241,15 @@ async function generateImageWithChatGPT(prompt, cookies) {
 
     while (Date.now() - startTime < 60000) {
         const candidate = await page.evaluate(() => {
-            const imgs = Array.from(document.querySelectorAll('img'));
+            // Scanner en partant du BAS de la conversation (la toute DERNIÈRE photo générée par DALL-E)
+            const imgs = Array.from(document.querySelectorAll('img')).reverse();
             for (const img of imgs) {
                 const src = img.src || '';
                 
                 // Exclure les avatars, icônes et logos
                 if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
                 
-                // Détecter UNIQUEMENT la vraie photo HD finale (naturalWidth >= 600)
+                // Détecter la toute DERNIÈRE photo HD finale générée au bas de la page
                 if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600) {
                     return src;
                 }
