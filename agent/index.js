@@ -62,12 +62,14 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
         res = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
+            supportsAllDrives: true,
+            supportsTeamDrives: true,
             fields: 'id, webViewLink, webContentLink'
         });
     } catch (driveErr) {
-        if (driveErr.message?.includes('File not found') || driveErr.code === 404 || driveErr.code === 403) {
-            console.error("❌ Erreur Google Drive : Le dossier cible est introuvable ou non partagé.");
-            console.error(`👉 Solution : Ouvre ton dossier Google Drive (${folderId}) et partage-le avec cet email :`);
+        if (driveErr.message?.includes('storageQuotaExceeded') || driveErr.message?.includes('File not found') || driveErr.code === 404 || driveErr.code === 403) {
+            console.error("❌ Erreur Google Drive : Le dossier cible est introuvable ou non partagé avec l'email du robot.");
+            console.error(`👉 POUR ACTIVER GOOGLE DRIVE : Ouvre ton dossier Google Drive (${folderId}) et partage-le avec cet email :`);
             console.error(`👉 📧 ${credentials.client_email || 'votre service account email'}`);
             console.error("👉 Attribue-lui le rôle 'Éditeur' (Editor).");
         } else {
@@ -79,10 +81,10 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
     const fileId = res.data.id;
     console.log(`✅ Photo uploadée avec succès sur Google Drive ! File ID : ${fileId}`);
 
-    // Donner accès en lecture publique au fichier pour qu'il soit ouvert en 1 clic
     try {
         await drive.permissions.create({
             fileId: fileId,
+            supportsAllDrives: true,
             requestBody: {
                 role: 'reader',
                 type: 'anyone'
@@ -94,6 +96,36 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
 
     const driveUrl = res.data.webViewLink || `https://drive.google.com/file/d/${fileId}/view`;
     return { fileId, driveUrl };
+}
+
+// --- Upload Hybride (Google Drive en priorité, Supabase Storage en fallback) ---
+async function uploadImage(fileName, imageBuffer) {
+    try {
+        const driveRes = await uploadToGoogleDrive(fileName, imageBuffer);
+        return { provider: 'Google Drive', url: driveRes.driveUrl };
+    } catch (driveErr) {
+        console.log("⚠️ Transfert Google Drive indisponible. Bascule automatique sur Supabase Storage...");
+        
+        try {
+            await supabase.storage.createBucket('images', { public: true });
+        } catch (bErr) {}
+
+        const { data: storageData, error: storageError } = await supabase.storage
+            .from('images')
+            .upload(fileName, imageBuffer, {
+                contentType: 'image/png',
+                upsert: true
+            });
+
+        if (storageError) throw storageError;
+
+        const { data: publicUrlData } = supabase.storage
+            .from('images')
+            .getPublicUrl(fileName);
+
+        console.log(`✅ Photo sauvegardée avec succès sur Supabase Storage !`);
+        return { provider: 'Supabase Storage', url: publicUrlData.publicUrl };
+    }
 }
 async function generateImageWithChatGPT(prompt, cookies) {
     console.log("Connexion à Browserless avec le mode Stealth activé...");
@@ -453,15 +485,15 @@ async function main() {
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
                 const fileName = `${safeOpName}_${dateFormat}_${task.id}.png`;
                 
-                // Upload sur Google Drive
-                const { fileId, driveUrl } = await uploadToGoogleDrive(fileName, imageBuffer);
+                // Upload de l'image (Google Drive avec fallback Supabase Storage)
+                const uploadResult = await uploadImage(fileName, imageBuffer);
                 
                 // Mettre à jour la base de données Supabase (uniquement en mode prod)
                 if (isTestFallback) {
                     console.log(`========================================================`);
                     console.log(`🎉 TEST RÉUSSI AU MAXIMUM ! 🎉`);
-                    console.log(`Lien de la photo générée sur Google Drive : ${driveUrl}`);
-                    console.log(`ID du fichier Google Drive : ${fileId}`);
+                    console.log(`Stockage utilisé : ${uploadResult.provider}`);
+                    console.log(`Lien public de la photo : ${uploadResult.url}`);
                     console.log(`(Aucune ligne de la base de données n'a été modifiée)`);
                     console.log(`========================================================`);
                 } else {
@@ -469,10 +501,10 @@ async function main() {
                         .from('planning')
                         .update({
                             statut: 'image_generated',
-                            url_image: driveUrl
+                            url_image: uploadResult.url
                         })
                         .eq('id', task.id);
-                    console.log(`Supabase mis à jour avec le lien Google Drive pour l'avis ID ${task.id}`);
+                    console.log(`Supabase mis à jour avec le lien (${uploadResult.provider}) pour l'avis ID ${task.id}`);
                 }
                 
             } catch (err) {
