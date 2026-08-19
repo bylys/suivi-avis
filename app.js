@@ -1755,6 +1755,51 @@ function extraireVilleFiche(nomFiche) {
   }
 
   return str;
+function obtenirContexteMeteoSaisonnier(meteoSelectVal) {
+  if (meteoSelectVal && meteoSelectVal !== 'auto') {
+    if (meteoSelectVal === 'soleil') return 'Période estivale ensoleillée, forte chaleur ou entretien d\'été';
+    if (meteoSelectVal === 'pluie') return 'Fortes pluies récentes, infiltrations ou évacuation d\'eau d\'urgence';
+    if (meteoSelectVal === 'vent') return 'Coup de vent / tempête récente ayant provoqué des dégâts ou inquiétudes';
+    if (meteoSelectVal === 'froid') return 'Période de gel / grand froid nécessitant une réfection d\'étanchéité ou isolation';
+  }
+
+  const now = new Date();
+  const month = now.getMonth();
+  const moisNoms = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  const moisActuel = moisNoms[month];
+
+  if (month >= 5 && month <= 8) {
+    return `Saison estivale (${moisActuel}) — profiter du jardin/extérieur, besoin de lumière ou protection solaire`;
+  } else if (month >= 9 && month <= 10) {
+    return `Automne (${moisActuel}) — pluies fréquentes, ramassage des feuilles et préparation de la maison pour l'hiver`;
+  } else if (month === 11 || month <= 1) {
+    return `Période hivernale (${moisActuel}) — temps froid, gelées ou pluies battantes`;
+  } else {
+    return `Printemps (${moisActuel}) — retour des beaux jours, entretien d'espaces et nettoyage de printemps`;
+  }
+}
+
+function genererPersonaAuteur() {
+  const personas = [
+    "Propriétaire prévoyant qui a pris le temps de comparer les devis avant d'engager les travaux.",
+    "Client dans l'urgence suite à un imprévu récent (besoin d'une équipe réactive qui intervienne vite).",
+    "Propriétaire exigeant sur les finitions, la propreté du chantier et la tenue des engagements.",
+    "Client venu sur recommandation d'un voisin ou d'un proche du quartier.",
+    "Client fidèle qui faisait appel à eux pour la seconde fois.",
+    "Bailleur/propriétaire d'un bien locatif qui a fait réaliser les travaux à distance avec confiance.",
+    "Voisin d'un précédent chantier qui a remarqué leur professionnalisme et a décidé de les contacter."
+  ];
+  return personas[Math.floor(Math.random() * personas.length)];
+}
+
+function genererStructureNarrative() {
+  const structures = [
+    "Commence par l'impression générale ou la recommandation, puis détaille l'intervention et le résultat.",
+    "Commence par la raison initiale ou l'élément déclencheur (besoin/problème), puis décris l'arrivée de l'équipe et le travail fini.",
+    "Commence par une remarque sur la réactivité/devis, puis explique comment s'est déroulé le chantier.",
+    "Raconte simplement l'histoire depuis le premier contact jusqu'au départ de l'équipe."
+  ];
+  return structures[Math.floor(Math.random() * structures.length)];
 }
 
 async function populateGenFiche() {
@@ -2401,6 +2446,9 @@ async function genererAvis() {
   let   ville   = document.getElementById('gen-ville').value.trim();
   const ton     = document.getElementById('gen-ton').value;
 
+  const meteoSelect = document.getElementById('gen-meteo');
+  const meteoVal    = meteoSelect ? meteoSelect.value : 'auto';
+
   const villeFiche = extraireVilleFiche(fiche) || ville;
   if (!ville && villeFiche) {
     ville = villeFiche;
@@ -2422,8 +2470,7 @@ async function genererAvis() {
 
   const tonLabel = { neutre: 'neutre et factuel', enthousiaste: 'enthousiaste et chaleureux', detaille: 'détaillé et précis', court: 'court et direct' }[ton] || 'neutre';
 
-  // Le dépannage automobile n'est PAS une intervention à domicile : panne / remorquage
-  // au bord de la route. Le prompt générique (voisins, mobilier, chantier) ne colle pas.
+  // Détermination dynamique des variables anti-filtrage Google
   const isAuto = detecterMetier(fiche) === 'auto';
 
   const introRole = isAuto
@@ -2433,6 +2480,17 @@ async function genererAvis() {
   const detailConcret = isAuto
     ? 'Inclure au moins un détail concret propre au dépannage auto : délai d\'arrivée du dépanneur, réactivité (nuit, week-end, heure de pointe), diagnostic de la panne, dépannage sur place ou remorquage, tarif annoncé avant intervention, prise en charge rassurante. INTERDIT : voisins, mobilier, chantier, propreté du chantier, finitions, devis de travaux.'
     : 'Inclure au moins un détail concret : voisins qui réagissent, propreté du chantier, ponctualité, conformité du devis, qualité des finitions, protection du mobilier';
+
+  const contexteMeteoSaison = obtenirContexteMeteoSaisonnier(meteoVal);
+  const personaAuteur       = genererPersonaAuteur();
+  const structureNarrative  = genererStructureNarrative();
+
+  // 60% du temps : ne pas mentionner le nom exact de l'entreprise (termes neutres comme L'équipe / L'artisan / Ils)
+  // 40% du temps : mentionner le nom de l'entreprise 1 fois max
+  const mentionnerNomEntreprise = Math.random() < 0.4;
+  const regleNomCommercial = mentionnerNomEntreprise
+    ? `MENTION DU NOM COMMERCIAL : Tu peux mentionner le nom de l'entreprise ("${fiche}") 1 seule fois maximum dans l'avis.`
+    : `MENTION DU NOM COMMERCIAL : NE MENTIONNE PAS le nom complet de l'entreprise ("${fiche}"). Utilise des termes neutres ("L'équipe", "L'artisan", "Les intervenants", "Ils") comme le font la majorité des vrais clients sur Google.`;
 
   // Alternance 50/50 : 50% ville exacte du GMB, 50% ville voisine secteur (< 35 km)
   const useExactCity = Math.random() < 0.5;
@@ -2453,20 +2511,21 @@ Informations :
 - Ville principale de la fiche GMB : ${villeFiche}
 - Ville / Commune d'intervention : ${ville}
 - Ton : ${tonLabel}
+- Profil / Persona de l'auteur : ${personaAuteur}
+- Contexte Météo / Saison : ${contexteMeteoSaison}
 
 Règles de rédaction strictes :
-1. Écris à la première personne (je, on, nous) — style humain, naturel, pas de formulation marketing
-2. Langage familier modéré OK ("les gars", "nickel", "rien à redire", "boulot", "sympa") — INTERDIT : "franchement", "le matos", "vachement", "trop bien", "au top"
-3. Tu PEUX commencer par le nom de l'entreprise suivi d'une observation directe (ex : "Super boulot de la part de [entreprise] !") ou par une situation concrète
-4. Structure narrative : situation ou observation → intervention → résultat → impression finale (varie l'ordre)
-5. ${detailConcret}
+1. Écris à la première personne (je, on, nous) — style humain, spontané, pas de formulation commerciale
+2. Angle / Structure narrative suggérée : ${structureNarrative}
+3. ${detailConcret}
+4. Contexte temporel & météo : Intègre si approprié un léger détail temporel ou météo lié au contexte ("${contexteMeteoSaison}") ou à l'organisation ("intervention semaine dernière", "appels suite aux intempéries", "rendez-vous fixé vite", etc.)
+5. ${regleNomCommercial}
 ${regleVilleGeo}
-7. Les fautes de frappe légères et petites erreurs grammaticales sont acceptées et souhaitées pour l'authenticité
-8. Exclamations naturelles OK (1-2 max)
-9. Signaux d'authenticité Google : pas de superlatifs répétés, une observation précise et spécifique, nom de l'entreprise max 1-2 fois
-10. Longueur : court = 2-3 phrases / neutre = 3-4 phrases / détaillé = 5-7 phrases / enthousiaste = 4-5 phrases avec émotion sincère
-11. Conclusions variées : "Une adresse qu'on garde précieusement", "On repassera par eux sans hésiter", "Je recommande vivement pour leur sérieux", "Le résultat parle de lui-même" — jamais deux fois la même
-12. Réponds UNIQUEMENT avec le texte de l'avis — aucun guillemet, aucune introduction, aucune explication
+7. Vocabulaire & Authenticité : langage familier modéré OK ("les gars", "nickel", "boulot", "super sympa", "rien à redire"). INTERDIT : "franchement", "le matos", "vachement", "trop bien", "au top", "je recommande à 100%".
+8. Les fautes de frappe légères et petites imprécisions de ponctuation sont acceptées et souhaitées pour l'authenticité
+9. Longueur : court (2-3 phrases) / neutre (3-4 phrases) / détaillé (5-7 phrases) / enthousiaste (4-5 phrases)
+10. Conclusions variées et naturelles — évite absolument les formules répétitives
+11. Réponds UNIQUEMENT avec le texte de l'avis — aucun guillemet, aucune introduction, aucune explication
 
 Avis :`;
 
@@ -2484,7 +2543,13 @@ Avis :`;
     const res = await fetch(_geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.85 + Math.random() * 0.25,
+          topP: 0.95
+        }
+      })
     });
 
     const data = await res.json();

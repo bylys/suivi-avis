@@ -264,6 +264,15 @@
           <option value="court">Court & direct</option>
         </select>
       </label>
+      <label>Contexte météo / Saison
+        <select id="gen-meteo">
+          <option value="auto">⚙️ Automatique (Saison du jour)</option>
+          <option value="soleil">☀️ Beau temps / Période estivale</option>
+          <option value="pluie">🌧️ Fortes pluies / Infiltrations récentes</option>
+          <option value="vent">💨 Coup de vent / Tempête récente</option>
+          <option value="froid">❄️ Grand froid / Période de gel</option>
+        </select>
+      </label>
       <div class="gen-actions">
         <button class="btn-primary" onclick="genererAvis()">✨ Générer l'avis</button>
         <button class="btn-secondary" onclick="genererAvis()">🔄 Régénérer</button>
