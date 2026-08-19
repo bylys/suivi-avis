@@ -1719,10 +1719,64 @@ function renderRappelsBanner(dus) {
 // ── GÉNÉRATEUR D'AVIS ──
 function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+function extraireVilleFiche(nomFiche) {
+  if (!nomFiche) return '';
+  let str = nomFiche.trim();
+
+  if (typeof _fichesCache !== 'undefined' && Array.isArray(_fichesCache)) {
+    const found = _fichesCache.find(f => f.nom && f.nom.toLowerCase() === str.toLowerCase());
+    if (found && found.ville) return found.ville.trim();
+  }
+
+  let main = str.split(/\s+[-–—]\s+/)[0] || str;
+  main = main.replace(/\b(France|[0-9]{2,5}|[A-Z][a-z]+ [0-9]{2})\b/gi, '').trim();
+
+  const motsMetiers = [
+    'Élagage', 'Elagage', 'Abattage', 'Taille de Haie', 'Taille de haie', 'Taille', 'Haie', 'Arboriste', 'Grimpeur', 'Paysagiste',
+    'Ravalement de Façade', 'Ravalement de façade', 'Ravalement', 'Ravelement', 'Nettoyage', 'Démoussage', 'Demoussage',
+    'Peintre en Bâtiment', 'Peintre', 'Peinture', 'Couvreur', 'Toiture', 'Toit', 'Zinguerie', 'Zingu', 'Charpente',
+    'Carreleur', 'Carrelage', 'Maçonnerie', 'Maconnerie', 'Maçon', 'Macon', 'Béton', 'Beton', 'Dalle',
+    'Terrassement', 'Terrasse', 'Façade', 'Facade', 'Enduit', 'Façadier', 'Facadier', 'Isolation',
+    'Débarras', 'Debarras', 'Étanchéité', 'Etancheite', 'Plomberie', 'Plombier', 'Électricité', 'Electricite',
+    'Réparation', 'Reparation', 'Rénovation', 'Renovation', 'Dépannage', 'Depannage', 'Remorquage', 'Auto', 'Voiture',
+    'Garage', 'Jardinage', 'Jardin', 'Bâtiment', 'Batiment'
+  ];
+
+  let candidate = main;
+  for (const word of motsMetiers) {
+    const reg = new RegExp('\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+    candidate = candidate.replace(reg, '');
+  }
+
+  candidate = candidate.replace(/^[\s,;&|/-]+|[\s,;&|/-]+$/g, '').trim();
+
+  if (candidate && candidate.length >= 2) {
+    return candidate;
+  }
+
+  return str;
+}
+
 async function populateGenFiche() {
   const fiches = await getFiches();
   const dl = document.getElementById('datalist-gen-fiche');
   if (dl) dl.innerHTML = fiches.map(f => `<option value="${f.nom.replace(/"/g,'&quot;')}">`).join('');
+
+  const ficheInput = document.getElementById('gen-fiche');
+  if (ficheInput && !ficheInput._hasAutoVilleListener) {
+    ficheInput._hasAutoVilleListener = true;
+    const autoUpdateVille = () => {
+      const val = ficheInput.value.trim();
+      if (!val) return;
+      const extracted = extraireVilleFiche(val);
+      const villeInput = document.getElementById('gen-ville');
+      if (villeInput && extracted) {
+        villeInput.value = extracted;
+      }
+    };
+    ficheInput.addEventListener('input', autoUpdateVille);
+    ficheInput.addEventListener('change', autoUpdateVille);
+  }
 }
 
 // ── TEMPLATES D'AVIS COMPLETS PAR TON ──
@@ -2344,8 +2398,15 @@ function promptGeminiKey() {
 async function genererAvis() {
   const fiche   = document.getElementById('gen-fiche').value.trim();
   const travaux = document.getElementById('gen-travaux').value.trim();
-  const ville   = document.getElementById('gen-ville').value.trim();
+  let   ville   = document.getElementById('gen-ville').value.trim();
   const ton     = document.getElementById('gen-ton').value;
+
+  const villeFiche = extraireVilleFiche(fiche) || ville;
+  if (!ville && villeFiche) {
+    ville = villeFiche;
+    const elV = document.getElementById('gen-ville');
+    if (elV) elV.value = ville;
+  }
 
   if (!fiche || !travaux || !ville) {
     alert('Merci de remplir les 3 champs obligatoires.');
@@ -2373,12 +2434,24 @@ async function genererAvis() {
     ? 'Inclure au moins un détail concret propre au dépannage auto : délai d\'arrivée du dépanneur, réactivité (nuit, week-end, heure de pointe), diagnostic de la panne, dépannage sur place ou remorquage, tarif annoncé avant intervention, prise en charge rassurante. INTERDIT : voisins, mobilier, chantier, propreté du chantier, finitions, devis de travaux.'
     : 'Inclure au moins un détail concret : voisins qui réagissent, propreté du chantier, ponctualité, conformité du devis, qualité des finitions, protection du mobilier';
 
+  // Alternance 50/50 : 50% ville exacte du GMB, 50% ville voisine secteur (< 35 km)
+  const useExactCity = Math.random() < 0.5;
+
+  const regleVilleGeo = useExactCity
+    ? `6. RÈGLE STRICTE DE GÉOLOCALISATION / VILLE (VILLE EXACTE GMB) :
+   - Tu DOIS OBLIGATOIREMENT mentionner la ville exacte de la fiche GMB ("${villeFiche}") dans le texte de l'avis (ex: "sur ${villeFiche}", "à ${villeFiche}...").
+   - Ne mentionne aucune autre ville que "${villeFiche}".`
+    : `6. RÈGLE STRICTE DE GÉOLOCALISATION / VILLE (COMMUNE VOISINE < 35 KM) :
+   - Tu DOIS OBLIGATOIREMENT mentionner une commune voisine ou petite ville du secteur située à MAXIMUM 35 km autour de "${villeFiche}" (ex: commune limitrophe ou voisine du secteur).
+   - Ne cite PAS la ville "${villeFiche}" elle-même mais une commune proche de son secteur (< 35 km). INTERDICTION ABSOLUE de citer une ville éloignée hors de ce rayon.`;
+
   const prompt = `${introRole}
 
 Informations :
 - Entreprise : ${fiche}
 - ${isAuto ? 'Intervention' : 'Travaux'} : ${travaux}
-- Ville : ${ville}
+- Ville principale de la fiche GMB : ${villeFiche}
+- Ville / Commune d'intervention : ${ville}
 - Ton : ${tonLabel}
 
 Règles de rédaction strictes :
@@ -2387,12 +2460,13 @@ Règles de rédaction strictes :
 3. Tu PEUX commencer par le nom de l'entreprise suivi d'une observation directe (ex : "Super boulot de la part de [entreprise] !") ou par une situation concrète
 4. Structure narrative : situation ou observation → intervention → résultat → impression finale (varie l'ordre)
 5. ${detailConcret}
-6. Les fautes de frappe légères et petites erreurs grammaticales sont acceptées et souhaitées pour l'authenticité
-7. Exclamations naturelles OK (1-2 max)
-8. Signaux d'authenticité Google : pas de superlatifs répétés, une observation précise et spécifique, nom de l'entreprise max 1-2 fois
-9. Longueur : court = 2-3 phrases / neutre = 3-4 phrases / détaillé = 5-7 phrases / enthousiaste = 4-5 phrases avec émotion sincère
-10. Conclusions variées : "Une adresse qu'on garde précieusement", "On repassera par eux sans hésiter", "Je recommande vivement pour leur sérieux", "Le résultat parle de lui-même" — jamais deux fois la même
-11. Réponds UNIQUEMENT avec le texte de l'avis — aucun guillemet, aucune introduction, aucune explication
+${regleVilleGeo}
+7. Les fautes de frappe légères et petites erreurs grammaticales sont acceptées et souhaitées pour l'authenticité
+8. Exclamations naturelles OK (1-2 max)
+9. Signaux d'authenticité Google : pas de superlatifs répétés, une observation précise et spécifique, nom de l'entreprise max 1-2 fois
+10. Longueur : court = 2-3 phrases / neutre = 3-4 phrases / détaillé = 5-7 phrases / enthousiaste = 4-5 phrases avec émotion sincère
+11. Conclusions variées : "Une adresse qu'on garde précieusement", "On repassera par eux sans hésiter", "Je recommande vivement pour leur sérieux", "Le résultat parle de lui-même" — jamais deux fois la même
+12. Réponds UNIQUEMENT avec le texte de l'avis — aucun guillemet, aucune introduction, aucune explication
 
 Avis :`;
 
