@@ -105,10 +105,18 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   );
   if (visualKey) lines.push(VISUAL_RULES_BY_SERVICE[visualKey]);
 
-  const { showWorker, compositionRule } = getCompositionRules(etatChantier);
+  const { showWorker: initialShowWorker, compositionRule } = getCompositionRules(etatChantier);
   lines.push(compositionRule);
 
-  if (!showWorker) {
+  // Métiers extérieurs/dangereux exigeant toujours la présence de 2 ouvriers
+  const DANGEROUS_TRADES = ['toiture', 'nettoyage_toiture', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'vitrier', 'charpente'];
+  const isDangerous = DANGEROUS_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
+
+  const showWorker = isDangerous ? true : initialShowWorker;
+
+  if (showWorker) {
+    lines.push(`WORKER MANDATE: Minimum 2 active workers visible in high-visibility workwear (yellow/orange safety vests, hard hats, work trousers). One worker actively operating the main tool/equipment, the second worker assisting or securing. Both workers rendered in realistic working postures.`);
+  } else {
     lines.push(`WORKER PRESENCE: No workers visible in this shot. Show only the worksite, materials and equipment.`);
   }
 
