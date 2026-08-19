@@ -270,40 +270,44 @@ async function generateImageWithChatGPT(prompt, cookies) {
 
     await page.waitForTimeout(3000); // Petite pause de stabilisation du rendu visual
     
-    // 4. Extraction haute définition des pixels de l'image (Playwright CDP Screenshot)
-    console.log("Extraction haute définition des pixels de l'image (Playwright CDP Screenshot)...");
+    // 4. Téléchargement du fichier binaire ORIGINAL haute résolution DALL-E (1024x1024 / 1024x1792)
+    console.log("Téléchargement du fichier image original full-resolution...");
     
     let imageBuffer = null;
     
-    try {
-        const imgLocator = page.locator('div[data-message-author-role="assistant"] img, img[src*="estuary"], img[src*="oaiusercontent"], img[alt*="DALL"]').last();
-        await imgLocator.scrollIntoViewIfNeeded();
-        await page.waitForTimeout(1500);
-        imageBuffer = await imgLocator.screenshot({ type: 'png' });
-        console.log(`✅ Photo HD capturée avec succès ! (Taille du buffer : ${imageBuffer.length} octets)`);
-    } catch (err) {
-        console.log("Erreur lors de la capture d'écran d'élément :", err.message);
-    }
-    
-    // Fallback: Fetch in-page si le screenshot échoue
-    if (!imageBuffer || imageBuffer.length < 5000) {
-        console.log("Fallback : Récupération in-page via fetch avec credentials...");
-        const base64Data = await page.evaluate(async (url) => {
-            try {
+    // Méthode 1 (Principale) : Téléchargement du vrai fichier image binaire DALL-E
+    if (foundUrl) {
+        try {
+            const base64Data = await page.evaluate(async (url) => {
                 const res = await fetch(url, { credentials: 'include' });
+                if (!res.ok) return null;
                 const blob = await res.blob();
                 return new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result.split(',')[1]);
                     reader.readAsDataURL(blob);
                 });
-            } catch (e) {
-                return null;
-            }
-        }, foundUrl);
+            }, foundUrl);
 
-        if (base64Data) {
-            imageBuffer = Buffer.from(base64Data, 'base64');
+            if (base64Data && base64Data.length > 5000) {
+                imageBuffer = Buffer.from(base64Data, 'base64');
+                console.log(`✅ Fichier original HD DALL-E téléchargé en entier ! (Taille : ${imageBuffer.length} octets)`);
+            }
+        } catch (e) {
+            console.log("Erreur lors du téléchargement direct du fichier :", e.message);
+        }
+    }
+
+    // Méthode 2 (Fallback) : Capture d'élément si le téléchargement direct échoue
+    if (!imageBuffer || imageBuffer.length < 5000) {
+        console.log("Fallback : Capture d'élément Playwright...");
+        try {
+            const imgLocator = page.locator('div[data-message-author-role="assistant"] img, img[src*="estuary"], img[src*="oaiusercontent"], img[alt*="DALL"]').last();
+            await imgLocator.scrollIntoViewIfNeeded();
+            await page.waitForTimeout(1500);
+            imageBuffer = await imgLocator.screenshot({ type: 'png' });
+        } catch (err) {
+            console.log("Erreur lors de la capture d'élément :", err.message);
         }
     }
     
