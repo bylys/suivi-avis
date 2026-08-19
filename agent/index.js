@@ -57,11 +57,24 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
 
     console.log(`Upload en cours de la photo sur Google Drive (Dossier ID : ${folderId})...`);
 
-    const res = await drive.files.create({
-        requestBody: fileMetadata,
-        media: media,
-        fields: 'id, webViewLink, webContentLink'
-    });
+    let res;
+    try {
+        res = await drive.files.create({
+            requestBody: fileMetadata,
+            media: media,
+            fields: 'id, webViewLink, webContentLink'
+        });
+    } catch (driveErr) {
+        if (driveErr.message?.includes('File not found') || driveErr.code === 404 || driveErr.code === 403) {
+            console.error("❌ Erreur Google Drive : Le dossier cible est introuvable ou non partagé.");
+            console.error(`👉 Solution : Ouvre ton dossier Google Drive (${folderId}) et partage-le avec cet email :`);
+            console.error(`👉 📧 ${credentials.client_email || 'votre service account email'}`);
+            console.error("👉 Attribue-lui le rôle 'Éditeur' (Editor).");
+        } else {
+            console.error("❌ Erreur Google Drive API :", driveErr.message);
+        }
+        throw driveErr;
+    }
 
     const fileId = res.data.id;
     console.log(`✅ Photo uploadée avec succès sur Google Drive ! File ID : ${fileId}`);
