@@ -231,8 +231,8 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.keyboard.press('Enter');
     }
     
-    console.log("⏳ Pause obligatoire de 60 secondes pour laisser à DALL-E le temps de générer la photo HD complète...");
-    await page.waitForTimeout(60000);
+    console.log("⏳ Pause obligatoire de 90 secondes pour laisser à DALL-E le temps de générer la photo HD complète...");
+    await page.waitForTimeout(90000);
     
     // 2. Scanneur d'image final HD (validation stricte naturalWidth >= 600 et naturalHeight >= 600)
     console.log("Recherche et validation de la photo finale HD...");
