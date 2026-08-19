@@ -70,43 +70,49 @@ async function generateImageWithChatGPT(prompt, cookies) {
         console.log(html.substring(0, 1500)); // Afficher les premiers caractères pour comprendre où il est bloqué
         throw e;
     }
-    await page.fill('#prompt-textarea', prompt);
-    await page.type('#prompt-textarea', ' '); // Simule une frappe clavier pour forcer React à détecter le texte
-    // Le simple bouton "Entrée" ne suffit parfois plus sur ChatGPT. On clique sur le vrai bouton.
-    await page.waitForTimeout(1000); 
+    // 1. Saisie robuste du texte compatible React
+    await page.evaluate((text) => {
+        const textarea = document.querySelector('#prompt-textarea');
+        if (!textarea) return;
+        textarea.focus();
+        textarea.value = text;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    }, prompt);
+
+    await page.waitForTimeout(1000);
+
+    // 2. Clic sur le bouton d'envoi ou Entrée
     try {
-        await page.click('button[data-testid="send-button"]', { timeout: 5000 });
+        const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
+        await sendBtn.click();
+        console.log("Bouton d'envoi cliqué !");
     } catch(e) {
-        console.log("Bouton d'envoi non trouvé, tentative avec la touche Entrée...");
+        console.log("Bouton d'envoi non prêt, simulation de la touche Entrée...");
         await page.press('#prompt-textarea', 'Enter');
     }
     
-    console.log("Attente de la génération de l'image DALL-E (délai 90 secondes)...");
+    console.log("Attente de la génération de l'image DALL-E (délai 150 secondes max)...");
     
-    // Sélecteur universel : n'importe quelle image dans le dernier message de l'assistant ChatGPT
-    const imageSelector = 'div[data-message-author-role="assistant"] img, img[src*="oaiusercontent"], img[alt*="DALL"]';
+    // 3. Attente robuste de l'image (sélecteur universel)
+    // ChatGPT met parfois les images dans canvas, div[data-message-author-role="assistant"] img, ou img avec blob/oaiusercontent
+    const imageSelector = 'div[data-message-author-role="assistant"] img, article img, img[src*="oaiusercontent"], img[src*="blob:"], img[alt*="DALL"]';
     
     let imageElement;
     try {
-        imageElement = await page.waitForSelector(imageSelector, { timeout: 90000 });
+        imageElement = await page.waitForSelector(imageSelector, { timeout: 150000 });
+        console.log("Élément image détecté à l'écran !");
     } catch (e) {
-        console.log("Le sélecteur d'image n'a pas été trouvé au bout de 90 secondes.");
+        console.log("Le sélecteur d'image n'a pas été trouvé au bout de 150 secondes.");
         console.log("Analyse de ce qui bloque...");
         try {
-            const assistantMessages = await page.$$('div[data-message-author-role="assistant"]');
+            const assistantMessages = await page.$$('div[data-message-author-role="assistant"], article');
             if (assistantMessages.length > 0) {
                 const lastMessage = assistantMessages[assistantMessages.length - 1];
                 const text = await lastMessage.innerText();
                 console.log("========================================================");
-                console.log("RÉPONSE TEXTUELLE DE CHATGPT (au lieu d'une image) :");
+                console.log("RÉPONSE TEXTUELLE DE CHATGPT :");
                 console.log(text);
-                console.log("========================================================");
-            } else {
-                console.log("========================================================");
-                console.log("Aucune réponse de ChatGPT trouvée.");
-                console.log("Voici tout le texte visible sur la page (pour voir s'il y a un popup bloquant) :");
-                const bodyText = await page.locator('body').innerText();
-                console.log(bodyText.substring(0, 1500));
                 console.log("========================================================");
             }
         } catch (textError) {
@@ -115,22 +121,45 @@ async function generateImageWithChatGPT(prompt, cookies) {
         
         throw e;
     }
+
+    // Attente supplémentaire de 3 secondes pour que le rendu haute résolution soit chargé
+    await page.waitForTimeout(3000);
     
     const imageUrl = await imageElement.getAttribute('src');
-    console.log("Image générée avec succès ! URL de l'image :", imageUrl);
+    console.log("Image récupérée ! URL / SRC :", imageUrl ? imageUrl.substring(0, 100) : 'null');
     
-    // Téléchargement sécurisé du buffer de l'image directement dans le contexte de la page
-    const imageBase64 = await page.evaluate(async (url) => {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result.split(',')[1]);
-            reader.readAsDataURL(blob);
-        });
-    }, imageUrl);
-    
-    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    // 4. Téléchargement sécurisé du buffer (Fetch in-page ou capture de l'élément)
+    let imageBuffer;
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+        const base64Data = imageUrl.split(',')[1];
+        imageBuffer = Buffer.from(base64Data, 'base64');
+    } else {
+        const imageBase64 = await page.evaluate(async (imgSel) => {
+            const img = document.querySelector(imgSel);
+            if (!img) return null;
+            
+            // Si c'est un canvas ou si fetch direct
+            try {
+                const res = await fetch(img.src);
+                const blob = await res.blob();
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+            } catch (err) {
+                // Fallback canvas screenshot
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                return canvas.toDataURL('image/png').split(',')[1];
+            }
+        }, imageSelector);
+
+        imageBuffer = Buffer.from(imageBase64, 'base64');
+    }
     
     await browser.close();
     return imageBuffer;
