@@ -108,16 +108,27 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   const { showWorker: initialShowWorker, compositionRule } = getCompositionRules(etatChantier);
   lines.push(compositionRule);
 
-  // Métiers extérieurs/dangereux exigeant toujours la présence de 2 ouvriers
-  const DANGEROUS_TRADES = ['toiture', 'nettoyage_toiture', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'vitrier', 'charpente'];
-  const isDangerous = DANGEROUS_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
+  // Distinguer métiers extérieurs dangereux (2+ ouvriers) vs travaux intérieurs (1 ouvrier solo)
+  const DANGEROUS_OUTDOOR_TRADES = ['toiture', 'nettoyage_toiture', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'vitrier', 'charpente'];
+  const isOutdoorDangerous = DANGEROUS_OUTDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
-  const showWorker = isDangerous ? true : initialShowWorker;
+  const INDOOR_TRADES = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine'];
+  const isIndoor = INDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
-  if (showWorker) {
-    lines.push(`WORKER MANDATE: Minimum 2 active workers visible in high-visibility workwear (yellow/orange safety vests, hard hats, work trousers). One worker actively operating the main tool/equipment, the second worker assisting or securing. Both workers rendered in realistic working postures.`);
+  if (isOutdoorDangerous) {
+    lines.push(`WORKER MANDATE (Outdoor/High Risk): Minimum 2 active workers visible in professional high-visibility workwear (yellow/orange safety vests, hard hats, work trousers). One operating main tools, second assisting or securing. Both rendered in realistic working postures.`);
+  } else if (isIndoor) {
+    if (initialShowWorker) {
+      lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 professional artisan/tradesman visible inside the room, actively working on the task (e.g. painting wall, tiling, electrical outlet, plumbing under sink) in neat professional work clothes.`);
+    } else {
+      lines.push(`WORKER PRESENCE (Indoor): Show clean indoor room or active work zone with tools and materials neatly set up. No workers visible in frame.`);
+    }
   } else {
-    lines.push(`WORKER PRESENCE: No workers visible in this shot. Show only the worksite, materials and equipment.`);
+    if (initialShowWorker) {
+      lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear, operating equipment naturally.`);
+    } else {
+      lines.push(`WORKER PRESENCE: Show only the worksite, materials and equipment. No workers visible in frame.`);
+    }
   }
 
   return lines.length > 0 ? `\n\n---\n${lines.join('\n')}` : '';
