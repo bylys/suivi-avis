@@ -70,26 +70,40 @@ async function generateImageWithChatGPT(prompt, cookies) {
         console.log(html.substring(0, 1500)); // Afficher les premiers caractères pour comprendre où il est bloqué
         throw e;
     }
-    // 1. Saisie robuste du texte compatible React
+    // 1. Saisie robuste du texte (support contenteditable / Lexical & textarea)
+    console.log("Saisie du prompt dans le champ de texte...");
+    const promptInput = page.locator('#prompt-textarea');
+    await promptInput.focus();
+
     await page.evaluate((text) => {
-        const textarea = document.querySelector('#prompt-textarea');
-        if (!textarea) return;
-        textarea.focus();
-        textarea.value = text;
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+        const el = document.querySelector('#prompt-textarea');
+        if (!el) return;
+        el.focus();
+        // ChatGPT utilise un div/p contenteditable
+        if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
+            document.execCommand('selectAll', false, null);
+            document.execCommand('insertText', false, text);
+            el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+        } else {
+            el.value = text;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
     }, prompt);
 
+    await page.waitForTimeout(500);
+    // Simulation d'une touche pour forcer l'activation du bouton d'envoi React
+    await promptInput.pressSequentially(' ');
     await page.waitForTimeout(1000);
 
-    // 2. Clic sur le bouton d'envoi ou Entrée
+    // 2. Clic sur le bouton d'envoi
     try {
         const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
         await sendBtn.click();
-        console.log("Bouton d'envoi cliqué !");
+        console.log("✅ Bouton d'envoi cliqué avec succès !");
     } catch(e) {
-        console.log("Bouton d'envoi non prêt, simulation de la touche Entrée...");
-        await page.press('#prompt-textarea', 'Enter');
+        console.log("Bouton d'envoi non actif, tentative avec la touche Entrée...");
+        await page.keyboard.press('Enter');
     }
     
     console.log("Attente de la génération de l'image DALL-E (délai 150 secondes max)...");
