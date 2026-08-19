@@ -106,55 +106,59 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.keyboard.press('Enter');
     }
     
-    console.log("Attente de la génération de l'image DALL-E (délai 150 secondes max)...");
+    console.log("Attente de la génération de l'image DALL-E (scan actif toutes les 3s)...");
     
-    // 3. Attente robuste de l'image (sélecteur universel)
-    // ChatGPT met parfois les images dans canvas, div[data-message-author-role="assistant"] img, ou img avec blob/oaiusercontent
-    const imageSelector = 'div[data-message-author-role="assistant"] img, article img, img[src*="oaiusercontent"], img[src*="blob:"], img[alt*="DALL"]';
-    
-    let imageElement;
-    try {
-        imageElement = await page.waitForSelector(imageSelector, { timeout: 150000 });
-        console.log("Élément image détecté à l'écran !");
-    } catch (e) {
-        console.log("Le sélecteur d'image n'a pas été trouvé au bout de 150 secondes.");
-        console.log("Analyse de ce qui bloque...");
-        try {
-            const assistantMessages = await page.$$('div[data-message-author-role="assistant"], article');
-            if (assistantMessages.length > 0) {
-                const lastMessage = assistantMessages[assistantMessages.length - 1];
-                const text = await lastMessage.innerText();
-                console.log("========================================================");
-                console.log("RÉPONSE TEXTUELLE DE CHATGPT :");
-                console.log(text);
-                console.log("========================================================");
-            }
-        } catch (textError) {
-            console.log("Impossible de récupérer le texte :", textError);
-        }
+    // 3. Scanneur actif de la page toutes les 3 secondes
+    const startTime = Date.now();
+    let foundUrl = null;
+
+    while (Date.now() - startTime < 120000) { // 2 minutes max
+        await page.waitForTimeout(3000);
         
-        throw e;
+        const candidate = await page.evaluate(() => {
+            const imgs = Array.from(document.querySelectorAll('img'));
+            for (const img of imgs) {
+                const src = img.src || '';
+                const alt = img.alt || '';
+                
+                // Exclure les avatars et petites icônes
+                if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                
+                // Détecter l'image générée par sa taille ou son URL/ALT
+                if ((img.naturalWidth > 150 || img.width > 150) || 
+                    src.includes('oaiusercontent') || 
+                    src.includes('blob:') || 
+                    alt.toLowerCase().includes('dall') || 
+                    alt.length > 30) {
+                    return src;
+                }
+            }
+            return null;
+        });
+
+        if (candidate) {
+            foundUrl = candidate;
+            console.log("📸 Image générée détectée à l'écran ! URL :", foundUrl.substring(0, 100));
+            break;
+        }
     }
 
-    // Attente supplémentaire de 3 secondes pour que le rendu haute résolution soit chargé
-    await page.waitForTimeout(3000);
+    if (!foundUrl) {
+        console.log("❌ Aucune image trouvée après 2 minutes de scan.");
+        throw new Error("Timeout: Image not found after active scan");
+    }
+
+    await page.waitForTimeout(3000); // Petite pause pour s'assurer que les pixels HD sont chargés
     
-    const imageUrl = await imageElement.getAttribute('src');
-    console.log("Image récupérée ! URL / SRC :", imageUrl ? imageUrl.substring(0, 100) : 'null');
-    
-    // 4. Téléchargement sécurisé du buffer (Fetch in-page ou capture de l'élément)
+    // 4. Téléchargement sécurisé du buffer
     let imageBuffer;
-    if (imageUrl && imageUrl.startsWith('data:image')) {
-        const base64Data = imageUrl.split(',')[1];
+    if (foundUrl.startsWith('data:image')) {
+        const base64Data = foundUrl.split(',')[1];
         imageBuffer = Buffer.from(base64Data, 'base64');
     } else {
-        const imageBase64 = await page.evaluate(async (imgSel) => {
-            const img = document.querySelector(imgSel);
-            if (!img) return null;
-            
-            // Si c'est un canvas ou si fetch direct
+        const imageBase64 = await page.evaluate(async (url) => {
             try {
-                const res = await fetch(img.src);
+                const res = await fetch(url);
                 const blob = await res.blob();
                 return new Promise((resolve) => {
                     const reader = new FileReader();
@@ -162,17 +166,17 @@ async function generateImageWithChatGPT(prompt, cookies) {
                     reader.readAsDataURL(blob);
                 });
             } catch (err) {
-                // Fallback canvas screenshot
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth || img.width;
-                canvas.height = img.naturalHeight || img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                return canvas.toDataURL('image/png').split(',')[1];
+                return null;
             }
-        }, imageSelector);
+        }, foundUrl);
 
-        imageBuffer = Buffer.from(imageBase64, 'base64');
+        if (imageBase64) {
+            imageBuffer = Buffer.from(imageBase64, 'base64');
+        } else {
+            console.log("Fallback : Capture d'écran directe de l'élément image");
+            const element = await page.locator(`img[src="${foundUrl}"]`).first();
+            imageBuffer = await element.screenshot();
+        }
     }
     
     await browser.close();
