@@ -18,6 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- Google Drive Upload Function ---
 async function uploadToGoogleDrive(fileName, imageBuffer) {
+    const credentialsRaw = process.env.GOOGLE_DRIVE_CREDENTIALS;
     let folderId = process.env.DRIVE_PARENT_FOLDER_ID ? process.env.DRIVE_PARENT_FOLDER_ID.trim() : '';
     // Extraction propre de l'ID si une URL complète a été collée dans GitHub Secrets
     if (folderId.includes('/folders/')) {
