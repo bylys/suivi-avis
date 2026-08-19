@@ -106,15 +106,25 @@ async function generateImageWithChatGPT(prompt, cookies) {
         await page.keyboard.press('Enter');
     }
     
-    console.log("Attente de la génération de l'image DALL-E (scan actif toutes les 3s)...");
+    console.log("Attente de la fin de la génération DALL-E sur ChatGPT...");
+
+    // 1. Attendre que le bouton "Stop generating" disparaisse (signe que DALL-E a fini de travailler)
+    try {
+        await page.waitForSelector('button[aria-label*="Stop"], button[data-testid="stop-button"], .btn-neutral', { timeout: 10000 });
+        console.log("Génération DALL-E en cours... attente du rendu final...");
+        await page.waitForSelector('button[aria-label*="Stop"], button[data-testid="stop-button"], .btn-neutral', { state: 'detached', timeout: 120000 });
+        console.log("✅ DALL-E a terminé la création de l'image !");
+    } catch(e) {
+        console.log("Bouton de chargement non détecté ou déjà terminé, vérification directe des images...");
+    }
+
+    await page.waitForTimeout(3000); // Pause pour le rendu HD final
     
-    // 3. Scanneur actif de la page toutes les 3 secondes
+    // 2. Scanneur d'image complet (validation strict: complete + naturalWidth > 300)
     const startTime = Date.now();
     let foundUrl = null;
 
-    while (Date.now() - startTime < 120000) { // 2 minutes max
-        await page.waitForTimeout(3000);
-        
+    while (Date.now() - startTime < 60000) {
         const candidate = await page.evaluate(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             for (const img of imgs) {
@@ -124,12 +134,8 @@ async function generateImageWithChatGPT(prompt, cookies) {
                 // Exclure les avatars et petites icônes
                 if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
                 
-                // Détecter l'image générée par sa taille ou son URL/ALT
-                if ((img.naturalWidth > 150 || img.width > 150) || 
-                    src.includes('oaiusercontent') || 
-                    src.includes('blob:') || 
-                    alt.toLowerCase().includes('dall') || 
-                    alt.length > 30) {
+                // Détecter uniquement l'image FINALE (chargée à 100% et de grande taille)
+                if (img.complete && (img.naturalWidth >= 300 || img.width >= 300)) {
                     return src;
                 }
             }
@@ -138,9 +144,10 @@ async function generateImageWithChatGPT(prompt, cookies) {
 
         if (candidate) {
             foundUrl = candidate;
-            console.log("📸 Image générée détectée à l'écran ! URL :", foundUrl.substring(0, 100));
+            console.log("📸 Image finale HD validée à l'écran ! URL :", foundUrl.substring(0, 100));
             break;
         }
+        await page.waitForTimeout(2000);
     }
 
     if (!foundUrl) {
