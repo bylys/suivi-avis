@@ -346,15 +346,11 @@ async function main() {
             console.log("Aucun avis planifié pour demain. Mode test : création d'un FAUX avis de démonstration...");
             
             const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            // Sélection prioritaire de scénarios de travaux d'intérieur (1 artisan solo)
             const testScenarios = [
-                { fiche_nom: 'Élagage & Abattage Quimper', metier: 'élagage', travaux: 'Taille arbre haute tige', ville: 'Quimper', pays: 'France', contexte: 'maison' },
-                { fiche_nom: 'Nettoyage & Démoussage Toiture Valence', metier: 'nettoyage_toiture', travaux: 'Démoussage toiture', ville: 'Valence', pays: 'France', contexte: 'maison' },
-                { fiche_nom: 'Ravalement & Nettoyage Façade Nantes', metier: 'ravalement', travaux: 'Ravalement façade', ville: 'Nantes', pays: 'France', contexte: 'maison' },
                 { fiche_nom: 'Plomberie & Rénovation Salle de Bain Lyon', metier: 'plomberie', travaux: 'Remplacement robinetterie', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
                 { fiche_nom: 'Peinture & Décoration Intérieure Bordeaux', metier: 'peinture', travaux: 'Peinture mur salon', ville: 'Bordeaux', pays: 'France', contexte: 'maison' },
-                { fiche_nom: 'Carrelage & Rénovation Sol Lille', metier: 'carrelage', travaux: 'Pose carrelage sol', ville: 'Lille', pays: 'France', contexte: 'appartement' },
-                { fiche_nom: 'Augusta Tree Service - Tree Removal', metier: 'abattage', travaux: 'Abattage arbre', ville: 'Augusta', pays: 'USA', contexte: 'maison' },
-                { fiche_nom: 'Sandy Springs Concrete Atlanta', metier: 'maçonnerie', travaux: 'Coulage dalle', ville: 'Atlanta', pays: 'USA', contexte: 'maison' },
+                { fiche_nom: 'Carrelage & Rénovation Sol Lille', metier: 'carrelage', travaux: 'Pose carrelage sol', ville: 'Lille', pays: 'France', contexte: 'appartement' }
             ];
             
             const selectedScenario = pick(testScenarios);
