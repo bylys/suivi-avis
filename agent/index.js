@@ -2,6 +2,8 @@ require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const { chromium } = require('playwright');
 const fs = require('fs');
+const { google } = require('googleapis');
+const { Readable } = require('stream');
 const { buildRulesBlock } = require('./rules');
 
 // --- Configuration ---
@@ -14,7 +16,72 @@ const CHATGPT_IMAGE_PROMPT = process.env.CHATGPT_IMAGE_PROMPT || 'Génère une p
 // Initialize Supabase
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- Fonctions utilitaires retirées (Google Drive n'est plus utilisé) ---
+// --- Google Drive Upload Function ---
+async function uploadToGoogleDrive(fileName, imageBuffer) {
+    const credentialsRaw = process.env.GOOGLE_DRIVE_CREDENTIALS;
+    const folderId = process.env.DRIVE_PARENT_FOLDER_ID;
+    
+    if (!credentialsRaw || !folderId) {
+        throw new Error("❌ Secret GOOGLE_DRIVE_CREDENTIALS ou DRIVE_PARENT_FOLDER_ID manquant.");
+    }
+    
+    let credentials;
+    try {
+        credentials = JSON.parse(credentialsRaw.trim().startsWith('{') 
+            ? credentialsRaw 
+            : Buffer.from(credentialsRaw, 'base64').toString('utf-8'));
+    } catch (e) {
+        throw new Error("❌ Impossible de décoder GOOGLE_DRIVE_CREDENTIALS : " + e.message);
+    }
+    
+    const auth = new google.auth.GoogleAuth({
+        credentials,
+        scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
+    });
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    const stream = new Readable();
+    stream.push(imageBuffer);
+    stream.push(null);
+
+    const fileMetadata = {
+        name: fileName,
+        parents: [folderId]
+    };
+
+    const media = {
+        mimeType: 'image/png',
+        body: stream
+    };
+
+    console.log(`Upload en cours de la photo sur Google Drive (Dossier ID : ${folderId})...`);
+
+    const res = await drive.files.create({
+        requestBody: fileMetadata,
+        media: media,
+        fields: 'id, webViewLink, webContentLink'
+    });
+
+    const fileId = res.data.id;
+    console.log(`✅ Photo uploadée avec succès sur Google Drive ! File ID : ${fileId}`);
+
+    // Donner accès en lecture publique au fichier pour qu'il soit ouvert en 1 clic
+    try {
+        await drive.permissions.create({
+            fileId: fileId,
+            requestBody: {
+                role: 'reader',
+                type: 'anyone'
+            }
+        });
+    } catch (permErr) {
+        console.log("Note permission Google Drive :", permErr.message);
+    }
+
+    const driveUrl = res.data.webViewLink || `https://drive.google.com/file/d/${fileId}/view`;
+    return { fileId, driveUrl };
+}
 async function generateImageWithChatGPT(prompt, cookies) {
     console.log("Connexion à Browserless avec le mode Stealth activé...");
     // Le forfait gratuit limite à 60 secondes max.
@@ -373,44 +440,15 @@ async function main() {
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
                 const fileName = `${safeOpName}_${dateFormat}_${task.id}.png`;
                 
-                // Tenter de créer le bucket 'images' s'il n'existe pas encore
-                try {
-                    await supabase.storage.createBucket('images', { public: true });
-                } catch (bErr) {
-                    // Ignorer si le bucket existe déjà
-                }
-
-                // Upload to Supabase Storage
-                let { data: storageData, error: storageError } = await supabase.storage
-                    .from('images')
-                    .upload(fileName, imageBuffer, {
-                        contentType: 'image/png',
-                        upsert: true
-                    });
-                    
-                if (storageError) {
-                    if (storageError.code === 'NoSuchBucket' || storageError.message?.includes('Bucket not found')) {
-                        console.error("❌ Le bucket Storage 'images' n'existe pas sur ton projet Supabase !");
-                        console.error("👉 Solution : Connecte-toi sur Supabase > Storage > New bucket > Nomme-le 'images' et coche 'Public bucket'.");
-                    } else {
-                        console.error("Erreur lors de l'upload sur Supabase Storage :", storageError);
-                    }
-                    throw storageError;
-                }
-                
-                // Récupération de l'URL publique
-                const { data: publicUrlData } = supabase.storage
-                    .from('images')
-                    .getPublicUrl(fileName);
-                    
-                const publicUrl = publicUrlData.publicUrl;
-                console.log(`Image uploadée avec succès sur Supabase : ${publicUrl}`);
+                // Upload sur Google Drive
+                const { fileId, driveUrl } = await uploadToGoogleDrive(fileName, imageBuffer);
                 
                 // Mettre à jour la base de données Supabase (uniquement en mode prod)
                 if (isTestFallback) {
                     console.log(`========================================================`);
                     console.log(`🎉 TEST RÉUSSI AU MAXIMUM ! 🎉`);
-                    console.log(`Lien de l'image de test sur Supabase Storage : ${publicUrl}`);
+                    console.log(`Lien de la photo générée sur Google Drive : ${driveUrl}`);
+                    console.log(`ID du fichier Google Drive : ${fileId}`);
                     console.log(`(Aucune ligne de la base de données n'a été modifiée)`);
                     console.log(`========================================================`);
                 } else {
@@ -418,13 +456,11 @@ async function main() {
                         .from('planning')
                         .update({
                             statut: 'image_generated',
-                            url_image: publicUrl
+                            url_image: driveUrl
                         })
                         .eq('id', task.id);
-                    console.log(`Supabase mis à jour pour l'avis ID ${task.id}`);
+                    console.log(`Supabase mis à jour avec le lien Google Drive pour l'avis ID ${task.id}`);
                 }
-                    
-                console.log(`Supabase mis à jour pour l'avis ID ${task.id}`);
                 
             } catch (err) {
                 console.error(`Erreur lors de la génération pour la tâche ID ${task.id} :`, err);
