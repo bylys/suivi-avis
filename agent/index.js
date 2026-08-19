@@ -150,33 +150,37 @@ async function generateImageWithChatGPT(prompt, cookies) {
 
     await page.waitForTimeout(3000); // Petite pause pour s'assurer que les pixels HD sont chargés
     
-    // 4. Téléchargement sécurisé du buffer
+    // 4. Extraction sécurisée du buffer de l'image (Canvas + Element Screenshot)
+    console.log("Extraction des pixels de l'image (Canvas / Element Screenshot)...");
+    
     let imageBuffer;
-    if (foundUrl.startsWith('data:image')) {
-        const base64Data = foundUrl.split(',')[1];
-        imageBuffer = Buffer.from(base64Data, 'base64');
-    } else {
-        const imageBase64 = await page.evaluate(async (url) => {
-            try {
-                const res = await fetch(url);
-                const blob = await res.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (err) {
-                return null;
-            }
-        }, foundUrl);
-
-        if (imageBase64) {
-            imageBuffer = Buffer.from(imageBase64, 'base64');
-        } else {
-            console.log("Fallback : Capture d'écran directe de l'élément image");
-            const element = await page.locator(`img[src="${foundUrl}"]`).first();
-            imageBuffer = await element.screenshot();
+    
+    // Rendu Canvas in-page (qualité originale sans passer par des requêtes HTTP backend)
+    const canvasBase64 = await page.evaluate((url) => {
+        const imgs = Array.from(document.querySelectorAll('img'));
+        const img = imgs.find(i => i.src === url || i.src.includes('estuary') || i.src.includes('oaiusercontent')) || 
+                    imgs.find(i => (i.naturalWidth > 150 || i.width > 150) && !i.src.includes('avatar'));
+                    
+        if (!img) return null;
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width || 1024;
+            canvas.height = img.naturalHeight || img.height || 1024;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            return canvas.toDataURL('image/png').split(',')[1];
+        } catch (e) {
+            return null;
         }
+    }, foundUrl);
+
+    if (canvasBase64 && canvasBase64.length > 2000) {
+        console.log("✅ Buffer PNG extrait avec succès via Canvas !");
+        imageBuffer = Buffer.from(canvasBase64, 'base64');
+    } else {
+        console.log("📸 Fallback : Capture d'écran Playwright haute définition de l'élément image...");
+        const imgLocator = page.locator('div[data-message-author-role="assistant"] img, img[src*="estuary"], img[src*="oaiusercontent"]').first();
+        imageBuffer = await imgLocator.screenshot({ type: 'png' });
     }
     
     await browser.close();
