@@ -350,10 +350,11 @@ async function main() {
                 { fiche_nom: 'Élagage & Abattage Quimper', metier: 'élagage', travaux: 'Taille arbre haute tige', ville: 'Quimper', pays: 'France', contexte: 'maison' },
                 { fiche_nom: 'Nettoyage & Démoussage Toiture Valence', metier: 'nettoyage_toiture', travaux: 'Démoussage toiture', ville: 'Valence', pays: 'France', contexte: 'maison' },
                 { fiche_nom: 'Ravalement & Nettoyage Façade Nantes', metier: 'ravalement', travaux: 'Ravalement façade', ville: 'Nantes', pays: 'France', contexte: 'maison' },
+                { fiche_nom: 'Plomberie & Rénovation Salle de Bain Lyon', metier: 'plomberie', travaux: 'Remplacement robinetterie', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
+                { fiche_nom: 'Peinture & Décoration Intérieure Bordeaux', metier: 'peinture', travaux: 'Peinture mur salon', ville: 'Bordeaux', pays: 'France', contexte: 'maison' },
+                { fiche_nom: 'Carrelage & Rénovation Sol Lille', metier: 'carrelage', travaux: 'Pose carrelage sol', ville: 'Lille', pays: 'France', contexte: 'appartement' },
                 { fiche_nom: 'Augusta Tree Service - Tree Removal', metier: 'abattage', travaux: 'Abattage arbre', ville: 'Augusta', pays: 'USA', contexte: 'maison' },
                 { fiche_nom: 'Sandy Springs Concrete Atlanta', metier: 'maçonnerie', travaux: 'Coulage dalle', ville: 'Atlanta', pays: 'USA', contexte: 'maison' },
-                { fiche_nom: 'Miami Roof Cleaning & Pressure Wash', metier: 'nettoyage_toiture', travaux: 'Nettoyage toiture', ville: 'Miami', pays: 'USA', contexte: 'maison' },
-                { fiche_nom: 'Dallas Facade & Wall Masonry', metier: 'maçonnerie', travaux: 'Mur parpaing', ville: 'Dallas', pays: 'USA', contexte: 'commerce' },
             ];
             
             const selectedScenario = pick(testScenarios);
