@@ -14,7 +14,7 @@ const SAFETY_RULES = {
   terrassement: `SAFETY RULES — Earthworks: NEVER: person in open trench under bucket, person between rotating cab and trench edge. Ground signaller required near structures.`,
   paysagiste: `SAFETY RULES — Landscaping: NEVER: lawnmower on steep slope, chainsaw without visible leg protection.`,
   nettoyage: `SAFETY RULES — Exterior cleaning: NEVER: high-pressure jet aimed at person, bare feet during cleaning.`,
-  vitrier: `SAFETY RULES — Glazier: NEVER: bare hands on edge of large pane, pane against wall without cradle, broken glass with bare feet nearby.`,
+  vitrier: `SAFETY RULES — Glazier: Cut-resistant safety gloves and suction cup lifters MANDATORY when handling glass panes. Indoor window/mirror replacement: NO HARD HAT / NO HELMET on head (bare head or cap). Outdoor height intervention (scaffolding/basket): hard hat mandatory. NEVER: bare hands touching glass edge, glass pane resting unsupported on wall.`,
   depannage_auto: `SAFETY RULES — Auto breakdown: Off-road mandatory, warning triangle visible. NEVER: person between vehicle and traffic, cables crossing road, vehicle raised without axle stands.`,
   charpente: `SAFETY RULES — Carpentry: NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
   debarras: `SAFETY RULES — House & Junk Clearance: Utility van or skip container parked outside property. Minimum 1 or 2 movers carrying furniture or boxes in work gloves and sturdy boots. NO HARD HAT / NO HELMET on head (bare head or casual cap). NEVER: lone worker carrying oversized furniture dangerously on stairs, blocked exit path, sharp glass carried without gloves.`,
@@ -53,6 +53,9 @@ const VISUAL_RULES_BY_SERVICE = {
   'Debarras maison': `VISUAL: Utility van with open rear doors or skip container, neat stacks of cardboard boxes and old furniture being loaded by mover in work gloves.`,
   'Enlevement encombrants': `VISUAL: Utility truck or van, movers in workwear loading bulky items or boxes from driveway or garage.`,
   'Debarras cave': `VISUAL: Basement or garage clearance in progress, boxes, shelving or old items stacked neatly for loading.`,
+  'Remplacement vitrage': `VISUAL: Glazier wearing cut-resistant gloves using suction cup handles to position double glazing window frame indoors.`,
+  'Reparation vitre': `VISUAL: Glazier applying silicone sealant or fitting glass pane into window frame with suction lifter.`,
+  'Pose miroir': `VISUAL: Large mirror being mounted on wall using suction cups, glazier in professional workwear with gloves.`,
 };
 
 // Imperfections physiques d'appareil photo smartphone (doigt, verre gras, poussière...)
