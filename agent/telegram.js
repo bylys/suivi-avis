@@ -11,8 +11,12 @@ async function sendTelegramNotification(message) {
     return;
   }
 
-  // Nettoyage automatique du token (suppression des espaces, guillemets et du mot bot s'il a été collé en double)
-  const token = rawToken.trim().replace(/^["']|["']$/g, '');
+  // Nettoyage intelligent du token (supprime 'bot' si la personne l'a collé au début du secret)
+  let token = rawToken.trim().replace(/^["']|["']$/g, '');
+  if (token.toLowerCase().startsWith('bot')) {
+    token = token.slice(3);
+  }
+  token = token.trim();
 
   try {
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
