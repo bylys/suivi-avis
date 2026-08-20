@@ -17,6 +17,7 @@ const SAFETY_RULES = {
   vitrier: `SAFETY RULES — Glazier: NEVER: bare hands on edge of large pane, pane against wall without cradle, broken glass with bare feet nearby.`,
   depannage_auto: `SAFETY RULES — Auto breakdown: Off-road mandatory, warning triangle visible. NEVER: person between vehicle and traffic, cables crossing road, vehicle raised without axle stands.`,
   charpente: `SAFETY RULES — Carpentry: NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
+  debarras: `SAFETY RULES — House & Junk Clearance: Utility van or skip container parked outside property. Minimum 1 or 2 movers/operators carrying furniture or boxes in work gloves and sturdy boots. NEVER: lone worker carrying oversized furniture dangerously on stairs, blocked exit path, sharp glass carried without gloves.`,
 };
 
 const VISUAL_RULES_BY_SERVICE = {
@@ -49,6 +50,9 @@ const VISUAL_RULES_BY_SERVICE = {
   'Remorquage': `VISUAL: Car being secured onto flatbed tow truck with winch or wheel straps, operator in high-vis vest operating control panel.`,
   'Changement batterie': `VISUAL: Open car bonnet/hood, portable booster pack or jumper cables, technician in workwear.`,
   'Changement roue': `VISUAL: Car safely parked on roadside, trolley jack under sills, wheel brace or impact wrench in use.`,
+  'Debarras maison': `VISUAL: Utility van with open rear doors or skip container, neat stacks of cardboard boxes and old furniture being loaded by mover in work gloves.`,
+  'Enlevement encombrants': `VISUAL: Utility truck or van, movers in workwear loading bulky items or boxes from driveway or garage.`,
+  'Debarras cave': `VISUAL: Basement or garage clearance in progress, boxes, shelving or old items stacked neatly for loading.`,
 };
 
 // Imperfections physiques d'appareil photo smartphone (doigt, verre gras, poussière...)
