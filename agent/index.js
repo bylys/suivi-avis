@@ -212,8 +212,20 @@ async function uploadImage(fileName, imageBuffer, operatorName) {
         return { provider: 'Supabase Storage', url: publicUrlData.publicUrl };
     }
 }
-async function generateImageWithChatGPT(prompt, cookies) {
-    console.log("Connexion à Browserless avec le mode Stealth activé...");
+// Dynamic Operator & ChatGPT Conversation Resolution
+const TARGET_OPERATOR = process.env.OPERATOR_NAME ? process.env.OPERATOR_NAME.trim() : null;
+
+function getConversationUrlForOperator(operatorName) {
+    const op = (operatorName || TARGET_OPERATOR || '').trim().toUpperCase();
+    if (!op) return process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    
+    const envVar = `CHATGPT_CONVERSATION_URL_${op}`;
+    return process.env[envVar] || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+}
+
+async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
+    const targetUrl = getConversationUrlForOperator(operatorName);
+    console.log(`Connexion à Browserless avec le mode Stealth activé (URL GPT: ${targetUrl})...`);
     // Le forfait gratuit limite à 60 secondes max.
     const browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
     const context = await browser.newContext();
@@ -222,8 +234,8 @@ async function generateImageWithChatGPT(prompt, cookies) {
     await context.addCookies(cookies);
     
     const page = await context.newPage();
-    console.log("Ouverture de la conversation ChatGPT globale...");
-    await page.goto(CHATGPT_CONVERSATION_URL, { waitUntil: 'domcontentloaded' });
+    console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
     
     let title = await page.title();
     console.log("URL de la page :", page.url());
@@ -420,18 +432,20 @@ async function main() {
         tomorrow.setDate(tomorrow.getDate() + 1);
         const tomorrowStr = tomorrow.toISOString().split('T')[0];
         
-        console.log(`Recherche des avis planifiés pour le : ${tomorrowStr}`);
+        if (TARGET_OPERATOR) {
+            console.log(`🤖 Agent configuré spécifiquement pour l'opérateur : "${TARGET_OPERATOR}"`);
+        }
         
-        // IMPORTANT: Adjust table name and columns based on your screenshot!
-        let { data: tasks, error } = await supabase
-            .from('planning')
-            .select('*')
-            .eq('date', tomorrowStr)
-            .order('id', { ascending: true });
+        let query = supabase.from('planning').select('*').eq('date', tomorrowStr);
+        if (TARGET_OPERATOR) {
+            query = query.ilike('operateur', TARGET_OPERATOR);
+        }
+        
+        let { data: tasks, error } = await query.order('id', { ascending: true });
             
         if (error) throw error;
         
-        console.log(`${tasks.length} avis trouvés pour demain (${tomorrowStr}).`);
+        console.log(`${tasks.length} avis trouvés pour ${TARGET_OPERATOR ? 'l\'opérateur ' + TARGET_OPERATOR : 'tous les opérateurs'} pour demain (${tomorrowStr}).`);
         
         let isTestFallback = false;
         
