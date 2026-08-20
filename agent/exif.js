@@ -55,17 +55,32 @@ function degToDmsRational(degFloat) {
   ];
 }
 
-function generatePhotoDate3To21DaysBefore(taskDateStr) {
+function generatePhotoDate3To21DaysBefore(taskDateStr, reviewText = '') {
   let baseDate = new Date();
   if (taskDateStr && /^\d{4}-\d{2}-\d{2}$/.test(taskDateStr)) {
     const [y, m, d] = taskDateStr.split('-').map(Number);
     baseDate = new Date(y, m - 1, d);
   }
 
-  // Nombre de jours aléatoires avant l'avis : entre 3 jours (min) et 21 jours / 3 semaines (max)
-  const minDays = 3;
-  const maxDays = 21;
-  const daysBefore = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
+  let daysBefore;
+  const textNorm = (reviewText || '').toLowerCase()
+    .replace(/[éèê]/g, 'e').replace(/[àâ]/g, 'a');
+
+  // Détection intelligente de la période mentionnée dans le texte de l'avis
+  if (textNorm.includes('3 jours') || textNorm.includes('trois jours') || textNorm.includes('quelques jours')) {
+    daysBefore = Math.floor(Math.random() * 3) + 3; // 3 à 5 jours avant
+  } else if (textNorm.includes('semaine derniere') || textNorm.includes('1 semaine') || textNorm.includes('une semaine') || textNorm.includes('semaine passee')) {
+    daysBefore = Math.floor(Math.random() * 3) + 7; // 7 à 9 jours avant
+  } else if (textNorm.includes('2 semaines') || textNorm.includes('deux semaines') || textNorm.includes('15 jours') || textNorm.includes('quinze jours')) {
+    daysBefore = Math.floor(Math.random() * 3) + 14; // 14 à 16 jours avant
+  } else if (textNorm.includes('3 semaines') || textNorm.includes('trois semaines') || textNorm.includes('mois dernier')) {
+    daysBefore = Math.floor(Math.random() * 4) + 18; // 18 à 21 jours avant
+  } else {
+    // Tirage au sort naturel si aucune durée n'est explicitement mentionnée dans le texte
+    const minDays = 3;
+    const maxDays = 21;
+    daysBefore = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
+  }
 
   const photoDate = new Date(baseDate.getTime() - daysBefore * 24 * 60 * 60 * 1000);
 
@@ -80,11 +95,11 @@ function generatePhotoDate3To21DaysBefore(taskDateStr) {
   return `${photoDate.getFullYear()}:${pad(photoDate.getMonth() + 1)}:${pad(photoDate.getDate())} ${pad(photoDate.getHours())}:${pad(photoDate.getMinutes())}:${pad(photoDate.getSeconds())}`;
 }
 
-async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskDateStr = null) {
+async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskDateStr = null, reviewText = '') {
   try {
     const coords = await getCoordinatesForCity(cityName, country);
     const phone = pickSmartphone();
-    const dateStr = generatePhotoDate3To21DaysBefore(taskDateStr);
+    const dateStr = generatePhotoDate3To21DaysBefore(taskDateStr, reviewText);
 
     // Construction du bloc GPS EXIF
     const gpsIfd = {};

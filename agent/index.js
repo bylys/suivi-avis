@@ -582,8 +582,9 @@ async function main() {
                 // Generate Image
                 const rawImageBuffer = await generateImageWithChatGPT(finalPrompt, cookies);
                 
-                // Injection des métadonnées EXIF Smartphone (Samsung/Apple/Xiaomi) & Coordonnées GPS (prise de vue 3 jours à 3 semaines avant l'avis)
-                const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France', task.date);
+                // Injection des métadonnées EXIF Smartphone & Coordonnées GPS (matching intelligent de la date selon l'avis)
+                const reviewTextContent = (task.commentaire || '') + ' ' + (task.travaux || '');
+                const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France', task.date, reviewTextContent);
                 
                 // Construction du nom de fichier (.jpg pour compatibilité EXIF/GPS smartphone)
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
