@@ -450,23 +450,28 @@ async function main() {
         
         let isTestFallback = false;
         
-        // Mode test sécurisé : si aucun avis pour demain, on tire au sort un scénario de test réaliste
+        // Mode test sécurisé : si aucun avis pour demain, chaque opérateur teste un métier spécifique
         if (tasks.length === 0) {
-            console.log("Aucun avis planifié pour demain. Mode test : création d'un FAUX avis de démonstration...");
+            console.log(`Aucun avis planifié pour demain. Mode test : création d'un scénario de test pour ${TARGET_OPERATOR || 'Global'}...`);
             
-            const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-            // Sélection prioritaire de scénarios de travaux d'intérieur (1 artisan solo)
-            const testScenarios = [
-                { fiche_nom: 'Plomberie & Rénovation Salle de Bain Lyon', metier: 'plomberie', travaux: 'Remplacement robinetterie', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
-                { fiche_nom: 'Peinture & Décoration Intérieure Bordeaux', metier: 'peinture', travaux: 'Peinture mur salon', ville: 'Bordeaux', pays: 'France', contexte: 'maison' },
-                { fiche_nom: 'Carrelage & Rénovation Sol Lille', metier: 'carrelage', travaux: 'Pose carrelage sol', ville: 'Lille', pays: 'France', contexte: 'appartement' }
-            ];
+            const operatorScenarios = {
+                'KEVIN': { fiche_nom: 'Élagage & Abattage Bordeaux', metier: 'élagage', travaux: 'Taille arbre haute tige', ville: 'Mérignac', pays: 'France', contexte: 'jardin' },
+                'FIF': { fiche_nom: 'Plomberie & Rénovation Lyon', metier: 'plomberie', travaux: 'Remplacement robinetterie', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
+                'AINA': { fiche_nom: 'Peinture & Décoration Marseille', metier: 'peinture', travaux: 'Peinture mur salon', ville: 'Marseille', pays: 'France', contexte: 'maison' },
+                'ANJARA': { fiche_nom: 'Toiture & Couverture Nantes', metier: 'toiture', travaux: 'Rénovation tuiles toiture', ville: 'Nantes', pays: 'France', contexte: 'maison' },
+                'KORAIL': { fiche_nom: 'Carrelage & Sol Lille', metier: 'carrelage', travaux: 'Pose carrelage salle de bain', ville: 'Lille', pays: 'France', contexte: 'appartement' },
+                'KINTANA': { fiche_nom: 'Menuiserie & Serrurerie Toulouse', metier: 'menuiserie', travaux: 'Installation porte bois', ville: 'Toulouse', pays: 'France', contexte: 'maison' },
+            };
+
+            const opKey = (TARGET_OPERATOR || '').trim().toUpperCase();
+            const selectedScenario = operatorScenarios[opKey] || {
+                fiche_nom: 'Plomberie & Rénovation Lyon', metier: 'plomberie', travaux: 'Remplacement robinetterie', ville: 'Lyon', pays: 'France', contexte: 'appartement'
+            };
             
-            const selectedScenario = pick(testScenarios);
             tasks = [{
-                id: 999999,
+                id: Math.floor(100000 + Math.random() * 900000),
                 ...selectedScenario,
-                operateur: 'TEST_ROBOT',
+                operateur: TARGET_OPERATOR || 'TEST_ROBOT',
                 date: tomorrowStr,
                 statut: 'pending_test'
             }];
