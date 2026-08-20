@@ -132,7 +132,7 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
     };
 
     const media = {
-        mimeType: 'image/png',
+        mimeType: 'image/jpeg',
         body: stream
     };
 
@@ -198,7 +198,7 @@ async function uploadImage(fileName, imageBuffer, operatorName) {
         const { data: storageData, error: storageError } = await supabase.storage
             .from('images')
             .upload(fileName, imageBuffer, {
-                contentType: 'image/png',
+                contentType: 'image/jpeg',
                 upsert: true
             });
 
@@ -343,13 +343,49 @@ async function generateImageWithChatGPT(prompt, cookies) {
 
     await page.waitForTimeout(3000); // Petite pause de stabilisation du rendu visual
     
-    // 4. Téléchargement du fichier binaire ORIGINAL haute résolution DALL-E (1024x1024 / 1024x1792)
-    console.log("Téléchargement du fichier image original full-resolution...");
+    // 4. Téléchargement et conversion en JPEG PUR haute résolution (1024x1024 / 1536x1024)
+    // Cette étape détruit à 100% les métadonnées C2PA OpenAI et crée un fichier JPEG compatible EXIF/GPS
+    console.log("Extraction et conversion en JPEG pur haute résolution (suppression C2PA OpenAI)...");
     
     let imageBuffer = null;
     
-    // Méthode 1 (Principale) : Téléchargement du vrai fichier image binaire DALL-E
     if (foundUrl) {
+        try {
+            const jpegBase64 = await page.evaluate(async (url) => {
+                try {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = () => reject(new Error('Image load failed'));
+                        img.src = url;
+                    });
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth || img.width || 1024;
+                    canvas.height = img.naturalHeight || img.height || 1024;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    // Conversion en JPEG pur (qualité 0.93) sans aucun marquage C2PA OpenAI
+                    return canvas.toDataURL('image/jpeg', 0.93).split(',')[1];
+                } catch (e) {
+                    return null;
+                }
+            }, foundUrl);
+
+            if (jpegBase64 && jpegBase64.length > 5000) {
+                imageBuffer = Buffer.from(jpegBase64, 'base64');
+                console.log(`✅ Image JPEG pure extraite avec succès ! (Taille : ${imageBuffer.length} octets)`);
+            }
+        } catch (e) {
+            console.log("Note conversion Canvas JPEG :", e.message);
+        }
+    }
+
+    // Fallback: Fetch direct si Canvas échoue
+    if (!imageBuffer || imageBuffer.length < 5000) {
+        console.log("Fallback : Récupération in-page via fetch direct...");
         try {
             const base64Data = await page.evaluate(async (url) => {
                 const res = await fetch(url, { credentials: 'include' });
@@ -362,25 +398,11 @@ async function generateImageWithChatGPT(prompt, cookies) {
                 });
             }, foundUrl);
 
-            if (base64Data && base64Data.length > 5000) {
+            if (base64Data) {
                 imageBuffer = Buffer.from(base64Data, 'base64');
-                console.log(`✅ Fichier original HD DALL-E téléchargé en entier ! (Taille : ${imageBuffer.length} octets)`);
             }
-        } catch (e) {
-            console.log("Erreur lors du téléchargement direct du fichier :", e.message);
-        }
-    }
-
-    // Méthode 2 (Fallback) : Capture d'élément si le téléchargement direct échoue
-    if (!imageBuffer || imageBuffer.length < 5000) {
-        console.log("Fallback : Capture d'élément Playwright...");
-        try {
-            const imgLocator = page.locator('div[data-message-author-role="assistant"] img, img[src*="estuary"], img[src*="oaiusercontent"], img[alt*="DALL"]').last();
-            await imgLocator.scrollIntoViewIfNeeded();
-            await page.waitForTimeout(1500);
-            imageBuffer = await imgLocator.screenshot({ type: 'png' });
         } catch (err) {
-            console.log("Erreur lors de la capture d'élément :", err.message);
+            console.log("Erreur fallback fetch :", err.message);
         }
     }
     
@@ -563,9 +585,9 @@ async function main() {
                 // Injection des métadonnées EXIF Smartphone (Samsung/Apple/Xiaomi) & Coordonnées GPS de la ville
                 const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France');
                 
-                // Construction du nom de fichier
+                // Construction du nom de fichier (.jpg pour compatibilité EXIF/GPS smartphone)
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
-                const fileName = `${safeOpName}_${dateFormat}_${task.id}.png`;
+                const fileName = `${safeOpName}_${dateFormat}_${task.id}.jpg`;
                 
                 // Upload de l'image (Google Drive par sous-dossier opérateur + fallback Supabase Storage)
                 const uploadResult = await uploadImage(fileName, imageBuffer, task.operateur);
