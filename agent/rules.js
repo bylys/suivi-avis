@@ -45,6 +45,10 @@ const VISUAL_RULES_BY_SERVICE = {
   'Etancheite toit terrasse': `VISUAL: Flat rooftop, waterproofing membrane visible (EPDM, PVC or bitumen).`,
   'Dessouchage': `VISUAL: Stump and roots visible, stump grinder or digging equipment, wood chips around.`,
   'Abattage arbre': `VISUAL: Operator beside trunk, chainsaw visible, protective clothing, felled sections on ground.`,
+  'Depannage auto': `VISUAL: Flatbed tow truck or recovery vehicle with orange flashing beacons, breakdown car safely positioned on roadside or flatbed ramp, operator in high-vis vest.`,
+  'Remorquage': `VISUAL: Car being secured onto flatbed tow truck with winch or wheel straps, operator in high-vis vest operating control panel.`,
+  'Changement batterie': `VISUAL: Open car bonnet/hood, portable booster pack or jumper cables, technician in workwear.`,
+  'Changement roue': `VISUAL: Car safely parked on roadside, trolley jack under sills, wheel brace or impact wrench in use.`,
 };
 
 // Imperfections physiques d'appareil photo smartphone (doigt, verre gras, poussière...)
