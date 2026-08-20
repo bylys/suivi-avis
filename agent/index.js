@@ -280,9 +280,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
     console.log("URL de la page :", page.url());
     console.log("Titre de la page :", title);
     
-    // Gestion du challenge Cloudflare Turnstile ("Just a moment...")
-    if (title.includes('Just a moment')) {
-        console.log("⚠️ Challenge Cloudflare Turnstile détecté ! Tentative de contournement...");
+    // Gestion du challenge Cloudflare Turnstile ("Just a moment..." / "Un instant...")
+    if (title.includes('Just a moment') || title.includes('Un instant') || title.includes('Checking') || title.includes('Attention')) {
+        console.log(`⚠️ Challenge Cloudflare Turnstile ("${title}") détecté ! Tentative de contournement...`);
         await page.waitForTimeout(6000);
         
         try {
@@ -293,20 +293,20 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
                 const checkbox = await turnstileFrame.waitForSelector('input[type="checkbox"], .mark, label, #challenge-stage', { timeout: 6000 });
                 if (checkbox) {
                     await checkbox.click({ force: true });
-                    await page.waitForTimeout(4000);
+                    await page.waitForTimeout(5000);
                 }
             }
         } catch (cfErr) {
             console.log("Attente de la résolution Cloudflare...");
         }
         
-        // Deuxième tentative de rechargement si bloqué
+        // Attente que Cloudflare laisse passer (titre passe à ChatGPT)
         try {
-            await page.waitForFunction(() => !document.title.includes('Just a moment'), { timeout: 20000 });
+            await page.waitForFunction(() => !document.title.includes('Just a moment') && !document.title.includes('Un instant'), { timeout: 25000 });
             console.log("✅ Cloudflare dépassé ! Titre actuel :", await page.title());
         } catch (e) {
             console.log("❌ Bloqué par le challenge Cloudflare Turnstile.");
-            console.log("💡 CONSEIL : Tes cookies CHATGPT_COOKIES (notamment cf_clearance / __cf_bm) doivent être mis à jour dans GitHub Secrets.");
+            console.log("💡 CONSEIL : Mettez à jour les cookies CHATGPT_COOKIES (cf_clearance) dans GitHub Secrets.");
         }
     }
     
