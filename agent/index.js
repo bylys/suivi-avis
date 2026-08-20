@@ -16,11 +16,81 @@ const CHATGPT_IMAGE_PROMPT = process.env.CHATGPT_IMAGE_PROMPT || 'Génère une p
 // Initialize Supabase
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// --- Fonctions Utilitaires Google Drive (Sous-dossiers par opérateur + Nettoyage 7 jours) ---
+async function getOrCreateOperatorFolder(drive, parentFolderId, operatorName) {
+    const safeOpName = (operatorName || 'Autres_Operateurs').trim().replace(/[^a-zA-Z0-9_\- ]/g, '_');
+    
+    try {
+        const q = `'${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and name='${safeOpName}' and trashed=false`;
+        const searchRes = await drive.files.list({
+            q: q,
+            fields: 'files(id, name)',
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+        });
+
+        if (searchRes.data.files && searchRes.data.files.length > 0) {
+            return searchRes.data.files[0].id;
+        }
+
+        const folderMetadata = {
+            name: safeOpName,
+            mimeType: 'application/vnd.google-apps.folder',
+            parents: [parentFolderId]
+        };
+
+        const newFolder = await drive.files.create({
+            requestBody: folderMetadata,
+            supportsAllDrives: true,
+            fields: 'id, name'
+        });
+
+        console.log(`📂 Sous-dossier opérateur créé sur Google Drive : "${safeOpName}" (ID : ${newFolder.data.id})`);
+        return newFolder.data.id;
+    } catch (e) {
+        console.log(`Note sous-dossier (${safeOpName}) : ${e.message}. Utilisation du dossier principal.`);
+        return parentFolderId;
+    }
+}
+
+async function cleanOldPhotosFromDrive(drive, parentFolderId) {
+    try {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        console.log("🧹 Vérification et nettoyage automatique des anciennes photos sur Google Drive (> 7 jours)...");
+
+        const q = `mimeType != 'application/vnd.google-apps.folder' and createdTime < '${sevenDaysAgo}' and trashed=false`;
+        const res = await drive.files.list({
+            q: q,
+            fields: 'files(id, name, createdTime)',
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+        });
+
+        const filesToDelete = res.data.files || [];
+        if (filesToDelete.length === 0) {
+            console.log("✅ Aucune ancienne photo de plus de 7 jours à nettoyer.");
+            return;
+        }
+
+        for (const file of filesToDelete) {
+            try {
+                await drive.files.update({
+                    fileId: file.id,
+                    supportsAllDrives: true,
+                    requestBody: { trashed: true }
+                });
+                console.log(`🗑️ Ancienne photo envoyée à la corbeille Google Drive : ${file.name}`);
+            } catch (err) {}
+        }
+    } catch (e) {
+        console.log("Note nettoyage Drive :", e.message);
+    }
+}
+
 // --- Google Drive Upload Function ---
-async function uploadToGoogleDrive(fileName, imageBuffer) {
+async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
     const credentialsRaw = process.env.GOOGLE_DRIVE_CREDENTIALS;
     let folderId = process.env.DRIVE_PARENT_FOLDER_ID ? process.env.DRIVE_PARENT_FOLDER_ID.trim() : '';
-    // Extraction propre de l'ID si une URL complète a été collée dans GitHub Secrets
     if (folderId.includes('/folders/')) {
         folderId = folderId.split('/folders/')[1].split('?')[0].split('/')[0];
     }
@@ -45,13 +115,19 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
 
     const drive = google.drive({ version: 'v3', auth });
 
+    // 1. Nettoyage automatique des photos > 7 jours
+    await cleanOldPhotosFromDrive(drive, folderId);
+
+    // 2. Récupération ou création automatique du sous-dossier de l'opérateur
+    const targetFolderId = await getOrCreateOperatorFolder(drive, folderId, operatorName);
+
     const stream = new Readable();
     stream.push(imageBuffer);
     stream.push(null);
 
     const fileMetadata = {
         name: fileName,
-        parents: [folderId]
+        parents: [targetFolderId]
     };
 
     const media = {
@@ -59,11 +135,10 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
         body: stream
     };
 
-    console.log(`Upload en cours de la photo sur Google Drive (Dossier ID : ${folderId})...`);
+    console.log(`Upload en cours de la photo sur Google Drive (Sous-dossier Opérateur: "${operatorName || 'Défaut'}")...`);
 
     let res;
     try {
-        console.log(`Diagnostic Drive : Tentative de création avec folderId="${folderId}"...`);
         res = await drive.files.create({
             requestBody: fileMetadata,
             media: media,
@@ -73,10 +148,6 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
         });
     } catch (driveErr) {
         console.error("🔍 Détails bruts erreur Drive :", driveErr.code, driveErr.message);
-        if (driveErr.errors && driveErr.errors.length > 0) {
-            console.error("🔍 Cause exacte :", JSON.stringify(driveErr.errors));
-        }
-        
         if (driveErr.message?.includes('storageQuotaExceeded')) {
             console.error("❌ Google Drive API Quota Error : Le Service Account Google n'a pas de quota propre.");
             console.error("👉 Pour corriger : Le dossier Google Drive doit être dans un 'Drive Partagé' (Shared Drive) Google Workspace, ou utilisez Supabase Storage.");
@@ -92,7 +163,7 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
     }
 
     const fileId = res.data.id;
-    console.log(`✅ Photo uploadée avec succès sur Google Drive ! File ID : ${fileId}`);
+    console.log(`✅ Photo uploadée avec succès sur Google Drive dans le sous-dossier opérateur ! File ID : ${fileId}`);
 
     try {
         await drive.permissions.create({
@@ -112,9 +183,9 @@ async function uploadToGoogleDrive(fileName, imageBuffer) {
 }
 
 // --- Upload Hybride (Google Drive en priorité, Supabase Storage en fallback) ---
-async function uploadImage(fileName, imageBuffer) {
+async function uploadImage(fileName, imageBuffer, operatorName) {
     try {
-        const driveRes = await uploadToGoogleDrive(fileName, imageBuffer);
+        const driveRes = await uploadToGoogleDrive(fileName, imageBuffer, operatorName);
         return { provider: 'Google Drive', url: driveRes.driveUrl };
     } catch (driveErr) {
         console.log("⚠️ Transfert Google Drive indisponible. Bascule automatique sur Supabase Storage...");
@@ -492,8 +563,8 @@ async function main() {
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
                 const fileName = `${safeOpName}_${dateFormat}_${task.id}.png`;
                 
-                // Upload de l'image (Google Drive avec fallback Supabase Storage)
-                const uploadResult = await uploadImage(fileName, imageBuffer);
+                // Upload de l'image (Google Drive par sous-dossier opérateur + fallback Supabase Storage)
+                const uploadResult = await uploadImage(fileName, imageBuffer, task.operateur);
                 
                 // Mettre à jour la base de données Supabase (uniquement en mode prod)
                 if (isTestFallback) {
