@@ -282,28 +282,31 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
     
     // Gestion du challenge Cloudflare Turnstile ("Just a moment...")
     if (title.includes('Just a moment')) {
-        console.log("⚠️ Challenge Cloudflare Turnstile détecté ! Tentative de contournement automatique...");
-        await page.waitForTimeout(5000);
+        console.log("⚠️ Challenge Cloudflare Turnstile détecté ! Tentative de contournement...");
+        await page.waitForTimeout(6000);
         
         try {
             // Tenter de cliquer sur la case Turnstile si elle est dans un iframe
-            const turnstileFrame = page.frames().find(f => f.url().includes('challenges.cloudflare.com'));
+            const turnstileFrame = page.frames().find(f => f.url().includes('challenges.cloudflare.com') || f.url().includes('turnstile'));
             if (turnstileFrame) {
-                console.log("Iframe Turnstile trouvé. Tentative de clic sur la vérification...");
-                const checkbox = await turnstileFrame.waitForSelector('input[type="checkbox"], .mark', { timeout: 5000 });
-                if (checkbox) await checkbox.click();
+                console.log("Iframe Turnstile trouvé. Clic sur la vérification Cloudflare...");
+                const checkbox = await turnstileFrame.waitForSelector('input[type="checkbox"], .mark, label, #challenge-stage', { timeout: 6000 });
+                if (checkbox) {
+                    await checkbox.click({ force: true });
+                    await page.waitForTimeout(4000);
+                }
             }
         } catch (cfErr) {
-            console.log("Attente de la résolution automatique par le mode Stealth Browserless...");
+            console.log("Attente de la résolution Cloudflare...");
         }
         
-        // Attente jusqu'à 15 secondes que Cloudflare laisse passer
+        // Deuxième tentative de rechargement si bloqué
         try {
-            await page.waitForFunction(() => !document.title.includes('Just a moment'), { timeout: 15000 });
+            await page.waitForFunction(() => !document.title.includes('Just a moment'), { timeout: 20000 });
             console.log("✅ Cloudflare dépassé ! Titre actuel :", await page.title());
         } catch (e) {
             console.log("❌ Bloqué par le challenge Cloudflare Turnstile.");
-            console.log("💡 CONSEIL : Tes cookies ChatGPT (notamment cf_clearance) ont probablement expiré. Re-exporte tes cookies depuis ton navigateur et mets à jour le secret CHATGPT_COOKIES dans GitHub.");
+            console.log("💡 CONSEIL : Tes cookies CHATGPT_COOKIES (notamment cf_clearance / __cf_bm) doivent être mis à jour dans GitHub Secrets.");
         }
     }
     
