@@ -25,9 +25,11 @@ jobs:
         with:
           node-version: '22'
           
-      - name: Install dependencies
+      - name: Install dependencies & Chromium
         working-directory: ./agent
-        run: npm install
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
         
       - name: Run Image Generator Agent for ${{ matrix.operator }}
         working-directory: ./agent

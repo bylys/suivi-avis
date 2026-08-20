@@ -227,27 +227,27 @@ function getConversationUrlForOperator(operatorName) {
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
     const targetUrl = getConversationUrlForOperator(operatorName);
     
-    // Échelonnement anti-429 et boucle de retry robuste pour Browserless
-    const operatorIndex = ['KEVIN', 'FIF', 'AINA', 'ANJARA', 'KORAIL', 'KINTANA'].indexOf((operatorName || TARGET_OPERATOR || '').toUpperCase());
-    const initialStagger = operatorIndex >= 0 ? (operatorIndex % 2) * 25000 : Math.floor(Math.random() * 15000);
-    
-    if (initialStagger > 0) {
-        console.log(`⏳ Échelonnement anti-429 Browserless : attente de ${initialStagger / 1000}s avant connexion...`);
-        await new Promise(r => setTimeout(r, initialStagger));
+    let browser;
+    if (BROWSERLESS_TOKEN) {
+        try {
+            console.log(`Tentative de connexion à Browserless (URL GPT: ${targetUrl})...`);
+            browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
+        } catch (err) {
+            console.log(`⚠️ Browserless indisponible ou 429 (${err.message}). Bascule automatique sur Chromium local Playwright...`);
+        }
     }
 
-    let browser;
-    for (let attempt = 1; attempt <= 8; attempt++) {
-        try {
-            console.log(`Connexion à Browserless (tentative ${attempt}/8, URL GPT: ${targetUrl})...`);
-            browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
-            break;
-        } catch (err) {
-            if (attempt === 8) throw err;
-            const waitSec = attempt * 15 + Math.floor(Math.random() * 10);
-            console.log(`⚠️ Browserless occupé/429 (${err.message}). Re-tentative automatique (${attempt}/8) dans ${waitSec}s...`);
-            await new Promise(r => setTimeout(r, waitSec * 1000));
-        }
+    if (!browser) {
+        console.log("🚀 Lancement du navigateur Chromium local (Playwright 0% rate-limit)...");
+        browser = await chromium.launch({
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-blink-features=AutomationControlled'
+            ]
+        });
     }
     
     const context = await browser.newContext();
