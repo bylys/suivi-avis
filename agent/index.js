@@ -227,9 +227,9 @@ function getConversationUrlForOperator(operatorName) {
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
     const targetUrl = getConversationUrlForOperator(operatorName);
     
-    // Échelonnement anti-429 et boucle de retry automatique pour éviter d'inonder Browserless quand 6 agents démarrent
+    // Échelonnement anti-429 et boucle de retry robuste pour Browserless
     const operatorIndex = ['KEVIN', 'FIF', 'AINA', 'ANJARA', 'KORAIL', 'KINTANA'].indexOf((operatorName || TARGET_OPERATOR || '').toUpperCase());
-    const initialStagger = operatorIndex >= 0 ? operatorIndex * 8000 : Math.floor(Math.random() * 10000);
+    const initialStagger = operatorIndex >= 0 ? (operatorIndex % 2) * 25000 : Math.floor(Math.random() * 15000);
     
     if (initialStagger > 0) {
         console.log(`⏳ Échelonnement anti-429 Browserless : attente de ${initialStagger / 1000}s avant connexion...`);
@@ -237,15 +237,15 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
     }
 
     let browser;
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    for (let attempt = 1; attempt <= 8; attempt++) {
         try {
-            console.log(`Connexion à Browserless (tentative ${attempt}/5, URL GPT: ${targetUrl})...`);
+            console.log(`Connexion à Browserless (tentative ${attempt}/8, URL GPT: ${targetUrl})...`);
             browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
             break;
         } catch (err) {
-            if (attempt === 5) throw err;
-            const waitSec = attempt * 12;
-            console.log(`⚠️ Browserless occupé/429 (${err.message}). Re-tentative dans ${waitSec}s...`);
+            if (attempt === 8) throw err;
+            const waitSec = attempt * 15 + Math.floor(Math.random() * 10);
+            console.log(`⚠️ Browserless occupé/429 (${err.message}). Re-tentative automatique (${attempt}/8) dans ${waitSec}s...`);
             await new Promise(r => setTimeout(r, waitSec * 1000));
         }
     }
