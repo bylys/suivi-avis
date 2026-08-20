@@ -2,8 +2,8 @@ name: GMB Image Generator Agent (6 Opérateurs Parallèles)
 
 on:
   schedule:
-    # Exécution automatique chaque soir à 20h00 UTC (22h00 heure de Paris)
-    - cron: '0 20 * * *'
+    # Exécution automatique chaque jour à 06h00 heure de Thaïlande (UTC+7 -> 23h00 UTC la veille)
+    - cron: '0 23 * * *'
   workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
 
 jobs:
@@ -46,4 +46,6 @@ jobs:
           CHATGPT_CONVERSATION_URL_KORAIL: ${{ secrets.CHATGPT_CONVERSATION_URL_KORAIL }}
           CHATGPT_CONVERSATION_URL_KINTANA: ${{ secrets.CHATGPT_CONVERSATION_URL_KINTANA }}
           CHATGPT_IMAGE_PROMPT: ${{ secrets.CHATGPT_IMAGE_PROMPT }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node index.js
