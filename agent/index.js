@@ -226,9 +226,30 @@ function getConversationUrlForOperator(operatorName) {
 
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
     const targetUrl = getConversationUrlForOperator(operatorName);
-    console.log(`Connexion à Browserless avec le mode Stealth activé (URL GPT: ${targetUrl})...`);
-    // Le forfait gratuit limite à 60 secondes max.
-    const browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
+    
+    // Échelonnement anti-429 et boucle de retry automatique pour éviter d'inonder Browserless quand 6 agents démarrent
+    const operatorIndex = ['KEVIN', 'FIF', 'AINA', 'ANJARA', 'KORAIL', 'KINTANA'].indexOf((operatorName || TARGET_OPERATOR || '').toUpperCase());
+    const initialStagger = operatorIndex >= 0 ? operatorIndex * 8000 : Math.floor(Math.random() * 10000);
+    
+    if (initialStagger > 0) {
+        console.log(`⏳ Échelonnement anti-429 Browserless : attente de ${initialStagger / 1000}s avant connexion...`);
+        await new Promise(r => setTimeout(r, initialStagger));
+    }
+
+    let browser;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
+            console.log(`Connexion à Browserless (tentative ${attempt}/5, URL GPT: ${targetUrl})...`);
+            browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
+            break;
+        } catch (err) {
+            if (attempt === 5) throw err;
+            const waitSec = attempt * 12;
+            console.log(`⚠️ Browserless occupé/429 (${err.message}). Re-tentative dans ${waitSec}s...`);
+            await new Promise(r => setTimeout(r, waitSec * 1000));
+        }
+    }
+    
     const context = await browser.newContext();
     
     // Inject saved cookies to bypass login

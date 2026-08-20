@@ -3,13 +3,16 @@
  */
 
 async function sendTelegramNotification(message) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const rawToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
 
-  if (!token || !chatId) {
+  if (!rawToken || !chatId) {
     console.log("Note Telegram : TELEGRAM_BOT_TOKEN ou TELEGRAM_CHAT_ID manquant (notification ignorée).");
     return;
   }
+
+  // Nettoyage automatique du token (suppression des espaces, guillemets et du mot bot s'il a été collé en double)
+  const token = rawToken.trim().replace(/^["']|["']$/g, '');
 
   try {
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -17,7 +20,7 @@ async function sendTelegramNotification(message) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: chatId,
+        chat_id: String(chatId).trim(),
         text: message,
         parse_mode: 'HTML'
       })
