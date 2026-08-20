@@ -4,7 +4,9 @@
 
 const SAFETY_RULES = {
   toiture: `SAFETY RULES — Roofing: Minimum 2 workers visible. Worker 1 must be on a roof ladder LAID FLAT along the sloping tiles (hooked over the top ridge), OR inside a secure scaffolding basket/nacelle. Connected safety harness is MANDATORY. Worker 2: at ground level, standing away from the fall zone. ABSOLUTE FORBIDDEN: An aluminum extensión ladder placed against the house MUST NEVER extend onto or rest on top of fragile roof tiles; it must ONLY rest against the gutter/eaves. NO worker standing freely on tiles, NO floating ladders leaning mid-roof on tiles without ridge hooks.`,
-  nettoyage_toiture: `SAFETY RULES — Roof cleaning: 2 workers + connected harness required. NEVER: backpack confused with harness, lone worker, telescopic lance from garden without height access.`,
+  nettoyage_toiture: `SAFETY RULES — Roof cleaning & Moss removal: Minimum 2 workers visible. Worker 1 on roof ladder hooked over top ridge with connected safety harness. Worker 2 at ground level. Hard hat MANDATORY. NEVER: worker standing freely on tiles without harness, single worker on roof.`,
+  nettoyage_terrasse: `SAFETY RULES — Terrace / Deck cleaning: Ground level work on outdoor patio/deck/driveway. NO HARD HAT / NO HELMET on head (bare head or casual cap). High-pressure washer or patio cleaner attachment in use. Waterproof boots, work trousers. NEVER: bare feet, jet aimed at people.`,
+  nettoyage_facade: `SAFETY RULES — Facade cleaning: High-pressure washer or softwash lance aimed at exterior wall. Scaffold or ground level. Hard hat MANDATORY if under scaffold. Safety goggles/visor + work boots.`,
   nettoyage_gouttieres: `SAFETY RULES — Gutter cleaning: NEVER: worker standing on gutter channel, on top ladder rung, dangerously leaning sideways, improvised access (chair, crate). ALLOWED: simple ladder, 1 worker.`,
   etancheite: `SAFETY RULES — Waterproofing: NEVER: worker on parapet wall, blowtorch toward another worker, roller blocking access hatch, worker less than 2m from edge without harness. Floor/terrace/balcony: no harness required.`,
   ravalement: `SAFETY RULES — Facade rendering: Scaffold above 2m: mandatory guardrail on void side. NEVER: worker leaning beyond guardrail.`,
@@ -13,7 +15,7 @@ const SAFETY_RULES = {
   abattage: `SAFETY RULES — Tree felling: Operator beside trunk, never in frontal fall zone. NEVER: chainsaw above head height, bystander on other side of trunk.`,
   terrassement: `SAFETY RULES — Earthworks: NEVER: person in open trench under bucket, person between rotating cab and trench edge. Ground signaller required near structures.`,
   paysagiste: `SAFETY RULES — Landscaping: NEVER: lawnmower on steep slope, chainsaw without visible leg protection.`,
-  nettoyage: `SAFETY RULES — Exterior cleaning: NEVER: high-pressure jet aimed at person, bare feet during cleaning.`,
+  nettoyage: `SAFETY RULES — Exterior cleaning: Ground level work. NO HARD HAT on head. NEVER: high-pressure jet aimed at person, bare feet during cleaning.`,
   vitrier: `SAFETY RULES — Glazier: Cut-resistant safety gloves and suction cup lifters MANDATORY when handling glass panes. Indoor window/mirror replacement: NO HARD HAT / NO HELMET on head (bare head or cap). Outdoor height intervention (scaffolding/basket): hard hat mandatory. NEVER: bare hands touching glass edge, glass pane resting unsupported on wall.`,
   depannage_auto: `SAFETY RULES — Auto breakdown: Off-road mandatory, warning triangle visible. NEVER: person between vehicle and traffic, cables crossing road, vehicle raised without axle stands.`,
   charpente: `SAFETY RULES — Carpentry: NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
@@ -56,6 +58,8 @@ const VISUAL_RULES_BY_SERVICE = {
   'Remplacement vitrage': `VISUAL: Glazier wearing cut-resistant gloves using suction cup handles to position double glazing window frame indoors.`,
   'Reparation vitre': `VISUAL: Glazier applying silicone sealant or fitting glass pane into window frame with suction lifter.`,
   'Pose miroir': `VISUAL: Large mirror being mounted on wall using suction cups, glazier in professional workwear with gloves.`,
+  'Nettoyage terrasse': `VISUAL: Ground level patio/deck cleaning, pressure washer lance or patio cleaner attachment in use, clean wet tiles contrast with uncleaned area. Operator bare-headed or in cap, work boots.`,
+  'Nettoyage facade': `VISUAL: Exterior house wall being washed with pressure lance, visible contrast between clean rendered wall and unwashed section. Operator in work boots.`,
 };
 
 // Imperfections physiques d'appareil photo smartphone (doigt, verre gras, poussière...)
