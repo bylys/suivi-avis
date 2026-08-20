@@ -17,7 +17,7 @@ const SAFETY_RULES = {
   vitrier: `SAFETY RULES — Glazier: NEVER: bare hands on edge of large pane, pane against wall without cradle, broken glass with bare feet nearby.`,
   depannage_auto: `SAFETY RULES — Auto breakdown: Off-road mandatory, warning triangle visible. NEVER: person between vehicle and traffic, cables crossing road, vehicle raised without axle stands.`,
   charpente: `SAFETY RULES — Carpentry: NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
-  debarras: `SAFETY RULES — House & Junk Clearance: Utility van or skip container parked outside property. Minimum 1 or 2 movers/operators carrying furniture or boxes in work gloves and sturdy boots. NEVER: lone worker carrying oversized furniture dangerously on stairs, blocked exit path, sharp glass carried without gloves.`,
+  debarras: `SAFETY RULES — House & Junk Clearance: Utility van or skip container parked outside property. Minimum 1 or 2 movers carrying furniture or boxes in work gloves and sturdy boots. NO HARD HAT / NO HELMET on head (bare head or casual cap). NEVER: lone worker carrying oversized furniture dangerously on stairs, blocked exit path, sharp glass carried without gloves.`,
 };
 
 const VISUAL_RULES_BY_SERVICE = {
@@ -121,7 +121,7 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   const DANGEROUS_OUTDOOR_TRADES = ['toiture', 'nettoyage_toiture', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'vitrier', 'charpente'];
   const isOutdoorDangerous = DANGEROUS_OUTDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
-  const INDOOR_TRADES = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine'];
+  const INDOOR_TRADES = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine', 'debarras', 'encombrants', 'demenagement'];
   const isIndoor = INDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
   if (isOutdoorDangerous) {
