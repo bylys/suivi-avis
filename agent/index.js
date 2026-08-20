@@ -531,21 +531,21 @@ async function main() {
 
             const opKey = (TARGET_OPERATOR || '').trim().toUpperCase();
             const scenarioList = operatorScenarios[opKey] || operatorScenarios['FIF'];
-            const selectedScenario = scenarioList[Math.floor(Math.random() * scenarioList.length)];
             
-            tasks = [{
+            // Mode test multi-images : on prend jusqu'à 3 scénarios métiers différents de l'opérateur
+            tasks = scenarioList.slice(0, 3).map((sc) => ({
                 id: Math.floor(100000 + Math.random() * 900000),
-                ...selectedScenario,
+                ...sc,
                 operateur: TARGET_OPERATOR || 'TEST_ROBOT',
                 date: tomorrowStr,
                 statut: 'pending_test'
-            }];
+            }));
             isTestFallback = true;
-            console.log(`🎯 Faux avis de test (${selectedScenario.fiche_nom} - ${selectedScenario.ville}, ${selectedScenario.pays}) créé EN MÉMOIRE !`);
+            console.log(`🎯 Mode Test Multi-Images : ${tasks.length} avis de test créés pour l'opérateur ${TARGET_OPERATOR || 'Global'} !`);
         }
         
-        // Filter: 1 out of 2 reviews gets an image (en mode test ou prod)
-        const tasksToGenerate = tasks.filter((_, index) => index % 2 === 0);
+        // En mode test fallback : on génère TOUTES les images de test (3 images). En prod : 1 sur 2 (50%).
+        const tasksToGenerate = isTestFallback ? tasks : tasks.filter((_, index) => index % 2 === 0);
         console.log(`${tasksToGenerate.length} avis sélectionné(s) pour la génération d'image.`);
         
         if (tasksToGenerate.length === 0) {
