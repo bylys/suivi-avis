@@ -229,16 +229,21 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
     
     let browser;
     if (BROWSERLESS_TOKEN) {
-        try {
-            console.log(`Tentative de connexion à Browserless (URL GPT: ${targetUrl})...`);
-            browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
-        } catch (err) {
-            console.log(`⚠️ Browserless indisponible ou 429 (${err.message}). Bascule automatique sur Chromium local Playwright...`);
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                console.log(`Tentative de connexion à Browserless (${attempt}/3, URL GPT: ${targetUrl})...`);
+                browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
+                if (browser) break;
+            } catch (err) {
+                console.log(`Note connexion Browserless (tentative ${attempt}/3: ${err.message})...`);
+                if (attempt < 3) await new Promise(r => setTimeout(r, 10000));
+            }
         }
     }
 
+    let isLocalBrowser = false;
     if (!browser) {
-        console.log("🚀 Lancement du navigateur Chromium local (Playwright 0% rate-limit)...");
+        console.log("🚀 Lancement du navigateur Chromium local (Stealth Playwright)...");
         browser = await chromium.launch({
             headless: true,
             args: [
@@ -248,9 +253,21 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
                 '--disable-blink-features=AutomationControlled'
             ]
         });
+        isLocalBrowser = true;
     }
     
-    const context = await browser.newContext();
+    const context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        viewport: { width: 1280, height: 800 },
+        locale: 'fr-FR',
+        timezoneId: 'Europe/Paris'
+    });
+
+    if (isLocalBrowser) {
+        await context.addInitScript(() => {
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        });
+    }
     
     // Inject saved cookies to bypass login
     await context.addCookies(cookies);
