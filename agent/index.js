@@ -6,6 +6,7 @@ const { google } = require('googleapis');
 const { Readable } = require('stream');
 const { buildRulesBlock } = require('./rules');
 const { injectExifAndGps } = require('./exif');
+const { sendTelegramNotification } = require('./telegram');
 
 // --- Configuration ---
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -633,6 +634,15 @@ async function main() {
         }
         
         console.log("Terminé avec succès !");
+        
+        const summaryMsg = `<b>🚀 AGENT IMAGE GMB (${TARGET_OPERATOR || 'Global'})</b>\n\n` +
+            `✅ <b>Génération terminée avec succès !</b>\n` +
+            `📸 Photos générées : <b>${tasks.length} photo(s)</b>\n` +
+            `📅 Date de planification : <b>${tomorrowStr}</b>\n` +
+            `📍 Métadonnées EXIF & GPS intégrées\n` +
+            `📂 Dossier : Google Drive / ${TARGET_OPERATOR || 'Défaut'}`;
+            
+        await sendTelegramNotification(summaryMsg);
         
     } catch (err) {
         console.error("Erreur critique:", err);
