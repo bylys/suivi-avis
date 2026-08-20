@@ -119,8 +119,13 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   if (isOutdoorDangerous) {
     lines.push(`WORKER MANDATE (Outdoor/High Risk): Minimum 2 active workers visible in professional high-visibility workwear (yellow/orange safety vests, hard hats, work trousers). One operating main tools, second assisting or securing. Both rendered in realistic working postures.`);
   } else if (isIndoor) {
+    const isMasonry = metierNorm.includes('maconnerie') || travauxNorm.includes('maconnerie');
+    const helmetRule = isMasonry 
+      ? 'Hard hat / safety helmet MANDATORY for masonry.' 
+      : 'NO HARD HAT / NO SAFETY HELMET on head! The indoor artisan MUST have a bare head (or casual work cap), wearing neat normal professional workwear (t-shirt/polo/trousers). NEVER put a hard hat on an indoor plumber, painter, tiler, electrician or carpenter.';
+    
     if (initialShowWorker) {
-      lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 professional artisan/tradesman visible inside the room, actively working on the task (e.g. painting wall, tiling, electrical outlet, plumbing under sink) in neat professional work clothes.`);
+      lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 professional artisan/tradesman visible inside the room, actively working on the task (e.g. painting wall, tiling, electrical outlet, plumbing under sink). ${helmetRule}`);
     } else {
       lines.push(`WORKER PRESENCE (Indoor): Show clean indoor room or active work zone with tools and materials neatly set up. No workers visible in frame.`);
     }
