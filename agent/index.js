@@ -5,6 +5,7 @@ const fs = require('fs');
 const { google } = require('googleapis');
 const { Readable } = require('stream');
 const { buildRulesBlock } = require('./rules');
+const { injectExifAndGps } = require('./exif');
 
 // --- Configuration ---
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -557,7 +558,10 @@ async function main() {
             
             try {
                 // Generate Image
-                const imageBuffer = await generateImageWithChatGPT(finalPrompt, cookies);
+                const rawImageBuffer = await generateImageWithChatGPT(finalPrompt, cookies);
+                
+                // Injection des métadonnées EXIF Smartphone (Samsung/Apple/Xiaomi) & Coordonnées GPS de la ville
+                const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France');
                 
                 // Construction du nom de fichier
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
