@@ -55,14 +55,36 @@ function degToDmsRational(degFloat) {
   ];
 }
 
-async function injectExifAndGps(imageBuffer, cityName, country = 'France') {
+function generatePhotoDate3To21DaysBefore(taskDateStr) {
+  let baseDate = new Date();
+  if (taskDateStr && /^\d{4}-\d{2}-\d{2}$/.test(taskDateStr)) {
+    const [y, m, d] = taskDateStr.split('-').map(Number);
+    baseDate = new Date(y, m - 1, d);
+  }
+
+  // Nombre de jours aléatoires avant l'avis : entre 3 jours (min) et 21 jours / 3 semaines (max)
+  const minDays = 3;
+  const maxDays = 21;
+  const daysBefore = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays;
+
+  const photoDate = new Date(baseDate.getTime() - daysBefore * 24 * 60 * 60 * 1000);
+
+  // Heure de prise de vue en journée de chantier (entre 08h30 et 18h30)
+  const hour = Math.floor(Math.random() * (18 - 8 + 1)) + 8;
+  const minute = Math.floor(Math.random() * 60);
+  const second = Math.floor(Math.random() * 60);
+
+  photoDate.setHours(hour, minute, second);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${photoDate.getFullYear()}:${pad(photoDate.getMonth() + 1)}:${pad(photoDate.getDate())} ${pad(photoDate.getHours())}:${pad(photoDate.getMinutes())}:${pad(photoDate.getSeconds())}`;
+}
+
+async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskDateStr = null) {
   try {
     const coords = await getCoordinatesForCity(cityName, country);
     const phone = pickSmartphone();
-
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const dateStr = `${now.getFullYear()}:${pad(now.getMonth() + 1)}:${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const dateStr = generatePhotoDate3To21DaysBefore(taskDateStr);
 
     // Construction du bloc GPS EXIF
     const gpsIfd = {};
