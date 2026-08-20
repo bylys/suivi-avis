@@ -3,7 +3,7 @@
  */
 
 const SAFETY_RULES = {
-  toiture: `SAFETY RULES — Roofing: Minimum 2 workers visible. Worker 1: on a hooked roof ladder (hooks on the ridge), scaffold or MEWP, connected harness visible. Worker 2: at the base, NOT under the fall zone. NEVER: worker standing freely on tiles, harness without anchor, lone worker on active roof, industrial pallet on slope.`,
+  toiture: `SAFETY RULES — Roofing: Minimum 2 workers visible. Worker 1 must be on a roof ladder LAID FLAT along the sloping tiles (hooked over the top ridge), OR inside a secure scaffolding basket/nacelle. Connected safety harness is MANDATORY. Worker 2: at ground level, standing away from the fall zone. ABSOLUTE FORBIDDEN: An aluminum extensión ladder placed against the house MUST NEVER extend onto or rest on top of fragile roof tiles; it must ONLY rest against the gutter/eaves. NO worker standing freely on tiles, NO floating ladders leaning mid-roof on tiles without ridge hooks.`,
   nettoyage_toiture: `SAFETY RULES — Roof cleaning: 2 workers + connected harness required. NEVER: backpack confused with harness, lone worker, telescopic lance from garden without height access.`,
   nettoyage_gouttieres: `SAFETY RULES — Gutter cleaning: NEVER: worker standing on gutter channel, on top ladder rung, dangerously leaning sideways, improvised access (chair, crate). ALLOWED: simple ladder, 1 worker.`,
   etancheite: `SAFETY RULES — Waterproofing: NEVER: worker on parapet wall, blowtorch toward another worker, roller blocking access hatch, worker less than 2m from edge without harness. Floor/terrace/balcony: no harness required.`,
@@ -24,7 +24,8 @@ const VISUAL_RULES_BY_SERVICE = {
   'Taille arbre haute tige': `VISUAL: Climbing harness + ropes anchored to main crotch. If a ladder is present, it must reach a solid main fork or be omitted. Realistic human-to-tree scale mandatory.`,
   'Elagage arbre': `VISUAL: Climbing harness + ropes visible and anchored to main crotch. If an aluminum ladder is shown, it must rest securely against a main branch fork, NEVER stopping awkwardly mid-trunk far below the worker.`,
   'Elalgage en hauteur': `VISUAL: Climbing harness + ropes visible and anchored to main crotch. If an aluminum ladder is shown, it must rest securely against a main branch fork, NEVER stopping awkwardly mid-trunk far below the worker.`,
-  'Reparation toiture': `VISUAL: Hooked roof ladder on ridge (NOT against gutter). Damaged tiles visible.`,
+  'Reparation toiture': `VISUAL: Worker on a flat roof-ladder (lying flat along roof tiles hooked at top ridge). Ground ladder only reaches gutter line. Minimum 2 workers visible (1 roof, 1 ground).`,
+  'Renovation tuiles toiture': `VISUAL: Worker on a flat roof-ladder hooked at top ridge. Ground extension ladder stops strictly at the gutter edge and NEVER climbs onto the sloping roof surface.`,
   'Nettoyage gouttieres': `VISUAL: Gutter visible and accessible, active intervention at gutter or downpipe level.`,
   'Debouchage gouttieres': `VISUAL: Gutter and downpipe visible, active intervention at downpipe level.`,
   'Ravalement facade': `VISUAL: Scaffold visible, worker applying render with float, freshly applied coat on part of facade.`,
