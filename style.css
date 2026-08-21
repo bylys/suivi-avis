@@ -1641,6 +1641,24 @@ body.light-theme input::placeholder, body.light-theme textarea::placeholder {
   opacity: 1 !important;
 }
 
+/* Onglet GMails (Barre de recherche, boutons ville et badges) */
+body.light-theme .gmail-toolbar, body.light-theme .gmail-search-wrap, body.light-theme .gmail-sort-wrap {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body.light-theme .ville-map-btn {
+  background: #e0f2fe !important;
+  border: 1px solid #7dd3fc !important;
+  color: #0369a1 !important;
+  font-weight: 600;
+}
+body.light-theme .lg-badge.lg-off {
+  background: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
 /* Onglet Fiches GMB (Barre de recherche & Accordéons par métier) */
 body.light-theme .fiches-search-bar {
   background: #ffffff !important;
@@ -1705,8 +1723,9 @@ body.light-theme .btn-drive-op:hover {
 
 /* Top 5 Fiches Supprimées */
 body.light-theme .top-row {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
 }
 body.light-theme .top-row-nom {
   color: #0f172a !important;
@@ -1715,9 +1734,17 @@ body.light-theme .top-badge {
   background: #e2e8f0 !important;
   color: #0f172a !important;
 }
+body.light-theme .top-pill.suppr {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
 body.light-theme .top-pill.total {
-  background: #e2e8f0 !important;
+  background: #f1f5f9 !important;
   color: #334155 !important;
+}
+body.light-theme .top-pill.taux {
+  background: #fef3c7 !important;
+  color: #d97706 !important;
 }
 
 /* Tous Boutons Secondaires (Régénérer, Ignorer, Changer la clé API, + Ajouter) */
@@ -1731,10 +1758,28 @@ body.light-theme button:not(.btn-primary):not(.btn-generer):hover {
 }
 
 /* Modales & Panneau Carte Split-View */
-body.light-theme #gmb-map-panel, body.light-theme .modal-content, body.light-theme .gmb-fiche-item {
+body.light-theme #gmb-map-panel {
   background: #ffffff !important;
-  border-color: #cbd5e1 !important;
   color: #0f172a !important;
+  border-left: 1px solid #cbd5e1 !important;
+}
+body.light-theme .gmb-map-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+}
+body.light-theme .gmb-map-header h3, body.light-theme .gmb-map-header span {
+  color: #0f172a !important;
+}
+body.light-theme #gmb-map-fiches {
+  background: #f8fafc !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+body.light-theme .gmb-fiche-item {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
 }
 body.light-theme .gmb-fiche-item-name {
   color: #0f172a !important;
