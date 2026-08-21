@@ -82,10 +82,13 @@ function getCompositionRules(metier, travaux, etatChantier) {
     .replace(/[îï]/g, 'i').replace(/[ôö]/g, 'o');
   
   const combined = normalize(metier) + ' ' + normalize(travaux);
+  const isDebarras = combined.includes('debarras') || combined.includes('encombrant');
   const isIndoor = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine', 'escalier', 'vitrier'].some(t => combined.includes(t));
 
   let framingRule;
-  if (isIndoor) {
+  if (isDebarras) {
+    framingRule = 'CLEARANCE FRAMING (Débarras): Photo can be shot EITHER inside the room/basement/garage being cleared OR outside in front of the property/driveway with boxes and furniture being loaded into a utility van.';
+  } else if (isIndoor) {
     framingRule = 'INDOOR FRAMING: Photo MUST be shot from inside the room itself OR from an adjoining doorway/hallway looking directly into the active work space.';
   } else {
     const rand = Math.random();
@@ -138,6 +141,10 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   const INDOOR_TRADES = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine', 'debarras', 'encombrants', 'demenagement', 'vitrier'];
   const isIndoor = INDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
+  // Alternance aléatoire du couvre-chef quand le casque n'est pas obligatoire (tête nue / casquette / bonnet / chapeau)
+  const headwearOptions = ['bare head (no hat)', 'casual work cap / baseball cap', 'work beanie', 'casual sun hat'];
+  const randomHeadwear = headwearOptions[Math.floor(Math.random() * headwearOptions.length)];
+
   if (isOutdoorDangerous) {
     const isPublicRoad = metierNorm.includes('depannage') || metierNorm.includes('remorquage') || travauxNorm.includes('depannage') || travauxNorm.includes('remorquage') || travauxNorm.includes('voie publique') || travauxNorm.includes('trottoir');
     const vestRule = isPublicRoad 
@@ -152,14 +159,14 @@ function buildRulesBlock(metier, travaux, etatChantier) {
     if (isMasonry) {
       helmetRule = 'Hard hat / safety helmet MANDATORY for masonry.';
     } else if (isGlazier) {
-      helmetRule = 'NO HARD HAT / NO HELMET on head! BUT safety glasses/goggles and cut-resistant gloves are MANDATORY for glazier.';
+      helmetRule = `NO HARD HAT on head! Headwear: ${randomHeadwear}. BUT safety glasses/goggles and cut-resistant gloves are MANDATORY for glazier.`;
     } else {
-      helmetRule = 'NO HARD HAT / NO SAFETY HELMET on head! The indoor artisan MUST have a bare head (or casual work cap), wearing neat normal professional workwear (t-shirt/polo/trousers). NEVER put a hard hat on an indoor plumber, painter, tiler, electrician or carpenter.';
+      helmetRule = `NO HARD HAT / NO SAFETY HELMET on head! Headwear: ${randomHeadwear}. Wearing neat normal professional workwear (t-shirt/polo/trousers). NEVER put a hard hat on an indoor plumber, painter, tiler, electrician, carpenter or mover.`;
     }
     
-    lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 active professional artisan/tradesman visible inside the room or adjoining doorway, actively working on the task (e.g. painting wall, tiling floor/wall, plumbing under sink, assembling stairs/furniture). ${helmetRule} NO safety vests.`);
+    lines.push(`WORKER MANDATE (Indoor Renovation & Clearance): Exactly 1 active professional artisan/mover visible inside the room, adjoining doorway, or near the van/truck outside. ${helmetRule} NO safety vests.`);
   } else {
-    lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear (polo/t-shirt/trousers, NO safety vests unless on public road), operating equipment naturally.`);
+    lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear. Headwear: ${randomHeadwear}. (NO safety vests unless on public road), operating equipment naturally.`);
   }
 
   return lines.length > 0 ? `\n\n---\n${lines.join('\n')}` : '';
