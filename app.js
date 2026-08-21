@@ -4384,7 +4384,6 @@ function renderImgPlanning() {
 
 function updateCostEstimate() {
   const total = _imgRows.reduce((s, r) => s + (parseInt(r.nb) || 0), 0);
-  const cost  = (total * 0.04).toFixed(2);
-  const el    = document.getElementById('img-cost-estimate');
-  if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} · ~$${cost}` : '';
+  const el    = document.getElementById('img-gen-counter');
+  if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} planifiée${total > 1 ? 's' : ''} (Agent IA)` : '';
 }
