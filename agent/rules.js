@@ -16,7 +16,7 @@ const SAFETY_RULES = {
   terrassement: `SAFETY RULES — Earthworks: NEVER: person in open trench under bucket, person between rotating cab and trench edge. Ground signaller required near structures.`,
   paysagiste: `SAFETY RULES — Landscaping & Hedge Trimming: NO HARD HAT / NO HELMET on head for ground hedge trimming (bare head or casual cap/ear defenders). Hedge trimmer or lawnmower in use. Work trousers and gloves. NEVER: lawnmower on steep unstable slope, chainsaw operated without leg protection.`,
   nettoyage: `SAFETY RULES — Exterior cleaning: Ground level work. NO HARD HAT on head. NEVER: high-pressure jet aimed at person, bare feet during cleaning.`,
-  vitrier: `SAFETY RULES — Glazier: Cut-resistant safety gloves and suction cup lifters MANDATORY when handling glass panes. Indoor window/mirror replacement: NO HARD HAT / NO HELMET on head (bare head or cap). Outdoor height intervention (scaffolding/basket): hard hat mandatory. NEVER: bare hands touching glass edge, glass pane resting unsupported on wall.`,
+  vitrier: `SAFETY RULES — Glazier: Cut-resistant safety gloves and protective safety glasses/goggles MANDATORY when handling glass panes. NO HARD HAT / NO HELMET on head (bare head or casual cap). Outdoor height intervention (scaffolding/basket): hard hat mandatory. NEVER: bare hands touching glass edge, glass pane resting unsupported on wall.`,
   depannage_auto: `SAFETY RULES — Auto breakdown: Off-road mandatory, warning triangle visible. NEVER: person between vehicle and traffic, cables crossing road, vehicle raised without axle stands.`,
   charpente: `SAFETY RULES — Carpentry: NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
   debarras: `SAFETY RULES — House & Junk Clearance: Utility van or skip container parked outside property. Minimum 1 or 2 movers carrying furniture or boxes in work gloves and sturdy boots. NO HARD HAT / NO HELMET on head (bare head or casual cap). NEVER: lone worker carrying oversized furniture dangerously on stairs, blocked exit path, sharp glass carried without gloves.`,
@@ -60,9 +60,9 @@ const VISUAL_RULES_BY_SERVICE = {
   'Debarras maison': `VISUAL: Utility van with open rear doors or skip container, neat stacks of cardboard boxes and old furniture being loaded by mover in work gloves.`,
   'Enlevement encombrants': `VISUAL: Utility truck or van, movers in workwear loading bulky items or boxes from driveway or garage.`,
   'Debarras cave': `VISUAL: Basement or garage clearance in progress, boxes, shelving or old items stacked neatly for loading.`,
-  'Remplacement vitrage': `VISUAL: Glazier wearing cut-resistant gloves using suction cup handles to position double glazing window frame indoors.`,
-  'Reparation vitre': `VISUAL: Glazier applying silicone sealant or fitting glass pane into window frame with suction lifter.`,
-  'Pose miroir': `VISUAL: Large mirror being mounted on wall using suction cups, glazier in professional workwear with gloves.`,
+  'Remplacement vitrage': `VISUAL: Glazier wearing cut-resistant gloves and protective safety glasses using suction cup handles to position double glazing window frame indoors.`,
+  'Reparation vitre': `VISUAL: Glazier wearing protective glasses and cut-resistant gloves applying silicone sealant or fitting glass pane into window frame with suction lifter.`,
+  'Pose miroir': `VISUAL: Large mirror being mounted on wall using suction cups, glazier in professional workwear with safety glasses and gloves.`,
   'Nettoyage terrasse': `VISUAL: Ground level patio/deck cleaning, pressure washer lance or patio cleaner attachment in use, clean wet tiles contrast with uncleaned area. Operator bare-headed or in cap, work boots.`,
   'Nettoyage facade': `VISUAL: Exterior house wall being washed with pressure lance, visible contrast between clean rendered wall and unwashed section. Operator in work boots.`,
 };
@@ -76,24 +76,26 @@ const CAMERA_IMPERFECTIONS = [
   'slightly crooked horizon and candid hand-held tilt',
 ];
 
-function getCompositionRules(etatChantier) {
-  const workerPresenceMap = {
-    'debut de chantier': 0.65,
-    'travaux en cours': 0.90,
-    'travaux quasi-termines': 0.07,
-  };
-  const etatKey = (etatChantier || '').toLowerCase()
-    .replace(/[éè]/g, 'e').replace(/[àâ]/g, 'a').replace(/[î]/g, 'i');
-  const showWorker = Math.random() < (workerPresenceMap[etatKey] ?? 0.80);
+function getCompositionRules(metier, travaux, etatChantier) {
+  const normalize = (s) => (s || '').toLowerCase()
+    .replace(/[éèê]/g, 'e').replace(/[àâ]/g, 'a')
+    .replace(/[îï]/g, 'i').replace(/[ôö]/g, 'o');
+  
+  const combined = normalize(metier) + ' ' + normalize(travaux);
+  const isIndoor = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine', 'escalier', 'vitrier'].some(t => combined.includes(t));
 
-  const rand = Math.random();
-  let pointDeVueRule;
-  if (rand < 0.80) {
-    pointDeVueRule = '"client" viewpoint: taken from garden path, driveway or sidewalk, smartphone at chest height, candid framing.';
-  } else if (rand < 0.95) {
-    pointDeVueRule = '"tradesman" viewpoint: normal worksite photo taken by worker or colleague.';
+  let framingRule;
+  if (isIndoor) {
+    framingRule = 'INDOOR FRAMING: Photo MUST be shot from inside the room itself OR from an adjoining doorway/hallway looking directly into the active work space.';
   } else {
-    pointDeVueRule = `"neighbour" viewpoint: slightly from the side, as if taken discreetly from behind a fence.`;
+    const rand = Math.random();
+    if (rand < 0.80) {
+      framingRule = '"client" viewpoint: taken from garden path, driveway or sidewalk, smartphone at chest height, candid framing.';
+    } else if (rand < 0.95) {
+      framingRule = '"tradesman" viewpoint: normal worksite photo taken by worker or colleague.';
+    } else {
+      framingRule = `"neighbour" viewpoint: slightly from the side, as if taken discreetly from behind a fence.`;
+    }
   }
 
   // 1 chance sur 3 (33%) d'ajouter une imperfection physique marquée
@@ -103,8 +105,8 @@ function getCompositionRules(etatChantier) {
     : 'standard realistic smartphone camera quality with natural lighting';
 
   return {
-    showWorker,
-    compositionRule: `COMPOSITION & REALISM: ${pointDeVueRule} Camera detail: ${cameraDefect}, motion blur on active hands, subtle digital noise in shadows. NEVER too clean, HDR, sharp or perfectly framed.`,
+    showWorker: true, // 100% OBLIGATOIRE : toujours des ouvriers visibles !
+    compositionRule: `COMPOSITION & REALISM: ${framingRule} Camera detail: ${cameraDefect}, motion blur on active hands, subtle digital noise in shadows. NEVER too clean, HDR, sharp or perfectly framed.`,
   };
 }
 
@@ -126,35 +128,34 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   );
   if (visualKey) lines.push(VISUAL_RULES_BY_SERVICE[visualKey]);
 
-  const { showWorker: initialShowWorker, compositionRule } = getCompositionRules(etatChantier);
+  const { compositionRule } = getCompositionRules(metier, travaux, etatChantier);
   lines.push(compositionRule);
 
   // Distinguer métiers extérieurs dangereux (2+ ouvriers) vs travaux intérieurs (1 ouvrier solo)
-  const DANGEROUS_OUTDOOR_TRADES = ['toiture', 'nettoyage_toiture', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'vitrier', 'charpente'];
+  const DANGEROUS_OUTDOOR_TRADES = ['toiture', 'nettoyage_toiture', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'charpente'];
   const isOutdoorDangerous = DANGEROUS_OUTDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
-  const INDOOR_TRADES = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine', 'debarras', 'encombrants', 'demenagement'];
+  const INDOOR_TRADES = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine', 'debarras', 'encombrants', 'demenagement', 'vitrier'];
   const isIndoor = INDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
   if (isOutdoorDangerous) {
     lines.push(`WORKER MANDATE (Outdoor/High Risk): Minimum 2 active workers visible in professional high-visibility workwear (yellow/orange safety vests, hard hats, work trousers). One operating main tools, second assisting or securing. Both rendered in realistic working postures.`);
   } else if (isIndoor) {
     const isMasonry = metierNorm.includes('maconnerie') || travauxNorm.includes('maconnerie');
-    const helmetRule = isMasonry 
-      ? 'Hard hat / safety helmet MANDATORY for masonry.' 
-      : 'NO HARD HAT / NO SAFETY HELMET on head! The indoor artisan MUST have a bare head (or casual work cap), wearing neat normal professional workwear (t-shirt/polo/trousers). NEVER put a hard hat on an indoor plumber, painter, tiler, electrician or carpenter.';
+    const isGlazier = metierNorm.includes('vitrier') || travauxNorm.includes('vitrier');
     
-    if (initialShowWorker) {
-      lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 professional artisan/tradesman visible inside the room, actively working on the task (e.g. painting wall, tiling, electrical outlet, plumbing under sink). ${helmetRule}`);
+    let helmetRule;
+    if (isMasonry) {
+      helmetRule = 'Hard hat / safety helmet MANDATORY for masonry.';
+    } else if (isGlazier) {
+      helmetRule = 'NO HARD HAT / NO HELMET on head! BUT safety glasses/goggles and cut-resistant gloves are MANDATORY for glazier.';
     } else {
-      lines.push(`WORKER PRESENCE (Indoor): Show clean indoor room or active work zone with tools and materials neatly set up. No workers visible in frame.`);
+      helmetRule = 'NO HARD HAT / NO SAFETY HELMET on head! The indoor artisan MUST have a bare head (or casual work cap), wearing neat normal professional workwear (t-shirt/polo/trousers). NEVER put a hard hat on an indoor plumber, painter, tiler, electrician or carpenter.';
     }
+    
+    lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 active professional artisan/tradesman visible inside the room or adjoining doorway, actively working on the task (e.g. painting wall, tiling floor/wall, plumbing under sink, assembling stairs/furniture). ${helmetRule}`);
   } else {
-    if (initialShowWorker) {
-      lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear, operating equipment naturally.`);
-    } else {
-      lines.push(`WORKER PRESENCE: Show only the worksite, materials and equipment. No workers visible in frame.`);
-    }
+    lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear, operating equipment naturally.`);
   }
 
   return lines.length > 0 ? `\n\n---\n${lines.join('\n')}` : '';
