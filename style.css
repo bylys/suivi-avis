@@ -1536,3 +1536,80 @@ datalist { display: none; }
   border: 1px solid rgba(239, 68, 68, 0.4);
   color: #f87171;
 }
+
+/* Bouton Theme Switcher */
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+/* ☀️ MODE CLAIR (LIGHT THEME) ☀️ */
+body.light-theme {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+body.light-theme header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+body.light-theme header h1 {
+  color: #0f172a;
+}
+body.light-theme .theme-toggle-btn {
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  color: #0f172a;
+}
+body.light-theme .tab-btn {
+  color: #64748b;
+}
+body.light-theme .tab-btn.active, body.light-theme .tab-btn:hover {
+  background: #3b82f6;
+  color: #ffffff;
+}
+body.light-theme .stat-card, body.light-theme .chart-box, body.light-theme .img-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+body.light-theme .stat-card span {
+  color: #0f172a;
+}
+body.light-theme table tr {
+  border-bottom-color: #e2e8f0 !important;
+}
+body.light-theme table td {
+  color: #1e293b !important;
+}
+body.light-theme table th {
+  background: #f1f5f9;
+  color: #475569;
+}
+body.light-theme input[type="text"], body.light-theme input[type="email"], body.light-theme select {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+body.light-theme .collapsible-leaderboard {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+body.light-theme .collapsible-leaderboard summary {
+  color: #1e293b !important;
+}
+body.light-theme .collapsible-leaderboard div {
+  background: #f8fafc !important;
+}

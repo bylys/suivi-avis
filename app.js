@@ -2,6 +2,34 @@
 const DECODO_PASS_RESIDENTIAL = 'ip+w63wR0kk5uBtAfS';  // mot de passe résidentiel (VAteamR)
 const DECODO_PASS_MOBILE      = '5mF_i90ueyEEo0rJsd';  // mot de passe mobile (VATeam)
 
+// ── THÈME SOMBRE / CLAIR (MODE NUIT / MODE JOUR) ──
+function initTheme() {
+  const savedTheme = localStorage.getItem('gmb_theme_preference');
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-theme');
+    updateThemeBtn(false);
+  } else {
+    document.body.classList.remove('light-theme');
+    updateThemeBtn(true);
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-theme');
+  localStorage.setItem('gmb_theme_preference', isLight ? 'light' : 'dark');
+  updateThemeBtn(!isLight);
+}
+
+function updateThemeBtn(isDark) {
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) {
+    btn.innerHTML = isDark ? '🌙 Mode Nuit' : '☀️ Mode Jour';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initTheme);
+initTheme();
+
 // ── SUPABASE REST API (sans CDN) ──
 const SUPABASE_URL = 'https://rrbvghxmnimusfyqixau.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_k0nVhKHWUT5kBW9xBNpLkA_AKam7uBa';

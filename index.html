@@ -44,8 +44,10 @@
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
       <button class="tab-btn" onclick="showTab('gmails')">📧 GMails</button>
-    </nav>
-    <button class="logout-btn" onclick="logout()">Déconnexion</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="theme-toggle-btn" class="theme-toggle-btn" onclick="toggleTheme()" title="Basculer le thème Sombre / Clair">🌙 Mode Nuit</button>
+      <button class="logout-btn" onclick="logout()">Déconnexion</button>
+    </div>
   </header>
 
   <!-- DASHBOARD -->
