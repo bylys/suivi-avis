@@ -3777,12 +3777,12 @@ async function renderGmails() {
     pointsEstimesMap[aut] = (pointsEstimesMap[aut] || 0) + pts;
   });
 
-  const filterVille    = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
+  const filterQuery    = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
   const filterOp       = document.getElementById('gmail-filter-operateur')?.value || '';
   const sort           = document.getElementById('gmail-filter-sort')?.value || 'az';
 
   let list = gmails.filter(g => {
-    if (filterVille && !(g.ville || '').toLowerCase().includes(filterVille)) return false;
+    if (filterQuery && !((g.ville || '').toLowerCase().includes(filterQuery) || (g.email || '').toLowerCase().includes(filterQuery))) return false;
     if (filterOp === '__none__' && g.operateur) return false;
     if (filterOp && filterOp !== '__none__' && g.operateur !== filterOp) return false;
     return true;
