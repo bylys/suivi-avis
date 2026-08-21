@@ -4181,14 +4181,11 @@ async function showGmbMap(ville, targetEmail = '') {
     let leafletReady = false;
     if (centerGeo && typeof L !== 'undefined') {
       _leafletMap = L.map(mapEl, { zoomControl: true }).setView([centerGeo.lat, centerGeo.lon], 10);
-      const isLightMode = document.body.classList.contains('light-theme');
-      const tileUrl = isLightMode
-        ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyage/{z}/{x}/{y}{r}.png'
-        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
       L.tileLayer(tileUrl, {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: 'abcd',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        subdomains: 'abc',
         maxZoom: 19
       }).addTo(_leafletMap);
 
