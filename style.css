@@ -138,15 +138,13 @@ nav { display: flex; gap: 0.4rem; flex: 1; flex-wrap: wrap; }
   display: flex; gap: 1.2rem; margin-bottom: 1.5rem;
   flex-wrap: wrap; align-items: flex-end;
 }
-.filters label { font-size: 0.8rem; font-weight: 600; color: #64748b; display: flex; flex-direction: column; gap: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.filters label { font-size: 0.8rem; font-weight: 600; color: #94a3b8; display: flex; flex-direction: column; gap: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
 .filters select, .filters input {
   padding: 0.45rem 0.7rem; border: 1.5px solid #334155;
   border-radius: 8px; font-size: 0.88rem; outline: none;
-  background: #0f172a !important; color: #f1f5f9 !important;
+  background: #0f172a; color: #f1f5f9;
   transition: border-color .15s;
   -webkit-appearance: none; appearance: none;
-  color-scheme: dark;
-  -webkit-text-fill-color: #f1f5f9;
 }
 .filters select:focus, .filters input:focus { border-color: #6366f1; }
 .filters select option { background: #1e293b; color: #f1f5f9; }
@@ -1810,4 +1808,46 @@ body.light-theme .avis-fiche {
   background: #e0e7ff !important;
   color: #3730a3 !important;
   border: 1px solid #c7d2fe !important;
+}
+
+/* ☀️ MODE CLAIR (LIGHT THEME) - DASHBOARD & FILTRES PERFECTION ☀️ */
+body.light-theme .stat-card {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+body.light-theme .stat-card label {
+  color: #475569 !important;
+}
+body.light-theme .stat-card span {
+  color: #0f172a !important;
+}
+body.light-theme .chart-box, body.light-theme .chart-box.wide {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+body.light-theme .chart-box h3 {
+  color: #334155 !important;
+}
+body.light-theme #top-supprimes {
+  background: transparent !important;
+}
+body.light-theme .filters label {
+  color: #334155 !important;
+}
+body.light-theme .filters select, body.light-theme .filters input,
+body.light-theme #dash-year, body.light-theme #dash-month, body.light-theme #dash-fiche {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  border: 1.5px solid #94a3b8 !important;
+  color-scheme: light !important;
+}
+body.light-theme .filters select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
