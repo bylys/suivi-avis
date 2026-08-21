@@ -123,31 +123,41 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
     // 2. Récupération ou création automatique du sous-dossier de l'opérateur
     const targetFolderId = await getOrCreateOperatorFolder(drive, folderId, operatorName);
 
-    const stream = new Readable();
-    stream.push(imageBuffer);
-    stream.push(null);
-
-    const fileMetadata = {
-        name: fileName,
-        parents: [targetFolderId]
-    };
-
-    const media = {
-        mimeType: 'image/jpeg',
-        body: stream
-    };
+    // Anti-doublon Google Drive : vérifier si un fichier portant le même nom existe déjà dans le dossier opérateur
+    const checkQuery = `'${targetFolderId}' in parents and name='${fileName}' and trashed=false`;
+    let existingFiles = [];
+    try {
+        const checkRes = await drive.files.list({
+            q: checkQuery,
+            fields: 'files(id, webViewLink)',
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+        });
+        existingFiles = checkRes.data.files || [];
+    } catch (cErr) {}
 
     console.log(`Upload en cours de la photo sur Google Drive (Sous-dossier Opérateur: "${operatorName || 'Défaut'}")...`);
 
     let res;
     try {
-        res = await drive.files.create({
-            requestBody: fileMetadata,
-            media: media,
-            supportsAllDrives: true,
-            supportsTeamDrives: true,
-            fields: 'id, webViewLink, webContentLink'
-        });
+        if (existingFiles.length > 0) {
+            const existingId = existingFiles[0].id;
+            console.log(`ℹ️ Photo existante détectée sur Google Drive (${fileName}). Remplacement sans doublon...`);
+            res = await drive.files.update({
+                fileId: existingId,
+                media: { mimeType: 'image/jpeg', body: Readable.from(imageBuffer) },
+                supportsAllDrives: true,
+                fields: 'id, webViewLink, webContentLink'
+            });
+        } else {
+            res = await drive.files.create({
+                requestBody: fileMetadata,
+                media: { mimeType: 'image/jpeg', body: Readable.from(imageBuffer) },
+                supportsAllDrives: true,
+                supportsTeamDrives: true,
+                fields: 'id, webViewLink, webContentLink'
+            });
+        }
     } catch (driveErr) {
         console.error("🔍 Détails bruts erreur Drive :", driveErr.code, driveErr.message);
         if (driveErr.message?.includes('storageQuotaExceeded')) {
@@ -582,8 +592,9 @@ async function main() {
         // Formatage de la date pour le nom du fichier Supabase
         const dateFormat = `${tomorrow.getDate().toString().padStart(2, '0')}-${(tomorrow.getMonth()+1).toString().padStart(2, '0')}-${tomorrow.getFullYear()}`;
 
-        for (const task of tasksToGenerate) {
-            console.log(`Traitement de l'avis ID ${task.id} pour le VA : ${task.operateur}`);
+        for (let taskIndex = 0; taskIndex < tasksToGenerate.length; taskIndex++) {
+            const task = tasksToGenerate[taskIndex];
+            console.log(`[${taskIndex + 1}/${tasksToGenerate.length}] Traitement de l'avis ID ${task.id} pour le VA : ${task.operateur}`);
             
             // Valeurs aléatoires pour varier les photos
             const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -673,9 +684,9 @@ async function main() {
                 const reviewTextContent = (task.commentaire || '') + ' ' + (task.travaux || '');
                 const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France', task.date, reviewTextContent);
                 
-                // Construction du nom de fichier (.jpg pour compatibilité EXIF/GPS smartphone)
+                // Construction du nom de fichier unique (.jpg pour compatibilité EXIF/GPS smartphone)
                 const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
-                const fileName = `${safeOpName}_${dateFormat}_${task.id}.jpg`;
+                const fileName = `${safeOpName}_${dateFormat}_task${task.id}_img${taskIndex + 1}.jpg`;
                 
                 // Upload de l'image (Google Drive par sous-dossier opérateur + fallback Supabase Storage)
                 const uploadResult = await uploadImage(fileName, imageBuffer, task.operateur);
