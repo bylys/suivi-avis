@@ -3983,7 +3983,7 @@ async function showGmbMap(ville, targetEmail = '') {
     if (!targetEmailNorm) return '';
     const normFiche = normalizeStr(ficheNom);
     const prevAvis = (allAvis || []).find(a => {
-      const em = ((a.email || a.gmail) || '').toLowerCase().trim();
+      const em = ((a.auteur || a.email || a.gmail || a.compte_google) || '').toLowerCase().trim();
       const fi = normalizeStr(a.fiche_nom || a.fiche || '');
       return em === targetEmailNorm && fi === normFiche;
     });
