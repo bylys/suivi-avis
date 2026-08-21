@@ -3871,8 +3871,9 @@ async function showGmbMap(ville) {
 
   const fichesEl = document.getElementById('gmb-map-fiches');
 
-  const renderFicheItem = (f, dist) => `
-    <div class="gmb-fiche-item">
+  const renderFicheItem = (f, dist, isBestRec = false) => `
+    <div class="gmb-fiche-item ${isBestRec ? 'recommended' : ''}" data-fichename="${_escHtml(f.nom)}">
+      ${isBestRec ? `<div class="gmb-rec-badge">⭐ Meilleure Fiche Recommandée</div>` : ''}
       <div class="gmb-fiche-item-name">
         🏢 ${f.nom}
         ${dist ? `<span class="gmb-dist-badge">~${dist} km</span>` : ''}
@@ -3883,13 +3884,23 @@ async function showGmbMap(ville) {
   const renderFicheList = (nearby, isSearching) => {
     if (_mapSession !== session) return;
     let html = '';
+    let isTopAssigned = false;
+
     if (exactMatches.length) {
       html += `<p class="gmb-section-label">📍 ${exactMatches.length} fiche${exactMatches.length>1?'s':''} à ${ville}</p>`;
-      html += exactMatches.map(f => renderFicheItem(f, 0)).join('');
+      html += exactMatches.map((f, i) => {
+        const isBest = !isTopAssigned && i === 0;
+        if (isBest) isTopAssigned = true;
+        return renderFicheItem(f, 0, isBest);
+      }).join('');
     }
     if (nearby.length) {
       html += `<p class="gmb-section-label" style="margin-top:0.75rem;">🔍 ${nearby.length} fiche${nearby.length>1?'s':''} dans un rayon de 50 km</p>`;
-      html += nearby.map(f => renderFicheItem(f, f._dist)).join('');
+      html += nearby.map((f, i) => {
+        const isBest = !isTopAssigned && i === 0;
+        if (isBest) isTopAssigned = true;
+        return renderFicheItem(f, f._dist, isBest);
+      }).join('');
     }
     if (isSearching) {
       html += `<p class="gmb-searching-label">⏳ Recherche dans un rayon de 50 km…</p>`;
@@ -3912,29 +3923,30 @@ async function showGmbMap(ville) {
     let leafletReady = false;
     if (centerGeo && typeof L !== 'undefined') {
       _leafletMap = L.map(mapEl, { zoomControl: true }).setView([centerGeo.lat, centerGeo.lon], 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 18
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
       }).addTo(_leafletMap);
 
       L.circle([centerGeo.lat, centerGeo.lon], {
         radius: 50000,
         color: '#6366f1',
         fillColor: '#6366f1',
-        fillOpacity: 0.05,
+        fillOpacity: 0.08,
         weight: 1.5,
         dashArray: '6 4'
       }).addTo(_leafletMap);
 
       const centerIcon = L.divIcon({
         className: '',
-        html: `<div style="background:#6366f1;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5);"></div>`,
+        html: `<div style="background:#6366f1;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 12px #6366f1;"></div>`,
         iconSize: [14, 14],
         iconAnchor: [7, 7]
       });
       L.marker([centerGeo.lat, centerGeo.lon], { icon: centerIcon })
         .addTo(_leafletMap)
-        .bindPopup(`<b>${ville}</b>`)
+        .bindPopup(`<b>📍 ${ville}</b>`)
         .openPopup();
 
       setTimeout(() => { if (_leafletMap) _leafletMap.invalidateSize(); }, 150);
@@ -3950,9 +3962,9 @@ async function showGmbMap(ville) {
 
     const nearbyIcon = (typeof L !== 'undefined') ? L.divIcon({
       className: '',
-      html: `<div style="background:#22c55e;width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.4);"></div>`,
-      iconSize: [10, 10],
-      iconAnchor: [5, 5]
+      html: `<div style="background:#3b82f6;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px #3b82f6;"></div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6]
     }) : null;
 
     const nearby = [];
@@ -3974,7 +3986,7 @@ async function showGmbMap(ville) {
       if (leafletReady && _leafletMap && nearbyIcon) {
         L.marker([fGeo.lat, fGeo.lon], { icon: nearbyIcon })
           .addTo(_leafletMap)
-          .bindPopup(`<b>${f.nom}</b><br>~${d} km`);
+          .bindPopup(`<b>🏢 ${f.nom}</b><br>Distance: ~${d} km`);
       }
       renderFicheList(nearby, true);
     }

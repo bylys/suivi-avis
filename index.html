@@ -523,15 +523,18 @@
 <div id="gmb-map-panel">
   <div class="gmb-map-header">
     <div class="gmb-map-title-row">
-      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#6366f1;fill:none;stroke-width:2;flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#6366f1;fill:none;stroke-width:2;flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       <span id="gmb-map-city">–</span>
+      <span class="gmb-map-subtitle" style="font-size:0.78rem;color:#94a3b8;font-weight:400;margin-left:6px;">· Fiches GMB à proximité (50 km)</span>
     </div>
     <button class="gmb-map-close" onclick="closeGmbMap()">
-      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>
-  <div id="gmb-map-leaflet"></div>
-  <div id="gmb-map-fiches"></div>
+  <div class="gmb-map-split-body">
+    <div id="gmb-map-fiches"></div>
+    <div id="gmb-map-leaflet"></div>
+  </div>
 </div>
 
 <!-- ── NOTES FLOTTANTES ── -->
