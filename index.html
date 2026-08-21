@@ -176,15 +176,15 @@
       <label>Gmail de l'auteur *
         <input type="email" id="form-auteur" placeholder="client@gmail.com" required />
       </label>
-      <label>Note * <span id="star-display">☆☆☆☆☆</span>
+      <label>Note * <span id="star-text-badge" style="font-size:0.85rem;color:#f59e0b;font-weight:700;margin-left:8px;">(5/5 ⭐)</span>
         <div class="star-picker">
-          <span onclick="setNote(1)">★</span>
-          <span onclick="setNote(2)">★</span>
-          <span onclick="setNote(3)">★</span>
-          <span onclick="setNote(4)">★</span>
-          <span onclick="setNote(5)">★</span>
+          <span onclick="setNote(1)" onmouseover="updateStarPickerDisplay(1)" onmouseleave="updateStarPickerDisplay(selectedNote)" title="1 étoile">★</span>
+          <span onclick="setNote(2)" onmouseover="updateStarPickerDisplay(2)" onmouseleave="updateStarPickerDisplay(selectedNote)" title="2 étoiles">★</span>
+          <span onclick="setNote(3)" onmouseover="updateStarPickerDisplay(3)" onmouseleave="updateStarPickerDisplay(selectedNote)" title="3 étoiles">★</span>
+          <span onclick="setNote(4)" onmouseover="updateStarPickerDisplay(4)" onmouseleave="updateStarPickerDisplay(selectedNote)" title="4 étoiles">★</span>
+          <span onclick="setNote(5)" onmouseover="updateStarPickerDisplay(5)" onmouseleave="updateStarPickerDisplay(selectedNote)" title="5 étoiles">★</span>
         </div>
-        <input type="hidden" id="form-note" required />
+        <input type="hidden" id="form-note" value="5" required />
       </label>
       <label>Date de l'avis *
         <input type="date" id="form-date" required />

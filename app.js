@@ -1274,14 +1274,30 @@ async function savePays(id, pays) {
 }
 
 // ── SAISIE ──
-let selectedNote = 0;
+let selectedNote = 5;
 
 function setNote(n) {
   selectedNote = n;
-  document.getElementById('form-note').value = n;
+  const formNote = document.getElementById('form-note');
+  if (formNote) formNote.value = n;
+  updateStarPickerDisplay(n);
+}
+
+function updateStarPickerDisplay(n) {
   const stars = document.querySelectorAll('.star-picker span');
-  stars.forEach((s, i) => s.style.opacity = i < n ? '1' : '0.25');
-  document.getElementById('star-display').textContent = '★'.repeat(n) + '☆'.repeat(5 - n);
+  stars.forEach((s, i) => {
+    if (i < n) {
+      s.style.color = '#f59e0b';
+      s.style.opacity = '1';
+    } else {
+      s.style.color = '#cbd5e1';
+      s.style.opacity = '0.3';
+    }
+  });
+  const textBadge = document.getElementById('star-text-badge');
+  if (textBadge) {
+    textBadge.textContent = n > 0 ? `(${n}/5 ⭐)` : '(Choisir une note)';
+  }
 }
 
 async function submitAvis(e) {

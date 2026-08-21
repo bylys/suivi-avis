@@ -177,9 +177,10 @@ form input:not([type="checkbox"]):focus, form select:focus, form textarea:focus 
 form input::placeholder, form textarea::placeholder { color: #475569; }
 form select option { background: #1e293b; color: #f1f5f9; }
 
-.star-picker { display: flex; gap: 6px; font-size: 1.8rem; cursor: pointer; color: #fbbf24; }
-.star-picker span:hover { transform: scale(1.2); }
-#star-display { font-size: 1.1rem; color: #fbbf24; margin-left: 0.5rem; }
+.star-picker { display: flex; gap: 8px; font-size: 1.9rem; cursor: pointer; color: #f59e0b !important; margin: 4px 0 10px 0; }
+.star-picker span { transition: transform 0.15s ease, opacity 0.15s ease, color 0.15s ease; color: #f59e0b !important; user-select: none; }
+.star-picker span:hover { transform: scale(1.25); }
+body.light-theme .star-picker span { color: #f59e0b !important; }
 
 .checkbox-label {
   display: flex !important; flex-direction: row !important;
