@@ -589,8 +589,11 @@ async function main() {
             return clean;
         });
 
-        // Formatage de la date pour le nom du fichier Supabase
-        const dateFormat = `${tomorrow.getDate().toString().padStart(2, '0')}-${(tomorrow.getMonth()+1).toString().padStart(2, '0')}-${tomorrow.getFullYear()}`;
+        // Formatage de la date courte pour le nom du fichier (ex: 21-08-26)
+        const dayStr = tomorrow.getDate().toString().padStart(2, '0');
+        const monthStr = (tomorrow.getMonth() + 1).toString().padStart(2, '0');
+        const yearStr = tomorrow.getFullYear().toString().slice(-2);
+        const dateFormatShort = `${dayStr}-${monthStr}-${yearStr}`;
 
         for (let taskIndex = 0; taskIndex < tasksToGenerate.length; taskIndex++) {
             const task = tasksToGenerate[taskIndex];
@@ -684,9 +687,10 @@ async function main() {
                 const reviewTextContent = (task.commentaire || '') + ' ' + (task.travaux || '');
                 const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France', task.date, reviewTextContent);
                 
-                // Construction du nom de fichier unique (.jpg pour compatibilité EXIF/GPS smartphone)
-                const safeOpName = (task.operateur || 'VA_Inconnu').replace(/[^a-zA-Z0-9]/g, '_');
-                const fileName = `${safeOpName}_${dateFormat}_task${task.id}_img${taskIndex + 1}.jpg`;
+                // Formatage exact demandé : [NOM OPERATEUR]_21-08-26_[GMB NAME]
+                const safeOpName = (task.operateur || 'OPERATEUR').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                const safeGmbName = (task.fiche_nom || 'GMB').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+                const fileName = `${safeOpName}_${dateFormatShort}_${safeGmbName}_img${taskIndex + 1}.jpg`;
                 
                 // Upload de l'image (Google Drive par sous-dossier opérateur + fallback Supabase Storage)
                 const uploadResult = await uploadImage(fileName, imageBuffer, task.operateur);
