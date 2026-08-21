@@ -4140,6 +4140,14 @@ async function showGmbMap(ville, targetEmail = '') {
 
     if (!centerGeo) { renderFicheList([], false); return; }
 
+    // Icones des pins Leaflet
+    const exactIcon = (typeof L !== 'undefined') ? L.divIcon({
+      className: '',
+      html: `<div style="background:#10b981;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px #10b981;"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    }) : null;
+
     const nearbyIcon = (typeof L !== 'undefined') ? L.divIcon({
       className: '',
       html: `<div style="background:#3b82f6;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px #3b82f6;"></div>`,
@@ -4147,13 +4155,23 @@ async function showGmbMap(ville, targetEmail = '') {
       iconAnchor: [6, 6]
     }) : null;
 
+    // 1. Placer les fiches exactes de la ville sur la carte (Pins Verts 🟢)
+    if (leafletReady && _leafletMap && exactIcon) {
+      for (const f of exactMatches) {
+        L.marker([centerGeo.lat, centerGeo.lon], { icon: exactIcon })
+          .addTo(_leafletMap)
+          .bindPopup(`<b>🟢 ${f.nom}</b><br>📍 Fiche à ${ville}`);
+      }
+    }
+
+    // 2. Géocoder et placer les fiches environnantes dans un rayon de 50 km (Pins Bleus 🔵)
     const nearby = [];
     for (const f of otherFiches) {
       if (_mapSession !== session) return;
-      await new Promise(r => setTimeout(r, 300));
-      if (_mapSession !== session) return;
-
-      const fGeo = await geocodeVille(f.nom);
+      
+      // Extraction intelligente de la ville dans le nom de la fiche
+      const extractedCity = cleanCityQuery(f.nom) || f.nom;
+      const fGeo = await geocodeVille(extractedCity);
       if (!fGeo) continue;
 
       const dist = haversineKm(centerGeo.lat, centerGeo.lon, fGeo.lat, fGeo.lon);
@@ -4166,13 +4184,13 @@ async function showGmbMap(ville, targetEmail = '') {
       if (leafletReady && _leafletMap && nearbyIcon) {
         L.marker([fGeo.lat, fGeo.lon], { icon: nearbyIcon })
           .addTo(_leafletMap)
-          .bindPopup(`<b>🏢 ${f.nom}</b><br>Distance: ~${d} km`);
+          .bindPopup(`<b>🔵 ${f.nom}</b><br>Distance: ~${d} km`);
       }
       renderFicheList(nearby, true);
     }
 
     renderFicheList(nearby, false);
-  }, 300);
+  }, 100);
 }
 
 function closeGmbMap() {
