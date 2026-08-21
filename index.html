@@ -14,10 +14,6 @@
   <link rel="stylesheet" href="style.css" />
   <!-- config.local.js — gitignorée, pré-charge les clés API pour les VAs -->
   <script src="config.local.js" onerror="void 0"></script>
-  <!-- Proxy OpenAI (Cloudflare Worker). URL publique, PAS un secret : la clé vit dans le Worker.
-       Vide = désactivé (appels directs, saisie manuelle). Rempli en Phase D. -->
-  <script>window.OPENAI_PROXY_URL='https://gmb-openai-proxy.m-payot76.workers.dev';</script>
-  <script>if(window._APP_CONFIG?.openai_key||window.OPENAI_PROXY_URL){const s=document.createElement('style');s.textContent='.img-api-bar{display:none!important}'+(window.OPENAI_PROXY_URL?'#gemini-key-btn{display:none!important}':'');document.head.appendChild(s);}</script>
 </head>
 <body>
 
