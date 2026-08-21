@@ -1571,45 +1571,90 @@ datalist { display: none; }
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* ☀️ MODE CLAIR (LIGHT THEME) ☀️ */
+/* ☀️ MODE CLAIR (LIGHT THEME) - COUVERTURE TOTALE 100% ☀️ */
 body.light-theme {
-  background-color: #f1f5f9;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  color-scheme: light !important;
+}
+
+body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4, 
+body.light-theme label, body.light-theme p, body.light-theme span, body.light-theme td, 
+body.light-theme div, body.light-theme summary, body.light-theme strong, body.light-theme legend {
   color: #0f172a;
 }
-body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4, body.light-theme label, body.light-theme p, body.light-theme span, body.light-theme td, body.light-theme div {
-  color: #0f172a;
-}
+
 body.light-theme header {
-  background-color: #ffffff;
-  border-bottom: 1px solid #cbd5e1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
 body.light-theme header h1 {
-  color: #0f172a;
+  color: #0f172a !important;
 }
+
+/* Switcher en Mode Clair */
 body.light-theme .theme-switch {
-  background: #cbd5e1;
-  border-color: #94a3b8;
+  background: #cbd5e1 !important;
+  border-color: #94a3b8 !important;
 }
 body.light-theme .theme-switch-slider {
-  transform: translateX(29px);
-  background: #f59e0b;
+  transform: translateX(29px) !important;
+  background: #f59e0b !important;
 }
+
+/* Onglets Navigation Header */
 body.light-theme .tab-btn {
-  color: #475569;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
+  color: #475569 !important;
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
 }
 body.light-theme .tab-btn.active, body.light-theme .tab-btn:hover {
-  background: #2563eb;
-  color: #ffffff;
-  border-color: #1d4ed8;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
 }
-body.light-theme .stat-card, body.light-theme .chart-box, body.light-theme .img-card {
+
+/* Override universel des éléments avec styles inline sombres (#1e293b, #0f172a, #090d16) */
+body.light-theme [style*="background:#1e293b"], body.light-theme [style*="background: #1e293b"],
+body.light-theme [style*="background:#0f172a"], body.light-theme [style*="background: #0f172a"],
+body.light-theme [style*="background:#090d16"], body.light-theme [style*="background: #090d16"],
+body.light-theme [style*="background:rgba(30, 41, 59"], body.light-theme [style*="background: rgba(30, 41, 59"] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+body.light-theme [style*="color:#f1f5f9"], body.light-theme [style*="color: #f1f5f9"],
+body.light-theme [style*="color:#94a3b8"], body.light-theme [style*="color: #94a3b8"],
+body.light-theme [style*="color:#64748b"], body.light-theme [style*="color: #64748b"] {
+  color: #1e293b !important;
+}
+
+/* Inputs, Selects, Textareas, Date Pickers */
+body.light-theme input, body.light-theme select, body.light-theme textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #94a3b8 !important;
+  color-scheme: light !important;
+}
+body.light-theme option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+body.light-theme input::placeholder, body.light-theme textarea::placeholder {
+  color: #64748b !important;
+  -webkit-text-fill-color: #64748b !important;
+  opacity: 1 !important;
+}
+
+/* Cartes, Containers & Widgets */
+body.light-theme .stat-card, body.light-theme .chart-box, body.light-theme .img-card, 
+body.light-theme .planning-stat, body.light-theme details, body.light-theme .tab-content {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 body.light-theme .stat-card label, body.light-theme .chart-box h3 {
   color: #334155 !important;
@@ -1617,6 +1662,53 @@ body.light-theme .stat-card label, body.light-theme .chart-box h3 {
 body.light-theme .stat-card span {
   color: #0f172a !important;
 }
+
+/* Top 5 Fiches & Rangées */
+body.light-theme .top-row {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+body.light-theme .top-row-nom {
+  color: #0f172a !important;
+}
+body.light-theme .top-badge {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+body.light-theme .top-pill.total {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+/* Barre Drive Raccourcis */
+body.light-theme .drive-shortcuts-bar {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+body.light-theme .drive-bar-title {
+  color: #334155 !important;
+}
+body.light-theme .btn-drive-op {
+  background: #f1f5f9 !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #1d4ed8 !important;
+}
+body.light-theme .btn-drive-op:hover {
+  background: #e2e8f0 !important;
+  color: #1e40af !important;
+}
+
+/* Boutons secondaires & d'action (Régénérer, Ignorer, Changer la clé...) */
+body.light-theme .btn-secondary, body.light-theme button:not(.btn-primary):not(.btn-generer):not(.btn-sync-gmb):not(.btn-drive-op):not(.tab-btn) {
+  background-color: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body.light-theme button:not(.btn-primary):not(.btn-generer):hover {
+  background-color: #cbd5e1 !important;
+}
+
+/* Tableaux & Popups */
 body.light-theme table tr {
   border-bottom-color: #e2e8f0 !important;
 }
@@ -1627,29 +1719,6 @@ body.light-theme table th {
   background: #e2e8f0 !important;
   color: #1e293b !important;
   border-bottom: 2px solid #cbd5e1 !important;
-}
-body.light-theme input[type="text"], body.light-theme input[type="email"], body.light-theme select, body.light-theme textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border: 1.5px solid #94a3b8 !important;
-}
-body.light-theme option {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-}
-body.light-theme input::placeholder, body.light-theme textarea::placeholder {
-  color: #475569 !important;
-}
-body.light-theme .top-row {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-}
-body.light-theme .top-row-nom {
-  color: #0f172a !important;
-}
-body.light-theme .top-pill.total {
-  background: #e2e8f0 !important;
-  color: #334155 !important;
 }
 body.light-theme .collapsible-leaderboard {
   background: #ffffff !important;
