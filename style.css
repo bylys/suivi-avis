@@ -1659,17 +1659,37 @@ body.light-theme .lg-badge.lg-off {
   color: #475569 !important;
 }
 
+/* Bannière Agent IA Bulk Images */
+body.light-theme .img-api-bar {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #047857 !important;
+}
+body.light-theme .img-api-bar span {
+  color: #047857 !important;
+}
+
+/* Filters Dashboard (#dash-year, #dash-month, #dash-fiche) */
+body.light-theme #dash-year, body.light-theme #dash-month, body.light-theme #dash-fiche, body.light-theme .filters select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #94a3b8 !important;
+}
+
 /* Onglet Fiches GMB (Barre de recherche & Accordéons par métier) */
 body.light-theme .fiches-search-bar {
   background: #ffffff !important;
   border: 1.5px solid #cbd5e1 !important;
 }
-body.light-theme .cat-header, body.light-theme .fiche-cat, body.light-theme .category-block summary, body.light-theme details summary {
+body.light-theme .fiche-category, body.light-theme .fiche-category-header, body.light-theme .cat-header, body.light-theme .fiche-cat, body.light-theme .category-block summary, body.light-theme details summary {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
-body.light-theme .cat-header:hover, body.light-theme details summary:hover {
+body.light-theme .fiche-category-header:hover, body.light-theme .cat-header:hover, body.light-theme details summary:hover {
+  background: #f8fafc !important;
+}
+body.light-theme .fiche-category-list {
   background: #f8fafc !important;
 }
 body.light-theme .cat-count, body.light-theme .badge-count {
@@ -1682,23 +1702,24 @@ body.light-theme #liste-fiches li {
   color: #0f172a !important;
 }
 
-/* Onglet Planning & Tableaux Accordéons */
-body.light-theme #tab-planning details, body.light-theme #tab-planning table {
+/* Onglet Planning & Tableaux Accordéons (#tab-planning, #tab-liste) */
+body.light-theme #tab-planning details, body.light-theme #tab-planning table,
+body.light-theme #tab-liste details, body.light-theme #tab-liste table {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
-body.light-theme #tab-planning summary {
+body.light-theme #tab-planning summary, body.light-theme #tab-liste summary {
   background: #f8fafc !important;
   color: #0f172a !important;
 }
-body.light-theme #tab-planning tr {
+body.light-theme #tab-planning tr, body.light-theme #tab-liste tr {
   border-bottom-color: #e2e8f0 !important;
 }
-body.light-theme #tab-planning td {
+body.light-theme #tab-planning td, body.light-theme #tab-liste td {
   color: #0f172a !important;
 }
-body.light-theme #tab-planning a {
+body.light-theme #tab-planning a, body.light-theme #tab-liste a {
   color: #2563eb !important;
 }
 
