@@ -4387,3 +4387,9 @@ function updateCostEstimate() {
   const el    = document.getElementById('img-gen-counter');
   if (el) el.textContent = total > 0 ? `~${total} image${total > 1 ? 's' : ''} planifiée${total > 1 ? 's' : ''} (Agent IA)` : '';
 }
+
+function openOperatorDriveFolder(operatorName) {
+  const op = (operatorName || '').trim();
+  const searchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent(op)}`;
+  window.open(searchUrl, '_blank');
+}
