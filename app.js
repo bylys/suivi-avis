@@ -152,13 +152,7 @@ async function init() {
   const savedId  = localStorage.getItem('sheets_id');
   if (savedKey) { const el = document.getElementById('sheets-api-key'); if (el) el.value = savedKey; }
   if (savedId)  { const el = document.getElementById('sheets-id');      if (el) el.value = savedId; }
-  const _configOpenAI = window._APP_CONFIG?.openai_key;
-  const savedOpenAI   = _configOpenAI || localStorage.getItem('openai_key');
-  if (savedOpenAI) {
-    const el = document.getElementById('openai-key');
-    if (el) el.value = savedOpenAI;
-    if (_configOpenAI) localStorage.setItem('openai_key', _configOpenAI);
-  }
+  // Note : La clé API OpenAI directe est désormais remplacée par l'Agent IA DALL-E (Playwright & ChatGPT)
 
   // Restaurer config DonutBrowser
   const donutToken = localStorage.getItem('donut_token');
