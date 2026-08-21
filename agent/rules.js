@@ -139,7 +139,11 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   const isIndoor = INDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
   if (isOutdoorDangerous) {
-    lines.push(`WORKER MANDATE (Outdoor/High Risk): Minimum 2 active workers visible in professional high-visibility workwear (yellow/orange safety vests, hard hats, work trousers). One operating main tools, second assisting or securing. Both rendered in realistic working postures.`);
+    const isPublicRoad = metierNorm.includes('depannage') || metierNorm.includes('remorquage') || travauxNorm.includes('depannage') || travauxNorm.includes('remorquage') || travauxNorm.includes('voie publique') || travauxNorm.includes('trottoir');
+    const vestRule = isPublicRoad 
+      ? 'High-visibility safety vests (yellow/orange) MANDATORY for road breakdown / public highway work.' 
+      : 'NO HIGH-VIS SAFETY VESTS! Workers wear normal professional workwear (polo, t-shirt, work jacket, work trousers). Do NOT put yellow/orange safety vests on private property workers.';
+    lines.push(`WORKER MANDATE (Outdoor/High Risk): Minimum 2 active workers visible in realistic professional workwear. ${vestRule} One operating main tools, second assisting or securing. Both rendered in realistic working postures.`);
   } else if (isIndoor) {
     const isMasonry = metierNorm.includes('maconnerie') || travauxNorm.includes('maconnerie');
     const isGlazier = metierNorm.includes('vitrier') || travauxNorm.includes('vitrier');
@@ -153,9 +157,9 @@ function buildRulesBlock(metier, travaux, etatChantier) {
       helmetRule = 'NO HARD HAT / NO SAFETY HELMET on head! The indoor artisan MUST have a bare head (or casual work cap), wearing neat normal professional workwear (t-shirt/polo/trousers). NEVER put a hard hat on an indoor plumber, painter, tiler, electrician or carpenter.';
     }
     
-    lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 active professional artisan/tradesman visible inside the room or adjoining doorway, actively working on the task (e.g. painting wall, tiling floor/wall, plumbing under sink, assembling stairs/furniture). ${helmetRule}`);
+    lines.push(`WORKER MANDATE (Indoor Renovation): Exactly 1 active professional artisan/tradesman visible inside the room or adjoining doorway, actively working on the task (e.g. painting wall, tiling floor/wall, plumbing under sink, assembling stairs/furniture). ${helmetRule} NO safety vests.`);
   } else {
-    lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear, operating equipment naturally.`);
+    lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear (polo/t-shirt/trousers, NO safety vests unless on public road), operating equipment naturally.`);
   }
 
   return lines.length > 0 ? `\n\n---\n${lines.join('\n')}` : '';
