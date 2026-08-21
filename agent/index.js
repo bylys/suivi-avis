@@ -297,9 +297,10 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         console.log("Titre de la page :", title);
         
         // Gestion du challenge Cloudflare Turnstile ("Just a moment..." / "Un instant...")
-        if (title.includes('Just a moment') || title.includes('Un instant') || title.includes('Checking') || title.includes('Attention')) {
-            console.log(`⚠️ Challenge Cloudflare Turnstile ("${title}") détecté ! Tentative de contournement...`);
+        if (!title || title.trim() === '' || title.includes('Just a moment') || title.includes('Un instant') || title.includes('Checking') || title.includes('Attention')) {
+            console.log(`⚠️ Challenge Cloudflare Turnstile ("${title || 'Chargement...'}") détecté ! Tentative de contournement...`);
             await page.waitForTimeout(6000);
+            title = await page.title();
             
             try {
                 // Tenter de cliquer sur la case Turnstile si elle est dans un iframe

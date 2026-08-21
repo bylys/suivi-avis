@@ -103,6 +103,7 @@ async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskD
 
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
     // Construction du bloc GPS EXIF
     const gpsIfd = {};
