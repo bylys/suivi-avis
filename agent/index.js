@@ -639,13 +639,16 @@ async function main() {
             const etatChantier   = pick(['début de chantier', 'travaux en cours', 'travaux quasi-terminés']);
             
             // Règle du nombre d'ouvriers :
-            // Chantiers extérieurs à risque (élagage, abattage, toiture, ravalement, terrassement, maçonnerie, charpente) = 2 à 3 ouvriers OBLIGATOIRES.
+            // Chantiers extérieurs à risque (élagage, abattage, toiture, ravalement, terrassement, maçonnerie, charpente) = 70% 2 ouvriers / 30% 3 ouvriers.
             // Chantiers d'intérieur (plomberie, peinture, carrelage, vitrier, débarras...) = 1 artisan solo.
             const metierText = ((task.metier || '') + ' ' + (task.travaux || '')).toLowerCase();
             const isDangerousOutdoorTrade = ['elagage', 'élagage', 'abattage', 'toiture', 'ravalement', 'terrassement', 'maçonnerie', 'maconnerie', 'façade', 'facade', 'charpente']
                 .some(k => metierText.includes(k));
                 
-            const nbOuvriers = isDangerousOutdoorTrade ? pick(['2 ouvriers', '2 ouvriers', '3 ouvriers']) : '1 ouvrier';
+            const randWorker = Math.random();
+            const nbOuvriers = isDangerousOutdoorTrade 
+                ? (randWorker < 0.70 ? '2 ouvriers' : '3 ouvriers') 
+                : '1 artisan solo';
             const lumiere        = pick([
                 'ciel légèrement voilé, lumière diffuse de milieu de matinée',
                 'ciel couvert, lumière douce et uniforme',
