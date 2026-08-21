@@ -278,220 +278,221 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         timezoneId: 'Europe/Paris'
     });
 
-    if (isLocalBrowser) {
-        await context.addInitScript(() => {
-            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-        });
-    }
-    
-    // Inject saved cookies to bypass login
-    await context.addCookies(cookies);
-    
-    const page = await context.newPage();
-    console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
-    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
-    
-    let title = await page.title();
-    console.log("URL de la page :", page.url());
-    console.log("Titre de la page :", title);
-    
-    // Gestion du challenge Cloudflare Turnstile ("Just a moment..." / "Un instant...")
-    if (title.includes('Just a moment') || title.includes('Un instant') || title.includes('Checking') || title.includes('Attention')) {
-        console.log(`⚠️ Challenge Cloudflare Turnstile ("${title}") détecté ! Tentative de contournement...`);
-        await page.waitForTimeout(6000);
-        
-        try {
-            // Tenter de cliquer sur la case Turnstile si elle est dans un iframe
-            const turnstileFrame = page.frames().find(f => f.url().includes('challenges.cloudflare.com') || f.url().includes('turnstile'));
-            if (turnstileFrame) {
-                console.log("Iframe Turnstile trouvé. Clic sur la vérification Cloudflare...");
-                const checkbox = await turnstileFrame.waitForSelector('input[type="checkbox"], .mark, label, #challenge-stage', { timeout: 6000 });
-                if (checkbox) {
-                    await checkbox.click({ force: true });
-                    await page.waitForTimeout(5000);
-                }
-            }
-        } catch (cfErr) {
-            console.log("Attente de la résolution Cloudflare...");
+    try {
+        if (isLocalBrowser) {
+            await context.addInitScript(() => {
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            });
         }
         
-        // Attente que Cloudflare laisse passer (titre passe à ChatGPT)
+        // Inject saved cookies to bypass login
+        await context.addCookies(cookies);
+        
+        const page = await context.newPage();
+        console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
+        await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+        
+        let title = await page.title();
+        console.log("URL de la page :", page.url());
+        console.log("Titre de la page :", title);
+        
+        // Gestion du challenge Cloudflare Turnstile ("Just a moment..." / "Un instant...")
+        if (title.includes('Just a moment') || title.includes('Un instant') || title.includes('Checking') || title.includes('Attention')) {
+            console.log(`⚠️ Challenge Cloudflare Turnstile ("${title}") détecté ! Tentative de contournement...`);
+            await page.waitForTimeout(6000);
+            
+            try {
+                // Tenter de cliquer sur la case Turnstile si elle est dans un iframe
+                const turnstileFrame = page.frames().find(f => f.url().includes('challenges.cloudflare.com') || f.url().includes('turnstile'));
+                if (turnstileFrame) {
+                    console.log("Iframe Turnstile trouvé. Clic sur la vérification Cloudflare...");
+                    const checkbox = await turnstileFrame.waitForSelector('input[type="checkbox"], .mark, label, #challenge-stage', { timeout: 6000 });
+                    if (checkbox) {
+                        await checkbox.click({ force: true });
+                        await page.waitForTimeout(5000);
+                    }
+                }
+            } catch (cfErr) {
+                console.log("Attente de la résolution Cloudflare...");
+            }
+            
+            // Attente que Cloudflare laisse passer (titre passe à ChatGPT)
+            try {
+                await page.waitForFunction(() => !document.title.includes('Just a moment') && !document.title.includes('Un instant'), { timeout: 25000 });
+                console.log("✅ Cloudflare dépassé ! Titre actuel :", await page.title());
+            } catch (e) {
+                console.log("❌ Bloqué par le challenge Cloudflare Turnstile.");
+                console.log("💡 CONSEIL : Mettez à jour les cookies CHATGPT_COOKIES (cf_clearance) dans GitHub Secrets.");
+            }
+        }
+        
+        // Wait for the chat input box
+        console.log("Recherche du champ de texte...");
         try {
-            await page.waitForFunction(() => !document.title.includes('Just a moment') && !document.title.includes('Un instant'), { timeout: 25000 });
-            console.log("✅ Cloudflare dépassé ! Titre actuel :", await page.title());
+            await page.waitForSelector('#prompt-textarea', { timeout: 30000 });
         } catch (e) {
-            console.log("❌ Bloqué par le challenge Cloudflare Turnstile.");
-            console.log("💡 CONSEIL : Mettez à jour les cookies CHATGPT_COOKIES (cf_clearance) dans GitHub Secrets.");
+            console.log("Le champ de texte (#prompt-textarea) n'a pas été trouvé.");
+            console.log("Aperçu de ce que le robot voit (code HTML de la page) :");
+            const html = await page.content();
+            console.log(html.substring(0, 1500));
+            
+            // Envoi immédiat de l'alerte Telegram
+            const alertMsg = `🚨 <b>ALERTE COOKIES CHATGPT EXPIRÉS</b> 🚨\n\nL'agent n'a pas pu accéder à ChatGPT pour l'opérateur <b>${operatorName || TARGET_OPERATOR || 'Global'}</b> (Redirection login ou sécurité Cloudflare).\n\n👉 <b>Action requise :</b> Re-connectez-vous à ChatGPT dans votre navigateur, ré-exportez vos cookies JSON et mettez à jour le secret <code>CHATGPT_COOKIES</code> sur GitHub Secrets !`;
+            await sendTelegramNotification(alertMsg);
+
+            // Enregistrement de l'alerte dans Supabase pour affichage sur l'outil web
+            try {
+                await supabase.from('alerts').insert([{
+                    type: 'cookie_expired',
+                    operator: operatorName || TARGET_OPERATOR || 'Global',
+                    message: 'Cookies ChatGPT expirés - Mise à jour requise dans GitHub Secrets',
+                    created_at: new Date().toISOString()
+                }]);
+            } catch (sErr) {}
+
+            throw e;
         }
-    }
-    
-    // Wait for the chat input box
-    console.log("Recherche du champ de texte...");
-    try {
-        await page.waitForSelector('#prompt-textarea', { timeout: 30000 });
-    } catch (e) {
-        console.log("Le champ de texte (#prompt-textarea) n'a pas été trouvé.");
-        console.log("Aperçu de ce que le robot voit (code HTML de la page) :");
-        const html = await page.content();
-        console.log(html.substring(0, 1500));
-        
-        // Envoi immédiat de l'alerte Telegram
-        const alertMsg = `🚨 <b>ALERTE COOKIES CHATGPT EXPIRÉS</b> 🚨\n\nL'agent n'a pas pu accéder à ChatGPT pour l'opérateur <b>${operatorName || TARGET_OPERATOR || 'Global'}</b> (Redirection login ou sécurité Cloudflare).\n\n👉 <b>Action requise :</b> Re-connectez-vous à ChatGPT dans votre navigateur, ré-exportez vos cookies JSON et mettez à jour le secret <code>CHATGPT_COOKIES</code> sur GitHub Secrets !`;
-        await sendTelegramNotification(alertMsg);
+        // 1. Saisie robuste du texte (support contenteditable / Lexical & textarea)
+        console.log("Saisie du prompt dans le champ de texte...");
+        const promptInput = page.locator('#prompt-textarea');
+        await promptInput.focus();
 
-        // Enregistrement de l'alerte dans Supabase pour affichage sur l'outil web
-        try {
-            await supabase.from('alerts').insert([{
-                type: 'cookie_expired',
-                operator: operatorName || TARGET_OPERATOR || 'Global',
-                message: 'Cookies ChatGPT expirés - Mise à jour requise dans GitHub Secrets',
-                created_at: new Date().toISOString()
-            }]);
-        } catch (sErr) {}
-
-        throw e;
-    }
-    // 1. Saisie robuste du texte (support contenteditable / Lexical & textarea)
-    console.log("Saisie du prompt dans le champ de texte...");
-    const promptInput = page.locator('#prompt-textarea');
-    await promptInput.focus();
-
-    await page.evaluate((text) => {
-        const el = document.querySelector('#prompt-textarea');
-        if (!el) return;
-        el.focus();
-        // ChatGPT utilise un div/p contenteditable
-        if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
-            document.execCommand('selectAll', false, null);
-            document.execCommand('insertText', false, text);
-            el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
-        } else {
-            el.value = text;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-    }, prompt);
-
-    await page.waitForTimeout(500);
-    // Simulation d'une touche pour forcer l'activation du bouton d'envoi React
-    await promptInput.pressSequentially(' ');
-    await page.waitForTimeout(1000);
-
-    // 2. Clic sur le bouton d'envoi
-    try {
-        const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
-        await sendBtn.click();
-        console.log("✅ Bouton d'envoi cliqué avec succès !");
-    } catch(e) {
-        console.log("Bouton d'envoi non actif, tentative avec la touche Entrée...");
-        await page.keyboard.press('Enter');
-    }
-    
-    console.log("⏳ Pause obligatoire de 90 secondes pour laisser à DALL-E le temps de générer la photo HD complète...");
-    await page.waitForTimeout(90000);
-    
-    // 2. Scanneur d'image final HD (validation stricte naturalWidth >= 600 et naturalHeight >= 600)
-    console.log("Recherche et validation de la photo finale HD...");
-    const startTime = Date.now();
-    let foundUrl = null;
-
-    while (Date.now() - startTime < 60000) {
-        const candidate = await page.evaluate(() => {
-            // Scanner en partant du BAS de la conversation (la toute DERNIÈRE photo générée par DALL-E)
-            const imgs = Array.from(document.querySelectorAll('img')).reverse();
-            for (const img of imgs) {
-                const src = img.src || '';
-                
-                // Exclure les avatars, icônes et logos
-                if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                
-                // Détecter la toute DERNIÈRE photo HD finale générée au bas de la page
-                if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600) {
-                    return src;
-                }
+        await page.evaluate((text) => {
+            const el = document.querySelector('#prompt-textarea');
+            if (!el) return;
+            el.focus();
+            // ChatGPT utilise un div/p contenteditable
+            if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
+                document.execCommand('selectAll', false, null);
+                document.execCommand('insertText', false, text);
+                el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+            } else {
+                el.value = text;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            return null;
-        });
+        }, prompt);
 
-        if (candidate) {
-            foundUrl = candidate;
-            console.log("📸 Vraie photo HD finale validée à l'écran ! URL :", foundUrl.substring(0, 100));
-            break;
-        }
-        await page.waitForTimeout(3000);
-    }
+        await page.waitForTimeout(500);
+        // Simulation d'une touche pour forcer l'activation du bouton d'envoi React
+        await promptInput.pressSequentially(' ');
+        await page.waitForTimeout(1000);
 
-    if (!foundUrl) {
-        console.log("⚠️ Aucune image de taille > 600px trouvée après 60s de scan. Tentative de capture de la meilleure image disponible...");
-    }
-
-    await page.waitForTimeout(3000); // Petite pause de stabilisation du rendu visual
-    
-    // 4. Téléchargement et conversion en JPEG PUR haute résolution (1024x1024 / 1536x1024)
-    // Cette étape détruit à 100% les métadonnées C2PA OpenAI et crée un fichier JPEG compatible EXIF/GPS
-    console.log("Extraction et conversion en JPEG pur haute résolution (suppression C2PA OpenAI)...");
-    
-    let imageBuffer = null;
-    
-    if (foundUrl) {
+        // 2. Clic sur le bouton d'envoi
         try {
-            const jpegBase64 = await page.evaluate(async (url) => {
-                try {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    await new Promise((resolve, reject) => {
-                        img.onload = resolve;
-                        img.onerror = () => reject(new Error('Image load failed'));
-                        img.src = url;
+            const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
+            await sendBtn.click();
+            console.log("✅ Bouton d'envoi cliqué avec succès !");
+        } catch(e) {
+            console.log("Bouton d'envoi non actif, tentative avec la touche Entrée...");
+            await page.keyboard.press('Enter');
+        }
+        
+        console.log("⏳ Attente dynamique du rendu de la photo HD DALL-E 3 à l'écran (max 120s)...");
+        
+        // 3. Scanneur d'image dynamique (dès que l'image HD est rendue, on la capture immédiatement sans attendre 90s fixes)
+        const startTime = Date.now();
+        let foundUrl = null;
+
+        while (Date.now() - startTime < 120000) {
+            const candidate = await page.evaluate(() => {
+                // Scanner en partant du BAS de la conversation (la toute DERNIÈRE photo générée par DALL-E)
+                const imgs = Array.from(document.querySelectorAll('img')).reverse();
+                for (const img of imgs) {
+                    const src = img.src || '';
+                    
+                    // Exclure les avatars, icônes et logos
+                    if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                    
+                    // Détecter la toute DERNIÈRE photo HD finale générée au bas de la page (naturalWidth >= 600)
+                    if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600) {
+                        return src;
+                    }
+                }
+                return null;
+            });
+
+            if (candidate) {
+                foundUrl = candidate;
+                console.log("📸 Vraie photo HD finale validée à l'écran ! URL :", foundUrl.substring(0, 100));
+                break;
+            }
+            await page.waitForTimeout(3000);
+        }
+
+        if (!foundUrl) {
+            console.log("⚠️ Aucune image de taille > 600px trouvée après 120s de scan.");
+        }
+
+        await page.waitForTimeout(2000); // Stabilisation du rendu visuel
+        
+        // 4. Téléchargement et conversion en JPEG PUR haute résolution (1024x1024 / 1536x1024)
+        console.log("Extraction et conversion en JPEG pur haute résolution (suppression C2PA OpenAI)...");
+        
+        let imageBuffer = null;
+        
+        if (foundUrl) {
+            try {
+                const jpegBase64 = await page.evaluate(async (url) => {
+                    try {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        await new Promise((resolve, reject) => {
+                            img.onload = resolve;
+                            img.onerror = () => reject(new Error('Image load failed'));
+                            img.src = url;
+                        });
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth || img.width || 1024;
+                        canvas.height = img.naturalHeight || img.height || 1024;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+
+                        return canvas.toDataURL('image/jpeg', 0.93).split(',')[1];
+                    } catch (e) {
+                        return null;
+                    }
+                }, foundUrl);
+
+                if (jpegBase64 && jpegBase64.length > 5000) {
+                    imageBuffer = Buffer.from(jpegBase64, 'base64');
+                    console.log(`✅ Image JPEG pure extraite avec succès ! (Taille : ${imageBuffer.length} octets)`);
+                }
+            } catch (e) {
+                console.log("Note conversion Canvas JPEG :", e.message);
+            }
+        }
+
+        // Fallback: Fetch direct si Canvas échoue
+        if (!imageBuffer || imageBuffer.length < 5000) {
+            console.log("Fallback : Récupération in-page via fetch direct...");
+            try {
+                const base64Data = await page.evaluate(async (url) => {
+                    const res = await fetch(url, { credentials: 'include' });
+                    if (!res.ok) return null;
+                    const blob = await res.blob();
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(blob);
                     });
+                }, foundUrl);
 
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.naturalWidth || img.width || 1024;
-                    canvas.height = img.naturalHeight || img.height || 1024;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-
-                    // Conversion en JPEG pur (qualité 0.93) sans aucun marquage C2PA OpenAI
-                    return canvas.toDataURL('image/jpeg', 0.93).split(',')[1];
-                } catch (e) {
-                    return null;
+                if (base64Data) {
+                    imageBuffer = Buffer.from(base64Data, 'base64');
                 }
-            }, foundUrl);
-
-            if (jpegBase64 && jpegBase64.length > 5000) {
-                imageBuffer = Buffer.from(jpegBase64, 'base64');
-                console.log(`✅ Image JPEG pure extraite avec succès ! (Taille : ${imageBuffer.length} octets)`);
+            } catch (err) {
+                console.log("Erreur fallback fetch :", err.message);
             }
-        } catch (e) {
-            console.log("Note conversion Canvas JPEG :", e.message);
+        }
+
+        return imageBuffer;
+    } finally {
+        if (browser) {
+            await browser.close();
         }
     }
-
-    // Fallback: Fetch direct si Canvas échoue
-    if (!imageBuffer || imageBuffer.length < 5000) {
-        console.log("Fallback : Récupération in-page via fetch direct...");
-        try {
-            const base64Data = await page.evaluate(async (url) => {
-                const res = await fetch(url, { credentials: 'include' });
-                if (!res.ok) return null;
-                const blob = await res.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                    reader.readAsDataURL(blob);
-                });
-            }, foundUrl);
-
-            if (base64Data) {
-                imageBuffer = Buffer.from(base64Data, 'base64');
-            }
-        } catch (err) {
-            console.log("Erreur fallback fetch :", err.message);
-        }
-    }
-    
-    await browser.close();
-    return imageBuffer;
 }
 
 async function main() {
