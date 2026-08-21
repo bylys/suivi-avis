@@ -7,24 +7,14 @@ function initTheme() {
   const savedTheme = localStorage.getItem('gmb_theme_preference');
   if (savedTheme === 'light') {
     document.body.classList.add('light-theme');
-    updateThemeBtn(false);
   } else {
     document.body.classList.remove('light-theme');
-    updateThemeBtn(true);
   }
 }
 
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light-theme');
   localStorage.setItem('gmb_theme_preference', isLight ? 'light' : 'dark');
-  updateThemeBtn(!isLight);
-}
-
-function updateThemeBtn(isDark) {
-  const btn = document.getElementById('theme-toggle-btn');
-  if (btn) {
-    btn.innerHTML = isDark ? '🌙 Mode Nuit' : '☀️ Mode Jour';
-  }
 }
 
 document.addEventListener('DOMContentLoaded', initTheme);

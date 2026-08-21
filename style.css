@@ -1537,24 +1537,41 @@ datalist { display: none; }
   color: #f87171;
 }
 
-/* Bouton Theme Switcher */
-.theme-toggle-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #f1f5f9;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
+/* Interrupteur Switch Theme (Lune / Soleil) */
+.theme-switch {
+  position: relative;
+  width: 58px;
+  height: 28px;
+  background: #1e293b;
+  border: 1.5px solid #334155;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+  user-select: none;
+  transition: all 0.3s ease;
 }
-.theme-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
+.theme-switch-icon {
+  font-size: 13px;
+  z-index: 2;
+  transition: opacity 0.3s ease;
+}
+.theme-switch-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  background: #6366f1;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  z-index: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* ☀️ MODE CLAIR (LIGHT THEME) - HAUT DE GAMME HAUT CONTRASTE ☀️ */
+/* ☀️ MODE CLAIR (LIGHT THEME) ☀️ */
 body.light-theme {
   background-color: #f1f5f9;
   color: #0f172a;
@@ -1570,10 +1587,13 @@ body.light-theme header {
 body.light-theme header h1 {
   color: #0f172a;
 }
-body.light-theme .theme-toggle-btn {
-  background: #e2e8f0;
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
+body.light-theme .theme-switch {
+  background: #cbd5e1;
+  border-color: #94a3b8;
+}
+body.light-theme .theme-switch-slider {
+  transform: translateX(29px);
+  background: #f59e0b;
 }
 body.light-theme .tab-btn {
   color: #475569;
@@ -1609,12 +1629,27 @@ body.light-theme table th {
   border-bottom: 2px solid #cbd5e1 !important;
 }
 body.light-theme input[type="text"], body.light-theme input[type="email"], body.light-theme select, body.light-theme textarea {
-  background: #ffffff !important;
+  background-color: #ffffff !important;
   color: #0f172a !important;
   border: 1.5px solid #94a3b8 !important;
 }
+body.light-theme option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
 body.light-theme input::placeholder, body.light-theme textarea::placeholder {
-  color: #64748b !important;
+  color: #475569 !important;
+}
+body.light-theme .top-row {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+body.light-theme .top-row-nom {
+  color: #0f172a !important;
+}
+body.light-theme .top-pill.total {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
 }
 body.light-theme .collapsible-leaderboard {
   background: #ffffff !important;
