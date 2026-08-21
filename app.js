@@ -1528,14 +1528,58 @@ async function renderDashboard() {
   const resolus = totalJ30 + totalSupp;
   const tauxSurvie = resolus > 0 ? Math.round((totalJ30 / resolus) * 100) + ' %' : '–';
 
-  // Compteurs par opérateur (récents + archives)
-  const VAS = ['kevin','fifaliana','aina','kintana','korail','anjara'];
+  // Compteurs & Leaderboard par opérateur (récents + archives)
+  const VAS = ['kevin','fifaliana','kintana','anjara','aina','korail'];
+  const teamStats = [];
+
   VAS.forEach(va => {
-    const fromRecent  = moisAvis.filter(a => a.operateur?.toLowerCase() === va).length;
-    const fromArchive = archFiltered.filter(s => s.operateur === va).reduce((s, r) => s + r.nb_avis, 0);
+    const fromRecent  = moisAvis.filter(a => (a.operateur || '').toLowerCase().includes(va)).length;
+    const fromArchive = archFiltered.filter(s => (s.operateur || '').toLowerCase().includes(va)).reduce((s, r) => s + r.nb_avis, 0);
+    const count = fromRecent + fromArchive;
     const el = document.getElementById('stat-' + va);
-    if (el) el.textContent = fromRecent + fromArchive;
+    if (el) el.textContent = count;
+    
+    const displayName = va === 'fifaliana' ? 'Fif' : va.charAt(0).toUpperCase() + va.slice(1);
+    teamStats.push({ name: displayName, count, key: va });
   });
+
+  teamStats.sort((a, b) => b.count - a.count);
+  const maxCount = Math.max(...teamStats.map(t => t.count), 1);
+
+  const leaderboardEl = document.getElementById('team-leaderboard-list');
+  if (leaderboardEl) {
+    leaderboardEl.innerHTML = teamStats.map((t, i) => {
+      const pct = Math.round((t.count / maxCount) * 100);
+      const medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : `#${i+1}`));
+      return `
+        <div style="margin-bottom:0.75rem;">
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px;">
+            <span><strong style="color:#f1f5f9;margin-right:6px;">${medal}</strong> ${t.name}</span>
+            <span style="font-weight:700;color:#60a5fa;">${t.count} avis</span>
+          </div>
+          <div style="width:100%;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${i === 0 ? '#f59e0b' : (i === 1 ? '#94a3b8' : (i === 2 ? '#b45309' : '#3b82f6'))};border-radius:4px;transition:width 0.5s ease;"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Widget Taux de Survie J+30
+  const pctSurvieVal = resolus > 0 ? Math.round((totalJ30 / resolus) * 100) : null;
+  const healthEl = document.getElementById('health-percentage');
+  const healthBadge = document.getElementById('health-retention-badge');
+  if (healthEl) {
+    healthEl.textContent = pctSurvieVal !== null ? `${pctSurvieVal}%` : '–';
+    if (pctSurvieVal !== null) {
+      const color = pctSurvieVal >= 70 ? '#22c55e' : (pctSurvieVal >= 40 ? '#f59e0b' : '#ef4444');
+      healthEl.style.color = color;
+      if (healthBadge) {
+        healthBadge.style.borderColor = color;
+        healthBadge.style.boxShadow = `0 0 20px ${color}33`;
+        healthBadge.style.background = `${color}14`;
+      }
+    }
+  }
 
   document.getElementById('stat-total').textContent     = totalAvis;
   document.getElementById('stat-j30').textContent       = totalJ30;
