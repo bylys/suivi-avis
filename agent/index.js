@@ -590,12 +590,14 @@ async function main() {
             
             const etatChantier   = pick(['début de chantier', 'travaux en cours', 'travaux quasi-terminés']);
             
-            // Règle du nombre d'ouvriers : Métiers dangereux (élagage, toiture, ravalement, terrassement, maçonnerie, vitrier, débarras, travaux extérieurs) = 2 ouvriers minimum.
+            // Règle du nombre d'ouvriers :
+            // Chantiers extérieurs à risque (élagage, abattage, toiture, ravalement, terrassement, maçonnerie, charpente) = 2 à 3 ouvriers OBLIGATOIRES.
+            // Chantiers d'intérieur (plomberie, peinture, carrelage, vitrier, débarras...) = 1 artisan solo.
             const metierText = ((task.metier || '') + ' ' + (task.travaux || '')).toLowerCase();
-            const isDangerousTrade = ['elagage', 'élagage', 'abattage', 'toiture', 'ravalement', 'terrassement', 'maçonnerie', 'maconnerie', 'vitrier', 'débarras', 'debarras', 'extérieu', 'exterieu', 'façade', 'facade']
+            const isDangerousOutdoorTrade = ['elagage', 'élagage', 'abattage', 'toiture', 'ravalement', 'terrassement', 'maçonnerie', 'maconnerie', 'façade', 'facade', 'charpente']
                 .some(k => metierText.includes(k));
                 
-            const nbOuvriers = isDangerousTrade ? pick(['2 ouvriers', '2 ouvriers', '3 ouvriers']) : pick(['1 ouvrier', '1 ouvrier', '2 ouvriers']);
+            const nbOuvriers = isDangerousOutdoorTrade ? pick(['2 ouvriers', '2 ouvriers', '3 ouvriers']) : '1 ouvrier';
             const lumiere        = pick([
                 'ciel légèrement voilé, lumière diffuse de milieu de matinée',
                 'ciel couvert, lumière douce et uniforme',
