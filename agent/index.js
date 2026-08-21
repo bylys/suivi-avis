@@ -328,7 +328,22 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         console.log("Le champ de texte (#prompt-textarea) n'a pas été trouvé.");
         console.log("Aperçu de ce que le robot voit (code HTML de la page) :");
         const html = await page.content();
-        console.log(html.substring(0, 1500)); // Afficher les premiers caractères pour comprendre où il est bloqué
+        console.log(html.substring(0, 1500));
+        
+        // Envoi immédiat de l'alerte Telegram
+        const alertMsg = `🚨 <b>ALERTE COOKIES CHATGPT EXPIRÉS</b> 🚨\n\nL'agent n'a pas pu accéder à ChatGPT pour l'opérateur <b>${operatorName || TARGET_OPERATOR || 'Global'}</b> (Redirection login ou sécurité Cloudflare).\n\n👉 <b>Action requise :</b> Re-connectez-vous à ChatGPT dans votre navigateur, ré-exportez vos cookies JSON et mettez à jour le secret <code>CHATGPT_COOKIES</code> sur GitHub Secrets !`;
+        await sendTelegramNotification(alertMsg);
+
+        // Enregistrement de l'alerte dans Supabase pour affichage sur l'outil web
+        try {
+            await supabase.from('alerts').insert([{
+                type: 'cookie_expired',
+                operator: operatorName || TARGET_OPERATOR || 'Global',
+                message: 'Cookies ChatGPT expirés - Mise à jour requise dans GitHub Secrets',
+                created_at: new Date().toISOString()
+            }]);
+        } catch (sErr) {}
+
         throw e;
     }
     // 1. Saisie robuste du texte (support contenteditable / Lexical & textarea)
