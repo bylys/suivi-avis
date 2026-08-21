@@ -164,7 +164,7 @@ function buildRulesBlock(metier, travaux, etatChantier) {
       helmetRule = `NO HARD HAT / NO SAFETY HELMET on head! Headwear: ${randomHeadwear}. Wearing neat normal professional workwear (t-shirt/polo/trousers). NEVER put a hard hat on an indoor plumber, painter, tiler, electrician, carpenter or mover.`;
     }
     
-    lines.push(`WORKER MANDATE (Indoor Renovation & Clearance): Exactly 1 active professional artisan/mover visible inside the room, adjoining doorway, or near the van/truck outside. ${helmetRule} NO safety vests.`);
+    lines.push(`WORKER MANDATE (Indoor Renovation & Clearance): 1 or 2 active professional artisans/movers visible inside the room, adjoining doorway, or near the van/truck outside. ${helmetRule} NO safety vests.`);
   } else {
     lines.push(`WORKER MANDATE: 1 or 2 active workers visible in realistic workwear. Headwear: ${randomHeadwear}. (NO safety vests unless on public road), operating equipment naturally.`);
   }
