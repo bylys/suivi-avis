@@ -876,6 +876,28 @@ datalist { display: none; }
   font-weight: 700;
   margin-bottom: 6px;
 }
+
+.gmb-used-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  margin-top: 5px;
+  margin-bottom: 3px;
+}
+.gmb-used-badge.danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+.gmb-used-badge.safe {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
 .gmb-fiche-item:hover { border-color: #6366f1; }
 .gmb-fiche-item-name {
   font-size: 0.88rem;

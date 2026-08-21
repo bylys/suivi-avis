@@ -3752,7 +3752,7 @@ async function renderGmails() {
           const lastLabel = lastUse ? lastUse.split('-').reverse().join('/') : '–';
           const villeCell = g.ville
             ? `<div style="display:flex;align-items:center;gap:6px;">
-                 <button class="ville-map-btn" onclick="showGmbMap('${g.ville.replace(/'/g, "\\'")}')">📍 ${g.ville}</button>
+                 <button class="ville-map-btn" onclick="showGmbMap('${g.ville.replace(/'/g, "\\'")}', '${(g.email || '').replace(/'/g, "\\'")}')">📍 ${g.ville}</button>
                  <input type="text" value="${g.ville}" title="Modifier la ville"
                    style="background:transparent;border:none;border-bottom:1px dashed #334155;color:#475569;font-size:0.75rem;width:70px;outline:none;padding:1px 2px;"
                    onchange="updateGmailVille('${g.id}', this.value)" />
@@ -3956,7 +3956,7 @@ async function geocodeVille(villeRaw) {
   return null;
 }
 
-async function showGmbMap(ville) {
+async function showGmbMap(ville, targetEmail = '') {
   if (!ville) return;
 
   const session = ++_mapSession;
@@ -3972,9 +3972,29 @@ async function showGmbMap(ville) {
   panel.classList.add('open');
 
   const fiches       = await getFiches();
+  const allAvis      = await getAvis();
   const villeNorm    = normalizeStr(ville);
   const exactMatches = fiches.filter(f => normalizeStr(f.nom).includes(villeNorm));
   const otherFiches  = fiches.filter(f => !normalizeStr(f.nom).includes(villeNorm));
+
+  const targetEmailNorm = (targetEmail || '').toLowerCase().trim();
+
+  const getUsageBadge = (ficheNom) => {
+    if (!targetEmailNorm) return '';
+    const normFiche = normalizeStr(ficheNom);
+    const prevAvis = (allAvis || []).find(a => {
+      const em = ((a.email || a.gmail) || '').toLowerCase().trim();
+      const fi = normalizeStr(a.fiche_nom || a.fiche || '');
+      return em === targetEmailNorm && fi === normFiche;
+    });
+
+    if (prevAvis) {
+      const dateStr = prevAvis.date ? prevAvis.date.split('-').reverse().join('/') : '';
+      return `<div class="gmb-used-badge danger">⚠️ Gmail DÉJÀ UTILISÉ sur cette fiche ${dateStr ? '(' + dateStr + ')' : ''}</div>`;
+    } else {
+      return `<div class="gmb-used-badge safe">✅ Gmail jamais utilisé sur cette fiche</div>`;
+    }
+  };
 
   const fichesEl = document.getElementById('gmb-map-fiches');
 
@@ -3985,7 +4005,8 @@ async function showGmbMap(ville) {
         🏢 ${f.nom}
         ${dist ? `<span class="gmb-dist-badge">~${dist} km</span>` : ''}
       </div>
-      ${f.lien ? `<a href="${f.lien}" target="_blank" rel="noopener">Voir sur Google Maps ↗</a>` : ''}
+      ${getUsageBadge(f.nom)}
+      ${f.lien ? `<div style="margin-top:4px;"><a href="${f.lien}" target="_blank" rel="noopener">Voir sur Google Maps ↗</a></div>` : ''}
     </div>`;
 
   const renderFicheList = (nearby, isSearching) => {
