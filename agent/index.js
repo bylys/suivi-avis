@@ -585,9 +585,21 @@ async function main() {
             return;
         }
 
-        // Configuration des cookies
+        // Configuration des cookies (lecture dynamique depuis Supabase si synchronisés par l'extension Chrome Auto-Sync)
+        let cookiesRaw = process.env.CHATGPT_COOKIES;
+        try {
+            const { data: settingData } = await supabase
+                .from('app_settings')
+                .select('value')
+                .eq('key', 'CHATGPT_COOKIES')
+                .single();
+            if (settingData && settingData.value && settingData.value.length > 20) {
+                cookiesRaw = settingData.value;
+                console.log("🔄 Cookies ChatGPT frais récupérés dynamiquement depuis Supabase (Auto-Sync Extension) !");
+            }
+        } catch (dbErr) {}
 
-        let cookies = JSON.parse(process.env.CHATGPT_COOKIES);
+        let cookies = JSON.parse(cookiesRaw);
         
         // Sanitisation stricte des cookies pour Playwright (retrait de partitionKey, storeId, hostOnly, etc.)
         cookies = cookies.map(c => {
