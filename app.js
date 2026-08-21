@@ -3714,10 +3714,23 @@ async function renderGmails() {
   }
 
   const derniereUtilisation = {};
+  const pointsEstimesMap   = {};
+  const photoCountMap      = {};
+  const avisCountMap       = {};
+
   avis.forEach(a => {
-    if (!derniereUtilisation[a.auteur] || a.date > derniereUtilisation[a.auteur]) {
-      derniereUtilisation[a.auteur] = a.date;
+    const aut = (a.auteur || a.email || a.gmail || '').toLowerCase().trim();
+    if (!aut) return;
+    if (!derniereUtilisation[aut] || a.date > derniereUtilisation[aut]) {
+      derniereUtilisation[aut] = a.date;
     }
+    avisCountMap[aut] = (avisCountMap[aut] || 0) + 1;
+    if (a.photo) photoCountMap[aut] = (photoCountMap[aut] || 0) + 1;
+
+    let pts = 10; // 10 pts de base par avis
+    if ((a.texte || '').length > 150) pts += 10; // +10 pts bonus texte long (>150 car)
+    if (a.photo) pts += 5; // +5 pts bonus photo Google Maps
+    pointsEstimesMap[aut] = (pointsEstimesMap[aut] || 0) + pts;
   });
 
   const filterVille    = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
@@ -3760,8 +3773,17 @@ async function renderGmails() {
             : `<input type="text" value="" placeholder="Ajouter une ville..."
                  style="background:transparent;border:none;border-bottom:1px solid #334155;color:#94a3b8;font-size:0.88rem;width:120px;outline:none;padding:2px 4px;"
                  onchange="updateGmailVille('${g.id}', this.value)" />`;
+          const autKey = (g.email || '').toLowerCase().trim();
+          const pts = pointsEstimesMap[autKey] || 0;
+          const photosCount = photoCountMap[autKey] || 0;
+          const avisCount = avisCountMap[autKey] || 0;
+          const ptsTooltip = pts > 0 ? `${pts} points est. (${avisCount} avis · ${photosCount} photo${photosCount > 1 ? 's' : ''} +5pts)` : 'Compte vierge';
+
           return `<tr style="border-bottom:1px solid #1e293b;">
-            <td style="padding:10px;color:#f1f5f9;">${g.email}</td>
+            <td style="padding:10px;color:#f1f5f9;">
+              <div style="font-weight:500;">${g.email}</div>
+              ${pts > 0 ? `<div style="font-size:11px;color:#f59e0b;margin-top:2px;" title="${_escHtml(ptsTooltip)}">⚡ ~${pts} pts est. (${photosCount} 📷)</div>` : ''}
+            </td>
             <td style="padding:10px;">${villeCell}</td>
             <td style="padding:10px;text-align:center;">
               ${(() => {
