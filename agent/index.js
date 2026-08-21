@@ -752,6 +752,7 @@ async function main() {
             `📂 Dossier : Google Drive / ${TARGET_OPERATOR || 'Défaut'}`;
             
         await sendTelegramNotification(summaryMsg);
+        process.exit(0);
         
     } catch (err) {
         console.error("Erreur critique:", err);
