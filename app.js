@@ -3825,25 +3825,132 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-async function geocodeVille(ville) {
-  if (!ville) return null;
-  if (_geoCache[ville]) return _geoCache[ville];
+// Base de pré-cache des principales villes de France pour résolution instantanée sans réseau (0ms)
+const _MAJOR_FRENCH_CITIES = {
+  'paris': { lat: 48.8566, lon: 2.3522 },
+  'marseille': { lat: 43.2965, lon: 5.3698 },
+  'lyon': { lat: 45.7640, lon: 4.8357 },
+  'toulouse': { lat: 43.6047, lon: 1.4442 },
+  'nice': { lat: 43.7102, lon: 7.2620 },
+  'nantes': { lat: 47.2184, lon: -1.5536 },
+  'montpellier': { lat: 43.6108, lon: 3.8767 },
+  'strasbourg': { lat: 48.5734, lon: 7.7521 },
+  'bordeaux': { lat: 44.8378, lon: -0.5792 },
+  'lille': { lat: 50.6292, lon: 3.0573 },
+  'rennes': { lat: 48.1173, lon: -1.6778 },
+  'reims': { lat: 49.2583, lon: 4.0317 },
+  'toulon': { lat: 43.1242, lon: 5.9280 },
+  'saint-etienne': { lat: 45.4397, lon: 4.3872 },
+  'le havre': { lat: 49.4944, lon: 0.1079 },
+  'grenoble': { lat: 45.1885, lon: 5.7245 },
+  'dijon': { lat: 47.3220, lon: 5.0415 },
+  'angers': { lat: 47.4784, lon: -0.5632 },
+  'nimes': { lat: 43.8367, lon: 4.3601 },
+  'villeurbanne': { lat: 45.7667, lon: 4.8833 },
+  'clermont-ferrand': { lat: 45.7772, lon: 3.0870 },
+  'le mans': { lat: 48.0061, lon: 0.1996 },
+  'aix-en-provence': { lat: 43.5297, lon: 5.4474 },
+  'brest': { lat: 48.3904, lon: -4.4861 },
+  'tours': { lat: 47.3941, lon: 0.6848 },
+  'amiens': { lat: 49.8941, lon: 2.2957 },
+  'limoges': { lat: 45.8336, lon: 1.2611 },
+  'annecy': { lat: 45.8992, lon: 6.1294 },
+  'perpignan': { lat: 42.6986, lon: 2.8956 },
+  'boulogne-billancourt': { lat: 48.8397, lon: 2.2399 },
+  'metz': { lat: 49.1193, lon: 6.1757 },
+  'besancon': { lat: 47.2378, lon: 6.0241 },
+  'orleans': { lat: 47.9030, lon: 1.9090 },
+  'saint-denis': { lat: 48.9362, lon: 2.3574 },
+  'argenteuil': { lat: 48.9479, lon: 2.2467 },
+  'rouen': { lat: 49.4431, lon: 1.0993 },
+  'mulhouse': { lat: 47.7508, lon: 7.3359 },
+  'caen': { lat: 49.1829, lon: -0.3707 },
+  'nancy': { lat: 48.6921, lon: 6.1844 },
+  'saint-paul': { lat: -21.0096, lon: 55.2707 },
+  'montreuil': { lat: 48.8638, lon: 2.4484 },
+  'roubaix': { lat: 50.6901, lon: 3.1817 },
+  'tourcoing': { lat: 50.7239, lon: 3.1612 },
+  'nanterre': { lat: 48.8924, lon: 2.2071 },
+  'avignon': { lat: 43.9493, lon: 4.8055 },
+  'vitry-sur-seine': { lat: 48.7875, lon: 2.3927 },
+  'crteil': { lat: 48.7904, lon: 2.4556 },
+  'dunkerque': { lat: 51.0343, lon: 2.3768 },
+  'poitiers': { lat: 46.5802, lon: 0.3404 },
+  'asnières-sur-seine': { lat: 48.9107, lon: 2.2891 },
+  'versailles': { lat: 48.8049, lon: 2.1343 },
+  'courbevoie': { lat: 48.8967, lon: 2.2567 },
+  'colombes': { lat: 48.9231, lon: 2.2522 },
+  'aubervilliers': { lat: 48.9131, lon: 2.3831 },
+  'aulnay-sous-bois': { lat: 48.9386, lon: 2.4967 },
+  'la rochelle': { lat: 46.1603, lon: -1.1511 },
+  'rueil-malmaison': { lat: 48.8778, lon: 2.1802 },
+  'champigny-sur-marne': { lat: 48.8167, lon: 2.5167 },
+  'pau': { lat: 43.2951, lon: -0.3708 },
+  'aubagne': { lat: 43.2925, lon: 5.5708 },
+  'merignac': { lat: 44.8386, lon: -0.6436 },
+  'pessac': { lat: 44.8067, lon: -0.6311 },
+  'talence': { lat: 44.8083, lon: -0.5906 },
+};
+
+function cleanCityQuery(raw) {
+  if (!raw) return '';
+  let s = String(raw).trim();
+  // Retirer les préfixes de métiers courants
+  s = s.replace(/^(élagage|elagage|abattage|couvreur|toiture|plomberie|maçonnerie|maconnerie|peinture|carrelage|vitrier|débarras|debarras|paysagiste|terrassement|dépannage|depannage)\s*(?:&|-|et)?\s*/i, '');
+  // Retirer les numéros de département en fin de chaîne (ex: "Bordeaux 33", "Fontenay 94")
+  s = s.replace(/\s+\d{2,5}$/, '');
+  // Nettoyer les tirets et espaces superflus
+  s = s.replace(/^[-–—\s]+|[-–—\s]+$/g, '').trim();
+  return s;
+}
+
+async function geocodeVille(villeRaw) {
+  const villeClean = cleanCityQuery(villeRaw);
+  if (!villeClean) return null;
+
+  const cacheKey = villeClean.toLowerCase();
+  if (_geoCache[cacheKey]) return _geoCache[cacheKey];
+
+  // 1. Vérification dans le pré-cache des grandes villes françaises (0ms)
+  const normKey = normalizeStr(villeClean);
+  if (_MAJOR_FRENCH_CITIES[normKey]) {
+    _geoCache[cacheKey] = _MAJOR_FRENCH_CITIES[normKey];
+    return _MAJOR_FRENCH_CITIES[normKey];
+  }
+
+  // 2. Tentative via l'API officielle française (API Adresse Gouv - Sans Rate Limit, Ultra Rapide)
+  try {
+    const rGouv = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(villeClean)}&type=municipality&limit=1`);
+    if (rGouv.ok) {
+      const dGouv = await rGouv.json();
+      if (dGouv.features && dGouv.features.length > 0) {
+        const coords = dGouv.features[0].geometry.coordinates; // [lon, lat]
+        const resGouv = { lat: coords[1], lon: coords[0] };
+        _geoCache[cacheKey] = resGouv;
+        return resGouv;
+      }
+    }
+  } catch (eGouv) {
+    console.warn('[geocode Gouv] échec pour', villeClean, eGouv);
+  }
+
+  // 3. Fallback OpenStreetMap Nominatim
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 1200));
+      if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
       const r = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ville + ', France')}&format=json&limit=1`,
-        { headers: { 'Accept-Language': 'fr' } }
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(villeClean + ', France')}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'fr', 'User-Agent': 'GmbTracker/2.0' } }
       );
       if (!r.ok) continue;
       const data = await r.json();
       if (data.length) {
         const result = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-        _geoCache[ville] = result;
+        _geoCache[cacheKey] = result;
         return result;
       }
     } catch(e) {
-      console.warn('[geocode] tentative', attempt + 1, 'échouée pour', ville, e);
+      console.warn('[geocode OSM] tentative', attempt + 1, 'échouée pour', villeClean, e);
     }
   }
   return null;
