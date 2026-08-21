@@ -3764,7 +3764,18 @@ async function renderGmails() {
             <td style="padding:10px;color:#f1f5f9;">${g.email}</td>
             <td style="padding:10px;">${villeCell}</td>
             <td style="padding:10px;text-align:center;">
-              <input type="checkbox" ${g.local_guide ? 'checked' : ''} onchange="toggleLocalGuide('${g.id}', this.checked)" style="accent-color:#f59e0b;width:16px;height:16px;" />
+              ${(() => {
+                const lvl = g.local_guide_level || (g.local_guide ? 5 : 0);
+                if (g.status === 'suspended' || lvl === -1) {
+                  return `<span class="lg-badge lg-banned" onclick="cycleLocalGuideLevel('${g.id}', ${lvl})" title="Cliquer pour changer le statut">🔴 Suspendu</span>`;
+                } else if (lvl >= 5) {
+                  return `<span class="lg-badge lg-lvl5" onclick="cycleLocalGuideLevel('${g.id}', ${lvl})" title="Cliquer pour changer le niveau">🌟 Local Guide Niv. ${lvl}</span>`;
+                } else if (lvl > 0 || g.local_guide) {
+                  return `<span class="lg-badge lg-std" onclick="cycleLocalGuideLevel('${g.id}', ${lvl})" title="Cliquer pour changer le niveau">⭐ Local Guide</span>`;
+                } else {
+                  return `<span class="lg-badge lg-off" onclick="cycleLocalGuideLevel('${g.id}', ${lvl})" title="Cliquer pour activer Local Guide">⚪ Standard</span>`;
+                }
+              })()}
             </td>
             <td style="padding:10px;color:${lastUse ? '#22c55e' : '#475569'};">${lastLabel}</td>
             <td style="padding:10px;text-align:center;">
@@ -3791,6 +3802,25 @@ async function addGmail(e) {
 
 async function toggleLocalGuide(id, value) {
   await sbUpdate('gmails', id, { local_guide: value });
+}
+
+async function cycleLocalGuideLevel(id, currentLvl) {
+  let nextLvl = 0;
+  if (currentLvl === 0) nextLvl = 5;
+  else if (currentLvl === 5) nextLvl = 6;
+  else if (currentLvl === 6) nextLvl = 7;
+  else if (currentLvl === 7) nextLvl = -1;
+  else nextLvl = 0;
+
+  const isLg = nextLvl > 0;
+  const isSuspended = nextLvl === -1;
+
+  await sbUpdate('gmails', id, {
+    local_guide: isLg,
+    local_guide_level: nextLvl,
+    status: isSuspended ? 'suspended' : 'active'
+  });
+  renderGmails();
 }
 
 async function updateGmailVille(id, ville) {
