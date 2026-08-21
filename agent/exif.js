@@ -101,6 +101,9 @@ async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskD
     const phone = pickSmartphone();
     const dateStr = generatePhotoDate3To21DaysBefore(taskDateStr, reviewText);
 
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+
     // Construction du bloc GPS EXIF
     const gpsIfd = {};
     gpsIfd[piexif.GPSIFD.GPSLatitudeRef] = coords.lat >= 0 ? 'N' : 'S';

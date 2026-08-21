@@ -136,6 +136,11 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
         existingFiles = checkRes.data.files || [];
     } catch (cErr) {}
 
+    const fileMetadata = {
+        name: fileName,
+        parents: [targetFolderId]
+    };
+
     console.log(`Upload en cours de la photo sur Google Drive (Sous-dossier Opérateur: "${operatorName || 'Défaut'}")...`);
 
     let res;
