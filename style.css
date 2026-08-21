@@ -225,7 +225,7 @@ body.light-theme .star-picker span { color: #f59e0b !important; }
 .avis-table td.col-texte { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; color: #94a3b8; font-style: italic; }
 
 .avis-auteur { font-weight: 600; color: #f1f5f9; }
-.avis-fiche  { font-size: 0.73rem; background: #1e1b4b; color: #a5b4fc; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+.avis-fiche  { font-size: 0.73rem; background: rgba(99, 102, 241, 0.25); color: #c7d2fe; padding: 3px 10px; border-radius: 20px; font-weight: 600; border: 1px solid rgba(99, 102, 241, 0.4); display: inline-block; }
 .avis-date   { font-size: 0.8rem; color: #94a3b8; }
 .avis-stars  { color: #fbbf24; font-size: 0.92rem; letter-spacing: -1px; }
 .avis-statut { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
@@ -1805,4 +1805,9 @@ body.light-theme .gmb-fiche-item {
 }
 body.light-theme .gmb-fiche-item-name {
   color: #0f172a !important;
+}
+body.light-theme .avis-fiche {
+  background: #e0e7ff !important;
+  color: #3730a3 !important;
+  border: 1px solid #c7d2fe !important;
 }
