@@ -1578,32 +1578,22 @@ body.light-theme {
   color-scheme: light !important;
 }
 
-body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4, 
-body.light-theme label, body.light-theme p, body.light-theme span, body.light-theme td, 
-body.light-theme div, body.light-theme summary, body.light-theme strong, body.light-theme legend {
+body.light-theme h1, body.light-theme h2, body.light-theme h3, body.light-theme h4, body.light-theme h5,
+body.light-theme label, body.light-theme p, body.light-theme span, body.light-theme td, body.light-theme th,
+body.light-theme div, body.light-theme summary, body.light-theme strong, body.light-theme legend, body.light-theme b {
   color: #0f172a;
 }
 
+/* Header & Switcher */
 body.light-theme header {
   background-color: #ffffff !important;
   border-bottom: 1px solid #cbd5e1 !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
-body.light-theme header h1 {
-  color: #0f172a !important;
-}
+body.light-theme header h1 { color: #0f172a !important; }
+body.light-theme .theme-switch { background: #cbd5e1 !important; border-color: #94a3b8 !important; }
+body.light-theme .theme-switch-slider { transform: translateX(29px) !important; background: #f59e0b !important; }
 
-/* Switcher en Mode Clair */
-body.light-theme .theme-switch {
-  background: #cbd5e1 !important;
-  border-color: #94a3b8 !important;
-}
-body.light-theme .theme-switch-slider {
-  transform: translateX(29px) !important;
-  background: #f59e0b !important;
-}
-
-/* Onglets Navigation Header */
 body.light-theme .tab-btn {
   color: #475569 !important;
   background: #f8fafc !important;
@@ -1615,11 +1605,13 @@ body.light-theme .tab-btn.active, body.light-theme .tab-btn:hover {
   border-color: #1d4ed8 !important;
 }
 
-/* Override universel des éléments avec styles inline sombres (#1e293b, #0f172a, #090d16) */
+/* OVERRIDE TOUS LES CONTAINERS SOMBRES (#1e293b, #0f172a, #090d16, #111827) */
 body.light-theme [style*="background:#1e293b"], body.light-theme [style*="background: #1e293b"],
 body.light-theme [style*="background:#0f172a"], body.light-theme [style*="background: #0f172a"],
 body.light-theme [style*="background:#090d16"], body.light-theme [style*="background: #090d16"],
-body.light-theme [style*="background:rgba(30, 41, 59"], body.light-theme [style*="background: rgba(30, 41, 59"] {
+body.light-theme [style*="background:#111827"], body.light-theme [style*="background: #111827"],
+body.light-theme [style*="background:rgba(30, 41, 59"], body.light-theme [style*="background: rgba(30, 41, 59"],
+body.light-theme [style*="background: rgba(15, 23, 42"], body.light-theme [style*="background:rgba(15, 23, 42"] {
   background-color: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
@@ -1627,11 +1619,12 @@ body.light-theme [style*="background:rgba(30, 41, 59"], body.light-theme [style*
 
 body.light-theme [style*="color:#f1f5f9"], body.light-theme [style*="color: #f1f5f9"],
 body.light-theme [style*="color:#94a3b8"], body.light-theme [style*="color: #94a3b8"],
-body.light-theme [style*="color:#64748b"], body.light-theme [style*="color: #64748b"] {
-  color: #1e293b !important;
+body.light-theme [style*="color:#64748b"], body.light-theme [style*="color: #64748b"],
+body.light-theme [style*="color:#a5b4fc"], body.light-theme [style*="color: #a5b4fc"] {
+  color: #0f172a !important;
 }
 
-/* Inputs, Selects, Textareas, Date Pickers */
+/* Inputs, Selects, Textareas, Date Pickers & Placeholders */
 body.light-theme input, body.light-theme select, body.light-theme textarea {
   background-color: #ffffff !important;
   color: #0f172a !important;
@@ -1648,22 +1641,69 @@ body.light-theme input::placeholder, body.light-theme textarea::placeholder {
   opacity: 1 !important;
 }
 
-/* Cartes, Containers & Widgets */
-body.light-theme .stat-card, body.light-theme .chart-box, body.light-theme .img-card, 
-body.light-theme .planning-stat, body.light-theme details, body.light-theme .tab-content {
+/* Onglet Fiches GMB (Barre de recherche & Accordéons par métier) */
+body.light-theme .fiches-search-bar {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+}
+body.light-theme .cat-header, body.light-theme .fiche-cat, body.light-theme .category-block summary, body.light-theme details summary {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
-body.light-theme .stat-card label, body.light-theme .chart-box h3 {
+body.light-theme .cat-header:hover, body.light-theme details summary:hover {
+  background: #f8fafc !important;
+}
+body.light-theme .cat-count, body.light-theme .badge-count {
+  background: #e2e8f0 !important;
   color: #334155 !important;
 }
-body.light-theme .stat-card span {
+body.light-theme #liste-fiches li {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
 
-/* Top 5 Fiches & Rangées */
+/* Onglet Planning & Tableaux Accordéons */
+body.light-theme #tab-planning details, body.light-theme #tab-planning table {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body.light-theme #tab-planning summary {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+body.light-theme #tab-planning tr {
+  border-bottom-color: #e2e8f0 !important;
+}
+body.light-theme #tab-planning td {
+  color: #0f172a !important;
+}
+body.light-theme #tab-planning a {
+  color: #2563eb !important;
+}
+
+/* Barre Drive Raccourcis & Bannières Info */
+body.light-theme .drive-shortcuts-bar, body.light-theme .info-banner, body.light-theme .agent-banner {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+body.light-theme .drive-bar-title {
+  color: #334155 !important;
+}
+body.light-theme .btn-drive-op {
+  background: #f1f5f9 !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #1d4ed8 !important;
+}
+body.light-theme .btn-drive-op:hover {
+  background: #e2e8f0 !important;
+  color: #1e40af !important;
+}
+
+/* Top 5 Fiches Supprimées */
 body.light-theme .top-row {
   background: #f8fafc !important;
   border: 1px solid #e2e8f0 !important;
@@ -1680,25 +1720,7 @@ body.light-theme .top-pill.total {
   color: #334155 !important;
 }
 
-/* Barre Drive Raccourcis */
-body.light-theme .drive-shortcuts-bar {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-}
-body.light-theme .drive-bar-title {
-  color: #334155 !important;
-}
-body.light-theme .btn-drive-op {
-  background: #f1f5f9 !important;
-  border: 1.5px solid #cbd5e1 !important;
-  color: #1d4ed8 !important;
-}
-body.light-theme .btn-drive-op:hover {
-  background: #e2e8f0 !important;
-  color: #1e40af !important;
-}
-
-/* Boutons secondaires & d'action (Régénérer, Ignorer, Changer la clé...) */
+/* Tous Boutons Secondaires (Régénérer, Ignorer, Changer la clé API, + Ajouter) */
 body.light-theme .btn-secondary, body.light-theme button:not(.btn-primary):not(.btn-generer):not(.btn-sync-gmb):not(.btn-drive-op):not(.tab-btn) {
   background-color: #e2e8f0 !important;
   border-color: #cbd5e1 !important;
@@ -1708,37 +1730,12 @@ body.light-theme button:not(.btn-primary):not(.btn-generer):hover {
   background-color: #cbd5e1 !important;
 }
 
-/* Tableaux & Popups */
-body.light-theme table tr {
-  border-bottom-color: #e2e8f0 !important;
-}
-body.light-theme table td {
-  color: #0f172a !important;
-}
-body.light-theme table th {
-  background: #e2e8f0 !important;
-  color: #1e293b !important;
-  border-bottom: 2px solid #cbd5e1 !important;
-}
-body.light-theme .collapsible-leaderboard {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-}
-body.light-theme .collapsible-leaderboard summary {
-  color: #0f172a !important;
-}
-body.light-theme .collapsible-leaderboard div {
-  background: #f8fafc !important;
-}
-body.light-theme .gmb-fiche-item {
+/* Modales & Panneau Carte Split-View */
+body.light-theme #gmb-map-panel, body.light-theme .modal-content, body.light-theme .gmb-fiche-item {
   background: #ffffff !important;
   border-color: #cbd5e1 !important;
   color: #0f172a !important;
 }
 body.light-theme .gmb-fiche-item-name {
-  color: #0f172a !important;
-}
-body.light-theme #gmb-map-panel {
-  background: #ffffff !important;
   color: #0f172a !important;
 }
