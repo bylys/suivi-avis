@@ -34,8 +34,18 @@
 <!-- ── APPLICATION PRINCIPALE ── -->
 <div id="app" class="hidden">
   <header>
-    <h1>📍 Suivi Avis GMB</h1>
-    <nav>
+    <div class="header-top">
+      <h1>📍 Suivi Avis GMB</h1>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="theme-switch" class="theme-switch" onclick="toggleTheme()" title="Basculer le Thème Mode Nuit / Mode Jour">
+          <span class="theme-switch-icon moon">🌙</span>
+          <span class="theme-switch-icon sun">☀️</span>
+          <div class="theme-switch-slider"></div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Déconnexion</button>
+      </div>
+    </div>
+    <nav class="header-nav">
       <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
       <button class="tab-btn" onclick="showTab('planning')">📋 Planning</button>
       <button class="tab-btn" onclick="showTab('generateur')">Générateur d'avis</button>
@@ -44,14 +54,7 @@
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
       <button class="tab-btn" onclick="showTab('gmails')">📧 GMails</button>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <div id="theme-switch" class="theme-switch" onclick="toggleTheme()" title="Basculer le Thème Mode Nuit / Mode Jour">
-        <span class="theme-switch-icon moon">🌙</span>
-        <span class="theme-switch-icon sun">☀️</span>
-        <div class="theme-switch-slider"></div>
-      </div>
-      <button class="logout-btn" onclick="logout()">Déconnexion</button>
-    </div>
+    </nav>
   </header>
 
   <!-- DASHBOARD -->
