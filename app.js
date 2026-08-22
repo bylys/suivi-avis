@@ -4689,7 +4689,26 @@ function updateCostEstimate() {
 }
 
 function openOperatorDriveFolder(operatorName) {
-  const op = (operatorName || '').trim();
-  const searchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent(op)}`;
+  let op = (operatorName || '').trim();
+  if (!op) {
+    window.open('https://drive.google.com/drive/my-drive', '_blank');
+    return;
+  }
+  
+  const normKey = op.toLowerCase();
+  const searchName = (normKey === 'fif' || normKey === 'fifaliana') ? 'Fifaliana' : op;
+
+  // 1. Lien direct personnalise depuis localStorage ou config
+  const customUrl = localStorage.getItem(`drive_folder_${normKey}`) ||
+                    localStorage.getItem(`drive_folder_${searchName.toLowerCase()}`) ||
+                    (window.GMB_CONFIG && window.GMB_CONFIG.DRIVE_FOLDERS && (window.GMB_CONFIG.DRIVE_FOLDERS[op] || window.GMB_CONFIG.DRIVE_FOLDERS[searchName]));
+
+  if (customUrl) {
+    window.open(customUrl, '_blank');
+    return;
+  }
+
+  // 2. Recherche ciblee uniquement sur les DOSSIERS portant le nom du moderateur
+  const searchUrl = `https://drive.google.com/drive/search?q=type:folder%20name:%22${encodeURIComponent(searchName)}%22`;
   window.open(searchUrl, '_blank');
 }
