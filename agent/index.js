@@ -648,8 +648,21 @@ async function main() {
             function detectMetierFromFiche(ficheNom) {
                 const f = (ficheNom || '').toLowerCase();
                 
+                // Si la fiche mentionne plusieurs services de nettoyage (Toiture, Terrasse, Façade), varier les visuels !
+                const hasRoofCleaning = f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || (f.includes('nettoyage') && f.includes('toiture'));
+                const hasFacade = f.includes('façade') || f.includes('facade') || f.includes('ravalement');
+                const hasTerrace = f.includes('terrasse');
+
+                if (hasRoofCleaning && (hasFacade || hasTerrace)) {
+                    const cleaningChoices = [];
+                    if (hasRoofCleaning) cleaningChoices.push('démoussage, traitement hydrofuge et nettoyage haute pression de toiture (nettoyage des tuiles au jet haute pression)');
+                    if (hasFacade) cleaningChoices.push('nettoyage haute pression et ravalement de façade de maison (artisan nettoyant les murs au jet haute pression)');
+                    if (hasTerrace) cleaningChoices.push('nettoyage haute pression de terrasse extérieure et dalles de jardin');
+                    return pick(cleaningChoices);
+                }
+                
                 // 1. Spécialités spécifiques Toiture & Extérieur (priorité absolue avant 'toiture' générique)
-                if (f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || (f.includes('nettoyage') && f.includes('toiture'))) {
+                if (hasRoofCleaning) {
                     return 'démoussage, traitement hydrofuge et nettoyage haute pression de toiture (nettoyage des tuiles au jet haute pression)';
                 }
                 if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau')) {
