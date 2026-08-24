@@ -958,7 +958,9 @@ async function main() {
             const randWorker = Math.random();
             let nbOuvriers = '1 ou 2 artisans';
 
-            if (metierText.includes('terrasse') || metierText.includes('patio')) {
+            if (metierText.includes('haie') || metierText.includes('taille de haie')) {
+                nbOuvriers = 'exactement 2 ouvriers en duo';
+            } else if (metierText.includes('terrasse') || metierText.includes('patio')) {
                 nbOuvriers = randWorker < 0.85 ? '1 artisan solo' : '2 artisans';
             } else if (metierText.includes('facade') || metierText.includes('façade') || metierText.includes('ravalement')) {
                 nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
@@ -1050,12 +1052,18 @@ async function main() {
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROADSIDE BREAKDOWN / TOW TRUCK / AUTOMOTIVE REPAIR only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
                 negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof workers, NO trees, NO scaffolding, NO pressure washers, NO garden tools. ONLY roadside vehicle towing or breakdown assistance with a tow truck.";
-            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture')) {
+            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('charpente') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive')) {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROOFER / ROOF TILE REPLACEMENT / ROOFING WORK only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO hedge trimming, NO tree surgeons, NO pressure washing patio, NO tow trucks, NO arborists. ONLY roofing work with tiles on a roof slope.";
-            } else if (lowerLabel.includes('étanchéité')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: WATERPROOFING MEMBRANE / LIQUID RESIN APPLICATION only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO tree trimming, NO scaffolding facade. ONLY flat roof waterproofing membrane or liquid resin application.";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO hedge trimming, NO tree surgeons, NO pressure washing patio, NO tow trucks, NO arborists. ONLY roofing work with tiles or roof framing.";
+            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('pvc') || lowerLabel.includes('inondation') || lowerLabel.includes('infiltration')) {
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: WATERPROOFING MEMBRANE / PVC WATERPROOFING / LEAK REPAIR only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO tree trimming, NO scaffolding facade. ONLY flat roof waterproofing membrane, PVC resin application or water leak sealing.";
+            } else if (lowerLabel.includes('peinture')) {
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: INDOOR PAINTER / WALL PAINTING with roller and drop cloths only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO outdoor trees, NO tow trucks, NO pressure washers. ONLY indoor wall or ceiling painting in bathroom, kitchen, bedroom or living room.";
+            } else if (lowerLabel.includes('carrelage') || lowerLabel.includes('faïence') || lowerLabel.includes('faience')) {
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: TILER / FLOOR OR WALL TILING with tile spacers and trowel only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO outdoor trees, NO tow trucks, NO painting rollers. ONLY indoor floor tiling or wall ceramic tile installation.";
             } else {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nStart completely fresh with the following scene.\n\n";
             }
