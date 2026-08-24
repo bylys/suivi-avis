@@ -636,9 +636,12 @@ async function main() {
         // Configuration des cookies multi-opérateurs avec résolution universelle et diagnostic complet
         const opUpper = rawOp ? rawOp.toUpperCase() : '';
         
-        // Diagnostic : lister toutes les variables d'environnement contenant COOKIE
-        const availableCookieKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes('COOKIE') && process.env[k] && process.env[k].trim().length > 10);
-        console.log(`🔍 Diagnostic des secrets GitHub reçus par le robot : ${availableCookieKeys.length > 0 ? availableCookieKeys.join(', ') : '⚠️ AUCUN SECRET COOKIE TROUVÉ DANS ENV !'}`);
+        console.log("🔍 Diagnostic direct des clés de cookies reçues par le robot :");
+        const cookieKeysInEnv = Object.keys(process.env).filter(k => k.toUpperCase().includes('COOKIE'));
+        for (const k of cookieKeysInEnv) {
+            const valLen = (process.env[k] || '').trim().length;
+            console.log(`   - ${k} : ${valLen > 0 ? `${valLen} caractères` : 'VIDE (0 caractère)'}`);
+        }
 
         let cookiesRaw = null;
         let usedKey = null;
@@ -654,17 +657,17 @@ async function main() {
         ].filter(Boolean);
 
         for (const key of candidateKeys) {
-            if (process.env[key] && process.env[key].trim().length > 10) {
+            if (process.env[key] && process.env[key].trim().length > 0) {
                 cookiesRaw = process.env[key].trim();
                 usedKey = key;
                 break;
             }
         }
 
-        // 2. Recherche universelle insensible à la casse sur n'importe quelle variable contenant COOKIE
+        // 2. Recherche universelle insensible à la casse sur n'importe quelle variable non vide contenant COOKIE
         if (!cookiesRaw) {
             for (const [envKey, envVal] of Object.entries(process.env)) {
-                if (!envVal || envVal.trim().length <= 10) continue;
+                if (!envVal || envVal.trim().length === 0) continue;
                 const normKey = envKey.toUpperCase();
                 if (normKey.includes('COOKIE')) {
                     if (opUpper && (normKey.includes(opUpper) || normKey.includes('PERSO'))) {
