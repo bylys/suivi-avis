@@ -426,9 +426,17 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             console.log("🔄 Aucune nouvelle photo aperçue au bout de 75s. Actualisation de la page ChatGPT (page.reload())...");
             try {
                 await page.reload({ waitUntil: 'domcontentloaded' });
-                console.log("✅ Page ChatGPT actualisée avec succès ! Attente de 8s et re-scan de la conversation...");
-                await page.waitForTimeout(8000);
-                foundUrl = await checkNewImage();
+                const reloadWait = Math.floor(Math.random() * (20000 - 15000 + 1)) + 15000;
+                console.log(`✅ Page ChatGPT actualisée ! Attente de ${Math.round(reloadWait/1000)}s (entre 15 et 20s) pour le chargement du fil...`);
+                await page.waitForTimeout(reloadWait);
+                
+                const startTimeReload = Date.now();
+                while (Date.now() - startTimeReload < 20000) {
+                    foundUrl = await checkNewImage();
+                    if (foundUrl) break;
+                    await page.waitForTimeout(3000);
+                }
+
                 if (foundUrl) {
                     console.log("📸 Photo HD récupérée avec succès après actualisation de la page ! URL :", foundUrl.substring(0, 100));
                 } else {
