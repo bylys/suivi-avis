@@ -71,14 +71,17 @@ async function sbDelete(table, id) {
 const PASSWORD = 'teamreview2026';
 
 function checkPassword() {
-  const val = document.getElementById('pwd-input').value;
+  const val = (document.getElementById('pwd-input')?.value || '').trim();
   if (val === PASSWORD) {
     sessionStorage.setItem('gmb_auth', '1');
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    init();
+    const loginScreen = document.getElementById('login-screen');
+    const appScreen = document.getElementById('app');
+    if (loginScreen) loginScreen.classList.add('hidden');
+    if (appScreen) appScreen.classList.remove('hidden');
+    init().catch(err => console.error("Erreur d'initialisation:", err));
   } else {
-    document.getElementById('pwd-error').classList.remove('hidden');
+    const pwdErr = document.getElementById('pwd-error');
+    if (pwdErr) pwdErr.classList.remove('hidden');
   }
 }
 
