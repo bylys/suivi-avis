@@ -1825,6 +1825,7 @@ function extraireVilleFiche(nomFiche) {
   main = main.replace(/\b(France|[0-9]{2,5}|[A-Z][a-z]+ [0-9]{2})\b/gi, '').trim();
 
   const motsMetiers = [
+    'Entreprise', 'Élagueur', 'Elagueur', 'Société', 'Societe', 'Artisan', 'EURL', 'SARL', 'SAS',
     'Élagage', 'Elagage', 'Abattage', 'Taille de Haie', 'Taille de haie', 'Taille', 'Haie', 'Arboriste', 'Grimpeur', 'Paysagiste',
     'Ravalement de Façade', 'Ravalement de façade', 'Ravalement', 'Ravelement', 'Nettoyage', 'Démoussage', 'Demoussage',
     'Peintre en Bâtiment', 'Peintre', 'Peinture', 'Couvreur', 'Toiture', 'Toit', 'Zinguerie', 'Zingu', 'Charpente',
@@ -3708,9 +3709,14 @@ async function donutRafraichirProxy() {
 async function planningGenerer(id, ficheNom, gmail) {
   await sbUpdate('planning', id, { statut: 'generated' });
 
-  // Récupérer la ville depuis la ligne du planning
+  // Extraire la ville principale depuis la fiche GMB (priorité absolue)
+  // Fallback sur la ville de la ligne du planning si non trouvée
   const row = document.getElementById(`planning-row-${id}`);
-  const ville = row ? row.querySelector('td')?.textContent?.trim() : '';
+  const rowVille = row ? row.querySelector('td')?.textContent?.trim() : '';
+  const villeExtraite = extraireVilleFiche(ficheNom);
+  const ville = (villeExtraite && villeExtraite !== ficheNom)
+    ? villeExtraite
+    : (rowVille && rowVille !== '—' ? rowVille : (villeExtraite || ''));
 
   // Dériver les travaux depuis le nom de la fiche (utilisé pour avis et images)
   const _TRAVAUX_MAP = {
