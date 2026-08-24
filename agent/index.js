@@ -647,24 +647,32 @@ async function main() {
             // Extraction automatique du métier depuis le nom de la fiche si absent de la table
             function detectMetierFromFiche(ficheNom) {
                 const f = (ficheNom || '').toLowerCase();
-                if (f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('taille de haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur')) {
-                    return 'élagage et abattage d\'arbres';
+                
+                // 1. Spécialités spécifiques Toiture & Extérieur (priorité absolue avant 'toiture' générique)
+                if (f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || (f.includes('nettoyage') && f.includes('toiture'))) {
+                    return 'démoussage, traitement hydrofuge et nettoyage haute pression de toiture (nettoyage des tuiles au jet haute pression)';
                 }
-                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage')) {
-                    return 'réfection et travaux de toiture';
-                }
-                if (f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge')) {
-                    return 'démoussage et nettoyage de toiture';
-                }
-                if (f.includes('gouttière') || f.includes('gouttiere')) {
+                if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau')) {
                     return 'nettoyage et pose de gouttières';
                 }
-                if (f.includes('etancheite') || f.includes('étanchéité')) {
-                    return 'étanchéité de toit terrasse';
+                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit terrasse') || f.includes('toit-terrasse')) {
+                    return 'étanchéité et isolation de toit terrasse';
                 }
-                if (f.includes('ravalement') || f.includes('façade') || f.includes('facade')) {
+                if (f.includes('ravalement') || f.includes('façade') || f.includes('facade') || f.includes('crépi') || f.includes('crepi')) {
                     return 'ravalement et nettoyage de façade';
                 }
+                
+                // 2. Élagage, Abattage et Espaces Verts
+                if (f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('taille de haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur')) {
+                    return 'élagage, abattage d\'arbres et entretien d\'espaces verts';
+                }
+
+                // 3. Couverture & Réfection de Toiture (générique)
+                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage') || f.includes('zinguerie')) {
+                    return 'travaux de couverture, zinguerie et réfection de toiture';
+                }
+
+                // 4. Second œuvre & Intérieur
                 if (f.includes('carrelage') || f.includes('faïence')) {
                     return 'pose de carrelage';
                 }
