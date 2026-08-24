@@ -644,10 +644,57 @@ async function main() {
             
             const etatChantier   = pick(['début de chantier', 'travaux en cours', 'travaux quasi-terminés']);
             
+            // Extraction automatique du métier depuis le nom de la fiche si absent de la table
+            function detectMetierFromFiche(ficheNom) {
+                const f = (ficheNom || '').toLowerCase();
+                if (f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('taille de haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur')) {
+                    return 'élagage et abattage d\'arbres';
+                }
+                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage')) {
+                    return 'réfection et travaux de toiture';
+                }
+                if (f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge')) {
+                    return 'démoussage et nettoyage de toiture';
+                }
+                if (f.includes('gouttière') || f.includes('gouttiere')) {
+                    return 'nettoyage et pose de gouttières';
+                }
+                if (f.includes('etancheite') || f.includes('étanchéité')) {
+                    return 'étanchéité de toit terrasse';
+                }
+                if (f.includes('ravalement') || f.includes('façade') || f.includes('facade')) {
+                    return 'ravalement et nettoyage de façade';
+                }
+                if (f.includes('carrelage') || f.includes('faïence')) {
+                    return 'pose de carrelage';
+                }
+                if (f.includes('peintre') || f.includes('peinture')) {
+                    return 'travaux de peinture';
+                }
+                if (f.includes('plombier') || f.includes('plomberie')) {
+                    return 'travaux de plomberie';
+                }
+                if (f.includes('vitrier') || f.includes('miroiterie') || f.includes('vitrage')) {
+                    return 'remplacement de vitrage et vitrerie';
+                }
+                if (f.includes('débarras') || f.includes('debarras')) {
+                    return 'débarras de maison et locaux';
+                }
+                if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('pierre')) {
+                    return 'travaux de maçonnerie';
+                }
+                if (f.includes('terrassement') || f.includes('dessouchage')) {
+                    return 'travaux de terrassement';
+                }
+                return 'travaux de rénovation';
+            }
+
+            const detectedTrade = detectMetierFromFiche(task.fiche_nom);
+
             // Règle du nombre d'ouvriers :
             // Chantiers extérieurs à risque (élagage, abattage, toiture, ravalement, terrassement, maçonnerie, charpente) = 70% 2 ouvriers / 30% 3 ouvriers.
             // Chantiers d'intérieur (plomberie, peinture, carrelage, vitrier, débarras...) = 60% 1 artisan solo / 40% 2 artisans.
-            const metierText = ((task.metier || '') + ' ' + (task.travaux || '')).toLowerCase();
+            const metierText = ((task.metier || '') + ' ' + (task.travaux || '') + ' ' + (task.fiche_nom || '')).toLowerCase();
             const isDangerousOutdoorTrade = ['elagage', 'élagage', 'abattage', 'toiture', 'ravalement', 'terrassement', 'maçonnerie', 'maconnerie', 'façade', 'facade', 'charpente']
                 .some(k => metierText.includes(k));
                 
@@ -682,8 +729,8 @@ async function main() {
             // Format / Orientation (tirage aléatoire : 60% paysage, 40% portrait)
             const orientation    = pick(['3:2 paysage', '4:3 paysage', '3:4 portrait', '9:16 portrait']);
 
-            // Travaux = sous-métier (task.travaux) ou métier principal
-            const travauxLabel = task.travaux || task.metier || 'travaux de rénovation';
+            // Travaux = sous-métier (task.travaux) ou métier principal déduit de la fiche
+            const travauxLabel = task.travaux || task.metier || detectedTrade;
             
             // Construction du prompt final
             const paysLabel = task.pays || 'France';
