@@ -910,23 +910,32 @@ async function main() {
             let negativeConstraint = "";
             const lowerLabel = travauxLabel.toLowerCase();
             
+            // Header de reset de contexte — force DALL-E 3 à ignorer les images précédentes du fil
+            let contextReset = "";
             if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage') || lowerLabel.includes('façade') || lowerLabel.includes('terrasse')) {
-                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show tree pruning, do NOT show tree felling, do NOT show workers climbing or cutting trees, do NOT show chainsaws or ropes in trees. Focus ONLY on surface cleaning (roof tiles pressure washing, wall washing or patio cleaning).";
-            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('jardin')) {
-                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof pressure washing, do NOT show facade rendering, do NOT show cars or towing. Focus ONLY on tree trimming, hedge cutting, tree felling or arboriculture.";
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: PRESSURE WASHING / SURFACE CLEANING workers only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO trees being cut, NO arborists, NO chainsaws in trees, NO workers in tree canopy, NO towing trucks, NO cars. ONLY pressure washing or surface cleaning.";
+            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin')) {
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: TREE TRIMMING / ARBORIST / HEDGE CUTTING workers only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO pressure washing, NO tow trucks, NO cars, NO facade scaffolding. ONLY outdoor green space work (trees, hedges, stumps).";
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
-                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof work, do NOT show house scaffolding, do NOT show tree pruning, do NOT show pressure washing walls. Focus ONLY on roadside automotive breakdown assistance, flatbed tow truck, or mechanic towing a car.";
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROADSIDE BREAKDOWN / TOW TRUCK / AUTOMOTIVE REPAIR only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof workers, NO trees, NO scaffolding, NO pressure washers, NO garden tools. ONLY roadside vehicle towing or breakdown assistance with a tow truck.";
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture')) {
-                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show hedge trimming, do NOT show tree felling, do NOT show pressure washing ground patio. Focus ONLY on roof tile replacement, roofing work or ridge sealing on a roof.";
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROOFER / ROOF TILE REPLACEMENT / ROOFING WORK only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO hedge trimming, NO tree surgeons, NO pressure washing patio, NO tow trucks, NO arborists. ONLY roofing work with tiles on a roof slope.";
             } else if (lowerLabel.includes('étanchéité')) {
-                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof tile replacement, do NOT show tree trimming, do NOT show scaffolding facade rendering. Focus ONLY on waterproofing membrane or liquid resin application.";
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: WATERPROOFING MEMBRANE / LIQUID RESIN APPLICATION only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO tree trimming, NO scaffolding facade. ONLY flat roof waterproofing membrane or liquid resin application.";
+            } else {
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nStart completely fresh with the following scene.\n\n";
             }
 
             // Injection des règles de sécurité et visuelles selon le métier et le service
             const rulesBlock = buildRulesBlock(task.metier || travauxLabel, task.travaux || travauxLabel, etatChantier);
-            const finalPrompt = prompt + rulesBlock + negativeConstraint;
+            const finalPrompt = contextReset + prompt + rulesBlock + negativeConstraint;
             
-            console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 120)}...`);
+            console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 150)}...`);
             
             try {
                 // Generate Image
