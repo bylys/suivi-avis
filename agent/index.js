@@ -839,9 +839,21 @@ async function main() {
                 prompt += ` Localisation du chantier : ${locationStr}.`;
             }
             
+            // Exclusion stricte par métier pour empêcher la réutilisation de contextes DALL-E 3
+            let negativeConstraint = "";
+            const lowerLabel = travauxLabel.toLowerCase();
+            
+            if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage') || lowerLabel.includes('façade') || lowerLabel.includes('terrasse')) {
+                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show tree pruning, do NOT show tree felling, do NOT show workers climbing or cutting trees, do NOT show chainsaws or ropes in trees. Focus ONLY on surface cleaning (roof tiles pressure washing, wall washing or patio cleaning).";
+            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage')) {
+                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof pressure washing, do NOT show facade rendering. Focus ONLY on tree trimming, tree felling or arboriculture.";
+            } else if (lowerLabel.includes('étanchéité')) {
+                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof tile replacement, do NOT show tree trimming, do NOT show scaffolding facade rendering. Focus ONLY on waterproofing membrane or liquid resin application.";
+            }
+
             // Injection des règles de sécurité et visuelles selon le métier et le service
-            const rulesBlock = buildRulesBlock(task.metier, task.travaux, etatChantier);
-            const finalPrompt = prompt + rulesBlock;
+            const rulesBlock = buildRulesBlock(task.metier || travauxLabel, task.travaux || travauxLabel, etatChantier);
+            const finalPrompt = prompt + rulesBlock + negativeConstraint;
             
             console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 120)}...`);
             
