@@ -709,8 +709,8 @@ async function main() {
                     return pick(landscapeChoices);
                 }
 
-                // 3. Élagage, Abattage, Taille de Haies & Dessouchage (FR & EN)
-                const hasTree = f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge');
+                // 3. Élagage, Émondage, Abattage, Taille de Haies & Dessouchage (FR & EN)
+                const hasTree = f.includes('elagage') || f.includes('élagage') || f.includes('emondage') || f.includes('émondage') || f.includes('emondeur') || f.includes('émondeur') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge');
 
                 if (hasTree || isLandscape) {
                     const treeChoices = [
