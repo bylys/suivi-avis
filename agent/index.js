@@ -691,8 +691,8 @@ async function main() {
                 if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau')) {
                     return 'nettoyage et pose de gouttières';
                 }
-                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit terrasse') || f.includes('toit-terrasse')) {
-                    return 'étanchéité et isolation de toit terrasse';
+                if (f.includes('etancheite') || f.includes('étanchéité')) {
+                    return 'travaux d\'étanchéité (pose de membrane bitumineuse, résine d\'étanchéité ou traitement étanche hydrofuge, sans réfection de charpente ni tuiles)';
                 }
                 if (f.includes('ravalement') || f.includes('façade') || f.includes('facade') || f.includes('crépi') || f.includes('crepi')) {
                     return 'ravalement et nettoyage de façade';
