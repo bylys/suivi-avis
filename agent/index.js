@@ -644,7 +644,7 @@ async function main() {
             
             const etatChantier   = pick(['début de chantier', 'travaux en cours', 'travaux quasi-terminés']);
             
-            // Extraction automatique du métier depuis le nom de la fiche si absent de la table
+            // Extraction automatique du métier depuis le nom de la fiche si absent de la table (Support bilingue Français & Anglais)
             function detectMetierFromFiche(ficheNom) {
                 const f = (ficheNom || '').toLowerCase();
                 
@@ -658,10 +658,10 @@ async function main() {
                     return pick(choices);
                 }
                 
-                // Si la fiche mentionne plusieurs services de nettoyage (Toiture, Terrasse, Façade), varier les visuels !
-                const hasRoofCleaning = f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || (f.includes('nettoyage') && f.includes('toiture'));
-                const hasFacade = f.includes('façade') || f.includes('facade') || f.includes('ravalement');
-                const hasTerrace = f.includes('terrasse');
+                // Si la fiche mentionne plusieurs services de nettoyage (Toiture, Terrasse, Façade) — FR & EN
+                const hasRoofCleaning = f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || f.includes('moss removal') || f.includes('roof cleaning') || (f.includes('nettoyage') && f.includes('toiture'));
+                const hasFacade = f.includes('façade') || f.includes('facade') || f.includes('ravalement') || f.includes('siding') || f.includes('stucco') || f.includes('cladding');
+                const hasTerrace = f.includes('terrasse') || f.includes('terrace') || f.includes('patio') || f.includes('driveway');
 
                 if (hasRoofCleaning && (hasFacade || hasTerrace)) {
                     const cleaningChoices = [];
@@ -671,10 +671,10 @@ async function main() {
                     return pick(cleaningChoices);
                 }
 
-                // Multi-services Façade & Peinture (Ravalement, Peinture extérieure, Nettoyage façade)
-                const hasRavalement = f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit');
-                const hasPainting = f.includes('peinture') || f.includes('peintre');
-                const hasFacadeCleaning = (f.includes('façade') || f.includes('facade')) && (f.includes('nettoyage') || f.includes('lavage'));
+                // Multi-services Façade & Peinture (Ravalement, Peinture extérieure, Nettoyage façade) — FR & EN
+                const hasRavalement = f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit') || f.includes('render') || f.includes('stucco');
+                const hasPainting = f.includes('peinture') || f.includes('peintre') || f.includes('painting') || f.includes('painter');
+                const hasFacadeCleaning = (f.includes('façade') || f.includes('facade') || f.includes('siding')) && (f.includes('nettoyage') || f.includes('lavage') || f.includes('cleaning') || f.includes('washing'));
 
                 if ((hasRavalement || hasFacadeCleaning) && (hasPainting || hasFacadeCleaning)) {
                     const facadeChoices = [];
@@ -684,50 +684,50 @@ async function main() {
                     return pick(facadeChoices);
                 }
                 
-                // 1. Spécialités spécifiques Toiture & Extérieur (priorité absolue avant 'toiture' générique)
-                if (hasRoofCleaning) {
+                // 1. Spécialités spécifiques Toiture & Extérieur (FR & EN)
+                if (hasRoofCleaning || f.includes('pressure wash') || f.includes('power wash') || f.includes('soft wash') || f.includes('softwash')) {
                     return 'démoussage, traitement hydrofuge et nettoyage haute pression de toiture (nettoyage des tuiles au jet haute pression)';
                 }
-                if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau')) {
+                if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('gutter')) {
                     return 'nettoyage et vidage de gouttières (artisan retirant les feuilles et résidus accumulés dans la gouttière depuis une échelle, nettoyage au jet d\'eau, sans pose ni réfection)';
                 }
-                if (f.includes('etancheite') || f.includes('étanchéité')) {
+                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('waterproof') || f.includes('waterproofing')) {
                     return 'travaux d\'étanchéité (pose de membrane bitumineuse, résine d\'étanchéité ou traitement étanche hydrofuge, sans réfection de charpente ni tuiles)';
                 }
-                if (f.includes('ravalement') || f.includes('façade') || f.includes('facade') || f.includes('crépi') || f.includes('crepi')) {
+                if (f.includes('ravalement') || f.includes('façade') || f.includes('facade') || f.includes('crépi') || f.includes('crepi') || f.includes('siding')) {
                     return 'ravalement et nettoyage de façade';
                 }
                 
-                // 2. Élagage, Abattage et Espaces Verts
-                if (f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('taille de haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur')) {
+                // 2. Élagage, Abattage et Espaces Verts (FR & EN)
+                if (f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('taille de haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('landscaping') || f.includes('gardener') || f.includes('gardening')) {
                     return 'élagage, abattage d\'arbres et entretien d\'espaces verts';
                 }
 
-                // 3. Couverture & Réfection de Toiture (générique)
-                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage') || f.includes('zinguerie')) {
+                // 3. Couverture & Réfection de Toiture (FR & EN)
+                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage') || f.includes('zinguerie') || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle')) {
                     return 'travaux de couverture, zinguerie et réfection de toiture';
                 }
 
-                // 4. Second œuvre & Intérieur
-                if (f.includes('carrelage') || f.includes('faïence')) {
+                // 4. Second œuvre & Intérieur (FR & EN)
+                if (f.includes('carrelage') || f.includes('faïence') || f.includes('tile') || f.includes('tiling') || f.includes('tiler')) {
                     return 'pose de carrelage';
                 }
-                if (f.includes('peintre') || f.includes('peinture')) {
+                if (f.includes('peintre') || f.includes('peinture') || f.includes('paint') || f.includes('painter') || f.includes('painting')) {
                     return 'travaux de peinture';
                 }
-                if (f.includes('plombier') || f.includes('plomberie')) {
+                if (f.includes('plombier') || f.includes('plomberie') || f.includes('plumber') || f.includes('plumbing')) {
                     return 'travaux de plomberie';
                 }
-                if (f.includes('vitrier') || f.includes('miroiterie') || f.includes('vitrage')) {
+                if (f.includes('vitrier') || f.includes('miroiterie') || f.includes('vitrage') || f.includes('glass') || f.includes('glazier')) {
                     return 'remplacement de vitrage et vitrerie';
                 }
-                if (f.includes('débarras') || f.includes('debarras')) {
+                if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk')) {
                     return 'débarras de maison et locaux';
                 }
-                if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('pierre')) {
+                if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('pierre') || f.includes('masonry') || f.includes('mason') || f.includes('brickwork')) {
                     return 'travaux de maçonnerie';
                 }
-                if (f.includes('terrassement') || f.includes('dessouchage')) {
+                if (f.includes('terrassement') || f.includes('dessouchage') || f.includes('paving') || f.includes('driveway') || f.includes('excavation')) {
                     return 'travaux de terrassement';
                 }
                 return 'travaux de rénovation';
