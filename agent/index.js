@@ -400,33 +400,43 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             await page.keyboard.press('Enter');
         }
         
-        console.log("⏳ Attente obligatoire de 75 à 90 secondes pour la création de la NOUVELLE photo DALL-E 3...");
+        console.log("⏳ Attente obligatoire de 75 secondes pour la création de la NOUVELLE photo DALL-E 3...");
         await page.waitForTimeout(75000);
         
         // 3. Scanneur d'image dynamique (détection de la nouvelle image créée)
-        const startTime = Date.now();
-        let foundUrl = null;
-
-        while (Date.now() - startTime < 45000) {
-            const candidate = await page.evaluate((prevSrc) => {
+        const checkNewImage = async () => {
+            return await page.evaluate((prevSrc) => {
                 const imgs = Array.from(document.querySelectorAll('img')).reverse();
                 for (const img of imgs) {
                     const src = img.src || '';
                     if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                    // Doit être complète, de taille > 600px ET différente de l'image précédente
                     if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600 && src !== prevSrc) {
                         return src;
                     }
                 }
                 return null;
             }, initialLastImgSrc);
+        };
 
-            if (candidate) {
-                foundUrl = candidate;
-                console.log("📸 NOUVELLE photo HD unique validée à l'écran ! URL :", foundUrl.substring(0, 100));
-                break;
+        let foundUrl = await checkNewImage();
+
+        if (foundUrl) {
+            console.log("📸 NOUVELLE photo HD unique validée à l'écran ! URL :", foundUrl.substring(0, 100));
+        } else {
+            console.log("🔄 Aucune nouvelle photo aperçue au bout de 75s. Actualisation de la page ChatGPT (page.reload())...");
+            try {
+                await page.reload({ waitUntil: 'domcontentloaded' });
+                console.log("✅ Page ChatGPT actualisée avec succès ! Attente de 8s et re-scan de la conversation...");
+                await page.waitForTimeout(8000);
+                foundUrl = await checkNewImage();
+                if (foundUrl) {
+                    console.log("📸 Photo HD récupérée avec succès après actualisation de la page ! URL :", foundUrl.substring(0, 100));
+                } else {
+                    console.log("⚠️ Aucune nouvelle photo trouvée même après actualisation de la page.");
+                }
+            } catch (reloadErr) {
+                console.log("Note lors de l'actualisation de la page :", reloadErr.message);
             }
-            await page.waitForTimeout(3000);
         }
 
         if (!foundUrl) {
