@@ -689,7 +689,7 @@ async function main() {
                     return 'démoussage, traitement hydrofuge et nettoyage haute pression de toiture (nettoyage des tuiles au jet haute pression)';
                 }
                 if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau')) {
-                    return 'nettoyage et pose de gouttières';
+                    return 'nettoyage et vidage de gouttières (artisan retirant les feuilles et résidus accumulés dans la gouttière depuis une échelle, nettoyage au jet d\'eau, sans pose ni réfection)';
                 }
                 if (f.includes('etancheite') || f.includes('étanchéité')) {
                     return 'travaux d\'étanchéité (pose de membrane bitumineuse, résine d\'étanchéité ou traitement étanche hydrofuge, sans réfection de charpente ni tuiles)';
