@@ -379,17 +379,20 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         await promptInput.pressSequentially(' ');
         await page.waitForTimeout(1000);
 
-        // Capture de la toute dernière photo présente dans le chat AVANT d'envoyer le nouveau prompt
-        const initialLastImgSrc = await page.evaluate(() => {
-            const imgs = Array.from(document.querySelectorAll('img')).reverse();
+        // Capture de TOUTES les URLs de photos déjà présentes avant d'envoyer le prompt
+        // → Permet de détecter uniquement la nouvelle image ajoutée dans le fil, sans jamais confondre avec les précédentes
+        const existingImageUrls = await page.evaluate(() => {
+            const imgs = Array.from(document.querySelectorAll('img'));
+            const urls = new Set();
             for (const img of imgs) {
                 const src = img.src || '';
-                if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg')) {
-                    return src;
+                if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg') && img.naturalWidth >= 400) {
+                    urls.add(src);
                 }
             }
-            return null;
+            return Array.from(urls);
         });
+        console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) dans le fil avant envoi.`);
 
         // 2. Clic sur le bouton d'envoi
         try {
@@ -404,19 +407,20 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         console.log("⏳ Attente obligatoire de 60 secondes pour la création de la photo DALL-E 3...");
         await page.waitForTimeout(60000);
         
-        // 3. Scanneur d'image dynamique (détection de la nouvelle image créée)
+        // 3. Scanneur d'image dynamique : UNIQUEMENT les images dont l'URL n'était PAS présente avant l'envoi
         const checkNewImage = async () => {
-            return await page.evaluate((prevSrc) => {
+            return await page.evaluate((knownUrls) => {
+                const knownSet = new Set(knownUrls);
                 const imgs = Array.from(document.querySelectorAll('img')).reverse();
                 for (const img of imgs) {
                     const src = img.src || '';
                     if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                    if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600 && src !== prevSrc) {
+                    if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600 && !knownSet.has(src)) {
                         return src;
                     }
                 }
                 return null;
-            }, initialLastImgSrc);
+            }, existingImageUrls);
         };
 
         let foundUrl = null;
