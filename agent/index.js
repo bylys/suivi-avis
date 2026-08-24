@@ -1045,7 +1045,7 @@ async function main() {
             let contextReset = "";
             if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage') || lowerLabel.includes('façade') || lowerLabel.includes('terrasse')) {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: PRESSURE WASHING / SURFACE CLEANING workers only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO trees being cut, NO arborists, NO chainsaws in trees, NO workers in tree canopy, NO towing trucks, NO cars. ONLY pressure washing or surface cleaning.";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO jackhammers, NO concrete demolition tools, NO jackhammering, NO heavy power tools breaking ground, NO trees being cut, NO arborists, NO chainsaws, NO towing trucks, NO cars. ONLY high-pressure washer or surface cleaning with water spray lance.";
             } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin')) {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: TREE TRIMMING / ARBORIST / HEDGE CUTTING workers only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
                 negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO pressure washing, NO tow trucks, NO cars, NO facade scaffolding. ONLY outdoor green space work (trees, hedges, stumps).";

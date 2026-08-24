@@ -75,8 +75,10 @@ const VISUAL_RULES_BY_SERVICE = {
   'Remplacement vitrage': `VISUAL: Glazier wearing cut-resistant gloves and safety glasses holding 2 heavy-duty suction cup lifter handles firmly attached to the flat central glass pane surface to position double glazing into frame.`,
   'Reparation vitre': `VISUAL: Glazier wearing protective glasses and cut-resistant gloves holding suction lifter handle attached on central glass surface, applying silicone sealant to frame.`,
   'Pose miroir': `VISUAL: Large mirror being mounted on wall, glazier holding dual suction cup lifters attached flat on mirror surface, wearing safety glasses and gloves.`,
-  'Nettoyage terrasse': `VISUAL: Ground level patio/deck cleaning, pressure washer lance or patio cleaner attachment in use, clean wet tiles contrast with uncleaned area. Operator bare-headed or in cap, work boots.`,
-  'Nettoyage facade': `VISUAL: Exterior house wall being washed with pressure lance, visible contrast between clean rendered wall and unwashed section. Operator in work boots.`,
+  'Nettoyage terrasse': `VISUAL: Ground level patio/deck cleaning, pressure washer lance or patio cleaner attachment in use, clean wet tiles contrast with uncleaned area. Operator bare-headed or in cap, work boots. ABSOLUTE FORBIDDEN: NO jackhammers, NO concrete demolition tools.`,
+  'Nettoyage facade': `VISUAL: Exterior house wall being washed with pressure lance, visible contrast between clean rendered wall and unwashed section. Operator in work boots. ABSOLUTE FORBIDDEN: NO jackhammers, NO concrete demolition tools.`,
+  'Nettoyage': `VISUAL: High-pressure washer spray lance in use cleaning exterior ground surface or wall, water spray visible. ABSOLUTE FORBIDDEN: NO jackhammers, NO concrete demolition tools, NO jackhammering.`,
+  'Nettoyage haute pression': `VISUAL: High-pressure washer spray lance in use cleaning exterior ground surface or wall, water spray visible. ABSOLUTE FORBIDDEN: NO jackhammers, NO concrete demolition tools, NO jackhammering.`,
 };
 
 // Imperfections physiques d'appareil photo smartphone (doigt, verre gras, poussière...)
