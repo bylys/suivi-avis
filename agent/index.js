@@ -379,6 +379,17 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         await promptInput.pressSequentially(' ');
         await page.waitForTimeout(1000);
 
+        // Capture de la toute dernière photo présente dans le chat AVANT d'envoyer le nouveau prompt
+        const initialLastImgSrc = await page.evaluate(() => {
+            const imgs = Array.from(document.querySelectorAll('img')).reverse();
+            for (const img of imgs) {
+                if (img.src && !img.src.includes('avatar') && !img.src.includes('profile') && !img.src.includes('svg') && img.naturalWidth >= 600) {
+                    return img.src;
+                }
+            }
+            return null;
+        });
+
         // 2. Clic sur le bouton d'envoi
         try {
             const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
@@ -389,33 +400,30 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             await page.keyboard.press('Enter');
         }
         
-        console.log("⏳ Attente dynamique du rendu de la photo HD DALL-E 3 à l'écran (max 120s)...");
+        console.log("⏳ Attente obligatoire de 75 à 90 secondes pour la création de la NOUVELLE photo DALL-E 3...");
+        await page.waitForTimeout(75000);
         
-        // 3. Scanneur d'image dynamique (dès que l'image HD est rendue, on la capture immédiatement sans attendre 90s fixes)
+        // 3. Scanneur d'image dynamique (détection de la nouvelle image créée)
         const startTime = Date.now();
         let foundUrl = null;
 
-        while (Date.now() - startTime < 120000) {
-            const candidate = await page.evaluate(() => {
-                // Scanner en partant du BAS de la conversation (la toute DERNIÈRE photo générée par DALL-E)
+        while (Date.now() - startTime < 45000) {
+            const candidate = await page.evaluate((prevSrc) => {
                 const imgs = Array.from(document.querySelectorAll('img')).reverse();
                 for (const img of imgs) {
                     const src = img.src || '';
-                    
-                    // Exclure les avatars, icônes et logos
                     if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                    
-                    // Détecter la toute DERNIÈRE photo HD finale générée au bas de la page (naturalWidth >= 600)
-                    if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600) {
+                    // Doit être complète, de taille > 600px ET différente de l'image précédente
+                    if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600 && src !== prevSrc) {
                         return src;
                     }
                 }
                 return null;
-            });
+            }, initialLastImgSrc);
 
             if (candidate) {
                 foundUrl = candidate;
-                console.log("📸 Vraie photo HD finale validée à l'écran ! URL :", foundUrl.substring(0, 100));
+                console.log("📸 NOUVELLE photo HD unique validée à l'écran ! URL :", foundUrl.substring(0, 100));
                 break;
             }
             await page.waitForTimeout(3000);
@@ -747,6 +755,12 @@ async function main() {
                         })
                         .eq('id', task.id);
                     console.log(`Supabase mis à jour avec le lien (${uploadResult.provider}) pour l'avis ID ${task.id}`);
+                }
+
+                // Pause de sécurité de 75-90 secondes avant le prochain avis
+                if (taskIndex < tasksToGenerate.length - 1) {
+                    console.log("⏳ Pause de sécurité de 75 à 90 secondes avant l'avis suivant pour laisser DALL-E 3 créer la nouvelle photo...");
+                    await new Promise(r => setTimeout(r, 75000));
                 }
                 
             } catch (err) {
