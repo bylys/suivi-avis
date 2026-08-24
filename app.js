@@ -313,7 +313,7 @@ const SHEETS_SHEET_NAME = 'Sheet1';
 // Base du Worker proxy (même Worker que pour OpenAI). Vide = appels directs.
 // Quand défini, les clés Gemini/Sheets vivent côté serveur : le site n'en envoie plus.
 function _apiProxyBase() {
-  return String(window.OPENAI_PROXY_URL || '').replace(/\/+$/, '');
+  return String(window.OPENAI_PROXY_URL || 'https://gmb-openai-proxy.m-payot76.workers.dev').replace(/\/+$/, '');
 }
 
 function getSheetsApiKey() {
