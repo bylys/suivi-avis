@@ -740,12 +740,27 @@ async function main() {
                     return pick(treeChoices);
                 }
 
-                // 3. Couverture & Réfection de Toiture (FR & EN)
+                // 3. Couverture, Couvreur & Réfection de Toiture (FR & EN)
                 if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage') || f.includes('zinguerie') || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle')) {
-                    return 'travaux de couverture, zinguerie et réfection de toiture';
+                    const roofingChoices = [
+                        'travaux de couverture, pose et réfection de tuiles en terre cuite par un couvreur (artisan sur échelle de toit)',
+                        'travaux de couverture et étanchéité de faîtage de toiture',
+                        'travaux de zinguerie, étanchéité et finition de toiture par un artisan couvreur'
+                    ];
+                    return pick(roofingChoices);
                 }
 
-                // 4. Second œuvre & Intérieur (FR & EN)
+                // 4. Dépannage & Remorquage Automobile (FR & EN)
+                if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown')) {
+                    const towingChoices = [
+                        'dépannage automobile et chargement de voiture en panne sur camion dépanneuse plateau',
+                        'remorquage automobile sur le bord de la route avec véhicule d\'assistance routière et gyrophares',
+                        'dépannage auto sur place (changement de roue ou démarrage batterie avec booster)'
+                    ];
+                    return pick(towingChoices);
+                }
+
+                // 5. Second œuvre & Intérieur (FR & EN)
                 if (f.includes('carrelage') || f.includes('faïence') || f.includes('tile') || f.includes('tiling') || f.includes('tiler')) {
                     return 'pose de carrelage';
                 }
