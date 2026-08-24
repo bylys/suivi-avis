@@ -620,10 +620,11 @@ async function main() {
             return clean;
         });
 
-        // Formatage de la date courte pour le nom du fichier (ex: 21-08-26)
-        const dayStr = tomorrow.getDate().toString().padStart(2, '0');
-        const monthStr = (tomorrow.getMonth() + 1).toString().padStart(2, '0');
-        const yearStr = tomorrow.getFullYear().toString().slice(-2);
+        // Formatage de la date courte pour le nom du fichier (ex: 24-08-26)
+        const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
+        const dayStr = targetDateObj.getDate().toString().padStart(2, '0');
+        const monthStr = (targetDateObj.getMonth() + 1).toString().padStart(2, '0');
+        const yearStr = targetDateObj.getFullYear().toString().slice(-2);
         const dateFormatShort = `${dayStr}-${monthStr}-${yearStr}`;
 
         for (let taskIndex = 0; taskIndex < tasksToGenerate.length; taskIndex++) {
@@ -759,7 +760,7 @@ async function main() {
         const summaryMsg = `<b>🚀 AGENT IMAGE GMB (${TARGET_OPERATOR || 'Global'})</b>\n\n` +
             `✅ <b>Génération terminée avec succès !</b>\n` +
             `📸 Photos générées : <b>${tasks.length} photo(s)</b>\n` +
-            `📅 Date de planification : <b>${tomorrowStr}</b>\n` +
+            `📅 Date de planification : <b>${dateStr}</b>\n` +
             `📍 Métadonnées EXIF & GPS intégrées\n` +
             `📂 Dossier : Google Drive / ${TARGET_OPERATOR || 'Défaut'}`;
             
