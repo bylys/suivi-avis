@@ -1394,11 +1394,6 @@ function buildAvisRow(a, rappelsDus, aVerif) {
     <td data-label="Avis" class="col-texte">${a.texte || ''}</td>
     <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
   </tr>`;
-}rif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : isAutoUpdatedToday ? `<span class="avis-auto-badge">🤖 Auto ${st.label}</span>` : ''}</td>
-    <td data-label="Photo/Lien" class="td-photo-lien">${a.photo ? '📷' : ''}${a.lien ? `&nbsp;<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
-    <td data-label="Avis" class="col-texte">${a.texte || ''}</td>
-    <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
-  </tr>`;
 }
 
 async function renderListe(openMonths = null) {
