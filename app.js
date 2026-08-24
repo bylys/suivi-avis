@@ -3718,14 +3718,21 @@ async function planningGenerer(id, ficheNom, gmail) {
     ? villeExtraite
     : (rowVille && rowVille !== '—' ? rowVille : (villeExtraite || ''));
 
-  // Dériver les travaux depuis le nom de la fiche (utilisé pour avis et images)
+  // Dériver les travaux et le métier depuis le nom de la fiche (utilisé pour avis et images)
   const _TRAVAUX_MAP = {
+    depannage: 'dépannage et remorquage automobile',
+    remorquage: 'dépannage et remorquage automobile',
+    auto: 'dépannage et remorquage automobile',
+    voiture: 'dépannage et remorquage automobile',
+    garage: 'dépannage et réparation automobile',
+    debarras: 'débarras et enlèvement',
+    terrassement: 'travaux de terrassement',
     couvreur: 'réfection de toiture', toiture: 'réfection de toiture', couverture: 'travaux de couverture',
     demoussage: 'démoussage toiture', hydrofuge: 'traitement hydrofuge toiture',
     gouttieres: 'nettoyage gouttières',
     etancheite: 'travaux d\'étanchéité',
     paysagiste: 'aménagement paysager', jardinage: 'entretien jardin',
-    elagage: 'élagage et abattage d\'arbres',
+    elagage: 'élagage et abattage d\'arbres', abattage: 'élagage et abattage d\'arbres',
     ravalement: 'ravalement de façade', facade: 'ravalement de façade',
     nettoyage: 'nettoyage haute pression',
     peintre: 'travaux de peinture', peinture: 'travaux de peinture',
@@ -3733,7 +3740,19 @@ async function planningGenerer(id, ficheNom, gmail) {
     electricien: 'travaux d\'électricité',
     macon: 'travaux de maçonnerie', carrelage: 'pose de carrelage',
   };
-  const _travaux = Object.entries(_TRAVAUX_MAP).find(([k]) => ficheNom.toLowerCase().includes(k))?.[1] || 'travaux à domicile';
+  const _nomL = ficheNom.toLowerCase();
+  let _travaux = Object.entries(_TRAVAUX_MAP).find(([k]) => _nomL.includes(k))?.[1];
+  if (!_travaux) {
+    const metierDet = detecterMetier(ficheNom);
+    if (metierDet === 'auto') _travaux = 'dépannage et remorquage automobile';
+    else if (metierDet === 'debarras') _travaux = 'débarras et enlèvement';
+    else if (metierDet === 'terrassement') _travaux = 'travaux de terrassement';
+    else if (metierDet === 'elagage') _travaux = 'élagage et abattage d\'arbres';
+    else if (metierDet === 'ravalement') _travaux = 'ravalement de façade';
+    else if (metierDet === 'couvreur') _travaux = 'réfection de toiture';
+    else if (metierDet === 'nettoyage_toiture') _travaux = 'démoussage toiture';
+    else _travaux = 'travaux à domicile';
+  }
 
   // Créer et lancer le profil DonutBrowser si token configuré.
   // Isolé : une erreur/lenteur DonutBrowser ne doit JAMAIS bloquer la génération d'avis.
@@ -3744,15 +3763,20 @@ async function planningGenerer(id, ficheNom, gmail) {
 
   // Pré-remplir une ligne dans le générateur d'images
   const _metierMap = {
+    depannage: 'depannage_auto', remorquage: 'depannage_auto', auto: 'depannage_auto', voiture: 'depannage_auto', garage: 'depannage_auto',
+    debarras: 'debarras',
+    terrassement: 'terrassement',
+    macon: 'maconnerie', maconnerie: 'maconnerie', beton: 'maconnerie', dalle: 'maconnerie',
+    carrelage: 'carreleur', carreleur: 'carreleur',
     toiture: 'toiture', couvreur: 'toiture', charpente: 'toiture',
-    demoussage: 'nettoyage_toiture', demoussage: 'nettoyage_toiture', hydrofuge: 'nettoyage_toiture',
+    demoussage: 'nettoyage_toiture', hydrofuge: 'nettoyage_toiture',
     gouttieres: 'nettoyage_gouttieres', gouttiere: 'nettoyage_gouttieres',
     etancheite: 'etancheite', etanch: 'etancheite', fuite: 'etancheite',
     ravalement: 'ravalement', facade: 'ravalement',
     peintre: 'peinture', peinture: 'peinture',
-    plombier: 'plomberie', plomberie: 'plomberie',
+    plombier: 'plomberie',
     electricien: 'electricite',
-    paysagiste: 'paysagiste', jardinage: 'paysagiste', elagage: 'paysagiste',
+    paysagiste: 'paysagiste', jardinage: 'paysagiste', elagage: 'paysagiste', abattage: 'paysagiste',
     nettoyage: 'nettoyage',
   };
   const _imgCtx = window.__GMB_IMAGE_CONTEXT__;
@@ -3760,9 +3784,11 @@ async function planningGenerer(id, ficheNom, gmail) {
     _imgCtx.addRow();
     const _newRow = _imgCtx.getRows()[0];
     if (_newRow) {
-      const _nomL = ficheNom.toLowerCase();
-      const _metier = Object.entries(_metierMap).find(([k]) => _nomL.includes(k))?.[1] || '';
+      const _metier = Object.entries(_metierMap).find(([k]) => _nomL.includes(k))?.[1] || detecterMetier(ficheNom);
       if (_metier) {
+        updateImgRow(_newRow.id, 'metier', _metier);
+        updateImgRow(_newRow.id, 'travaux', _travaux);
+      }
         updateImgRow(_newRow.id, 'metier', _metier);
         updateImgRow(_newRow.id, 'travaux', _travaux);
       }
