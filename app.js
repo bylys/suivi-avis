@@ -1349,7 +1349,7 @@ async function submitAvis(e) {
 }
 
 // ── LISTE ──
-const MOIS_LABELS = ['Janvier','FÃ©vrier','Mars','Avril','Mai','Juin','Juillet','AoÃ» t','Septembre','Octobre','Novembre','DÃ©cembre'];
+const MOIS_LABELS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
 const STATUT_LABELS = {
   j0:       { label: 'Posté J+0',              color: '#38bdf8' },
