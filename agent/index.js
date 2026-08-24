@@ -535,26 +535,32 @@ async function main() {
         // Recherche de la date (TARGET_DATE ou date du jour par défaut)
         const dateStr = process.env.TARGET_DATE || new Date().toISOString().split('T')[0];
         
-        if (TARGET_OPERATOR) {
-            console.log(`🤖 Agent configuré spécifiquement pour l'opérateur : "${TARGET_OPERATOR}"`);
+        const rawOp = (TARGET_OPERATOR || '').trim();
+        let targetOp = rawOp;
+        if (rawOp.toLowerCase() === 'fif' || rawOp.toLowerCase() === 'fifa') {
+            targetOp = 'Fifaliana';
+        }
+        
+        if (rawOp) {
+            console.log(`🤖 Agent configuré spécifiquement pour l'opérateur : "${rawOp}" (Recherche DB: "${targetOp}")`);
         }
         
         let query = supabase.from('planning').select('*').eq('date', dateStr);
-        if (TARGET_OPERATOR) {
-            query = query.ilike('operateur', TARGET_OPERATOR);
+        if (rawOp) {
+            query = query.or(`operateur.ilike.${targetOp},operateur.ilike.${rawOp},operateur.ilike.%${rawOp}%`);
         }
         
         let { data: tasks, error } = await query.order('id', { ascending: true });
             
         if (error) throw error;
         
-        console.log(`${tasks.length} avis trouvés pour ${TARGET_OPERATOR ? 'l\'opérateur ' + TARGET_OPERATOR : 'tous les opérateurs'} pour le (${dateStr}).`);
+        console.log(`${tasks.length} avis trouvés pour ${rawOp ? 'l\'opérateur ' + rawOp + ' (' + targetOp + ')' : 'tous les opérateurs'} pour le (${dateStr}).`);
         
         let isTestFallback = false;
         
         // Mode test sécurisé : si aucun avis pour la date, chaque opérateur teste un métier spécifique
         if (tasks.length === 0) {
-            console.log(`Aucun avis planifié pour le ${dateStr}. Mode test : création d'un scénario de test pour ${TARGET_OPERATOR || 'Global'}...`);
+            console.log(`Aucun avis planifié pour le ${dateStr}. Mode test : création d'un scénario de test pour ${rawOp || 'Global'}...`);
             
             const operatorScenarios = {
                 'KEVIN': [
@@ -564,6 +570,11 @@ async function main() {
                     { fiche_nom: 'Dessouchage & Terrassement Bordeaux', metier: 'dessouchage', travaux: 'Dessouchage', ville: 'Talence', pays: 'France', contexte: 'maison' },
                 ],
                 'FIF': [
+                    { fiche_nom: 'Plomberie & Rénovation Lyon', metier: 'plomberie', travaux: 'Remplacement robinetterie', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
+                    { fiche_nom: 'Dépannage Auto & Remorquage Lyon', metier: 'dépannage auto', travaux: 'Depannage auto', ville: 'Villeurbanne', pays: 'France', contexte: 'route' },
+                    { fiche_nom: 'Chauffage & Sanitaire Lyon', metier: 'plomberie', travaux: 'Changement chauffe-eau', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
+                ],
+                'FIFALIANA': [
                     { fiche_nom: 'Plomberie & Rénovation Lyon', metier: 'plomberie', travaux: 'Remplacement robinetterie', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
                     { fiche_nom: 'Dépannage Auto & Remorquage Lyon', metier: 'dépannage auto', travaux: 'Depannage auto', ville: 'Villeurbanne', pays: 'France', contexte: 'route' },
                     { fiche_nom: 'Chauffage & Sanitaire Lyon', metier: 'plomberie', travaux: 'Changement chauffe-eau', ville: 'Lyon', pays: 'France', contexte: 'appartement' },
