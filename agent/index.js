@@ -746,8 +746,13 @@ async function main() {
                 if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('pierre') || f.includes('masonry') || f.includes('mason') || f.includes('brickwork')) {
                     return 'travaux de maçonnerie';
                 }
-                if (f.includes('terrassement') || f.includes('dessouchage') || f.includes('paving') || f.includes('driveway') || f.includes('excavation')) {
-                    return 'travaux de terrassement';
+                if (f.includes('terrassement') || f.includes('dessouchage') || f.includes('paving') || f.includes('driveway') || f.includes('excavation') || f.includes('concrete') || f.includes('cement')) {
+                    const concreteChoices = [
+                        'travaux de terrassement, nivellement du sol et coulage de dalle en béton (dalle béton extérieure)',
+                        'travaux de terrassement et préparation de sol pour allée ou terrasse',
+                        'aménagement de dalle béton et terrassement extérieur avec engin de chantier ou pelle de terrassement'
+                    ];
+                    return pick(concreteChoices);
                 }
                 return 'travaux de rénovation';
             }
