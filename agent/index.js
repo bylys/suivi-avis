@@ -500,17 +500,14 @@ async function main() {
     try {
         console.log("Démarrage du job de génération d'images GMB...");
         
-        // 1. Récupération des tâches depuis Supabase (Planning J+1)
-        // Adjust the date logic based on your Supabase timezone
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = tomorrow.toISOString().split('T')[0];
+        // Recherche de la date (TARGET_DATE ou date du jour par défaut)
+        const dateStr = process.env.TARGET_DATE || new Date().toISOString().split('T')[0];
         
         if (TARGET_OPERATOR) {
             console.log(`🤖 Agent configuré spécifiquement pour l'opérateur : "${TARGET_OPERATOR}"`);
         }
         
-        let query = supabase.from('planning').select('*').eq('date', tomorrowStr);
+        let query = supabase.from('planning').select('*').eq('date', dateStr);
         if (TARGET_OPERATOR) {
             query = query.ilike('operateur', TARGET_OPERATOR);
         }
@@ -519,13 +516,13 @@ async function main() {
             
         if (error) throw error;
         
-        console.log(`${tasks.length} avis trouvés pour ${TARGET_OPERATOR ? 'l\'opérateur ' + TARGET_OPERATOR : 'tous les opérateurs'} pour demain (${tomorrowStr}).`);
+        console.log(`${tasks.length} avis trouvés pour ${TARGET_OPERATOR ? 'l\'opérateur ' + TARGET_OPERATOR : 'tous les opérateurs'} pour le (${dateStr}).`);
         
         let isTestFallback = false;
         
-        // Mode test sécurisé : si aucun avis pour demain, chaque opérateur teste un métier spécifique
+        // Mode test sécurisé : si aucun avis pour la date, chaque opérateur teste un métier spécifique
         if (tasks.length === 0) {
-            console.log(`Aucun avis planifié pour demain. Mode test : création d'un scénario de test pour ${TARGET_OPERATOR || 'Global'}...`);
+            console.log(`Aucun avis planifié pour le ${dateStr}. Mode test : création d'un scénario de test pour ${TARGET_OPERATOR || 'Global'}...`);
             
             const operatorScenarios = {
                 'KEVIN': [
@@ -569,7 +566,7 @@ async function main() {
                 id: Math.floor(100000 + Math.random() * 900000),
                 ...sc,
                 operateur: TARGET_OPERATOR || 'TEST_ROBOT',
-                date: tomorrowStr,
+                date: dateStr,
                 statut: 'pending_test'
             }));
             isTestFallback = true;

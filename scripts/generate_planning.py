@@ -528,6 +528,18 @@ def main():
             continue
         print(f"Planning {op} : {len(taches)} tâches")
 
+    # Lancement automatique de la génération d'images Agent IA
+    print("\n🤖 Lancement automatique de la génération d'images Agent IA pour le planning...")
+    try:
+        import subprocess
+        agent_script = os.path.join(os.path.dirname(__file__), "..", "agent", "index.js")
+        env = os.environ.copy()
+        env["TARGET_DATE"] = today_str
+        subprocess.Popen(["node", agent_script], env=env)
+        print("✅ Processus de génération d'images DALL-E 3 / Agent IA lancé en arrière-plan !")
+    except Exception as e:
+        print(f"⚠️ Impossible de lancer la génération automatique d'images: {e}")
+
     print("Done.")
 
 if __name__ == "__main__":
