@@ -1976,6 +1976,30 @@ body.light-theme .top-pill.taux {
   color: #d97706 !important;
 }
 
+/* Générateur d'Avis — Mode Clair & Lisibilité */
+body.light-theme .gen-result {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+body.light-theme .gen-result-header {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+body.light-theme .gen-texte {
+  color: #0f172a !important;
+}
+body.light-theme .btn-copy {
+  background: #e0e7ff !important;
+  color: #4338ca !important;
+  border: 1px solid #c7d2fe !important;
+}
+body.light-theme .btn-copy:hover {
+  background: #c7d2fe !important;
+  color: #3730a3 !important;
+}
+
 /* Tous Boutons Secondaires (Régénérer, Ignorer, Changer la clé API, + Ajouter) */
 body.light-theme .btn-secondary, body.light-theme button:not(.btn-primary):not(.btn-generer):not(.btn-sync-gmb):not(.btn-drive-op):not(.tab-btn) {
   background-color: #e2e8f0 !important;

@@ -2653,6 +2653,8 @@ Avis :`;
       const msg = data?.error?.message || `Erreur ${res.status}`;
       if (res.status === 400 || res.status === 403) localStorage.removeItem('gemini_api_key');
       textEl.textContent = `❌ ${msg}`;
+      textEl.style.color = '#ef4444';
+      textEl.style.fontStyle = 'normal';
       return;
     }
 
@@ -2660,11 +2662,17 @@ Avis :`;
     if (!texte) {
       const reason = data?.candidates?.[0]?.finishReason || JSON.stringify(data).slice(0, 100);
       textEl.textContent = `❌ Réponse vide (${reason}). Réessaie.`;
+      textEl.style.color = '#ef4444';
+      textEl.style.fontStyle = 'normal';
       return;
     }
+    textEl.style.color = '';
+    textEl.style.fontStyle = 'italic';
     textEl.textContent = texte;
   } catch(e) {
     textEl.textContent = '❌ Erreur réseau, vérifie ta connexion.';
+    textEl.style.color = '#ef4444';
+    textEl.style.fontStyle = 'normal';
   }
 }
 
