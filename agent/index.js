@@ -751,7 +751,7 @@ async function main() {
                 if (hasTree || isLandscape) {
                     const treeChoices = [
                         'élagage doux et taille raisonnée de grands arbres par un élagueur arboriste (avec harnais de sécurité et cordages dans l\'arbre)',
-                        'abattage sécurisé d\'arbre dangereux dans un jardin privé (débitage du tronçon et branches au sol par des élagueurs)',
+                        'coupe et entretien d\'arbre dans un jardin privé (tronçon de bois et branches au sol par des artisans jardiniers)',
                         'taille de haie haute et mise en forme d\'arbustes de jardin (artisan jardinier utilisant un taille-haie professionnel)',
                         'dessouchage et rognage de souche d\'arbre au sol dans un jardin (extraction de la souche)'
                     ];
@@ -920,6 +920,9 @@ async function main() {
             try {
                 // Generate Image
                 const rawImageBuffer = await generateImageWithChatGPT(finalPrompt, cookies);
+                if (!rawImageBuffer) {
+                    throw new Error("Impossible d'extraire l'image générée par DALL-E 3 (cookies expirés, quota atteint ou sécurité).");
+                }
                 
                 // Injection des métadonnées EXIF Smartphone & Coordonnées GPS (matching intelligent de la date selon l'avis)
                 const reviewTextContent = (task.commentaire || '') + ' ' + (task.travaux || '');
