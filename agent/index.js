@@ -660,6 +660,19 @@ async function main() {
                     if (hasTerrace) cleaningChoices.push('nettoyage haute pression de terrasse extérieure et dalles de jardin');
                     return pick(cleaningChoices);
                 }
+
+                // Multi-services Façade & Peinture (Ravalement, Peinture extérieure, Nettoyage façade)
+                const hasRavalement = f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit');
+                const hasPainting = f.includes('peinture') || f.includes('peintre');
+                const hasFacadeCleaning = (f.includes('façade') || f.includes('facade')) && (f.includes('nettoyage') || f.includes('lavage'));
+
+                if ((hasRavalement || hasFacadeCleaning) && (hasPainting || hasFacadeCleaning)) {
+                    const facadeChoices = [];
+                    if (hasRavalement) facadeChoices.push('ravalement de façade de maison individuelle avec application d\'enduit ou crépi neuf');
+                    if (hasPainting) facadeChoices.push('travaux de peinture extérieure sur façade de maison, boiseries et volets');
+                    if (hasFacadeCleaning) facadeChoices.push('nettoyage haute pression et démoussage de façade extérieure');
+                    return pick(facadeChoices);
+                }
                 
                 // 1. Spécialités spécifiques Toiture & Extérieur (priorité absolue avant 'toiture' générique)
                 if (hasRoofCleaning) {
