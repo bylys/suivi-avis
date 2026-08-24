@@ -698,9 +698,17 @@ async function main() {
                     return 'ravalement et nettoyage de façade';
                 }
                 
-                // 2. Élagage, Abattage et Espaces Verts (FR & EN)
-                if (f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('taille de haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('landscaping') || f.includes('gardener') || f.includes('gardening')) {
-                    return 'élagage, abattage d\'arbres et entretien d\'espaces verts';
+                // 2. Élagage, Abattage, Taille de Haies & Dessouchage (FR & EN)
+                const hasTree = f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('landscaping') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge');
+
+                if (hasTree) {
+                    const treeChoices = [
+                        'élagage doux et taille raisonnée de grands arbres par un élagueur arboriste (avec harnais de sécurité et cordages dans l\'arbre)',
+                        'abattage sécurisé d\'arbre dangereux dans un jardin privé (débitage du tronçon et branches au sol par des élagueurs)',
+                        'taille de haie haute et mise en forme d\'arbustes de jardin (artisan jardinier utilisant un taille-haie professionnel)',
+                        'dessouchage et rognage de souche d\'arbre au sol dans un jardin (extraction de la souche)'
+                    ];
+                    return pick(treeChoices);
                 }
 
                 // 3. Couverture & Réfection de Toiture (FR & EN)
