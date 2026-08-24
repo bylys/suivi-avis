@@ -400,8 +400,8 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             await page.keyboard.press('Enter');
         }
         
-        console.log("⏳ Attente obligatoire de 75 secondes pour la création de la NOUVELLE photo DALL-E 3...");
-        await page.waitForTimeout(75000);
+        console.log("⏳ Attente initiale de 45 secondes pour la création de la photo DALL-E 3...");
+        await page.waitForTimeout(45000);
         
         // 3. Scanneur d'image dynamique (détection de la nouvelle image créée)
         const checkNewImage = async () => {
@@ -418,7 +418,13 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             }, initialLastImgSrc);
         };
 
-        let foundUrl = await checkNewImage();
+        let foundUrl = null;
+        const scanStart = Date.now();
+        while (Date.now() - scanStart < 35000) {
+            foundUrl = await checkNewImage();
+            if (foundUrl) break;
+            await page.waitForTimeout(3000);
+        }
 
         if (foundUrl) {
             console.log("📸 NOUVELLE photo HD unique validée à l'écran ! URL :", foundUrl.substring(0, 100));
@@ -934,10 +940,10 @@ async function main() {
                     console.log(`Supabase mis à jour avec le lien (${uploadResult.provider}) pour l'avis ID ${task.id}`);
                 }
 
-                // Pause de sécurité de 75-90 secondes avant le prochain avis
+                // Pause de sécurité optimale de 15 secondes entre les avis (l'attente DALL-E 3 ayant déjà eu lieu)
                 if (taskIndex < tasksToGenerate.length - 1) {
-                    console.log("⏳ Pause de sécurité de 75 à 90 secondes avant l'avis suivant pour laisser DALL-E 3 créer la nouvelle photo...");
-                    await new Promise(r => setTimeout(r, 75000));
+                    console.log("⏳ Pause de 15 secondes avant le prochain avis...");
+                    await new Promise(r => setTimeout(r, 15000));
                 }
                 
             } catch (err) {
