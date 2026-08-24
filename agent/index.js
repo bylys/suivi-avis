@@ -648,6 +648,16 @@ async function main() {
             function detectMetierFromFiche(ficheNom) {
                 const f = (ficheNom || '').toLowerCase();
                 
+                // Cas spécifique : Fiche GMB 'Domiciliation' = Ravalement de façade à Saint-Herblain
+                if (f.includes('domiciliation')) {
+                    const choices = [
+                        'ravalement de façade de maison individuelle avec application d\'enduit ou crépi neuf',
+                        'nettoyage haute pression et démoussage de façade de maison',
+                        'travaux de peinture extérieure sur façade et volets'
+                    ];
+                    return pick(choices);
+                }
+                
                 // Si la fiche mentionne plusieurs services de nettoyage (Toiture, Terrasse, Façade), varier les visuels !
                 const hasRoofCleaning = f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || (f.includes('nettoyage') && f.includes('toiture'));
                 const hasFacade = f.includes('façade') || f.includes('facade') || f.includes('ravalement');
@@ -767,6 +777,14 @@ async function main() {
             const travauxLabel = task.travaux || task.metier || detectedTrade;
             
             // Construction du prompt final
+            if ((task.fiche_nom || '').toLowerCase().includes('domiciliation')) {
+                if (!task.ville || task.ville === '—' || task.ville === 'France') {
+                    task.ville = 'Saint-Herblain';
+                    task.departement = '44';
+                    task.region = 'Loire-Atlantique';
+                }
+            }
+
             const paysLabel = task.pays || 'France';
             const villeLabel = task.ville || '';
             const locationStr = task.ville ? `${task.ville} (${paysLabel})` : paysLabel;

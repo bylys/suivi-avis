@@ -1814,6 +1814,7 @@ function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function extraireVilleFiche(nomFiche) {
   if (!nomFiche) return '';
   let str = nomFiche.trim();
+  if (str.toLowerCase().includes('domiciliation')) return 'Saint-Herblain';
 
   if (typeof _fichesCache !== 'undefined' && Array.isArray(_fichesCache)) {
     const found = _fichesCache.find(f => f.nom && f.nom.toLowerCase() === str.toLowerCase());
