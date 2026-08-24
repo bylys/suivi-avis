@@ -632,19 +632,27 @@ async function main() {
             return;
         }
 
-        // Configuration des cookies (lecture dynamique depuis Supabase si synchronisés par l'extension Chrome Auto-Sync)
-        let cookiesRaw = process.env.CHATGPT_COOKIES;
+        // Configuration des cookies multi-opérateurs (ex: CHATGPT_COOKIES_KEVIN, CHATGPT_COOKIES_FIF, etc., avec fallback sur CHATGPT_COOKIES)
+        const opEnvKey = rawOp ? `CHATGPT_COOKIES_${rawOp.toUpperCase()}` : null;
+        let cookiesRaw = (opEnvKey && process.env[opEnvKey]) ? process.env[opEnvKey] : process.env.CHATGPT_COOKIES;
+        
+        const dbSettingKey = rawOp ? `CHATGPT_COOKIES_${rawOp.toUpperCase()}` : 'CHATGPT_COOKIES';
         try {
             const { data: settingData } = await supabase
                 .from('app_settings')
-                .select('value')
-                .eq('key', 'CHATGPT_COOKIES')
-                .single();
-            if (settingData && settingData.value && settingData.value.length > 20) {
-                cookiesRaw = settingData.value;
-                console.log("🔄 Cookies ChatGPT frais récupérés dynamiquement depuis Supabase (Auto-Sync Extension) !");
+                .select('key, value')
+                .or(`key.eq.${dbSettingKey},key.eq.CHATGPT_COOKIES`)
+                .order('key', { ascending: false })
+                .limit(1);
+            if (settingData && settingData[0] && settingData[0].value && settingData[0].value.length > 20) {
+                cookiesRaw = settingData[0].value;
+                console.log(`🔄 Cookies ChatGPT frais pour "${rawOp || 'Global'}" récupérés depuis Supabase (${settingData[0].key}) !`);
             }
         } catch (dbErr) {}
+
+        if (!cookiesRaw) {
+            throw new Error(`❌ Aucun cookie ChatGPT disponible pour "${rawOp || 'Global'}". Définissez ${opEnvKey || 'CHATGPT_COOKIES'} dans GitHub Secrets.`);
+        }
 
         let cookies = JSON.parse(cookiesRaw);
         
