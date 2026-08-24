@@ -23,7 +23,7 @@ const SAFETY_RULES = {
 };
 
 const VISUAL_RULES_BY_SERVICE = {
-  'Taille de haie': `VISUAL: Exactly 2 workers in duo working together on hedge trimming (never 1 solo, never 3+), hedge trimmer visible, hedge in frame, neat cut hedge.`,
+  'Taille de haie': `VISUAL: Exactly 2 workers in duo working together on hedge trimming (never 1 solo, never 3+). WORKER POSITION: Both workers MUST stand at ground level OR on a low A-frame garden step-ladder (escabeau de jardin en A). ABSOLUTE PROHIBITION: NO tall straight extension ladders leaning against hedges or walls! NO worker standing dangerously on top rung of a tall ladder leaning against bushes. Hedge trimmer visible, hedge in frame.`,
   'Taille arbre haute tige': `VISUAL: Climbing harness + ropes anchored to main crotch. If a ladder is present, it must reach a solid main fork or be omitted. Realistic human-to-tree scale mandatory.`,
   'Elagage arbre': `VISUAL: Climbing harness + ropes visible and anchored to main crotch. If an aluminum ladder is shown, it must rest securely against a main branch fork, NEVER stopping awkwardly mid-trunk far below the worker.`,
   'Elalgage en hauteur': `VISUAL: Climbing harness + ropes visible and anchored to main crotch. If an aluminum ladder is shown, it must rest securely against a main branch fork, NEVER stopping awkwardly mid-trunk far below the worker.`,
