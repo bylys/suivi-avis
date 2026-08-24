@@ -698,10 +698,21 @@ async function main() {
                     return 'ravalement et nettoyage de façade';
                 }
                 
-                // 2. Élagage, Abattage, Taille de Haies & Dessouchage (FR & EN)
-                const hasTree = f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('paysagiste') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('landscaping') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge');
+                // 2. Paysagiste & Aménagement Paysager (FR & EN)
+                const isLandscape = f.includes('paysagiste') || f.includes('paysagisme') || f.includes('landscaping') || f.includes('landscape designer');
+                if (isLandscape && !f.includes('elagage') && !f.includes('élagage') && !f.includes('abattage')) {
+                    const landscapeChoices = [
+                        'aménagement paysager de jardin (création et plantation de massifs de fleurs et arbustes décoratifs par un paysagiste)',
+                        'création de pelouse et engazonnement de jardin paysagé par un artisan paysagiste',
+                        'aménagement d\'allée paysagère en dalles de pierre et murets de jardin'
+                    ];
+                    return pick(landscapeChoices);
+                }
 
-                if (hasTree) {
+                // 3. Élagage, Abattage, Taille de Haies & Dessouchage (FR & EN)
+                const hasTree = f.includes('elagage') || f.includes('élagage') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge');
+
+                if (hasTree || isLandscape) {
                     const treeChoices = [
                         'élagage doux et taille raisonnée de grands arbres par un élagueur arboriste (avec harnais de sécurité et cordages dans l\'arbre)',
                         'abattage sécurisé d\'arbre dangereux dans un jardin privé (débitage du tronçon et branches au sol par des élagueurs)',
