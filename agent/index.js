@@ -671,16 +671,61 @@ async function main() {
             throw new Error(`❌ Aucun cookie ChatGPT disponible pour "${rawOp || 'Global'}". Définissez ${persoCookieKey || workCookieKey || 'CHATGPT_COOKIES'} dans GitHub Secrets.`);
         }
 
-        let cookies = JSON.parse(cookiesRaw);
+        function parseCookiesHelper(raw) {
+            if (!raw) return [];
+            let str = raw.trim();
+            if (str.startsWith('```')) {
+                str = str.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+            }
+            if (!str.startsWith('[') && !str.includes('\t') && str.length > 50) {
+                try {
+                    const decoded = Buffer.from(str, 'base64').toString('utf-8').trim();
+                    if (decoded.startsWith('[')) str = decoded;
+                } catch (e) {}
+            }
+            if (str.startsWith('[')) {
+                try { return JSON.parse(str); } catch (e) {}
+            }
+            const lines = str.split('\n');
+            const list = [];
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+                const parts = trimmed.split('\t');
+                if (parts.length >= 7) {
+                    const domain = parts[0];
+                    const path = parts[2];
+                    const secure = parts[3].toUpperCase() === 'TRUE';
+                    const expires = parseInt(parts[4], 10);
+                    const name = parts[5];
+                    const value = parts[6];
+                    if (name && value) {
+                        list.push({
+                            name, value,
+                            domain: domain.startsWith('.') ? domain : `.${domain}`,
+                            path: path || '/', secure, httpOnly: false,
+                            expires: isNaN(expires) ? undefined : expires
+                        });
+                    }
+                }
+            }
+            if (list.length > 0) return list;
+            return JSON.parse(str);
+        }
+
+        let cookies = parseCookiesHelper(cookiesRaw);
         
-        // Sanitisation stricte des cookies pour Playwright (retrait de partitionKey, storeId, hostOnly, etc.)
+        // Sanitisation stricte des cookies pour Playwright & Correction automatique des domaines openai.com -> .chatgpt.com
         cookies = cookies.map(c => {
+            let dom = c.domain || '.chatgpt.com';
+            if (dom.includes('openai.com')) dom = '.chatgpt.com';
+            
             const clean = {
                 name: c.name,
                 value: c.value,
-                domain: c.domain,
+                domain: dom,
                 path: c.path || '/',
-                secure: Boolean(c.secure),
+                secure: c.secure !== undefined ? Boolean(c.secure) : true,
                 httpOnly: Boolean(c.httpOnly),
             };
             if (typeof c.expires === 'number') {
@@ -694,6 +739,8 @@ async function main() {
             }
             return clean;
         });
+
+        console.log(`✅ ${cookies.length} cookies valides extraits et sanitités pour la session ChatGPT ("${rawOp || 'Global'}").`);
 
         // Formatage de la date courte pour le nom du fichier (ex: 24-08-26)
         const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
