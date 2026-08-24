@@ -760,16 +760,26 @@ async function main() {
             const detectedTrade = detectMetierFromFiche(task.fiche_nom);
 
             // Règle du nombre d'ouvriers :
-            // Chantiers extérieurs à risque (élagage, abattage, toiture, ravalement, terrassement, maçonnerie, charpente) = 70% 2 ouvriers / 30% 3 ouvriers.
-            // Chantiers d'intérieur (plomberie, peinture, carrelage, vitrier, débarras...) = 60% 1 artisan solo / 40% 2 artisans.
-            const metierText = ((task.metier || '') + ' ' + (task.travaux || '') + ' ' + (task.fiche_nom || '')).toLowerCase();
-            const isDangerousOutdoorTrade = ['elagage', 'élagage', 'abattage', 'toiture', 'ravalement', 'terrassement', 'maçonnerie', 'maconnerie', 'façade', 'facade', 'charpente']
-                .some(k => metierText.includes(k));
-                
+            // Nettoyage terrasse : artisan solo (1 ouvrier)
+            // Nettoyage façade : 1 à 2 ouvriers (50% solo / 50% duo)
+            // Nettoyage toiture / démoussage : 1 à 2 ouvriers (50% solo / 50% duo)
+            // Extérieurs lourds à risque (élagage, abattage, charpente, maçonnerie, terrassement) : 70% 2 ouvriers / 30% 3 ouvriers.
+            // Chantiers d'intérieur : 60% 1 artisan solo / 40% 2 artisans.
+            const metierText = ((task.metier || '') + ' ' + (task.travaux || '') + ' ' + (task.fiche_nom || '') + ' ' + travauxLabel).toLowerCase();
             const randWorker = Math.random();
-            const nbOuvriers = isDangerousOutdoorTrade 
-                ? (randWorker < 0.70 ? '2 ouvriers' : '3 ouvriers') 
-                : (randWorker < 0.60 ? '1 artisan solo' : '2 artisans');
+            let nbOuvriers = '1 ou 2 artisans';
+
+            if (metierText.includes('terrasse') || metierText.includes('patio')) {
+                nbOuvriers = randWorker < 0.85 ? '1 artisan solo' : '2 artisans';
+            } else if (metierText.includes('facade') || metierText.includes('façade') || metierText.includes('ravalement')) {
+                nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
+            } else if (metierText.includes('demoussage') || metierText.includes('démoussage') || (metierText.includes('nettoyage') && metierText.includes('toiture'))) {
+                nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
+            } else if (['elagage', 'élagage', 'abattage', 'charpente', 'maconnerie', 'maçonnerie', 'terrassement'].some(k => metierText.includes(k))) {
+                nbOuvriers = randWorker < 0.70 ? '2 ouvriers' : '3 ouvriers';
+            } else {
+                nbOuvriers = randWorker < 0.60 ? '1 artisan solo' : '2 artisans';
+            }
             const lumiere        = pick([
                 'ciel légèrement voilé, lumière diffuse de milieu de matinée',
                 'ciel couvert, lumière douce et uniforme',
