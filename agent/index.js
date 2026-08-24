@@ -809,8 +809,11 @@ async function main() {
             }
 
             const detectedTrade = detectMetierFromFiche(task.fiche_nom);
-            // Travaux = sous-métier (task.travaux) ou métier principal déduit de la fiche
-            const travauxLabel = task.travaux || task.metier || detectedTrade;
+            // Priorité absolue au métier réel de la Fiche GMB pour éviter que task.travaux/metier vague n'écrase la fiche
+            let travauxLabel = detectedTrade;
+            if (!travauxLabel || travauxLabel === 'travaux d\'artisanat et d\'entretien') {
+                travauxLabel = task.travaux || task.metier || 'travaux d\'artisanat';
+            }
 
             // Règle du nombre d'ouvriers :
             // Nettoyage terrasse : artisan solo (1 ouvrier)
@@ -905,8 +908,12 @@ async function main() {
             
             if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage') || lowerLabel.includes('façade') || lowerLabel.includes('terrasse')) {
                 negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show tree pruning, do NOT show tree felling, do NOT show workers climbing or cutting trees, do NOT show chainsaws or ropes in trees. Focus ONLY on surface cleaning (roof tiles pressure washing, wall washing or patio cleaning).";
-            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage')) {
-                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof pressure washing, do NOT show facade rendering. Focus ONLY on tree trimming, tree felling or arboriculture.";
+            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('jardin')) {
+                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof pressure washing, do NOT show facade rendering, do NOT show cars or towing. Focus ONLY on tree trimming, hedge cutting, tree felling or arboriculture.";
+            } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
+                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof work, do NOT show house scaffolding, do NOT show tree pruning, do NOT show pressure washing walls. Focus ONLY on roadside automotive breakdown assistance, flatbed tow truck, or mechanic towing a car.";
+            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture')) {
+                negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show hedge trimming, do NOT show tree felling, do NOT show pressure washing ground patio. Focus ONLY on roof tile replacement, roofing work or ridge sealing on a roof.";
             } else if (lowerLabel.includes('étanchéité')) {
                 negativeConstraint = "\n\n⚠️ STRICT FORBIDDEN SUBJECTS: Do NOT show roof tile replacement, do NOT show tree trimming, do NOT show scaffolding facade rendering. Focus ONLY on waterproofing membrane or liquid resin application.";
             }
