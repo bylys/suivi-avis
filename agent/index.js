@@ -232,9 +232,11 @@ async function uploadImage(fileName, imageBuffer, operatorName) {
 const TARGET_OPERATOR = process.env.OPERATOR_NAME ? process.env.OPERATOR_NAME.trim() : null;
 
 function getConversationUrlForOperator(operatorName) {
-    // Toujours ouvrir un NOUVEAU chat vierge (https://chatgpt.com/) pour isoler 100% chaque génération d'image !
-    // Cela élimine à 100% tout risque de réutiliser la photo de la tâche précédente ou de polluer le contexte DALL-E 3.
-    return 'https://chatgpt.com/';
+    const op = (operatorName || TARGET_OPERATOR || '').trim().toUpperCase();
+    if (!op) return process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    
+    const envVar = `CHATGPT_CONVERSATION_URL_${op}`;
+    return process.env[envVar] || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
@@ -381,8 +383,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         const initialLastImgSrc = await page.evaluate(() => {
             const imgs = Array.from(document.querySelectorAll('img')).reverse();
             for (const img of imgs) {
-                if (img.src && !img.src.includes('avatar') && !img.src.includes('profile') && !img.src.includes('svg') && img.naturalWidth >= 600) {
-                    return img.src;
+                const src = img.src || '';
+                if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg')) {
+                    return src;
                 }
             }
             return null;
