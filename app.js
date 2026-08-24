@@ -2633,8 +2633,8 @@ Avis :`;
   try {
     const _proxy = _apiProxyBase();
     const _geminiUrl = _proxy
-      ? `${_proxy}/gemini/v1beta/models/gemini-2.5-flash:generateContent`
-      : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      ? `${_proxy}/gemini/v1beta/models/gemini-2.0-flash:generateContent`
+      : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const res = await fetch(_geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
