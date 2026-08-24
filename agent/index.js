@@ -234,10 +234,11 @@ const TARGET_OPERATOR = process.env.OPERATOR_NAME ? process.env.OPERATOR_NAME.tr
 
 function getConversationUrlForOperator(operatorName) {
     const op = (operatorName || TARGET_OPERATOR || '').trim().toUpperCase();
-    if (!op) return process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    if (!op) return process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
     
-    const envVar = `CHATGPT_CONVERSATION_URL_${op}`;
-    return process.env[envVar] || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    const persoVar = `CHATGPT_PERSO_CONVERSATION_URL_${op}`;
+    const workVar = `CHATGPT_CONVERSATION_URL_${op}`;
+    return process.env[persoVar] || process.env[workVar] || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
@@ -632,11 +633,18 @@ async function main() {
             return;
         }
 
-        // Configuration des cookies multi-opérateurs (ex: CHATGPT_COOKIES_KEVIN, CHATGPT_COOKIES_FIF, etc., avec fallback sur CHATGPT_COOKIES)
-        const opEnvKey = rawOp ? `CHATGPT_COOKIES_${rawOp.toUpperCase()}` : null;
-        let cookiesRaw = (opEnvKey && process.env[opEnvKey]) ? process.env[opEnvKey] : process.env.CHATGPT_COOKIES;
-        
-        const dbSettingKey = rawOp ? `CHATGPT_COOKIES_${rawOp.toUpperCase()}` : 'CHATGPT_COOKIES';
+        // Configuration des cookies multi-opérateurs (Priorité 1: CHATGPT_PERSO_COOKIES_[OP], Priorité 2: CHATGPT_COOKIES_[OP], Fallback: CHATGPT_COOKIES)
+        const opUpper = rawOp ? rawOp.toUpperCase() : '';
+        const persoCookieKey = opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null;
+        const workCookieKey = opUpper ? `CHATGPT_COOKIES_${opUpper}` : null;
+
+        let cookiesRaw = (persoCookieKey && process.env[persoCookieKey])
+            ? process.env[persoCookieKey]
+            : ((workCookieKey && process.env[workCookieKey])
+                ? process.env[workCookieKey]
+                : process.env.CHATGPT_COOKIES);
+
+        const dbSettingKey = opUpper ? `CHATGPT_COOKIES_${opUpper}` : 'CHATGPT_COOKIES';
         try {
             const { data: settingData } = await supabase
                 .from('app_settings')
@@ -651,7 +659,7 @@ async function main() {
         } catch (dbErr) {}
 
         if (!cookiesRaw) {
-            throw new Error(`❌ Aucun cookie ChatGPT disponible pour "${rawOp || 'Global'}". Définissez ${opEnvKey || 'CHATGPT_COOKIES'} dans GitHub Secrets.`);
+            throw new Error(`❌ Aucun cookie ChatGPT disponible pour "${rawOp || 'Global'}". Définissez ${persoCookieKey || workCookieKey || 'CHATGPT_COOKIES'} dans GitHub Secrets.`);
         }
 
         let cookies = JSON.parse(cookiesRaw);
