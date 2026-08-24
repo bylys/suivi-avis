@@ -405,8 +405,8 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             await page.keyboard.press('Enter');
         }
         
-        console.log("⏳ Attente obligatoire de 60 secondes pour la création de la photo DALL-E 3...");
-        await page.waitForTimeout(60000);
+        console.log("⏳ Attente obligatoire de 90 secondes pour la création de la photo DALL-E 3...");
+        await page.waitForTimeout(90000);
         
         // 3. Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
         const checkNewImage = async () => {
@@ -986,10 +986,10 @@ async function main() {
                     console.log(`Supabase mis à jour avec le lien (${uploadResult.provider}) pour l'avis ID ${task.id}`);
                 }
 
-                // Pause de sécurité inter-tâches de 45 secondes avant le prochain avis
+                // Pause de sécurité inter-tâches de 20 secondes avant le prochain avis
                 if (taskIndex < tasksToGenerate.length - 1) {
-                    console.log("⏳ Pause de 45 secondes avant le prochain avis...");
-                    await new Promise(r => setTimeout(r, 45000));
+                    console.log("⏳ Pause de 20 secondes avant le prochain avis...");
+                    await new Promise(r => setTimeout(r, 20000));
                 }
                 
             } catch (err) {
