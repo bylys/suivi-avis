@@ -296,13 +296,63 @@ body.light-theme .star-picker span { color: #f59e0b !important; }
 .date-inline:focus { border-color: #6366f1; background: #1e293b; color: #f1f5f9; }
 
 .statut-inline {
-  font-size: 0.74rem; font-weight: 600; padding: 3px 7px;
-  border-radius: 8px; border: 1.5px solid; background: #0f172a;
-  color: #f1f5f9; cursor: pointer; outline: none; max-width: 140px;
-  transition: box-shadow .15s;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1.5px solid;
+  cursor: pointer;
+  outline: none;
+  min-width: 155px;
+  text-align: center;
+  transition: all 0.18s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 22px;
 }
+
+/* Couleurs de statuts en Mode Sombre (Dark Mode) */
+.statut-inline.status-j0 {
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.5);
+}
+.statut-inline.status-j7 {
+  background-color: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.5);
+}
+.statut-inline.status-j14 {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+.statut-inline.status-j21 {
+  background-color: rgba(249, 115, 22, 0.15);
+  color: #f97316;
+  border-color: rgba(249, 115, 22, 0.5);
+}
+.statut-inline.status-j30 {
+  background-color: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.5);
+}
+.statut-inline.status-supprime {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+.statut-inline.status-pending {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
 .statut-inline option { background: #1e293b; color: #f1f5f9; }
-.statut-inline:focus { box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+.statut-inline:focus { box-shadow: 0 0 0 3px rgba(99,102,241,0.25); }
 
 /* ── GROUPES PAR MOIS ── */
 .month-group {
@@ -2007,6 +2057,181 @@ body.light-theme #dash-year, body.light-theme #dash-month, body.light-theme #das
   color-scheme: light !important;
 }
 body.light-theme .filters select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* ☀️ MODE CLAIR (LIGHT THEME) - TABLEAU DES AVIS & STATUTS ☀️ */
+body.light-theme .avis-table {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+body.light-theme .avis-table thead tr {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+body.light-theme .avis-table th {
+  color: #475569 !important;
+  font-weight: 700 !important;
+  background-color: #f8fafc !important;
+}
+
+body.light-theme .avis-table tbody tr {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .avis-table tbody tr:hover {
+  background-color: #f1f5f9 !important;
+}
+
+body.light-theme .avis-table td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-theme .avis-auteur {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+body.light-theme .avis-op-cell {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+body.light-theme .col-texte {
+  color: #475569 !important;
+}
+
+/* Lignes Orange / A vérifier en Mode Clair */
+body.light-theme .avis-a-verifier,
+body.light-theme .avis-orange,
+body.light-theme .avis-table tr.avis-orange,
+body.light-theme .avis-table tr.avis-a-verifier {
+  background-color: #fffbeb !important;
+  border-left: 4px solid #f59e0b !important;
+}
+body.light-theme .avis-a-verifier td,
+body.light-theme .avis-orange td,
+body.light-theme .avis-table tr.avis-orange td,
+body.light-theme .avis-table tr.avis-a-verifier td {
+  background-color: #fffbeb !important;
+  color: #0f172a !important;
+}
+
+/* Lignes Auto Updated en Mode Clair */
+body.light-theme .avis-auto-updated,
+body.light-theme .avis-table tr.avis-auto-updated {
+  background-color: #f0fdf4 !important;
+  border-left: 4px solid #10b981 !important;
+}
+body.light-theme .avis-auto-badge {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+  font-weight: 700 !important;
+}
+
+/* Bannière de Rappel en Mode Clair */
+body.light-theme .rappels-summary,
+body.light-theme #rappels-banner,
+body.light-theme #rappels-count {
+  background-color: #fef3c7 !important;
+  border: 1.5px solid #f59e0b !important;
+  color: #92400e !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15) !important;
+}
+body.light-theme .rappels-summary strong {
+  color: #78350f !important;
+}
+body.light-theme .avis-rappel {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #f59e0b !important;
+  font-weight: 700 !important;
+}
+
+/* Date inline en Mode Clair */
+body.light-theme .date-inline {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 600 !important;
+  color-scheme: light !important;
+}
+body.light-theme .date-inline:hover,
+body.light-theme .date-inline:focus {
+  border-color: #6366f1 !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Accordéons Mois en Mode Clair */
+body.light-theme .month-group {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+body.light-theme .month-summary {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
+}
+body.light-theme .month-label {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* Couleurs des Statuts en Mode Clair */
+body.light-theme .statut-inline.status-j0 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+  font-weight: 700 !important;
+}
+body.light-theme .statut-inline.status-j7 {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border-color: #fcd34d !important;
+  font-weight: 700 !important;
+}
+body.light-theme .statut-inline.status-j14 {
+  background-color: #ffedd5 !important;
+  color: #c2410c !important;
+  border-color: #fdba74 !important;
+  font-weight: 700 !important;
+}
+body.light-theme .statut-inline.status-j21 {
+  background-color: #fed7aa !important;
+  color: #9a3412 !important;
+  border-color: #fb923c !important;
+  font-weight: 700 !important;
+}
+body.light-theme .statut-inline.status-j30 {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border-color: #86efac !important;
+  font-weight: 700 !important;
+}
+body.light-theme .statut-inline.status-supprime {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+  font-weight: 700 !important;
+}
+body.light-theme .statut-inline.status-pending {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+  font-weight: 700 !important;
+}
+body.light-theme .statut-inline option {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }

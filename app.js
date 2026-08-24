@@ -1346,16 +1346,22 @@ async function submitAvis(e) {
 }
 
 // ── LISTE ──
-const MOIS_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MOIS_LABELS = ['Janvier','FÃ©vrier','Mars','Avril','Mai','Juin','Juillet','AoÃ» t','Septembre','Octobre','Novembre','DÃ©cembre'];
 
 const STATUT_LABELS = {
-  supprime: { label: 'Supprimé (à été fait)', color: '#e53935' },
-  j0:       { label: 'Posté J+0',  color: '#9c27b0' },
-  j7:       { label: 'Posté J+7',  color: '#fb8c00' },
-  j14:      { label: 'Posté J+14', color: '#f4b942' },
-  j21:      { label: 'Posté J+21', color: '#43a047' },
-  j30:      { label: 'Posté J+30', color: '#1a73e8' },
+  j0:       { label: 'Posté J+0',              color: '#38bdf8' },
+  j7:       { label: 'Posté J+7',              color: '#fbbf24' },
+  j14:      { label: 'Posté J+14',             color: '#f59e0b' },
+  j21:      { label: 'Posté J+21',             color: '#f97316' },
+  j30:      { label: 'Posté J+30',             color: '#22c55e' },
+  supprime: { label: 'Supprimé (à été fait)',  color: '#ef4444' }
 };
+
+function updateSelectStatusClass(selectEl) {
+  if (!selectEl) return;
+  selectEl.className = selectEl.className.replace(/\bstatus-\S+/g, '').trim();
+  selectEl.classList.add(`status-${selectEl.value}`);
+}
 
 function buildAvisRow(a, rappelsDus, aVerif) {
   const st = STATUT_LABELS[a.statut] || { label: a.statut || '–', color: '#999' };
@@ -1363,23 +1369,29 @@ function buildAvisRow(a, rappelsDus, aVerif) {
   const verifLabel = needsVerif ? rappelsDus.find(d => d.avis.id === a.id)?.label : null;
   const todayStr = new Date().toISOString().slice(0, 10);
   const isAutoUpdatedToday = a.statut_date === todayStr && !needsVerif && a.statut !== 'j0';
+  const statusClass = `status-${a.statut || 'pending'}`;
   
   return `<tr class="${needsVerif ? 'avis-a-verifier avis-orange' : isAutoUpdatedToday ? 'avis-auto-updated' : ''}">
     <td data-label="Date" class="avis-date">
       <input type="date" class="date-inline" value="${a.date}" onchange="updateDate('${a.id}', this.value)" />
     </td>
     <td data-label="Fiche"><span class="avis-fiche">${a.fiche_nom}</span></td>
-    <td data-label="Opér." style="color:#94a3b8;font-size:0.85rem;">${a.operateur || '–'}</td>
+    <td data-label="Opér." style="font-size:0.85rem;" class="avis-op-cell">${a.operateur || '–'}</td>
     <td data-label="Gmail" class="avis-auteur">${a.auteur}</td>
     <td data-label="Note" class="avis-stars">${'★'.repeat(a.note)}${'☆'.repeat(5-a.note)}</td>
     <td data-label="Statut">
-      <select class="statut-inline" onchange="updateStatut('${a.id}', this.value)" style="border-color:${st.color};color:${st.color}">
+      <select class="statut-inline ${statusClass}" onchange="updateStatut('${a.id}', this.value); updateSelectStatusClass(this);">
         ${Object.entries(STATUT_LABELS).map(([k,v]) =>
-          `<option value="${k}" ${a.statut===k?'selected':''} style="color:${v.color}">${v.label}</option>`
+          `<option value="${k}" ${a.statut===k?'selected':''}>${v.label}</option>`
         ).join('')}
       </select>
     </td>
     <td data-label="Rappel">${needsVerif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : isAutoUpdatedToday ? `<span class="avis-auto-badge">🤖 Auto ${st.label}</span>` : ''}</td>
+    <td data-label="Photo/Lien" class="td-photo-lien">${a.photo ? '📷' : ''}${a.lien ? `&nbsp;<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
+    <td data-label="Avis" class="col-texte">${a.texte || ''}</td>
+    <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
+  </tr>`;
+}rif ? `<span class="avis-rappel">🔔 ${verifLabel}</span>` : isAutoUpdatedToday ? `<span class="avis-auto-badge">🤖 Auto ${st.label}</span>` : ''}</td>
     <td data-label="Photo/Lien" class="td-photo-lien">${a.photo ? '📷' : ''}${a.lien ? `&nbsp;<a href="${a.lien}" target="_blank" rel="noopener" title="Voir l'avis">🔗</a>` : ''}</td>
     <td data-label="Avis" class="col-texte">${a.texte || ''}</td>
     <td><button class="btn-delete" onclick="deleteAvis('${a.id}')">🗑</button></td>
