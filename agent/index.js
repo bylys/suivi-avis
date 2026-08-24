@@ -407,15 +407,29 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         console.log("⏳ Attente obligatoire de 60 secondes pour la création de la photo DALL-E 3...");
         await page.waitForTimeout(60000);
         
-        // 3. Scanneur d'image dynamique : UNIQUEMENT les images dont l'URL n'était PAS présente avant l'envoi
+        // 3. Scanneur d'image dynamique : cibler la DERNIÈRE réponse générée par ChatGPT (dernier message assistant)
         const checkNewImage = async () => {
             return await page.evaluate((knownUrls) => {
                 const knownSet = new Set(knownUrls);
-                const imgs = Array.from(document.querySelectorAll('img')).reverse();
+                // Sélectionner le dernier message de la conversation (assistant)
+                const articles = Array.from(document.querySelectorAll('article[data-testid^="conversation-turn-"]'));
+                const lastTurn = articles.length > 0 ? articles[articles.length - 1] : document.body;
+                
+                const imgs = Array.from(lastTurn.querySelectorAll('img')).reverse();
                 for (const img of imgs) {
                     const src = img.src || '';
                     if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                    if (img.complete && img.naturalWidth >= 600 && img.naturalHeight >= 600 && !knownSet.has(src)) {
+                    if (img.complete && img.naturalWidth >= 400 && !knownSet.has(src)) {
+                        return src;
+                    }
+                }
+                
+                // Fallback sur le DOM global si le selector article a évolué
+                const allImgs = Array.from(document.querySelectorAll('img')).reverse();
+                for (const img of allImgs) {
+                    const src = img.src || '';
+                    if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                    if (img.complete && img.naturalWidth >= 600 && !knownSet.has(src)) {
                         return src;
                     }
                 }
