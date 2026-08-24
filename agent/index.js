@@ -683,24 +683,42 @@ async function main() {
         if (cookiesRaw) {
             console.log(`🔑 Cookies ChatGPT chargés avec succès depuis le secret GitHub : "${usedKey}" !`);
         } else {
-            // Fallback sur Supabase si aucun secret d'environnement n'a été transmis
-            const dbSettingKey = opUpper ? `CHATGPT_COOKIES_${opUpper}` : 'CHATGPT_COOKIES';
+            console.log("⚠️ Aucun secret GitHub valide trouvé en variable d'environnement. Diagnostic des variables reçues :");
+            const allKeys = Object.keys(process.env).sort();
+            console.log(`📋 Clés ENV disponibles (${allKeys.length}) : ${allKeys.join(', ')}`);
+            
+            console.log("🔄 Recherche de secours dans la table Supabase app_settings...");
             try {
                 const { data: settingData } = await supabase
                     .from('app_settings')
-                    .select('key, value')
-                    .or(`key.eq.${dbSettingKey},key.eq.CHATGPT_COOKIES`)
-                    .order('key', { ascending: false })
-                    .limit(1);
-                if (settingData && settingData[0] && settingData[0].value && settingData[0].value.length > 20) {
-                    cookiesRaw = settingData[0].value;
-                    console.log(`🔄 Cookies ChatGPT récupérés depuis Supabase (${settingData[0].key}) !`);
+                    .select('key, value');
+                if (settingData && settingData.length > 0) {
+                    for (const item of settingData) {
+                        const k = (item.key || '').toUpperCase();
+                        const v = (item.value || '').trim();
+                        if (v.length > 20 && k.includes('COOKIE')) {
+                            if (opUpper && (k.includes(opUpper) || k.includes('PERSO'))) {
+                                cookiesRaw = v;
+                                usedKey = item.key;
+                                break;
+                            }
+                            if (!cookiesRaw) {
+                                cookiesRaw = v;
+                                usedKey = item.key;
+                            }
+                        }
+                    }
                 }
-            } catch (dbErr) {}
+                if (cookiesRaw) {
+                    console.log(`🔄 Cookies ChatGPT récupérés avec succès depuis Supabase app_settings ("${usedKey}") !`);
+                }
+            } catch (dbErr) {
+                console.log("Erreur lors de la lecture Supabase :", dbErr.message);
+            }
         }
 
         if (!cookiesRaw) {
-            throw new Error(`❌ Aucun cookie ChatGPT trouvé. Assurez-vous d'avoir enregistré le secret CHATGPT_PERSO_COOKIES_KEVIN ou CHATGPT_COOKIES dans GitHub Secrets.`);
+            throw new Error(`❌ Aucun cookie ChatGPT trouvé ni dans GitHub Secrets ni dans Supabase. Veuillez créer le secret CHATGPT_PERSO_COOKIES_KEVIN sous Repository secrets dans GitHub.`);
         }
 
         function parseCookiesHelper(raw) {
