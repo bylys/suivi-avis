@@ -2,6 +2,7 @@ require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const { chromium } = require('playwright');
 const fs = require('fs');
+const crypto = require('crypto');
 const { google } = require('googleapis');
 const { Readable } = require('stream');
 const { buildRulesBlock } = require('./rules');
@@ -379,20 +380,20 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         await promptInput.pressSequentially(' ');
         await page.waitForTimeout(1000);
 
-        // Capture de TOUTES les URLs de photos déjà présentes avant d'envoyer le prompt
-        // → Permet de détecter uniquement la nouvelle image ajoutée dans le fil, sans jamais confondre avec les précédentes
+        // Capture de TOUTES les URLs de photos déjà présentes avant d'envoyer le prompt (sans filtre de taille)
+        // → Garantit à 100% qu'aucune image existante ne pourra être capturée par erreur
         const existingImageUrls = await page.evaluate(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             const urls = new Set();
             for (const img of imgs) {
                 const src = img.src || '';
-                if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg') && img.naturalWidth >= 400) {
+                if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg')) {
                     urls.add(src);
                 }
             }
             return Array.from(urls);
         });
-        console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) dans le fil avant envoi.`);
+        console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) sur la page avant l'envoi du prompt.`);
 
         // 2. Clic sur le bouton d'envoi
         try {
@@ -407,29 +408,16 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
         console.log("⏳ Attente obligatoire de 60 secondes pour la création de la photo DALL-E 3...");
         await page.waitForTimeout(60000);
         
-        // 3. Scanneur d'image dynamique : cibler la DERNIÈRE réponse générée par ChatGPT (dernier message assistant)
+        // 3. Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
         const checkNewImage = async () => {
             return await page.evaluate((knownUrls) => {
                 const knownSet = new Set(knownUrls);
-                // Sélectionner le dernier message de la conversation (assistant)
-                const articles = Array.from(document.querySelectorAll('article[data-testid^="conversation-turn-"]'));
-                const lastTurn = articles.length > 0 ? articles[articles.length - 1] : document.body;
-                
-                const imgs = Array.from(lastTurn.querySelectorAll('img')).reverse();
+                const imgs = Array.from(document.querySelectorAll('img')).reverse();
                 for (const img of imgs) {
                     const src = img.src || '';
-                    if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                    if (img.complete && img.naturalWidth >= 400 && !knownSet.has(src)) {
-                        return src;
-                    }
-                }
-                
-                // Fallback sur le DOM global si le selector article a évolué
-                const allImgs = Array.from(document.querySelectorAll('img')).reverse();
-                for (const img of allImgs) {
-                    const src = img.src || '';
-                    if (src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                    if (img.complete && img.naturalWidth >= 600 && !knownSet.has(src)) {
+                    if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                    if (knownSet.has(src)) continue; // INTERDICTION STRICTE : ne jamais prendre une image déjà connue
+                    if (img.complete && (img.naturalWidth >= 400 || img.width >= 400)) {
                         return src;
                     }
                 }
@@ -688,6 +676,8 @@ async function main() {
         const monthStr = (targetDateObj.getMonth() + 1).toString().padStart(2, '0');
         const yearStr = targetDateObj.getFullYear().toString().slice(-2);
         const dateFormatShort = `${dayStr}-${monthStr}-${yearStr}`;
+
+        const uploadedImageHashes = new Set();
 
         for (let taskIndex = 0; taskIndex < tasksToGenerate.length; taskIndex++) {
             const task = tasksToGenerate[taskIndex];
@@ -957,6 +947,13 @@ async function main() {
                 if (!rawImageBuffer) {
                     throw new Error("Impossible d'extraire l'image générée par DALL-E 3 (cookies expirés, quota atteint ou sécurité).");
                 }
+                
+                // Contrôle anti-doublon binaire : bloquer l'upload si la photo est strictement identique à une tâche précédente du même run
+                const imgHash = crypto.createHash('md5').update(rawImageBuffer).digest('hex');
+                if (uploadedImageHashes.has(imgHash)) {
+                    throw new Error(`⚠️ Photo binaire en double (${imgHash.substring(0, 8)}) détectée. Tâche ignorée pour éviter la répétition de la même photo sur Drive.`);
+                }
+                uploadedImageHashes.add(imgHash);
                 
                 // Injection des métadonnées EXIF Smartphone & Coordonnées GPS (matching intelligent de la date selon l'avis)
                 const reviewTextContent = (task.commentaire || '') + ' ' + (task.travaux || '');
