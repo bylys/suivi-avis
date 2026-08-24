@@ -633,23 +633,50 @@ async function main() {
             return;
         }
 
-        // Configuration des cookies multi-opérateurs avec résolution ultra-souple et fallback automatique
+        // Configuration des cookies multi-opérateurs avec résolution universelle et diagnostic complet
         const opUpper = rawOp ? rawOp.toUpperCase() : '';
-        const candidateKeys = [
-            opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null,
-            opUpper ? `CHATGPT_COOKIES_${opUpper}` : null,
-            'CHATGPT_PERSO_COOKIES',
-            'CHATGPT_COOKIES'
-        ].filter(Boolean);
+        
+        // Diagnostic : lister toutes les variables d'environnement contenant COOKIE
+        const availableCookieKeys = Object.keys(process.env).filter(k => k.toUpperCase().includes('COOKIE') && process.env[k] && process.env[k].trim().length > 10);
+        console.log(`🔍 Diagnostic des secrets GitHub reçus par le robot : ${availableCookieKeys.length > 0 ? availableCookieKeys.join(', ') : '⚠️ AUCUN SECRET COOKIE TROUVÉ DANS ENV !'}`);
 
         let cookiesRaw = null;
         let usedKey = null;
+
+        // 1. Recherche par correspondance exacte prioritaire (ex: CHATGPT_PERSO_COOKIES_KEVIN)
+        const candidateKeys = [
+            opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null,
+            opUpper ? `CHATGPT_COOKIES_${opUpper}` : null,
+            opUpper ? `CHATGPT_PERSO_COOKIE_${opUpper}` : null,
+            opUpper ? `CHATGPT_COOKIE_${opUpper}` : null,
+            'CHATGPT_PERSO_COOKIES',
+            'CHATGPT_COOKIES'
+        ].filter(Boolean);
 
         for (const key of candidateKeys) {
             if (process.env[key] && process.env[key].trim().length > 10) {
                 cookiesRaw = process.env[key].trim();
                 usedKey = key;
                 break;
+            }
+        }
+
+        // 2. Recherche universelle insensible à la casse sur n'importe quelle variable contenant COOKIE
+        if (!cookiesRaw) {
+            for (const [envKey, envVal] of Object.entries(process.env)) {
+                if (!envVal || envVal.trim().length <= 10) continue;
+                const normKey = envKey.toUpperCase();
+                if (normKey.includes('COOKIE')) {
+                    if (opUpper && (normKey.includes(opUpper) || normKey.includes('PERSO'))) {
+                        cookiesRaw = envVal.trim();
+                        usedKey = envKey;
+                        break;
+                    }
+                    if (!cookiesRaw) {
+                        cookiesRaw = envVal.trim();
+                        usedKey = envKey;
+                    }
+                }
             }
         }
 
