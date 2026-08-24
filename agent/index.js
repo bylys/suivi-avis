@@ -776,6 +776,8 @@ async function main() {
             }
 
             const detectedTrade = detectMetierFromFiche(task.fiche_nom);
+            // Travaux = sous-métier (task.travaux) ou métier principal déduit de la fiche
+            const travauxLabel = task.travaux || task.metier || detectedTrade;
 
             // Règle du nombre d'ouvriers :
             // Nettoyage terrasse : artisan solo (1 ouvrier)
@@ -824,9 +826,6 @@ async function main() {
             
             // Format / Orientation (tirage aléatoire : 60% paysage, 40% portrait)
             const orientation    = pick(['3:2 paysage', '4:3 paysage', '3:4 portrait', '9:16 portrait']);
-
-            // Travaux = sous-métier (task.travaux) ou métier principal déduit de la fiche
-            const travauxLabel = task.travaux || task.metier || detectedTrade;
             
             // Construction du prompt final
             if ((task.fiche_nom || '').toLowerCase().includes('domiciliation')) {
