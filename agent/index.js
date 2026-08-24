@@ -949,10 +949,10 @@ async function main() {
                     console.log(`Supabase mis à jour avec le lien (${uploadResult.provider}) pour l'avis ID ${task.id}`);
                 }
 
-                // Pause de sécurité obligatoire de 60 secondes avant le prochain avis
+                // Pause de sécurité inter-tâches de 45 secondes avant le prochain avis
                 if (taskIndex < tasksToGenerate.length - 1) {
-                    console.log("⏳ Pause de 60 secondes avant le prochain avis...");
-                    await new Promise(r => setTimeout(r, 60000));
+                    console.log("⏳ Pause de 45 secondes avant le prochain avis...");
+                    await new Promise(r => setTimeout(r, 45000));
                 }
                 
             } catch (err) {
