@@ -158,9 +158,9 @@ function invalidateFichesCache() { _fichesCache = null; }
 async function init() {
   if (!sessionStorage.getItem('gmb_auth')) return;
   await populateFicheSelects();
-  renderFiches();
-  renderDashboard();
-  renderListe();
+
+  const initialTab = getTabFromUrl();
+  showTab(initialTab, true);
   checkNotifications();
 
   const today = new Date().toISOString().split('T')[0];
@@ -204,12 +204,59 @@ async function init() {
   document.getElementById('dash-month').value = currentMonth;
 }
 
-// ── TABS ──
-function showTab(name) {
+// ── ROUTER & TABS ──
+const VALID_TABS = ['dashboard', 'planning', 'generateur', 'images', 'saisir', 'liste', 'fiches', 'gmails'];
+
+function getTabFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const redirectPath = params.get('p');
+  if (redirectPath) {
+    const cleanPath = redirectPath.replace(/^\/+|\/+$/g, '');
+    if (VALID_TABS.includes(cleanPath)) return cleanPath;
+  }
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const lastPart = pathParts[pathParts.length - 1];
+  if (VALID_TABS.includes(lastPart)) return lastPart;
+
+  const hash = window.location.hash.replace(/^#/, '');
+  if (VALID_TABS.includes(hash)) return hash;
+
+  return 'dashboard';
+}
+
+function updateUrlForTab(name) {
+  if (!VALID_TABS.includes(name)) return;
+  const pathSegments = window.location.pathname.split('/').filter(Boolean);
+  let basePath = '/suivi-avis';
+  if (pathSegments.length > 0 && pathSegments[0] !== name) {
+    basePath = '/' + pathSegments[0];
+  }
+  const newUrl = `${basePath}/${name}`;
+  try {
+    window.history.pushState({ tab: name }, '', newUrl);
+  } catch (e) {
+    window.location.hash = name;
+  }
+}
+
+function showTab(name, skipUrlUpdate = false) {
+  if (!VALID_TABS.includes(name)) name = 'dashboard';
+
+  const targetTab = document.getElementById('tab-' + name);
+  if (!targetTab) return;
+
   document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.remove('hidden');
-  event.target.classList.add('active');
+
+  targetTab.classList.remove('hidden');
+
+  const btn = document.querySelector(`.tab-btn[onclick*="${name}"]`);
+  if (btn) btn.classList.add('active');
+
+  if (!skipUrlUpdate) {
+    updateUrlForTab(name);
+  }
+
   if (name === 'dashboard') renderDashboard();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
@@ -217,6 +264,11 @@ function showTab(name) {
   if (name === 'gmails') renderGmails();
   if (name === 'planning') renderPlanning();
 }
+
+window.addEventListener('popstate', () => {
+  const currentTab = getTabFromUrl();
+  showTab(currentTab, true);
+});
 
 // ── FICHES ──
 async function populateFicheSelects() {
