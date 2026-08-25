@@ -19,12 +19,12 @@ const CHATGPT_IMAGE_PROMPT = process.env.CHATGPT_IMAGE_PROMPT || 'Génère une p
 // Initialize Supabase
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- Fonctions Utilitaires Google Drive (Sous-dossiers par opérateur + Nettoyage 7 jours) ---
-async function getOrCreateOperatorFolder(drive, parentFolderId, operatorName) {
-    const safeOpName = (operatorName || 'Autres_Operateurs').trim().replace(/[^a-zA-Z0-9_\- ]/g, '_');
+// --- Fonctions Utilitaires Google Drive (Dossiers Opérateur + Sous-dossiers par Date du jour + Nettoyage 7 jours) ---
+async function getOrCreateDriveFolder(drive, parentFolderId, folderName) {
+    const safeName = (folderName || 'Nouveau_Dossier').trim().replace(/[^a-zA-Z0-9_\- ]/g, '_');
     
     try {
-        const q = `'${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and name='${safeOpName}' and trashed=false`;
+        const q = `'${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and name='${safeName}' and trashed=false`;
         const searchRes = await drive.files.list({
             q: q,
             fields: 'files(id, name)',
@@ -37,7 +37,7 @@ async function getOrCreateOperatorFolder(drive, parentFolderId, operatorName) {
         }
 
         const folderMetadata = {
-            name: safeOpName,
+            name: safeName,
             mimeType: 'application/vnd.google-apps.folder',
             parents: [parentFolderId]
         };
@@ -48,10 +48,10 @@ async function getOrCreateOperatorFolder(drive, parentFolderId, operatorName) {
             fields: 'id, name'
         });
 
-        console.log(`📂 Sous-dossier opérateur créé sur Google Drive : "${safeOpName}" (ID : ${newFolder.data.id})`);
+        console.log(`📂 Dossier créé sur Google Drive : "${safeName}" (ID : ${newFolder.data.id})`);
         return newFolder.data.id;
     } catch (e) {
-        console.log(`Note sous-dossier (${safeOpName}) : ${e.message}. Utilisation du dossier principal.`);
+        console.log(`Note dossier (${safeName}) : ${e.message}. Utilisation du dossier parent.`);
         return parentFolderId;
     }
 }
@@ -121,8 +121,12 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
     // 1. Nettoyage automatique des photos > 7 jours
     await cleanOldPhotosFromDrive(drive, folderId);
 
-    // 2. Récupération ou création automatique du sous-dossier de l'opérateur
-    const targetFolderId = await getOrCreateOperatorFolder(drive, folderId, operatorName);
+    // 2. Dossier opérateur (ex: "Kevin")
+    const opFolderId = await getOrCreateDriveFolder(drive, folderId, operatorName);
+
+    // 3. Sous-dossier avec la date du jour (ex: "2026-08-25")
+    const todayDate = new Date().toISOString().split('T')[0];
+    const targetFolderId = await getOrCreateDriveFolder(drive, opFolderId, todayDate);
 
     // Anti-doublon Google Drive : vérifier si un fichier portant le même nom existe déjà dans le dossier opérateur
     const checkQuery = `'${targetFolderId}' in parents and name='${fileName}' and trashed=false`;
