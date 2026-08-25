@@ -1811,6 +1811,117 @@ function renderRappelsBanner(dus) {
 // ── GÉNÉRATEUR D'AVIS ──
 function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+const _DEPARTEMENT_TO_VILLE = {
+  'ain': 'Bourg-en-Bresse',
+  'aisne': 'Laon',
+  'allier': 'Moulins',
+  'alpes de haute provence': 'Digne-les-Bains',
+  'hautes alpes': 'Gap',
+  'alpes maritimes': 'Nice',
+  'ardeche': 'Privas',
+  'ardennes': 'Charleville-Mézières',
+  'ariege': 'Foix',
+  'aube': 'Troyes',
+  'aude': 'Carcassonne',
+  'aveyron': 'Rodez',
+  'bouches du rhone': 'Marseille',
+  'calvados': 'Caen',
+  'cantal': 'Aurillac',
+  'charente': 'Angoulême',
+  'charente maritime': 'La Rochelle',
+  'cher': 'Bourges',
+  'correze': 'Tulle',
+  'corse du sud': 'Ajaccio',
+  'haute corse': 'Bastia',
+  'corse': 'Ajaccio',
+  'cote d or': 'Dijon',
+  'cotes d armor': 'Saint-Brieuc',
+  'creuse': 'Guéret',
+  'dordogne': 'Périgueux',
+  'doubs': 'Besançon',
+  'drome': 'Valence',
+  'eure': 'Évreux',
+  'eure et loir': 'Chartres',
+  'finistere': 'Quimper',
+  'gard': 'Nîmes',
+  'haute garonne': 'Toulouse',
+  'gers': 'Auch',
+  'gironde': 'Bordeaux',
+  'herault': 'Montpellier',
+  'ille et vilaine': 'Rennes',
+  'indre': 'Châteauroux',
+  'indre et loire': 'Tours',
+  'isere': 'Grenoble',
+  'jura': 'Lons-le-Saunier',
+  'landes': 'Mont-de-Marsan',
+  'loir et cher': 'Blois',
+  'loire': 'Saint-Étienne',
+  'haute loire': 'Le Puy-en-Velay',
+  'loire atlantique': 'Nantes',
+  'loiret': 'Orléans',
+  'lot': 'Cahors',
+  'lot et garonne': 'Agen',
+  'lozere': 'Mende',
+  'maine et loire': 'Angers',
+  'manche': 'Saint-Lô',
+  'marne': 'Reims',
+  'haute marne': 'Chaumont',
+  'mayenne': 'Laval',
+  'meurthe et moselle': 'Nancy',
+  'meuse': 'Bar-le-Duc',
+  'morbihan': 'Vannes',
+  'moselle': 'Metz',
+  'nievre': 'Nevers',
+  'nord': 'Lille',
+  'oise': 'Beauvais',
+  'orne': 'Alençon',
+  'pas de calais': 'Arras',
+  'puy de dome': 'Clermont-Ferrand',
+  'pyrenees atlantiques': 'Pau',
+  'hautes pyrenees': 'Tarbes',
+  'pyrenees orientales': 'Perpignan',
+  'bas rhin': 'Strasbourg',
+  'haut rhin': 'Colmar',
+  'rhone': 'Lyon',
+  'haute saone': 'Vesoul',
+  'saone et loire': 'Mâcon',
+  'sarthe': 'Le Mans',
+  'savoie': 'Chambéry',
+  'haute savoie': 'Annecy',
+  'paris': 'Paris',
+  'seine maritime': 'Rouen',
+  'seine et marne': 'Melun',
+  'yvelines': 'Versailles',
+  'deux sevres': 'Niort',
+  'somme': 'Amiens',
+  'tarn': 'Albi',
+  'tarn et garonne': 'Montauban',
+  'var': 'Toulon',
+  'vaucluse': 'Avignon',
+  'vendee': 'La Roche-sur-Yon',
+  'vienne': 'Poitiers',
+  'haute vienne': 'Limoges',
+  'vosges': 'Épinal',
+  'yonne': 'Auxerre',
+  'territoire de belfort': 'Belfort',
+  'essonne': 'Évry',
+  'hauts de seine': 'Nanterre',
+  'seine saint denis': 'Bobigny',
+  'val de marne': 'Créteil',
+  'val d oise': 'Cergy',
+  // Régions
+  'ile de france': 'Paris',
+  'bretagne': 'Rennes',
+  'normandie': 'Rouen',
+  'occitanie': 'Toulouse',
+  'paca': 'Marseille',
+  'provence': 'Marseille',
+  'alsace': 'Strasbourg',
+  'lorraine': 'Metz',
+  'aquitaine': 'Bordeaux',
+  'auvergne': 'Clermont-Ferrand',
+};
+
 function extraireVilleFiche(nomFiche) {
   if (!nomFiche) return '';
   let str = nomFiche.trim();
@@ -1845,7 +1956,26 @@ function extraireVilleFiche(nomFiche) {
   candidate = candidate.replace(/^[\s,;&|/-]+|[\s,;&|/-]+$/g, '').trim();
 
   if (candidate && candidate.length >= 2) {
+    const norm = candidate.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/['’\-_]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (_DEPARTEMENT_TO_VILLE[norm]) {
+      return _DEPARTEMENT_TO_VILLE[norm];
+    }
+
     return candidate;
+  }
+
+  const strNorm = str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/['’\-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (_DEPARTEMENT_TO_VILLE[strNorm]) {
+    return _DEPARTEMENT_TO_VILLE[strNorm];
   }
 
   return str;
