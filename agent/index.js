@@ -1143,28 +1143,14 @@ async function main() {
                     console.log(`========================================================`);
                 } else {
                     try {
-                        const { error: updErr } = await supabase
+                        await supabase
                             .from('planning')
                             .update({
-                                statut: 'image_generated',
                                 url_image: uploadResult.url
                             })
                             .eq('id', task.id);
-                        if (updErr) {
-                            await supabase
-                                .from('planning')
-                                .update({ statut: 'image_generated' })
-                                .eq('id', task.id);
-                        }
-                    } catch (sErr) {
-                        try {
-                            await supabase
-                                .from('planning')
-                                .update({ statut: 'image_generated' })
-                                .eq('id', task.id);
-                        } catch (e) {}
-                    }
-                    console.log(`Supabase mis à jour avec succès pour l'avis ID ${task.id} (${uploadResult.provider})`);
+                    } catch (sErr) {}
+                    console.log(`Photo sauvegardée sur Google Drive (${uploadResult.provider}) pour l'avis ID ${task.id} sans modifier le statut du planning.`);
                 }
 
                 // Pause de sécurité inter-tâches de 20 secondes avant le prochain avis
