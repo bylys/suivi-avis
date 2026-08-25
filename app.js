@@ -1638,31 +1638,44 @@ async function archiverAvisAnciens() {
   const confirmMsg = `Trouvé ${toArchive.length} avis datant de plus de 2 mois (avant le ${cutoffStr}).\nVoulez-vous les archiver maintenant vers la section d'archives ?`;
   if (!confirm(confirmMsg)) return;
 
-  showToast(`📦 Archivage de ${toArchive.length} avis en cours...`, 'info');
+  showToast(`📦 Archivage en masse de ${toArchive.length} avis en cours...`, 'info');
 
-  let successCount = 0;
+  const cleanItems = toArchive.map(a => {
+    const itemCopy = { ...a };
+    delete itemCopy.id;
+    return itemCopy;
+  });
+
+  const insRes = await fetch(`${SUPABASE_URL}/rest/v1/avis_archives`, {
+    method: 'POST',
+    headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+    body: JSON.stringify(cleanItems)
+  });
+
+  if (!insRes.ok) {
+    const errText = await insRes.text();
+    console.error('Erreur Bulk Insert avis_archives:', errText);
+    showToast(`⚠️ Erreur d'archivage : ${errText}`, 'error', 6000);
+    return;
+  }
+
+  const idsToDelete = toArchive.map(a => a.id);
+  for (let i = 0; i < idsToDelete.length; i += 50) {
+    const chunk = idsToDelete.slice(i, i + 50);
+    await fetch(`${SUPABASE_URL}/rest/v1/avis?id=in.(${chunk.join(',')})`, {
+      method: 'DELETE',
+      headers: SB_HEADERS
+    });
+  }
+
   const monthStats = {};
-
   for (const a of toArchive) {
-    try {
-      const archiveObj = { ...a };
-      delete archiveObj.id;
-
-      const insOk = await sbInsert('avis_archives', archiveObj);
-      if (insOk) {
-        await sbDelete('avis', a.id);
-        successCount++;
-
-        const m = (a.date || '').slice(0, 7);
-        if (m) {
-          if (!monthStats[m]) monthStats[m] = { nb_avis: 0, nb_j30: 0, nb_supprimes: 0 };
-          monthStats[m].nb_avis++;
-          if (a.statut === 'j30') monthStats[m].nb_j30++;
-          if (a.statut === 'supprime') monthStats[m].nb_supprimes++;
-        }
-      }
-    } catch (err) {
-      console.error('Erreur lors du transfert de l\'avis:', err);
+    const m = (a.date || '').slice(0, 7);
+    if (m) {
+      if (!monthStats[m]) monthStats[m] = { nb_avis: 0, nb_j30: 0, nb_supprimes: 0 };
+      monthStats[m].nb_avis++;
+      if (a.statut === 'j30') monthStats[m].nb_j30++;
+      if (a.statut === 'supprime') monthStats[m].nb_supprimes++;
     }
   }
 
@@ -1693,7 +1706,7 @@ async function archiverAvisAnciens() {
   invalidateAvisCache();
   _statsArchiveCache = null;
 
-  showToast(`🎉 ${successCount} avis ont été archivés avec succès !`, 'success');
+  showToast(`🎉 ${toArchive.length} avis ont été archivés avec succès !`, 'success');
   await renderListe();
 }
 window.archiverAvisAnciens = archiverAvisAnciens;
