@@ -895,9 +895,10 @@ async function main() {
 
                 if (hasTree || isLandscape) {
                     const treeChoices = [
-                        'élagage doux et taille raisonnée de grands arbres par un élagueur arboriste (avec harnais de sécurité et cordages dans l\'arbre)',
-                        'coupe et entretien d\'arbre dans un jardin privé (tronçon de bois et branches au sol par des artisans jardiniers)',
-                        'taille de haie haute et mise en forme d\'arbustes de jardin (artisan jardinier utilisant un taille-haie professionnel)',
+                        'élagage doux d\'arbre de jardin sur un escabeau double de jardin (artisan jardinier taillant les branches à la scie de jardin, sans harnais ni cordages)',
+                        'élagage et entretien d\'arbre de jardin (branches taillées depuis un escabeau double de jardin ou à hauteur d\'homme par des jardiniers)',
+                        'élagage en hauteur de grand arbre haute tige (élagueur arboriste qualifié avec harnais de sécurité et cordages ancrés dans les grandes branches en hauteur)',
+                        'taille de haie haute sur escabeau double de jardin (artisan jardinier utilisant un taille-haie professionnel)',
                         'dessouchage et rognage de souche d\'arbre au sol dans un jardin (extraction de la souche)'
                     ];
                     return pick(treeChoices);
