@@ -238,11 +238,12 @@ const TARGET_OPERATOR = process.env.OPERATOR_NAME ? process.env.OPERATOR_NAME.tr
 
 function getConversationUrlForOperator(operatorName) {
     const op = (operatorName || TARGET_OPERATOR || '').trim().toUpperCase();
-    if (!op) return process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    if (!op) return process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
     
+    const workVar = `CHATGPT_WORK_CONVERSATION_URL_${op}`;
     const persoVar = `CHATGPT_PERSO_CONVERSATION_URL_${op}`;
-    const workVar = `CHATGPT_CONVERSATION_URL_${op}`;
-    return process.env[persoVar] || process.env[workVar] || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    const stdVar = `CHATGPT_CONVERSATION_URL_${op}`;
+    return process.env[workVar] || process.env[persoVar] || process.env[stdVar] || process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
@@ -650,12 +651,15 @@ async function main() {
         let cookiesRaw = null;
         let usedKey = null;
 
-        // 1. Recherche par correspondance exacte prioritaire (ex: CHATGPT_PERSO_COOKIES_KEVIN)
+        // 1. Recherche par correspondance exacte prioritaire (ex: CHATGPT_WORK_COOKIES_KEVIN)
         const candidateKeys = [
+            opUpper ? `CHATGPT_WORK_COOKIES_${opUpper}` : null,
             opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null,
             opUpper ? `CHATGPT_COOKIES_${opUpper}` : null,
+            opUpper ? `CHATGPT_WORK_COOKIE_${opUpper}` : null,
             opUpper ? `CHATGPT_PERSO_COOKIE_${opUpper}` : null,
             opUpper ? `CHATGPT_COOKIE_${opUpper}` : null,
+            'CHATGPT_WORK_COOKIES',
             'CHATGPT_PERSO_COOKIES',
             'CHATGPT_COOKIES'
         ].filter(Boolean);
