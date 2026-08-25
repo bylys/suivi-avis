@@ -1812,114 +1812,114 @@ function renderRappelsBanner(dus) {
 function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 const _DEPARTEMENT_TO_VILLE = {
-  'ain': 'Bourg-en-Bresse',
-  'aisne': 'Laon',
-  'allier': 'Moulins',
-  'alpes de haute provence': 'Digne-les-Bains',
-  'hautes alpes': 'Gap',
-  'alpes maritimes': 'Nice',
-  'ardeche': 'Privas',
-  'ardennes': 'Charleville-Mézières',
-  'ariege': 'Foix',
-  'aube': 'Troyes',
-  'aude': 'Carcassonne',
-  'aveyron': 'Rodez',
-  'bouches du rhone': 'Marseille',
-  'calvados': 'Caen',
-  'cantal': 'Aurillac',
-  'charente': 'Angoulême',
-  'charente maritime': 'La Rochelle',
-  'cher': 'Bourges',
-  'correze': 'Tulle',
-  'corse du sud': 'Ajaccio',
-  'haute corse': 'Bastia',
-  'corse': 'Ajaccio',
-  'cote d or': 'Dijon',
-  'cotes d armor': 'Saint-Brieuc',
-  'creuse': 'Guéret',
-  'dordogne': 'Périgueux',
-  'doubs': 'Besançon',
-  'drome': 'Valence',
-  'eure': 'Évreux',
-  'eure et loir': 'Chartres',
-  'finistere': 'Quimper',
-  'gard': 'Nîmes',
-  'haute garonne': 'Toulouse',
-  'gers': 'Auch',
-  'gironde': 'Bordeaux',
-  'herault': 'Montpellier',
-  'ille et vilaine': 'Rennes',
-  'indre': 'Châteauroux',
-  'indre et loire': 'Tours',
-  'isere': 'Grenoble',
-  'jura': 'Lons-le-Saunier',
-  'landes': 'Mont-de-Marsan',
-  'loir et cher': 'Blois',
-  'loire': 'Saint-Étienne',
-  'haute loire': 'Le Puy-en-Velay',
-  'loire atlantique': 'Nantes',
-  'loiret': 'Orléans',
-  'lot': 'Cahors',
-  'lot et garonne': 'Agen',
-  'lozere': 'Mende',
-  'maine et loire': 'Angers',
-  'manche': 'Saint-Lô',
-  'marne': 'Reims',
-  'haute marne': 'Chaumont',
-  'mayenne': 'Laval',
-  'meurthe et moselle': 'Nancy',
-  'meuse': 'Bar-le-Duc',
-  'morbihan': 'Vannes',
-  'moselle': 'Metz',
-  'nievre': 'Nevers',
-  'nord': 'Lille',
-  'oise': 'Beauvais',
-  'orne': 'Alençon',
-  'pas de calais': 'Arras',
-  'puy de dome': 'Clermont-Ferrand',
-  'pyrenees atlantiques': 'Pau',
-  'hautes pyrenees': 'Tarbes',
-  'pyrenees orientales': 'Perpignan',
-  'bas rhin': 'Strasbourg',
-  'haut rhin': 'Colmar',
-  'rhone': 'Lyon',
-  'haute saone': 'Vesoul',
-  'saone et loire': 'Mâcon',
-  'sarthe': 'Le Mans',
-  'savoie': 'Chambéry',
-  'haute savoie': 'Annecy',
-  'paris': 'Paris',
-  'seine maritime': 'Rouen',
-  'seine et marne': 'Melun',
-  'yvelines': 'Versailles',
-  'deux sevres': 'Niort',
-  'somme': 'Amiens',
-  'tarn': 'Albi',
-  'tarn et garonne': 'Montauban',
-  'var': 'Toulon',
-  'vaucluse': 'Avignon',
-  'vendee': 'La Roche-sur-Yon',
-  'vienne': 'Poitiers',
-  'haute vienne': 'Limoges',
-  'vosges': 'Épinal',
-  'yonne': 'Auxerre',
-  'territoire de belfort': 'Belfort',
-  'essonne': 'Évry',
-  'hauts de seine': 'Nanterre',
-  'seine saint denis': 'Bobigny',
-  'val de marne': 'Créteil',
-  'val d oise': 'Cergy',
+  'ain': ['Bourg-en-Bresse', 'Oyonnax', 'Ambérieu-en-Bugey', 'Gex', 'Belley', 'Miribel'],
+  'aisne': ['Laon', 'Saint-Quentin', 'Soissons', 'Château-Thierry', 'Tergnier', 'Chauny'],
+  'allier': ['Moulins', 'Vichy', 'Montluçon', 'Yzeure', 'Cusset'],
+  'alpes de haute provence': ['Digne-les-Bains', 'Manosque', 'Sisteron', 'Forcalquier'],
+  'hautes alpes': ['Gap', 'Briançon', 'Embrun', 'Veynes'],
+  'alpes maritimes': ['Nice', 'Cannes', 'Antibes', 'Grasse', 'Menton', 'Cagnes-sur-Mer', 'Le Cannet'],
+  'ardeche': ['Privas', 'Aubenas', 'Annonay', 'Guilherand-Granges', 'Tournon-sur-Rhône'],
+  'ardennes': ['Charleville-Mézières', 'Sedan', 'Rethel', 'Givet', 'Vouziers'],
+  'ariege': ['Foix', 'Pamiers', 'Saint-Girons', 'Lavelanet'],
+  'aube': ['Troyes', 'Romilly-sur-Seine', 'La Chapelle-Saint-Luc', 'Nogent-sur-Seine', 'Bar-sur-Aube'],
+  'aude': ['Carcassonne', 'Narbonne', 'Limoux', 'Castelnaudary', 'Lézignan-Corbières'],
+  'aveyron': ['Rodez', 'Millau', 'Villefranche-de-Rouergue', 'Onet-le-Château', 'Decazeville'],
+  'bouches du rhone': ['Marseille', 'Aix-en-Provence', 'Arles', 'Martigues', 'Salon-de-Provence', 'Aubagne', 'Istres'],
+  'calvados': ['Caen', 'Bayeux', 'Lisieux', 'Vire', 'Deauville', 'Hérouville-Saint-Clair'],
+  'cantal': ['Aurillac', 'Saint-Flour', 'Mauriac', 'Arpajon-sur-Cère'],
+  'charente': ['Angoulême', 'Cognac', 'Soyaux', 'Ruelle-sur-Touvre', 'La Couronne'],
+  'charente maritime': ['La Rochelle', 'Saintes', 'Rochefort', 'Royan', 'Aytré', 'Tonnay-Charente'],
+  'cher': ['Bourges', 'Vierzon', 'Saint-Amand-Montrond', 'Saint-Doulchard'],
+  'correze': ['Tulle', 'Brive-la-Gaillarde', 'Ussel', 'Malemort'],
+  'corse du sud': ['Ajaccio', 'Porto-Vecchio', 'Propriano', 'Sartène'],
+  'haute corse': ['Bastia', 'Corte', 'Calvi', 'Biguglia', 'Borgo'],
+  'corse': ['Ajaccio', 'Bastia', 'Porto-Vecchio', 'Corte'],
+  'cote d or': ['Dijon', 'Beaune', 'Chenôve', 'Talant', 'Quetigny'],
+  'cotes d armor': ['Saint-Brieuc', 'Lannion', 'Dinan', 'Plérin', 'Lamballe', 'Guingamp', 'Loudéac'],
+  'creuse': ['Guéret', 'La Souterraine', 'Aubusson', 'Bourganeuf'],
+  'dordogne': ['Périgueux', 'Bergerac', 'Sarlat-la-Canéda', 'Coulounieix-Chamiers'],
+  'doubs': ['Besançon', 'Montbéliard', 'Pontarlier', 'Audincourt', 'Valentigney'],
+  'drome': ['Valence', 'Romans-sur-Isère', 'Montélimar', 'Bourg-lès-Valence', 'Nyons'],
+  'eure': ['Évreux', 'Vernon', 'Louviers', 'Val-de-Reuil', 'Bernay', 'Gisors'],
+  'eure et loir': ['Chartres', 'Dreux', 'Lucé', 'Châteaudun', 'Nogent-le-Rotrou'],
+  'finistere': ['Quimper', 'Brest', 'Concarneau', 'Morlaix', 'Landerneau', 'Douarnenez'],
+  'gard': ['Nîmes', 'Alès', 'Bagnols-sur-Cèze', 'Beaucaire', 'Saint-Gilles', 'Le Grau-du-Roi'],
+  'haute garonne': ['Toulouse', 'Colomiers', 'Tournefeuille', 'Blagnac', 'Muret', 'Plaisance-du-Touch'],
+  'gers': ['Auch', 'Condom', 'Fleurance', 'L\'Isle-Jourdain'],
+  'gironde': ['Bordeaux', 'Mérignac', 'Pessac', 'Talence', 'Villave-d\'Ornon', 'Arcachon', 'Libourne'],
+  'herault': ['Montpellier', 'Béziers', 'Sète', 'Agde', 'Lunel', 'Frontignan', 'Castelnau-le-Lez'],
+  'ille et vilaine': ['Rennes', 'Saint-Malo', 'Fougères', 'Vitré', 'Cesson-Sévigné', 'Bruz'],
+  'indre': ['Châteauroux', 'Issoudun', 'Déols', 'Le Blanc', 'La Châtre'],
+  'indre et loire': ['Tours', 'Joué-lès-Tours', 'Saint-Cyr-sur-Loire', 'Saint-Pierre-des-Corps', 'Amboise'],
+  'isere': ['Grenoble', 'Échirolles', 'Saint-Martin-d\'Hères', 'Vienne', 'Bourgoin-Jallieu', 'Voiron'],
+  'jura': ['Lons-le-Saunier', 'Dole', 'Saint-Claude', 'Champagnole'],
+  'landes': ['Mont-de-Marsan', 'Dax', 'Biscarrosse', 'Saint-Paul-lès-Dax', 'Tarnos'],
+  'loir et cher': ['Blois', 'Romorantin-Lanthenay', 'Vendôme', 'Vineuil'],
+  'loire': ['Saint-Étienne', 'Roanne', 'Saint-Chamond', 'Firminy', 'Montbrison'],
+  'haute loire': ['Le Puy-en-Velay', 'Monistrol-sur-Loire', 'Yssingeaux', 'Brioude'],
+  'loire atlantique': ['Nantes', 'Saint-Nazaire', 'Saint-Herblain', 'Rezé', 'Saint-Sébastien-sur-Loire', 'Orvault'],
+  'loiret': ['Orléans', 'Fleury-les-Aubrais', 'Olivet', 'Saint-Jean-de-Braye', 'Montargis'],
+  'lot': ['Cahors', 'Figeac', 'Gourdon', 'Gramat'],
+  'lot et garonne': ['Agen', 'Villeneuve-sur-Lot', 'Marmande', 'Passage'],
+  'lozere': ['Mende', 'Marvejols', 'Saint-Chély-d\'Apcher'],
+  'maine et loire': ['Angers', 'Cholet', 'Saumur', 'Sèvremoine', 'Beaupréau-en-Mauges'],
+  'manche': ['Saint-Lô', 'Cherbourg-en-Cotentin', 'Avranches', 'Granville', 'Carentan'],
+  'marne': ['Reims', 'Châlons-en-Champagne', 'Épernay', 'Vitry-le-François', 'Tinqueux'],
+  'haute marne': ['Chaumont', 'Saint-Dizier', 'Langres'],
+  'mayenne': ['Laval', 'Mayenne', 'Château-Gontier'],
+  'meurthe et moselle': ['Nancy', 'Vandœuvre-lès-Nancy', 'Lunéville', 'Toul', 'Longwy', 'Pont-à-Mousson'],
+  'meuse': ['Bar-le-Duc', 'Verdun', 'Commercy', 'Saint-Mihiel'],
+  'morbihan': ['Vannes', 'Lorient', 'Lanester', 'Ploemeur', 'Pontivy', 'Auray', 'Hennebont'],
+  'moselle': ['Metz', 'Thionville', 'Montigny-lès-Metz', 'Forbach', 'Sarreguemines', 'Yutz'],
+  'nievre': ['Nevers', 'Cosne-Cours-sur-Loire', 'Varennes-Vauzelles', 'Decize'],
+  'nord': ['Lille', 'Roubaix', 'Tourcoing', 'Dunkerque', 'Villeneuve-d\'Ascq', 'Valenciennes', 'Douai', 'Wattrelos'],
+  'oise': ['Beauvais', 'Compiègne', 'Creil', 'Nogent-sur-Oise', 'Senlis', 'Méru', 'Noyon', 'Chantilly'],
+  'orne': ['Alençon', 'Flers', 'Argentan', 'L\'Aigle'],
+  'pas de calais': ['Arras', 'Calais', 'Boulogne-sur-Mer', 'Lens', 'Liévin', 'Béthune', 'Hénin-Beaumont'],
+  'puy de dome': ['Clermont-Ferrand', 'Cournon-d\'Auvergne', 'Riom', 'Chamalières', 'Issoire', 'Thiers'],
+  'pyrenees atlantiques': ['Pau', 'Bayonne', 'Anglet', 'Biarritz', 'Hendaye', 'Oloron-Sainte-Marie'],
+  'hautes pyrenees': ['Tarbes', 'Lourdes', 'Aureilhan', 'Bagnères-de-Bigorre'],
+  'pyrenees orientales': ['Perpignan', 'Canet-en-Roussillon', 'Saint-Estève', 'Saint-Cyprien', 'Argelès-sur-Mer'],
+  'bas rhin': ['Strasbourg', 'Haguenau', 'Schiltigheim', 'Illkirch-Graffenstaden', 'Sélestat', 'Lingolsheim'],
+  'haut rhin': ['Mulhouse', 'Colmar', 'Saint-Louis', 'Illzach', 'Rixheim'],
+  'rhone': ['Lyon', 'Villeurbanne', 'Vénissieux', 'Vaulx-en-Velin', 'Saint-Priest', 'Caluire-et-Cuire'],
+  'haute saone': ['Vesoul', 'Héricourt', 'Lure', 'Luxeuil-les-Bains'],
+  'saone et loire': ['Chalon-sur-Saône', 'Mâcon', 'Le Creusot', 'Montceau-les-Mines', 'Autun'],
+  'sarthe': ['Le Mans', 'La Flèche', 'Sablé-sur-Sarthe', 'Allonnes'],
+  'savoie': ['Chambéry', 'Aix-les-Bains', 'Albertville', 'La Motte-Servolex', 'Saint-Jean-de-Maurienne'],
+  'haute savoie': ['Annecy', 'Annemasse', 'Thonon-les-Bains', 'Cluses', 'Sallanches', 'Rumilly'],
+  'paris': ['Paris'],
+  'seine maritime': ['Rouen', 'Le Havre', 'Dieppe', 'Sotteville-lès-Rouen', 'Saint-Étienne-du-Rouvray', 'Le Grand-Quevilly'],
+  'seine et marne': ['Meaux', 'Chelles', 'Melun', 'Pontault-Combault', 'Savigny-le-Temple', 'Champs-sur-Marne'],
+  'yvelines': ['Versailles', 'Sartrouville', 'Mantes-la-Jolie', 'Saint-Germain-en-Laye', 'Poissy', 'Conflans-Sainte-Honorine'],
+  'deux sevres': ['Niort', 'Bressuire', 'Parthenay', 'Thouars'],
+  'somme': ['Amiens', 'Abbeville', 'Albert', 'Péronne', 'Doullens'],
+  'tarn': ['Albi', 'Castres', 'Gaillac', 'Graulhet', 'Mazamet'],
+  'tarn et garonne': ['Montauban', 'Castelsarrasin', 'Moissac'],
+  'var': ['Toulon', 'La Seyne-sur-Mer', 'Hyères', 'Fréjus', 'Draguignan', 'Six-Fours-les-Plages', 'Saint-Raphaël'],
+  'vaucluse': ['Avignon', 'Orange', 'Carpentras', 'Cavaillon', 'Pertuis', 'Sorgues'],
+  'vendee': ['La Roche-sur-Yon', 'Les Sables-d\'Olonne', 'Challans', 'Saint-Gilles-Croix-de-Vie', 'Les Herbiers'],
+  'vienne': ['Poitiers', 'Châtellerault', 'Buxerolles', 'Loudun'],
+  'haute vienne': ['Limoges', 'Saint-Junien', 'Panazol', 'Couzeix'],
+  'vosges': ['Épinal', 'Saint-Dié-des-Vosges', 'Gérardmer', 'Golbey'],
+  'yonne': ['Auxerre', 'Sens', 'Joigny', 'Avallon'],
+  'territoire de belfort': ['Belfort', 'Delle', 'Valdoie', 'Bavilliers'],
+  'essonne': ['Évry', 'Corbeil-Essonnes', 'Massy', 'Savigny-sur-Orge', 'Sainte-Geneviève-des-Bois', 'Viry-Châtillon'],
+  'hauts de seine': ['Nanterre', 'Boulogne-Billancourt', 'Asnières-sur-Seine', 'Colombes', 'Courbevoie', 'Rueil-Malmaison'],
+  'seine saint denis': ['Saint-Denis', 'Montreuil', 'Aulnay-sous-Bois', 'Aubervilliers', 'Drancy', 'Noisy-le-Grand'],
+  'val de marne': ['Créteil', 'Vitry-sur-Seine', 'Champigny-sur-Marne', 'Saint-Maur-des-Fossés', 'Ivry-sur-Seine'],
+  'val d oise': ['Argenteuil', 'Cergy', 'Sarcelles', 'Garges-lès-Gonesse', 'Franconville', 'Pontoise'],
   // Régions
-  'ile de france': 'Paris',
-  'bretagne': 'Rennes',
-  'normandie': 'Rouen',
-  'occitanie': 'Toulouse',
-  'paca': 'Marseille',
-  'provence': 'Marseille',
-  'alsace': 'Strasbourg',
-  'lorraine': 'Metz',
-  'aquitaine': 'Bordeaux',
-  'auvergne': 'Clermont-Ferrand',
+  'ile de france': ['Paris', 'Boulogne-Billancourt', 'Versailles', 'Argenteuil', 'Créteil', 'Nanterre'],
+  'bretagne': ['Rennes', 'Brest', 'Quimper', 'Lorient', 'Vannes', 'Saint-Malo', 'Saint-Brieuc'],
+  'normandie': ['Rouen', 'Le Havre', 'Caen', 'Évreux', 'Cherbourg-en-Cotentin', 'Dieppe'],
+  'occitanie': ['Toulouse', 'Montpellier', 'Nîmes', 'Perpignan', 'Béziers', 'Carcassonne', 'Tarbes'],
+  'paca': ['Marseille', 'Nice', 'Toulon', 'Aix-en-Provence', 'Avignon', 'Cannes', 'Antibes'],
+  'provence': ['Marseille', 'Aix-en-Provence', 'Toulon', 'Avignon', 'Arles'],
+  'alsace': ['Strasbourg', 'Mulhouse', 'Colmar', 'Haguenau'],
+  'lorraine': ['Metz', 'Nancy', 'Thionville', 'Épinal'],
+  'aquitaine': ['Bordeaux', 'Pau', 'Bayonne', 'Mérignac', 'Pessac', 'Agen', 'Périgueux'],
+  'auvergne': ['Clermont-Ferrand', 'Montluçon', 'Aurillac', 'Vichy', 'Le Puy-en-Velay'],
 };
 
 function extraireVilleFiche(nomFiche) {
@@ -1955,28 +1955,29 @@ function extraireVilleFiche(nomFiche) {
 
   candidate = candidate.replace(/^[\s,;&|/-]+|[\s,;&|/-]+$/g, '').trim();
 
-  if (candidate && candidate.length >= 2) {
-    const norm = candidate.toLowerCase()
+  const pickCity = (val) => {
+    if (!val) return '';
+    const norm = val.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/['’\-_]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
     if (_DEPARTEMENT_TO_VILLE[norm]) {
-      return _DEPARTEMENT_TO_VILLE[norm];
+      const target = _DEPARTEMENT_TO_VILLE[norm];
+      return Array.isArray(target) ? rnd(target) : target;
     }
+    return '';
+  };
 
+  if (candidate && candidate.length >= 2) {
+    const matchDep = pickCity(candidate);
+    if (matchDep) return matchDep;
     return candidate;
   }
 
-  const strNorm = str.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/['’\-_]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (_DEPARTEMENT_TO_VILLE[strNorm]) {
-    return _DEPARTEMENT_TO_VILLE[strNorm];
-  }
+  const matchDepStr = pickCity(str);
+  if (matchDepStr) return matchDepStr;
 
   return str;
 }
@@ -3976,38 +3977,7 @@ async function planningGenerer(id, ficheNom, gmail) {
     catch (e) { console.warn('DonutBrowser ignoré (erreur, avis continue):', e?.message || e); }
   }
 
-  // Pré-remplir une ligne dans le générateur d'images
-  const _metierMap = {
-    depannage: 'depannage_auto', remorquage: 'depannage_auto', auto: 'depannage_auto', voiture: 'depannage_auto', garage: 'depannage_auto',
-    debarras: 'debarras',
-    terrassement: 'terrassement',
-    macon: 'maconnerie', maconnerie: 'maconnerie', beton: 'maconnerie', dalle: 'maconnerie',
-    carrelage: 'carreleur', carreleur: 'carreleur',
-    toiture: 'toiture', couvreur: 'toiture', charpente: 'toiture',
-    demoussage: 'nettoyage_toiture', hydrofuge: 'nettoyage_toiture',
-    gouttieres: 'nettoyage_gouttieres', gouttiere: 'nettoyage_gouttieres',
-    etancheite: 'etancheite', etanch: 'etancheite', fuite: 'etancheite',
-    ravalement: 'ravalement', facade: 'ravalement',
-    peintre: 'peinture', peinture: 'peinture',
-    plombier: 'plomberie',
-    electricien: 'electricite',
-    paysagiste: 'paysagiste', jardinage: 'paysagiste', elagage: 'paysagiste', abattage: 'paysagiste',
-    nettoyage: 'nettoyage',
-  };
-  const _imgCtx = window.__GMB_IMAGE_CONTEXT__;
-  if (_imgCtx) {
-    _imgCtx.addRow();
-    const _newRow = _imgCtx.getRows()[0];
-    if (_newRow) {
-      const _metier = Object.entries(_metierMap).find(([k]) => _nomL.includes(k))?.[1] || detecterMetier(ficheNom);
-      if (_metier) {
-        updateImgRow(_newRow.id, 'metier', _metier);
-        updateImgRow(_newRow.id, 'travaux', _travaux);
-      }
-      if (ville && ville !== '—') updateImgRow(_newRow.id, 'ville', ville);
-      updateImgRow(_newRow.id, 'fiche', ficheNom);
-    }
-  }
+
 
   // Basculer vers le générateur d'avis
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
