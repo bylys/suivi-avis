@@ -3473,6 +3473,81 @@ function normalizeCityForProxy(ville) {
     .replace(/_+/g, '_');
 }
 
+// Table de correspondance Départements / Subordonnées → Préfectures & Villes majeures Decodo
+const DECODO_CITY_MAP = {
+  // Départements français (numéro ou nom -> préfecture/sous-préfecture majeure)
+  'oise': 'beauvais', '60': 'beauvais',
+  'essonne': 'evry', '91': 'evry',
+  'var': 'toulon', '83': 'toulon',
+  'herault': 'montpellier', '34': 'montpellier',
+  'val_d_oise': 'cergy', 'val_doise': 'cergy', '95': 'cergy',
+  'seine_et_marne': 'melun', '77': 'melun',
+  'yvelines': 'versailles', '78': 'versailles',
+  'hauts_de_seine': 'nanterre', '92': 'nanterre',
+  'seine_saint_denis': 'bobigny', '93': 'bobigny',
+  'val_de_marne': 'creteil', '94': 'creteil',
+  'bouches_du_rhone': 'marseille', '13': 'marseille',
+  'rhone': 'lyon', '69': 'lyon',
+  'haute_garonne': 'toulouse', '31': 'toulouse',
+  'gironde': 'bordeaux', '33': 'bordeaux',
+  'loire_atlantique': 'nantes', '44': 'nantes',
+  'nord': 'lille', '59': 'lille',
+  'pas_de_calais': 'arras', '62': 'arras',
+  'bas_rhin': 'strasbourg', '67': 'strasbourg',
+  'ille_et_vilaine': 'rennes', '35': 'rennes',
+  'seine_maritime': 'rouen', '76': 'rouen',
+  'isere': 'grenoble', '38': 'grenoble',
+  'alpes_maritimes': 'nice', '06': 'nice',
+  'marne': 'reims', '51': 'reims',
+  'moselle': 'metz', '57': 'metz',
+  'somme': 'amiens', '80': 'amiens',
+  'finistere': 'brest', '29': 'brest',
+  'loiret': 'orleans', '45': 'orleans',
+  'calvados': 'caen', '14': 'caen',
+  'haute_savoie': 'annecy', '74': 'annecy',
+  'puy_de_dome': 'clermont_ferrand', '63': 'clermont_ferrand',
+  'pyrenees_atlantiques': 'pau', '64': 'pau',
+  'maine_et_loire': 'angers', '49': 'angers',
+  'charente_maritime': 'la_rochelle', '17': 'la_rochelle',
+  'cote_d_or': 'dijon', '21': 'dijon',
+  'doubs': 'besancon', '25': 'besancon',
+  'saone_et_loire': 'macon', '71': 'macon',
+  'gard': 'nimes', '30': 'nimes',
+  'vaucluse': 'avignon', '84': 'avignon',
+  'pyrenees_orientales': 'perpignan', '66': 'perpignan',
+  'dordogne': 'perigueux', '24': 'perigueux',
+  'drome': 'valence', '26': 'valence',
+  'eure': 'evreux', '27': 'evreux',
+  'eure_et_loir': 'chartres', '28': 'chartres',
+  'indre_et_loire': 'tours', '37': 'tours',
+  'landes': 'mont_de_marsan', '40': 'mont_de_marsan',
+  'loir_et_cher': 'blois', '41': 'blois',
+  'loire': 'saint_etienne', '42': 'saint_etienne',
+  'morbihan': 'vannes', '56': 'vannes',
+  'sarthe': 'le_mans', '72': 'le_mans',
+  'savoie': 'chambery', '73': 'chambery',
+  'vendee': 'la_roche_sur_yon', '85': 'la_roche_sur_yon',
+  'vienne': 'poitiers', '86': 'poitiers',
+  'yonne': 'auxerre', '89': 'auxerre',
+
+  // Banlieues et communes rattachées
+  'reze': 'nantes', 'saint_herblain': 'nantes', 'orvault': 'nantes', 'vertou': 'nantes', 'carquefou': 'nantes', 'bouguenais': 'nantes',
+  'villeurbanne': 'lyon', 'venissieux': 'lyon', 'vaulx_en_velin': 'lyon', 'saint_priest': 'lyon', 'caluire_et_cuire': 'lyon',
+  'pessac': 'bordeaux', 'merignac': 'bordeaux', 'talence': 'bordeaux', 'villenave_d_ornon': 'bordeaux', 'begles': 'bordeaux', 'gradignan': 'bordeaux',
+  'tournefeuille': 'toulouse', 'blagnac': 'toulouse', 'colomiers': 'toulouse', 'muret': 'toulouse',
+  'boulogne_billancourt': 'paris', 'nanterre': 'paris', 'courbevoie': 'paris', 'colombes': 'paris', 'asnieres_sur_seine': 'paris', 'neuilly_sur_seine': 'paris', 'levallois_perret': 'paris', 'issy_les_moulineaux': 'paris', 'antony': 'paris', 'clamart': 'paris', 'rueil_malmaison': 'paris', 'montrouge': 'paris', 'suresnes': 'paris',
+  'saint_denis': 'paris', 'montreuil': 'paris', 'aubervilliers': 'paris', 'aulnay_sous_bois': 'paris', 'drancy': 'paris', 'noisy_le_grand': 'paris', 'pantin': 'paris',
+  'tourcoing': 'lille', 'roubaix': 'lille', 'villeneuve_d_ascq': 'lille', 'marcq_en_baroeul': 'lille',
+  'schiltigheim': 'strasbourg', 'illkirch_graffenstaden': 'strasbourg',
+  'saint_martin_d_heres': 'grenoble', 'echirolles': 'grenoble',
+  'aix_en_provence': 'marseille', 'aubagne': 'marseille', 'vitrolles': 'marseille'
+};
+
+function getDecodoCitySlug(ville) {
+  const slug = normalizeCityForProxy(ville);
+  return DECODO_CITY_MAP[slug] || slug;
+}
+
 async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const token = getDonutToken();
   if (!token) {
@@ -3482,24 +3557,23 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const base = getDonutBase();
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-  // 1. Créer le proxy Decodo pour cette ville
-  const citySlug = normalizeCityForProxy(ville);
+  // 1. Créer le proxy Decodo pour cette ville (avec résolution automatique Préfecture / Sous-Préfecture)
+  const rawCitySlug = normalizeCityForProxy(ville);
+  const citySlug    = getDecodoCitySlug(ville);
+  const backupSlug  = DECODO_CITY_MAP[rawCitySlug] ? rawCitySlug : 'paris';
+
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
-  // Gateway unique pour TOUS les pays — le pays est ciblé via country-XX dans le username
-  // (confirmé au curl : gate.decodo.com:10001 + country-fr/be/... fonctionne).
   const cfg = { host: 'gate.decodo.com', port: 10001 };
   const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
   const baseUser   = isMobile ? 'user-VATeam' : 'user-VAteamR';
 
-  // sessionduration-1440 EXIGE un id de session avant lui, sinon "no suitable exit node".
-  // Session stable par ville (sticky IP 24h) + suffixe aléatoire pour l'unicité.
+  // sessionduration-1440 EXIGE un id de session avant lui.
   const sessionId = ('s' + citySlug.replace(/[^a-z0-9]/g, '') + Math.random().toString(36).slice(2, 8)).slice(0, 24);
   const sessionSuffix = `-session-${sessionId}-sessionduration-1440`;
 
-  // Ordre de tentative : ville → pays → base (correspond aux curl qui fonctionnent)
-  const usernameAvecVille = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
-  const usernameAvecPays  = `${baseUser}-country-${pays.toLowerCase()}${sessionSuffix}`;
-  const usernameBase      = `${baseUser}${sessionSuffix}`;
+  // Stratégie 100% City-Forced : cibler toujours une ville préfecture/sous-préfecture valide chez Decodo
+  const usernameCityPrimary   = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
+  const usernameCitySecondary = `${baseUser}-country-${pays.toLowerCase()}-city-${backupSlug}${sessionSuffix}`;
 
   const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
     : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
@@ -3570,14 +3644,12 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }
     } catch (e) { console.warn('DonutBrowser GET proxies échoué:', e); }
 
-    // Si aucun proxy existant, essayer de créer avec les 3 niveaux de ciblage
-    // (ville → pays → base) pour trouver lequel DonutBrowser accepte sans PROXY_NOT_WORKING
+    // Si aucun proxy existant, essayer de créer avec le ciblage ville préfecture puis alternative (100% City-Forced)
     if (!proxyId && decodoPass) {
       const ts = Math.floor(Date.now() / 1000);
       for (const [suffix, username] of [
-        [`${citySlug}_${ts}`, usernameAvecVille],
-        [`${pays.toLowerCase()}_${ts}`, usernameAvecPays],
-        [`base_${ts}`, usernameBase],
+        [`${citySlug}_${ts}`, usernameCityPrimary],
+        [`${backupSlug}_${ts}`, usernameCitySecondary],
       ]) {
         try {
           const pxRes = await _fetchTimeout(`${base}/v1/proxies`, {
@@ -3684,7 +3756,8 @@ async function donutRafraichirProxy() {
     settings = { proxy_type: s.proxy_type || 'http', host: s.host, port: s.port, username: newUser, password: s.password };
   } else {
     const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
-    const citySlug = prof.name.split('_').slice(2).join('_') || 'paris';
+    const rawCity  = prof.name.split('_').slice(2).join('_') || 'paris';
+    const citySlug = getDecodoCitySlug(rawCity);
     const baseUser = isMobile ? 'user-VATeam' : 'user-VAteamR';
     settings = {
       proxy_type: 'http', host: 'gate.decodo.com', port: 10001,
