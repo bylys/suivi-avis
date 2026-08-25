@@ -1515,6 +1515,85 @@ async function loadArchivedMonth(mois) {
 }
 window.loadArchivedMonth = loadArchivedMonth;
 
+async function archiverAvisAnciens() {
+  const now = new Date();
+  const dCutoff = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  const cutoffStr = dCutoff.toISOString().split('T')[0];
+
+  showToast('📦 Recherche des avis de plus de 2 mois à archiver...', 'info');
+
+  const toArchive = await sbGet('avis', `select=*&date=lt.${cutoffStr}`);
+
+  if (!toArchive || toArchive.length === 0) {
+    showToast('✅ Aucun avis de plus de 2 mois à archiver pour le moment.', 'success');
+    return;
+  }
+
+  const confirmMsg = `Trouvé ${toArchive.length} avis datant de plus de 2 mois (avant le ${cutoffStr}).\nVoulez-vous les archiver maintenant vers la section d'archives ?`;
+  if (!confirm(confirmMsg)) return;
+
+  showToast(`📦 Archivage de ${toArchive.length} avis en cours...`, 'info');
+
+  let successCount = 0;
+  const monthStats = {};
+
+  for (const a of toArchive) {
+    try {
+      const archiveObj = { ...a };
+      delete archiveObj.id;
+
+      const { error: insErr } = await supabase.from('avis_archives').insert(archiveObj);
+      if (insErr) {
+        console.warn('Erreur archivage item:', insErr.message);
+      }
+
+      await supabase.from('avis').delete().eq('id', a.id);
+      successCount++;
+
+      const m = (a.date || '').slice(0, 7);
+      if (m) {
+        if (!monthStats[m]) monthStats[m] = { nb_avis: 0, nb_j30: 0, nb_supprimes: 0 };
+        monthStats[m].nb_avis++;
+        if (a.statut === 'j30') monthStats[m].nb_j30++;
+        if (a.statut === 'supprime') monthStats[m].nb_supprimes++;
+      }
+    } catch (err) {
+      console.error('Erreur lors du transfert de l\'avis:', err);
+    }
+  }
+
+  for (const [mois, st] of Object.entries(monthStats)) {
+    try {
+      const existing = await sbGet('stats_mensuelles', `select=*&mois=eq.${mois}`);
+      if (existing && existing.length > 0) {
+        const cur = existing[0];
+        await supabase.from('stats_mensuelles').update({
+          nb_avis: (cur.nb_avis || 0) + st.nb_avis,
+          nb_j30: (cur.nb_j30 || 0) + st.nb_j30,
+          nb_supprimes: (cur.nb_supprimes || 0) + st.nb_supprimes
+        }).eq('id', cur.id);
+      } else {
+        await supabase.from('stats_mensuelles').insert({
+          mois,
+          fiche_nom: 'Toutes fiches',
+          operateur: 'archive',
+          nb_avis: st.nb_avis,
+          nb_j30: st.nb_j30,
+          nb_supprimes: st.nb_supprimes,
+          note_moyenne: 5.0
+        });
+      }
+    } catch (e) {}
+  }
+
+  invalidateAvisCache();
+  _statsArchiveCache = null;
+
+  showToast(`🎉 ${successCount} avis ont été archivés avec succès !`, 'success');
+  await renderListe();
+}
+window.archiverAvisAnciens = archiverAvisAnciens;
+
 async function updateDate(id, newDate) {
   await sbUpdate('avis', id, { date: newDate });
   invalidateAvisCache();
