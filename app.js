@@ -3803,9 +3803,6 @@ async function planningGenerer(id, ficheNom, gmail) {
         updateImgRow(_newRow.id, 'metier', _metier);
         updateImgRow(_newRow.id, 'travaux', _travaux);
       }
-        updateImgRow(_newRow.id, 'metier', _metier);
-        updateImgRow(_newRow.id, 'travaux', _travaux);
-      }
       if (ville && ville !== '—') updateImgRow(_newRow.id, 'ville', ville);
       updateImgRow(_newRow.id, 'fiche', ficheNom);
     }
