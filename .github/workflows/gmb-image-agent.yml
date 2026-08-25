@@ -2,8 +2,8 @@ name: GMB Image Generator Agent (6 Opérateurs Parallèles)
 
 on:
   schedule:
-    # Exécution automatique chaque jour à 06h00 heure de Thaïlande (UTC+7 -> 23h00 UTC la veille)
-    - cron: '0 23 * * *'
+    # Exécution automatique chaque jour à 01h00 du matin heure de Thaïlande (UTC+7 -> 18h00 UTC la veille)
+    - cron: '0 18 * * *'
   workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
 
 jobs:
