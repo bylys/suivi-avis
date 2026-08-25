@@ -206,7 +206,7 @@ async function init() {
 }
 
 // ── ROUTER & TABS ──
-const VALID_TABS = ['dashboard', 'planning', 'generateur', 'images', 'saisie', 'liste', 'fiches', 'gmails'];
+const VALID_TABS = ['dashboard', 'planning', 'generateur', 'images', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
 
 function getBasePath() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -216,25 +216,31 @@ function getBasePath() {
   return '';
 }
 
+function normalizeTabName(name) {
+  if (name === 'saisir') return 'saisie';
+  return name;
+}
+
 function getTabFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const redirectPath = params.get('p');
   if (redirectPath) {
     const cleanPath = redirectPath.replace(/^\/+|\/+$/g, '');
-    if (VALID_TABS.includes(cleanPath)) return cleanPath;
+    if (VALID_TABS.includes(cleanPath)) return normalizeTabName(cleanPath);
   }
 
   const hash = window.location.hash.replace(/^#/, '');
-  if (VALID_TABS.includes(hash)) return hash;
+  if (VALID_TABS.includes(hash)) return normalizeTabName(hash);
 
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const lastPart = pathParts[pathParts.length - 1];
-  if (VALID_TABS.includes(lastPart)) return lastPart;
+  if (VALID_TABS.includes(lastPart)) return normalizeTabName(lastPart);
 
   return 'dashboard';
 }
 
 function updateUrlForTab(name, replace = false) {
+  name = normalizeTabName(name);
   if (!VALID_TABS.includes(name)) return;
   const base = getBasePath();
   const targetUrl = `${base}/${name}`;
@@ -253,6 +259,7 @@ function updateUrlForTab(name, replace = false) {
 }
 
 function showTab(name, skipUrlUpdate = false) {
+  name = normalizeTabName(name);
   if (!VALID_TABS.includes(name)) name = 'dashboard';
 
   const targetTab = document.getElementById('tab-' + name);
@@ -263,7 +270,7 @@ function showTab(name, skipUrlUpdate = false) {
 
   targetTab.classList.remove('hidden');
 
-  const btn = document.querySelector(`.tab-btn[onclick*="${name}"]`);
+  const btn = document.querySelector(`.tab-btn[onclick*="${name}"]`) || document.querySelector(`.tab-btn[onclick*="saisie"]`) || document.querySelector(`.tab-btn[onclick*="saisir"]`);
   if (btn) btn.classList.add('active');
 
   if (!skipUrlUpdate) {
