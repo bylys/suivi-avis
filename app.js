@@ -206,7 +206,7 @@ async function init() {
 }
 
 // ── ROUTER & TABS ──
-const VALID_TABS = ['dashboard', 'planning', 'generateur', 'images', 'saisir', 'liste', 'fiches', 'gmails'];
+const VALID_TABS = ['dashboard', 'planning', 'generateur', 'images', 'saisie', 'liste', 'fiches', 'gmails'];
 
 function getBasePath() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -1515,6 +1515,8 @@ async function renderListe(openMonths = null) {
       <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
     </tr></thead>`;
 
+  window._monthAvisCache = {};
+
   el.innerHTML = sortedMonths.map((m, idx) => {
     const [year, mo] = m.split('-');
     const label = `${MOIS_LABELS[parseInt(mo)-1]} ${year}`;
@@ -1522,11 +1524,23 @@ async function renderListe(openMonths = null) {
     const hasArchive = archByMonth[m] && archByMonth[m].nb_avis > 0;
 
     if (hasRecent) {
-      const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
       const suppCount = byMonth[m].filter(a => a.statut === 'supprime').length;
       const j30Count  = byMonth[m].filter(a => a.statut === 'j30').length;
       const isOpen = openMonths ? openMonths.has(m) : idx === 0;
-      return `<details class="month-group" data-month="${m}" ${isOpen ? 'open' : ''}>
+
+      window._monthAvisCache[m] = {
+        avisList: byMonth[m],
+        rappelsDus,
+        aVerif
+      };
+
+      let initialContent = '';
+      if (isOpen) {
+        const rows = byMonth[m].map(a => buildAvisRow(a, rappelsDus, aVerif)).join('');
+        initialContent = `${tableHead}<tbody>${rows}</tbody></table>`;
+      }
+
+      return `<details class="month-group" data-month="${m}" ${isOpen ? 'open' : ''} ontoggle="onMonthToggle('${m}', this)">
         <summary class="month-summary">
           <span class="month-label">📅 ${label}</span>
           <span class="month-badges">
@@ -1535,7 +1549,7 @@ async function renderListe(openMonths = null) {
             <span class="badge-j30">${j30Count} J+30</span>
           </span>
         </summary>
-        ${tableHead}<tbody>${rows}</tbody></table>
+        <div id="month-body-${m}" data-rendered="${isOpen ? 'true' : 'false'}">${initialContent}</div>
       </details>`;
     }
 
@@ -1579,6 +1593,26 @@ async function loadArchivedMonth(mois) {
   container.innerHTML = tableHead + '<tbody>' + rows + '</tbody></table>';
 }
 window.loadArchivedMonth = loadArchivedMonth;
+
+function onMonthToggle(m, detailsEl) {
+  if (detailsEl && detailsEl.open) {
+    const bodyEl = document.getElementById(`month-body-${m}`);
+    if (bodyEl && bodyEl.dataset.rendered !== 'true') {
+      const data = window._monthAvisCache ? window._monthAvisCache[m] : null;
+      if (data && data.avisList) {
+        const tableHead = `<table class="avis-table">
+          <thead><tr>
+            <th>Date</th><th>Fiche GMB</th><th>Opérateur</th><th>Gmail</th><th>Note</th>
+            <th>Statut</th><th>Rappel</th><th>Photo</th><th>Lien</th><th>Avis</th><th></th>
+          </tr></thead>`;
+        const rows = data.avisList.map(a => buildAvisRow(a, data.rappelsDus, data.aVerif)).join('');
+        bodyEl.innerHTML = `${tableHead}<tbody>${rows}</tbody></table>`;
+        bodyEl.dataset.rendered = 'true';
+      }
+    }
+  }
+}
+window.onMonthToggle = onMonthToggle;
 
 async function archiverAvisAnciens() {
   const now = new Date();
