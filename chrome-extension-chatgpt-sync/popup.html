@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      width: 280px;
+      padding: 16px;
+      margin: 0;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    h2 {
+      font-size: 15px;
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    label {
+      font-size: 12px;
+      color: #94a3b8;
+      display: block;
+      margin-bottom: 6px;
+    }
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+      font-size: 13px;
+      outline: none;
+      margin-bottom: 14px;
+    }
+    select:focus {
+      border-color: #38bdf8;
+    }
+    .status-box {
+      font-size: 11px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      word-break: break-all;
+    }
+    .btn-sync {
+      width: 100%;
+      padding: 8px;
+      background: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-sync:hover {
+      background: #0369a1;
+    }
+  </style>
+</head>
+<body>
+  <h2>📍 Sync Cookies ChatGPT</h2>
+  <label for="op-select">Opérateur associé :</label>
+  <select id="op-select">
+    <option value="KEVIN">Kevin</option>
+    <option value="FIF">Fif / Fifaliana</option>
+    <option value="AINA">Aina</option>
+    <option value="ANJARA">Anjara</option>
+    <option value="KORAIL">Korail</option>
+    <option value="KINTANA">Kintana</option>
+  </select>
+
+  <div class="status-box" id="status-text">⏳ Chargement du statut...</div>
+  <button class="btn-sync" id="btn-force">🔄 Forcer la synchro maintenant</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>

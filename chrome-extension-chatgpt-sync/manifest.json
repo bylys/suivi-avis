@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "GMB Tracker — ChatGPT Cookie Auto-Sync",
-  "version": "1.0.0",
-  "description": "Synchronisation automatique et privée des cookies ChatGPT vers Supabase pour l'Agent GMB Tracker.",
+  "version": "1.1.0",
+  "description": "Synchronisation automatique et privée des cookies ChatGPT par opérateur vers Supabase.",
   "permissions": [
-    "cookies"
+    "cookies",
+    "storage"
   ],
   "host_permissions": [
     "https://chatgpt.com/*",
@@ -12,6 +13,10 @@
     "https://*.openai.com/*",
     "https://rrbvghxmnimusfyqixau.supabase.co/*"
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Select Operator & Status"
+  },
   "background": {
     "service_worker": "background.js"
   }
