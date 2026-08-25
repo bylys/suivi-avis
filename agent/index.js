@@ -868,8 +868,12 @@ async function main() {
                 if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('gutter')) {
                     return 'nettoyage et vidage de gouttières (artisan retirant les feuilles et résidus accumulés dans la gouttière depuis une échelle, nettoyage au jet d\'eau, sans pose ni réfection)';
                 }
-                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('waterproof') || f.includes('waterproofing')) {
-                    return 'travaux d\'étanchéité (pose de membrane bitumineuse, résine d\'étanchéité ou traitement étanche hydrofuge, sans réfection de charpente ni tuiles)';
+                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit plat') || f.includes('toiture terrasse') || f.includes('terrasse toit plat') || f.includes('waterproof') || f.includes('waterproofing')) {
+                    const etancheiteChoices = [
+                        'travaux d\'étanchéité de toit terrasse et toit plat (pose de membrane EPDM / PVC synthétique ou membrane bitumineuse au chalumeau sur toit terrasse plat, sans tuiles ni pente)',
+                        'étanchéité de toit terrasse plat (artisan étancheur étalant la résine synthétique d\'étanchéité au rouleau sur surface plate)'
+                    ];
+                    return pick(etancheiteChoices);
                 }
                 if (f.includes('ravalement') || f.includes('façade') || f.includes('facade') || f.includes('crépi') || f.includes('crepi') || f.includes('siding')) {
                     return 'ravalement et nettoyage de façade';
@@ -1085,12 +1089,12 @@ async function main() {
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROADSIDE BREAKDOWN / TOW TRUCK / AUTOMOTIVE REPAIR only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
                 negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof workers, NO trees, NO scaffolding, NO pressure washers, NO garden tools. ONLY roadside vehicle towing or breakdown assistance with a tow truck.";
+            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('inondation') || lowerLabel.includes('infiltration')) {
+                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: FLAT ROOF WATERPROOFING MEMBRANE / EPDM / PVC / SYNTHETIC RESIN ON FLAT ROOFTOP ONLY.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
+                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO sloped roofs! NO terracotta roof tiles! NO high-pressure jet washing of roof tiles! NO pitched house roofs! NO tree trimming! The building roof MUST be 100% FLAT (toit plat/terrasse). ONLY flat roof waterproofing membrane (EPDM, PVC, bitumen) applied with torch or resin roller on a flat rooftop surface.";
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('charpente') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive')) {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROOFER / ROOF TILE REPLACEMENT / ROOFING WORK on a fully tiled finished roof only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
                 negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO exposed bare wooden laths/battens, NO skeletal uncovered roof structure, NO giant tall extension ladders leaning against the front of the house reaching up the roof slope, NO single worker climbing a giant ladder in front of a house, NO hedge trimming, NO tree surgeons, NO pressure washing patio, NO tow trucks, NO arborists. ONLY roofing work on a fully tiled roof surface with a hooked roof ladder laid flat on tiles.";
-            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('pvc') || lowerLabel.includes('inondation') || lowerLabel.includes('infiltration')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: WATERPROOFING MEMBRANE / PVC WATERPROOFING / LEAK REPAIR only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO tree trimming, NO scaffolding facade. ONLY flat roof waterproofing membrane, PVC resin application or water leak sealing.";
             } else if (lowerLabel.includes('peinture')) {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: INDOOR PAINTER / WALL PAINTING with roller and drop cloths only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
                 negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO outdoor trees, NO tow trucks, NO pressure washers. ONLY indoor wall or ceiling painting in bathroom, kitchen, bedroom or living room.";
