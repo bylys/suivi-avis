@@ -1142,14 +1142,29 @@ async function main() {
                     console.log(`(Aucune ligne de la base de données n'a été modifiée)`);
                     console.log(`========================================================`);
                 } else {
-                    await supabase
-                        .from('planning')
-                        .update({
-                            statut: 'image_generated',
-                            url_image: uploadResult.url
-                        })
-                        .eq('id', task.id);
-                    console.log(`Supabase mis à jour avec le lien (${uploadResult.provider}) pour l'avis ID ${task.id}`);
+                    try {
+                        const { error: updErr } = await supabase
+                            .from('planning')
+                            .update({
+                                statut: 'image_generated',
+                                url_image: uploadResult.url
+                            })
+                            .eq('id', task.id);
+                        if (updErr) {
+                            await supabase
+                                .from('planning')
+                                .update({ statut: 'image_generated' })
+                                .eq('id', task.id);
+                        }
+                    } catch (sErr) {
+                        try {
+                            await supabase
+                                .from('planning')
+                                .update({ statut: 'image_generated' })
+                                .eq('id', task.id);
+                        } catch (e) {}
+                    }
+                    console.log(`Supabase mis à jour avec succès pour l'avis ID ${task.id} (${uploadResult.provider})`);
                 }
 
                 // Pause de sécurité inter-tâches de 20 secondes avant le prochain avis

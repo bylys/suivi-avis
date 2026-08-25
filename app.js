@@ -3378,8 +3378,11 @@ async function renderPlanning() {
 
   list.innerHTML = Object.entries(byOp).map(([op, taches]) => `
     <div style="margin-bottom:24px">
-      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px">
-        👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span>
+      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px;display:flex;align-items:center;justify-space-between">
+        <span>👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span></span>
+        <button onclick="openOperatorDriveFolder('${op}')" style="padding:4px 10px;border-radius:6px;background:#1e293b;color:#38bdf8;border:1px solid #334155;cursor:pointer;font-size:12px">
+          📁 Dossier Drive ${op}
+        </button>
       </h3>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead>
