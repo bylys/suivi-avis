@@ -1,0 +1,27 @@
+name: JavaScript Syntax & Code Quality Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check-syntax:
+    name: Validate JavaScript Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Check JS Syntax (App & Agent)
+        run: |
+          node -c app.js
+          node -c agent/index.js
+          node -c agent/rules.js
+          echo "✅ All JavaScript files parsed successfully with ZERO syntax errors!"
