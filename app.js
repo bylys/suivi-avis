@@ -1648,20 +1648,18 @@ async function archiverAvisAnciens() {
       const archiveObj = { ...a };
       delete archiveObj.id;
 
-      const { error: insErr } = await supabase.from('avis_archives').insert(archiveObj);
-      if (insErr) {
-        console.warn('Erreur archivage item:', insErr.message);
-      }
+      const insOk = await sbInsert('avis_archives', archiveObj);
+      if (insOk) {
+        await sbDelete('avis', a.id);
+        successCount++;
 
-      await supabase.from('avis').delete().eq('id', a.id);
-      successCount++;
-
-      const m = (a.date || '').slice(0, 7);
-      if (m) {
-        if (!monthStats[m]) monthStats[m] = { nb_avis: 0, nb_j30: 0, nb_supprimes: 0 };
-        monthStats[m].nb_avis++;
-        if (a.statut === 'j30') monthStats[m].nb_j30++;
-        if (a.statut === 'supprime') monthStats[m].nb_supprimes++;
+        const m = (a.date || '').slice(0, 7);
+        if (m) {
+          if (!monthStats[m]) monthStats[m] = { nb_avis: 0, nb_j30: 0, nb_supprimes: 0 };
+          monthStats[m].nb_avis++;
+          if (a.statut === 'j30') monthStats[m].nb_j30++;
+          if (a.statut === 'supprime') monthStats[m].nb_supprimes++;
+        }
       }
     } catch (err) {
       console.error('Erreur lors du transfert de l\'avis:', err);
@@ -1673,13 +1671,13 @@ async function archiverAvisAnciens() {
       const existing = await sbGet('stats_mensuelles', `select=*&mois=eq.${mois}`);
       if (existing && existing.length > 0) {
         const cur = existing[0];
-        await supabase.from('stats_mensuelles').update({
+        await sbUpdate('stats_mensuelles', cur.id, {
           nb_avis: (cur.nb_avis || 0) + st.nb_avis,
           nb_j30: (cur.nb_j30 || 0) + st.nb_j30,
           nb_supprimes: (cur.nb_supprimes || 0) + st.nb_supprimes
-        }).eq('id', cur.id);
+        });
       } else {
-        await supabase.from('stats_mensuelles').insert({
+        await sbInsert('stats_mensuelles', {
           mois,
           fiche_nom: 'Toutes fiches',
           operateur: 'archive',
