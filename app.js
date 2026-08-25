@@ -3407,11 +3407,6 @@ async function renderPlanning() {
                     style="padding:3px 8px;border-radius:5px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px">
                     📸 Voir Photo
                   </a>
-                ` : (r.statut === 'generated' || r.statut === 'image_generated' || r.statut === 'done') ? `
-                  <button onclick="openOperatorDriveFolder('${op}')"
-                    style="padding:3px 8px;border-radius:5px;background:#1e293b;color:#38bdf8;border:1px solid #334155;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px">
-                    📁 Voir sur Drive
-                  </button>
                 ` : '<span style="color:#64748b;font-size:12px">—</span>'}
               </td>
               <td style="padding:7px 10px">
