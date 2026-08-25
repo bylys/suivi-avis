@@ -1623,19 +1623,19 @@ window.onMonthToggle = onMonthToggle;
 
 async function archiverAvisAnciens() {
   const now = new Date();
-  const dCutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+  const dCutoff = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const cutoffStr = dCutoff.toISOString().split('T')[0];
 
-  showToast('📦 Recherche des avis antérieurs au mois en cours à archiver...', 'info');
+  showToast('📦 Recherche des avis datant de plus d\'1 mois à archiver...', 'info');
 
   const toArchive = await sbGet('avis', `select=*&date=lt.${cutoffStr}`);
 
   if (!toArchive || toArchive.length === 0) {
-    showToast('✅ Aucun avis antérieur au mois en cours à archiver.', 'success');
+    showToast('✅ Aucun avis antérieur aux 2 derniers mois à archiver.', 'success');
     return;
   }
 
-  const confirmMsg = `Trouvé ${toArchive.length} avis de plus d'1 mois (antérieurs au ${cutoffStr}).\nVoulez-vous les archiver maintenant vers la section d'archives ?`;
+  const confirmMsg = `Trouvé ${toArchive.length} avis de plus d'1 mois (antérieurs au ${cutoffStr}).\nCela conservera Août et Juillet actifs et archivra Juin et antérieurs.\nVoulez-vous lancer l'archivage ?`;
   if (!confirm(confirmMsg)) return;
 
   showToast(`📦 Archivage en masse de ${toArchive.length} avis en cours...`, 'info');
