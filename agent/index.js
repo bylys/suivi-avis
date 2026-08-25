@@ -947,17 +947,27 @@ async function main() {
                 if (f.includes('vitrier') || f.includes('miroiterie') || f.includes('vitrage') || f.includes('glass') || f.includes('glazier')) {
                     return 'remplacement de vitrage et vitrerie';
                 }
-                if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk')) {
-                    return 'débarras de maison et locaux';
+                if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk') || f.includes('encombrant')) {
+                    const debarrasChoices = [
+                        'débarras et nettoyage d\'intérieur de maison, appartement ou grenier (cartons empilés, objets et meubles en cours de rangement par des déménageurs sans camion à l\'image)',
+                        'débarras de locaux et maison individuelle avec camionnette utilitaire aux portes arrière ouvertes garée devant l\'allée'
+                    ];
+                    return pick(debarrasChoices);
                 }
                 if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('pierre') || f.includes('masonry') || f.includes('mason') || f.includes('brickwork')) {
-                    return 'travaux de maçonnerie';
+                    const maconnerieChoices = [
+                        'travaux de maçonnerie générale, pose de parpaings et muret en béton avec mortier au sol',
+                        'maçonnerie et rejointoiement de mur en pierre naturelle de maison',
+                        'construction et coffrage d\'escalier intérieur ou extérieur en béton armé par un artisan maçon',
+                        'ouverture dans mur porteur et pose de linteau par un artisan maçon'
+                    ];
+                    return pick(maconnerieChoices);
                 }
-                if (f.includes('terrassement') || f.includes('dessouchage') || f.includes('paving') || f.includes('driveway') || f.includes('excavation') || f.includes('concrete') || f.includes('cement')) {
+                if (f.includes('terrassement') || f.includes('dessouchage') || f.includes('dallage') || f.includes('paving') || f.includes('driveway') || f.includes('excavation') || f.includes('concrete') || f.includes('cement')) {
                     const concreteChoices = [
-                        'travaux de terrassement, nivellement du sol et coulage de dalle en béton (dalle béton extérieure)',
-                        'travaux de terrassement et préparation de sol pour allée ou terrasse',
-                        'aménagement de dalle béton et terrassement extérieur avec engin de chantier ou pelle de terrassement'
+                        'travaux de terrassement, nivellement du sol et coulage de dalle béton extérieure (coffrage en bois, treillis métallique et terrassement par un terrasseur)',
+                        'travaux de terrassement et préparation du sol pour allée de jardin ou terrasse extérieure',
+                        'aménagement de dalle béton extérieure avec mini-pelle de terrassement ou engin de chantier'
                     ];
                     return pick(concreteChoices);
                 }

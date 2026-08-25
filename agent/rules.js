@@ -101,7 +101,7 @@ function getCompositionRules(metier, travaux, etatChantier) {
 
   let framingRule;
   if (isDebarras) {
-    framingRule = 'CLEARANCE FRAMING (Débarras): Photo can be shot EITHER inside the room/basement/garage being cleared OR outside in front of the property/driveway with boxes and furniture being loaded into a utility van.';
+    framingRule = 'CLEARANCE FRAMING (Débarras & Encombrants): Photo can be shot EITHER (A) inside an indoor room, apartment or attic/grenier showing cardboard boxes and movers clearing the space (NO truck visible in indoor shot), OR (B) outdoors in front of the property showing a white utility van with OPEN REAR DOORS being loaded with boxes and furniture.';
   } else if (isIndoor) {
     framingRule = 'INDOOR FRAMING: Photo MUST be shot from inside the room itself OR from an adjoining doorway/hallway looking directly into the active work space.';
   } else {
