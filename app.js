@@ -188,7 +188,7 @@ async function init() {
     const el = document.getElementById('img-gen-counter');
     if (el) el.textContent = `${savedCount} image${savedCount > 1 ? 's' : ''} générée${savedCount > 1 ? 's' : ''} au total`;
   }
-  if (_imgRows.length === 0) addImgRow(); // Ligne vide par défaut dans le planning
+  if (_imgRows.length === 0 && window.__GMB_IMAGE_CONTEXT__) window.__GMB_IMAGE_CONTEXT__.addRow(); // Ligne vide par défaut dans le planning
 
   const yearSel = document.getElementById('dash-year');
   const currentYear = new Date().getFullYear();
@@ -3387,6 +3387,7 @@ async function renderPlanning() {
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Ville</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Gmail</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Fiche</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Photo</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Statut</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Action</th>
           </tr>
@@ -3397,16 +3398,18 @@ async function renderPlanning() {
               <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
               <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#a5b4fc">${r.gmail}</td>
               <td style="padding:7px 10px;color:#e2e8f0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fiche_nom}">${r.fiche_nom}</td>
+              <td style="padding:7px 10px;white-space:nowrap">
+                ${(r.url_image || r.image_url || r.drive_url) ? `
+                  <a href="${r.url_image || r.image_url || r.drive_url}" target="_blank" rel="noopener"
+                    style="padding:3px 8px;border-radius:5px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px">
+                    📸 Voir Photo
+                  </a>
+                ` : '<span style="color:#64748b;font-size:12px">—</span>'}
+              </td>
               <td style="padding:7px 10px">
                 <span style="background:${(STATUT_COLORS[r.statut]||'#64748b')}22;color:${STATUT_COLORS[r.statut]||'#64748b'};padding:2px 8px;border-radius:99px;font-size:11px">
                   ${STATUT_LABELS[r.statut] || r.statut}
                 </span>
-                ${(r.url_image || r.image_url || r.drive_url) ? `
-                  <a href="${r.url_image || r.image_url || r.drive_url}" target="_blank" rel="noopener"
-                    style="margin-left:6px;padding:2px 8px;border-radius:4px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px">
-                    📸 Voir Photo
-                  </a>
-                ` : ''}
               </td>
               <td style="padding:7px 10px;white-space:nowrap">
                 ${r.statut === 'pending' || r.statut === 'generated' ? `
@@ -3418,15 +3421,7 @@ async function renderPlanning() {
                     style="padding:3px 10px;border-radius:5px;background:#334155;color:#94a3b8;border:none;cursor:pointer;font-size:12px">
                     Ignorer
                   </button>
-                ` : (r.statut === 'done' || r.statut === 'image_generated') ? `
-                  <span style="color:#22c55e;font-size:12px">✅ Fait</span>
-                  ${(r.url_image || r.image_url || r.drive_url) ? `
-                    <a href="${r.url_image || r.image_url || r.drive_url}" target="_blank" rel="noopener"
-                      style="margin-left:6px;color:#38bdf8;text-decoration:underline;font-size:12px">
-                      🔗 Lien Image
-                    </a>
-                  ` : ''}
-                ` : ''}
+                ` : r.statut === 'done' ? `<span style="color:#22c55e;font-size:12px">✅ Fait</span>` : ''}
               </td>
             </tr>`).join('')}
         </tbody>
