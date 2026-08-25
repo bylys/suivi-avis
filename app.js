@@ -161,6 +161,7 @@ async function init() {
 
   const initialTab = getTabFromUrl();
   showTab(initialTab, true);
+  updateUrlForTab(initialTab, true);
   checkNotifications();
 
   const today = new Date().toISOString().split('T')[0];
@@ -207,6 +208,14 @@ async function init() {
 // ── ROUTER & TABS ──
 const VALID_TABS = ['dashboard', 'planning', 'generateur', 'images', 'saisir', 'liste', 'fiches', 'gmails'];
 
+function getBasePath() {
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  if (pathParts.length > 0 && pathParts[0] === 'suivi-avis') {
+    return '/suivi-avis';
+  }
+  return '';
+}
+
 function getTabFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const redirectPath = params.get('p');
@@ -214,26 +223,30 @@ function getTabFromUrl() {
     const cleanPath = redirectPath.replace(/^\/+|\/+$/g, '');
     if (VALID_TABS.includes(cleanPath)) return cleanPath;
   }
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  const lastPart = pathParts[pathParts.length - 1];
-  if (VALID_TABS.includes(lastPart)) return lastPart;
 
   const hash = window.location.hash.replace(/^#/, '');
   if (VALID_TABS.includes(hash)) return hash;
 
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const lastPart = pathParts[pathParts.length - 1];
+  if (VALID_TABS.includes(lastPart)) return lastPart;
+
   return 'dashboard';
 }
 
-function updateUrlForTab(name) {
+function updateUrlForTab(name, replace = false) {
   if (!VALID_TABS.includes(name)) return;
-  const pathSegments = window.location.pathname.split('/').filter(Boolean);
-  let basePath = '/suivi-avis';
-  if (pathSegments.length > 0 && pathSegments[0] !== name) {
-    basePath = '/' + pathSegments[0];
-  }
-  const newUrl = `${basePath}/${name}`;
+  const base = getBasePath();
+  const targetUrl = `${base}/${name}`;
+
+  if (window.location.pathname === targetUrl && !window.location.search) return;
+
   try {
-    window.history.pushState({ tab: name }, '', newUrl);
+    if (replace) {
+      window.history.replaceState({ tab: name }, '', targetUrl);
+    } else {
+      window.history.pushState({ tab: name }, '', targetUrl);
+    }
   } catch (e) {
     window.location.hash = name;
   }
