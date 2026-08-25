@@ -3401,6 +3401,12 @@ async function renderPlanning() {
                 <span style="background:${(STATUT_COLORS[r.statut]||'#64748b')}22;color:${STATUT_COLORS[r.statut]||'#64748b'};padding:2px 8px;border-radius:99px;font-size:11px">
                   ${STATUT_LABELS[r.statut] || r.statut}
                 </span>
+                ${(r.url_image || r.image_url || r.drive_url) ? `
+                  <a href="${r.url_image || r.image_url || r.drive_url}" target="_blank" rel="noopener"
+                    style="margin-left:6px;padding:2px 8px;border-radius:4px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px">
+                    📸 Voir Photo
+                  </a>
+                ` : ''}
               </td>
               <td style="padding:7px 10px;white-space:nowrap">
                 ${r.statut === 'pending' || r.statut === 'generated' ? `
@@ -3412,7 +3418,15 @@ async function renderPlanning() {
                     style="padding:3px 10px;border-radius:5px;background:#334155;color:#94a3b8;border:none;cursor:pointer;font-size:12px">
                     Ignorer
                   </button>
-                ` : r.statut === 'done' ? `<span style="color:#22c55e;font-size:12px">✅ Fait</span>` : ''}
+                ` : (r.statut === 'done' || r.statut === 'image_generated') ? `
+                  <span style="color:#22c55e;font-size:12px">✅ Fait</span>
+                  ${(r.url_image || r.image_url || r.drive_url) ? `
+                    <a href="${r.url_image || r.image_url || r.drive_url}" target="_blank" rel="noopener"
+                      style="margin-left:6px;color:#38bdf8;text-decoration:underline;font-size:12px">
+                      🔗 Lien Image
+                    </a>
+                  ` : ''}
+                ` : ''}
               </td>
             </tr>`).join('')}
         </tbody>
