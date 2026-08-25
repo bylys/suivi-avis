@@ -912,11 +912,26 @@ async function main() {
                 }
 
                 // 5. Second œuvre & Intérieur (FR & EN)
-                if (f.includes('carrelage') || f.includes('faïence') || f.includes('tile') || f.includes('tiling') || f.includes('tiler')) {
-                    return 'pose de carrelage';
+                if (f.includes('carrelage') || f.includes('carreleur') || f.includes('faïence') || f.includes('tile') || f.includes('tiling') || f.includes('tiler')) {
+                    const tileChoices = [
+                        'pose de carrelage intérieur au sol (artisan carreleur appliquant le mortier-colle et les croisillons sur sol intérieur)',
+                        'pose de faïence murale céramique dans une salle de bain ou cuisine intérieure'
+                    ];
+                    return pick(tileChoices);
                 }
-                if (f.includes('peintre') || f.includes('peinture') || f.includes('paint') || f.includes('painter') || f.includes('painting')) {
-                    return 'travaux de peinture';
+                if (f.includes('peintre') || f.includes('peinture') || f.includes('décoration') || f.includes('decoration') || f.includes('paint') || f.includes('painter') || f.includes('painting')) {
+                    const paintChoices = [
+                        'travaux de peinture intérieure et décoration (artisan peintre appliquant la peinture au rouleau sur mur intérieur de salon ou chambre)',
+                        'peinture murale intérieure et finitions de plafond dans une pièce à vivre'
+                    ];
+                    return pick(paintChoices);
+                }
+                if (f.includes('nettoyage extérieur') || f.includes('nettoyage exterieur')) {
+                    const extCleaningChoices = [
+                        'nettoyage haute pression et démoussage de façade extérieure de maison',
+                        'nettoyage haute pression de terrasse extérieure en dalles de pierre ou pavés'
+                    ];
+                    return pick(extCleaningChoices);
                 }
                 if (f.includes('plombier') || f.includes('plomberie') || f.includes('plumber') || f.includes('plumbing')) {
                     return 'travaux de plomberie';
