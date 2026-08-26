@@ -3918,6 +3918,7 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     name: profileName,
     browserType: 'chrome',
     os: 'mac',
+    folders: ['69e5a54f0213fbdbd5796404'], // Dossier VA TEAM dans GoLogin
     navigator: {
       language: 'fr-FR',
       platform: 'MacIntel',
