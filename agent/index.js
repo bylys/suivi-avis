@@ -246,8 +246,8 @@ function getConversationUrlForOperator(operatorName) {
     return process.env[workVar] || process.env[persoVar] || process.env[stdVar] || process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
-async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
-    const targetUrl = getConversationUrlForOperator(operatorName);
+async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null) {
+    const targetUrl = customUrl || getConversationUrlForOperator(operatorName);
     
     let browser;
     if (BROWSERLESS_TOKEN) {
@@ -696,6 +696,10 @@ async function main() {
         function resolveCookieSetsForOp(opName) {
             const opUpper = (opName || '').trim().toUpperCase();
             
+            const workUrl = availableCookiesMap[`CHATGPT_WORK_CONVERSATION_URL_${opUpper}`] || process.env[`CHATGPT_WORK_CONVERSATION_URL_${opUpper}`] || process.env.CHATGPT_WORK_CONVERSATION_URL;
+            const persoUrl = availableCookiesMap[`CHATGPT_PERSO_CONVERSATION_URL_${opUpper}`] || process.env[`CHATGPT_PERSO_CONVERSATION_URL_${opUpper}`] || process.env.CHATGPT_PERSO_CONVERSATION_URL;
+            const fallbackUrl = availableCookiesMap[`CHATGPT_CONVERSATION_URL_${opUpper}`] || process.env[`CHATGPT_CONVERSATION_URL_${opUpper}`] || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+
             const workKeyCandidates = [
                 opUpper ? `CHATGPT_WORK_COOKIES_${opUpper}` : null,
                 opUpper ? `CHATGPT_WORK_COOKIE_${opUpper}` : null,
@@ -715,7 +719,7 @@ async function main() {
             let workEntry = null;
             for (const k of workKeyCandidates) {
                 if (availableCookiesMap[k]) {
-                    workEntry = { name: 'Plan PRO / Work', key: k, raw: availableCookiesMap[k] };
+                    workEntry = { name: 'Plan PRO / Work', key: k, raw: availableCookiesMap[k], url: workUrl || fallbackUrl };
                     break;
                 }
             }
@@ -723,7 +727,7 @@ async function main() {
             let persoEntry = null;
             for (const k of persoKeyCandidates) {
                 if (availableCookiesMap[k] && (!workEntry || availableCookiesMap[k] !== workEntry.raw)) {
-                    persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: availableCookiesMap[k] };
+                    persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: availableCookiesMap[k], url: persoUrl || fallbackUrl };
                     break;
                 }
             }
@@ -735,14 +739,14 @@ async function main() {
             if (sets.length === 0) {
                 for (const [k, v] of Object.entries(availableCookiesMap)) {
                     if (opUpper && k.includes(opUpper)) {
-                        sets.push({ name: 'Plan ChatGPT', key: k, raw: v });
+                        sets.push({ name: 'Plan ChatGPT', key: k, raw: v, url: fallbackUrl });
                         break;
                     }
                 }
             }
             if (sets.length === 0 && Object.keys(availableCookiesMap).length > 0) {
                 const k = Object.keys(availableCookiesMap)[0];
-                sets.push({ name: 'Plan ChatGPT (Fallback)', key: k, raw: availableCookiesMap[k] });
+                sets.push({ name: 'Plan ChatGPT (Fallback)', key: k, raw: availableCookiesMap[k], url: fallbackUrl });
             }
             return sets;
         }
@@ -1140,7 +1144,7 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        rawImageBuffer = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur);
+                        rawImageBuffer = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, plan.url);
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);

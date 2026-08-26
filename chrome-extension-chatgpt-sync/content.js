@@ -1,9 +1,14 @@
 /**
- * content.js — Détecte les clics sur 'Nouvelle discussion', les ouvertures de conversations ChatGPT et déclenche la synchro automatique
+ * content.js — Détecte les clics sur 'Nouvelle discussion', les ouvertures de conversations ChatGPT et transmet l'URL active
  */
 function notifySync() {
   try {
-    chrome.runtime.sendMessage({ action: 'FORCE_SYNC', source: 'CHATGPT_CLICK' });
+    const currentUrl = window.location.href;
+    chrome.runtime.sendMessage({ 
+      action: 'FORCE_SYNC', 
+      source: 'CHATGPT_CLICK',
+      conversationUrl: currentUrl
+    });
   } catch (e) {}
 }
 

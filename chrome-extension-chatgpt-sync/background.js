@@ -1,11 +1,37 @@
 /**
- * background.js — Synchronisation automatique et explicite des cookies ChatGPT par opérateur et type de compte (PRO vs PERSO) vers Supabase
+ * background.js — Synchronisation automatique et explicite des cookies ET des URLs de conversation ChatGPT par opérateur vers Supabase
  */
 
 const SUPABASE_URL = 'https://rrbvghxmnimusfyqixau.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_k0nVhKHWUT5kBW9xBNpLkA_AKam7uBa';
 
-async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null) {
+async function saveKeyToSupabase(keyName, valueStr) {
+  if (!keyName || !valueStr) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/fiches?nom=eq.${encodeURIComponent(keyName)}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    await fetch(`${SUPABASE_URL}/rest/v1/fiches`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        nom: keyName,
+        lien: valueStr
+      })
+    });
+  } catch (err) {}
+}
+
+async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null, conversationUrl = null) {
   try {
     const { operatorName } = await chrome.storage.local.get(['operatorName']);
     const targetOp = (forcedOp || operatorName || 'KEVIN').toUpperCase();
@@ -31,7 +57,6 @@ async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null) {
     }));
 
     const jsonStr = JSON.stringify(cleanCookies);
-    const nowIso = new Date().toISOString();
 
     const keysToUpdate = isPerso
       ? [
@@ -45,33 +70,18 @@ async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null) {
         ];
 
     for (const keyName of keysToUpdate) {
-      // 1. Sauvegarde garantie dans la table 'fiches'
-      try {
-        await fetch(`${SUPABASE_URL}/rest/v1/fiches?nom=eq.${encodeURIComponent(keyName)}`, {
-          method: 'DELETE',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`
-          }
-        });
+      await saveKeyToSupabase(keyName, jsonStr);
+    }
 
-        await fetch(`${SUPABASE_URL}/rest/v1/fiches`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            nom: keyName,
-            lien: jsonStr
-          })
-        });
-      } catch (fErr) {}
+    // Sauvegarde de l'URL de la conversation active si fournie
+    if (conversationUrl && conversationUrl.includes('chatgpt.com')) {
+      const urlKey = isPerso ? `CHATGPT_PERSO_CONVERSATION_URL_${targetOp}` : `CHATGPT_WORK_CONVERSATION_URL_${targetOp}`;
+      await saveKeyToSupabase(urlKey, conversationUrl);
+      await saveKeyToSupabase(`CHATGPT_CONVERSATION_URL_${targetOp}`, conversationUrl);
     }
 
     const typeLabel = isPerso ? 'PERSO (Secours)' : 'PRO (Principal)';
-    const msg = `✅ Compte ${typeLabel} enregistré pour ${targetOp}`;
+    const msg = `✅ Compte ${typeLabel} & URL enregistrés pour ${targetOp}`;
     console.log(`[GMB Sync] ${msg}`);
     await chrome.storage.local.set({
       lastSyncStatus: msg,
@@ -90,19 +100,19 @@ async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null) {
 // Écouteur de messages depuis le popup et content.js
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'SYNC_NOW') {
-    syncCookiesToSupabase(msg.targetType || 'WORK', msg.operator).then(() => sendResponse({ status: 'DONE' }));
+    syncCookiesToSupabase(msg.targetType || 'WORK', msg.operator, msg.conversationUrl).then(() => sendResponse({ status: 'DONE' }));
     return true;
   } else if (msg.action === 'FORCE_SYNC') {
-    syncCookiesToSupabase('WORK').then(() => sendResponse({ status: 'DONE' }));
+    syncCookiesToSupabase('WORK', null, msg.conversationUrl).then(() => sendResponse({ status: 'DONE' }));
     return true;
   }
 });
 
-// Déclencheur 1 : Navigation sur ChatGPT (met à jour le compte PRO par défaut si actif)
+// Déclencheur 1 : Navigation sur ChatGPT
 if (chrome.webNavigation) {
   chrome.webNavigation.onCompleted.addListener((details) => {
     if (details.url && details.url.includes('chatgpt.com')) {
-      syncCookiesToSupabase('WORK');
+      syncCookiesToSupabase('WORK', null, details.url);
     }
   }, { url: [{ hostContains: 'chatgpt.com' }] });
 }

@@ -13,14 +13,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Restaurer l'opérateur sélectionné
+  async function getActiveTabUrl() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      return tab && tab.url && tab.url.includes('chatgpt.com') ? tab.url : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   const initialData = await chrome.storage.local.get(['operatorName', 'lastSyncStatus', 'lastSyncTime']);
   if (initialData.operatorName) {
     selectOp.value = initialData.operatorName;
   }
   updateStatusDisplay(initialData);
 
-  // Écouter en temps réel la fin de synchro de background.js
   chrome.storage.onChanged.addListener(() => {
     chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime'], (d) => {
       updateStatusDisplay(d);
@@ -33,15 +40,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     statusText.textContent = `Opérateur réglé sur ${op}.`;
   });
 
-  btnPro.addEventListener('click', () => {
+  btnPro.addEventListener('click', async () => {
     const op = selectOp.value;
+    const url = await getActiveTabUrl();
     statusText.textContent = `Enregistrement du Compte PRO (${op})...`;
-    chrome.runtime.sendMessage({ action: 'SYNC_NOW', targetType: 'WORK', operator: op });
+    chrome.runtime.sendMessage({ action: 'SYNC_NOW', targetType: 'WORK', operator: op, conversationUrl: url });
   });
 
-  btnPerso.addEventListener('click', () => {
+  btnPerso.addEventListener('click', async () => {
     const op = selectOp.value;
+    const url = await getActiveTabUrl();
     statusText.textContent = `Enregistrement du Compte PERSO (${op})...`;
-    chrome.runtime.sendMessage({ action: 'SYNC_NOW', targetType: 'PERSO', operator: op });
+    chrome.runtime.sendMessage({ action: 'SYNC_NOW', targetType: 'PERSO', operator: op, conversationUrl: url });
   });
 });
