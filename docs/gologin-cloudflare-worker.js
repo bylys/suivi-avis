@@ -28,10 +28,11 @@ export default {
       const gologinPath = url.pathname.replace(/^\/gologin/, '') || '/browser';
       const targetUrl = `https://api.gologin.com${gologinPath}`;
 
+      const gologinToken = env.GOLOGIN_API_KEY || env.GOLOGIN_API_TOKEN;
       const headers = new Headers(request.headers);
       headers.set('Content-Type', 'application/json');
-      if (env.GOLOGIN_API_TOKEN) {
-        headers.set('Authorization', `Bearer ${env.GOLOGIN_API_TOKEN}`);
+      if (gologinToken) {
+        headers.set('Authorization', `Bearer ${gologinToken}`);
       }
 
       try {
