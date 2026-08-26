@@ -1135,11 +1135,11 @@ async function main() {
                         }
                     } catch (planErr) {
                         console.warn(`⚠️ ÉCHEC avec le ${plan.name} ("${plan.key}") : ${planErr.message}`);
-                        if (planIdx < cookieSets.length - 1) {
-                            console.log(`🔄 BASCULE AUTOMATIQUE SUR LE PLAN DE SECOURS : "${cookieSets[planIdx + 1].name}" ("${cookieSets[planIdx + 1].key}")...`);
+                        if (planIdx < taskCookieSets.length - 1) {
+                            console.log(`🔄 BASCULE AUTOMATIQUE SUR LE PLAN DE SECOURS : "${taskCookieSets[planIdx + 1].name}" ("${taskCookieSets[planIdx + 1].key}")...`);
                             await new Promise(r => setTimeout(r, 4000));
                         } else {
-                            console.error(`❌ TOUS LES PLANS ONT ÉCHOUÉ pour la tâche ID ${task.id}.`);
+                            console.error(`❌ TOUS LES PLANS ONT ÉCHOUÉ pour la tâche ID ${task.id}. (Nombre de plans configurés pour cet opérateur : ${taskCookieSets.length})`);
                             throw planErr;
                         }
                     }
