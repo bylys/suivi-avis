@@ -679,64 +679,62 @@ async function main() {
             }
         } catch (e) {}
 
-        const workKeyCandidates = [
-            opUpper ? `CHATGPT_WORK_COOKIES_${opUpper}` : null,
-            opUpper ? `CHATGPT_WORK_COOKIE_${opUpper}` : null,
-            'CHATGPT_WORK_COOKIES',
-            'CHATGPT_WORK_COOKIE'
-        ].filter(Boolean);
+        function resolveCookieSetsForOp(opName) {
+            const opUpper = (opName || '').trim().toUpperCase();
+            
+            const workKeyCandidates = [
+                opUpper ? `CHATGPT_WORK_COOKIES_${opUpper}` : null,
+                opUpper ? `CHATGPT_WORK_COOKIE_${opUpper}` : null,
+                'CHATGPT_WORK_COOKIES',
+                'CHATGPT_WORK_COOKIE'
+            ].filter(Boolean);
 
-        const persoKeyCandidates = [
-            opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null,
-            opUpper ? `CHATGPT_COOKIES_${opUpper}` : null,
-            opUpper ? `CHATGPT_PERSO_COOKIE_${opUpper}` : null,
-            opUpper ? `CHATGPT_COOKIE_${opUpper}` : null,
-            'CHATGPT_PERSO_COOKIES',
-            'CHATGPT_COOKIES'
-        ].filter(Boolean);
+            const persoKeyCandidates = [
+                opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null,
+                opUpper ? `CHATGPT_COOKIES_${opUpper}` : null,
+                opUpper ? `CHATGPT_PERSO_COOKIE_${opUpper}` : null,
+                opUpper ? `CHATGPT_COOKIE_${opUpper}` : null,
+                'CHATGPT_PERSO_COOKIES',
+                'CHATGPT_COOKIES'
+            ].filter(Boolean);
 
-        let workEntry = null;
-        for (const k of workKeyCandidates) {
-            if (availableCookiesMap[k]) {
-                workEntry = { name: 'Plan PRO / Work', key: k, raw: availableCookiesMap[k] };
-                break;
-            }
-        }
-
-        let persoEntry = null;
-        for (const k of persoKeyCandidates) {
-            if (availableCookiesMap[k] && (!workEntry || availableCookiesMap[k] !== workEntry.raw)) {
-                persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: availableCookiesMap[k] };
-                break;
-            }
-        }
-
-        const cookieSets = [];
-        if (workEntry) cookieSets.push(workEntry);
-        if (persoEntry) cookieSets.push(persoEntry);
-
-        // Backup générique si pas de clé explicite
-        if (cookieSets.length === 0) {
-            for (const [k, v] of Object.entries(availableCookiesMap)) {
-                if (opUpper && k.includes(opUpper)) {
-                    cookieSets.push({ name: 'Plan ChatGPT', key: k, raw: v });
+            let workEntry = null;
+            for (const k of workKeyCandidates) {
+                if (availableCookiesMap[k]) {
+                    workEntry = { name: 'Plan PRO / Work', key: k, raw: availableCookiesMap[k] };
                     break;
                 }
             }
-        }
-        if (cookieSets.length === 0 && Object.keys(availableCookiesMap).length > 0) {
-            const k = Object.keys(availableCookiesMap)[0];
-            cookieSets.push({ name: 'Plan ChatGPT (Fallback)', key: k, raw: availableCookiesMap[k] });
+
+            let persoEntry = null;
+            for (const k of persoKeyCandidates) {
+                if (availableCookiesMap[k] && (!workEntry || availableCookiesMap[k] !== workEntry.raw)) {
+                    persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: availableCookiesMap[k] };
+                    break;
+                }
+            }
+
+            const sets = [];
+            if (workEntry) sets.push(workEntry);
+            if (persoEntry) sets.push(persoEntry);
+
+            if (sets.length === 0) {
+                for (const [k, v] of Object.entries(availableCookiesMap)) {
+                    if (opUpper && k.includes(opUpper)) {
+                        sets.push({ name: 'Plan ChatGPT', key: k, raw: v });
+                        break;
+                    }
+                }
+            }
+            if (sets.length === 0 && Object.keys(availableCookiesMap).length > 0) {
+                const k = Object.keys(availableCookiesMap)[0];
+                sets.push({ name: 'Plan ChatGPT (Fallback)', key: k, raw: availableCookiesMap[k] });
+            }
+            return sets;
         }
 
-        if (cookieSets.length === 0) {
-            throw new Error(`❌ Aucun cookie ChatGPT disponible. Veuillez enregistrer au moins un compte dans l'extension ou dans GitHub Secrets (CHATGPT_WORK_COOKIES_KEVIN / CHATGPT_PERSO_COOKIES_KEVIN).`);
-        }
-
-        console.log(`🔑 Jeux de cookies ChatGPT configurés (${cookieSets.length}) :`);
-        for (const s of cookieSets) {
-            console.log(`   - ${s.name} : Clé "${s.key}" (${s.raw.length} caractères)`);
-        }
+        const initialOpSets = resolveCookieSetsForOp(rawOp);
+        console.log(`🔑 Jeux de cookies ChatGPT prêts pour l'opérateur principal (${initialOpSets.length} plan(s)) : ${initialOpSets.map(s => s.name + ' [' + s.key + ']').join(', ')}`);
 
         function parseCookiesHelper(raw) {
             if (!raw) return [];
@@ -1116,12 +1114,12 @@ async function main() {
             console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 150)}...`);
             
             try {
-                // Generate Image avec bascule automatique Multi-Plans (PRO -> PERSO)
-                let rawImageBuffer = null;
-                let usedPlanName = null;
+                // Resolution dynamique des cookies pour l'opérateur de cette tâche spécifique (ex: KEVIN puis FIFA...)
+                const taskOpName = task.operateur || TARGET_OPERATOR || rawOp;
+                const taskCookieSets = resolveCookieSetsForOp(taskOpName);
 
-                for (let planIdx = 0; planIdx < cookieSets.length; planIdx++) {
-                    const plan = cookieSets[planIdx];
+                for (let planIdx = 0; planIdx < taskCookieSets.length; planIdx++) {
+                    const plan = taskCookieSets[planIdx];
                     console.log(`\n🤖 [Avis ID ${task.id}] Tentative avec le ${plan.name} (Secret: "${plan.key}")...`);
                     try {
                         const parsedCookies = sanitizeCookiesList(plan.raw);
