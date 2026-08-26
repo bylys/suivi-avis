@@ -31,11 +31,27 @@ async function saveKeyToSupabase(keyName, valueStr) {
   } catch (err) {}
 }
 
+async function getActiveChatGPTUrl() {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tabs && tabs[0] && tabs[0].url && tabs[0].url.includes('chatgpt.com')) {
+      return tabs[0].url;
+    }
+    const allGptTabs = await chrome.tabs.query({ url: '*://*.chatgpt.com/*' });
+    if (allGptTabs && allGptTabs.length > 0) {
+      return allGptTabs[0].url;
+    }
+  } catch (e) {}
+  return null;
+}
+
 async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null, conversationUrl = null) {
   try {
     const { operatorName } = await chrome.storage.local.get(['operatorName']);
     const targetOp = (forcedOp || operatorName || 'KEVIN').toUpperCase();
     const isPerso = targetType === 'PERSO';
+
+    const activeUrl = conversationUrl || (await getActiveChatGPTUrl());
 
     const cookies = await chrome.cookies.getAll({ domain: 'chatgpt.com' });
     if (!cookies || cookies.length === 0) {
@@ -73,11 +89,11 @@ async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null, conve
       await saveKeyToSupabase(keyName, jsonStr);
     }
 
-    // Sauvegarde de l'URL de la conversation active si fournie
-    if (conversationUrl && conversationUrl.includes('chatgpt.com')) {
+    // Sauvegarde de l'URL de la conversation active si détectée
+    if (activeUrl && activeUrl.includes('chatgpt.com')) {
       const urlKey = isPerso ? `CHATGPT_PERSO_CONVERSATION_URL_${targetOp}` : `CHATGPT_WORK_CONVERSATION_URL_${targetOp}`;
-      await saveKeyToSupabase(urlKey, conversationUrl);
-      await saveKeyToSupabase(`CHATGPT_CONVERSATION_URL_${targetOp}`, conversationUrl);
+      await saveKeyToSupabase(urlKey, activeUrl);
+      await saveKeyToSupabase(`CHATGPT_CONVERSATION_URL_${targetOp}`, activeUrl);
     }
 
     const typeLabel = isPerso ? 'PERSO (Secours)' : 'PRO (Principal)';
