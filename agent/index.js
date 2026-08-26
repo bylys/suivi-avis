@@ -550,7 +550,8 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             }
         }
 
-        return imageBuffer;
+        const finalUrl = page ? page.url() : null;
+        return { imageBuffer, finalUrl };
     } finally {
         if (browser) {
             await browser.close();
@@ -821,6 +822,7 @@ async function main() {
         }
 
         console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
+        const activePlanUrls = {};
 
         // Formatage de la date courte pour le nom du fichier (ex: 24-08-26)
         const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
@@ -1144,9 +1146,16 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        rawImageBuffer = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, plan.url);
+                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url;
+                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse);
+                        rawImageBuffer = res ? res.imageBuffer : null;
+
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
+                            if (res.finalUrl && res.finalUrl.includes('/c/')) {
+                                activePlanUrls[plan.key] = res.finalUrl;
+                                console.log(`📌 Fil de conversation conservé et réutilisé pour les prochaines images (${plan.name}) : ${res.finalUrl}`);
+                            }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
                         }
