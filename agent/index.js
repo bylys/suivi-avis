@@ -566,6 +566,7 @@ async function main() {
         const dateStr = process.env.TARGET_DATE || new Date().toISOString().split('T')[0];
         
         const rawOp = (TARGET_OPERATOR || '').trim();
+        const opUpper = rawOp ? rawOp.toUpperCase() : '';
         let targetOp = rawOp;
         if (rawOp.toLowerCase() === 'fif' || rawOp.toLowerCase() === 'fifa') {
             targetOp = 'Fifaliana';
