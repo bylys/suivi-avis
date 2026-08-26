@@ -411,6 +411,21 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             await page.keyboard.press('Enter');
         }
         
+        // Détection immédiate de message de limite/quota de génération d'images DALL-E 3
+        const limitDetected = await page.evaluate(() => {
+            const bodyText = document.body.innerText || '';
+            const lower = bodyText.toLowerCase();
+            if (lower.includes("reached your limit") || lower.includes("limite de génération") || lower.includes("too many requests") || lower.includes("reached the limit") || lower.includes("try again after") || lower.includes("upgrade to plus") || lower.includes("free tier limit") || lower.includes("quota de génération")) {
+                return bodyText;
+            }
+            return null;
+        });
+
+        if (limitDetected) {
+            console.error("❌ QUOTA CHATGPT ATTEINT SUR CE COMPTE :");
+            throw new Error("LIMITE_QUOTA_ATTEINTE: La limite de génération d'images a été atteinte sur ce compte ChatGPT.");
+        }
+
         console.log("⏳ Attente obligatoire de 90 secondes pour la création de la photo DALL-E 3...");
         await page.waitForTimeout(90000);
         
@@ -638,98 +653,87 @@ async function main() {
             return;
         }
 
-        // Configuration des cookies multi-opérateurs avec résolution universelle et diagnostic complet
-        const opUpper = rawOp ? rawOp.toUpperCase() : '';
-        
-        console.log("🔍 Diagnostic direct des clés de cookies reçues par le robot :");
-        const cookieKeysInEnv = Object.keys(process.env).filter(k => k.toUpperCase().includes('COOKIE'));
-        for (const k of cookieKeysInEnv) {
-            const valLen = (process.env[k] || '').trim().length;
-            console.log(`   - ${k} : ${valLen > 0 ? `${valLen} caractères` : 'VIDE (0 caractère)'}`);
+        // ── 2-TIER COOKIE MANAGEMENT : PLAN PRO / WORK ET PLAN PERSO / SECOURS ──
+        const availableCookiesMap = {};
+
+        // 1. Collecte depuis process.env (GitHub Secrets)
+        for (const [envKey, envVal] of Object.entries(process.env)) {
+            if (envVal && envVal.trim().length > 20 && envKey.toUpperCase().includes('COOKIE')) {
+                availableCookiesMap[envKey.toUpperCase()] = envVal.trim();
+            }
         }
 
-        let cookiesRaw = null;
-        let usedKey = null;
+        // 2. Collecte depuis Supabase app_settings
+        try {
+            const { data: settingData } = await supabase.from('app_settings').select('key, value');
+            if (settingData) {
+                for (const item of settingData) {
+                    const k = (item.key || '').toUpperCase();
+                    const v = (item.value || '').trim();
+                    if (v.length > 20 && k.includes('COOKIE')) {
+                        if (!availableCookiesMap[k]) availableCookiesMap[k] = v;
+                    }
+                }
+            }
+        } catch (e) {}
 
-        // 1. Recherche par correspondance exacte prioritaire (ex: CHATGPT_WORK_COOKIES_KEVIN)
-        const candidateKeys = [
+        const workKeyCandidates = [
             opUpper ? `CHATGPT_WORK_COOKIES_${opUpper}` : null,
+            opUpper ? `CHATGPT_WORK_COOKIE_${opUpper}` : null,
+            'CHATGPT_WORK_COOKIES',
+            'CHATGPT_WORK_COOKIE'
+        ].filter(Boolean);
+
+        const persoKeyCandidates = [
             opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null,
             opUpper ? `CHATGPT_COOKIES_${opUpper}` : null,
-            opUpper ? `CHATGPT_WORK_COOKIE_${opUpper}` : null,
             opUpper ? `CHATGPT_PERSO_COOKIE_${opUpper}` : null,
             opUpper ? `CHATGPT_COOKIE_${opUpper}` : null,
-            'CHATGPT_WORK_COOKIES',
             'CHATGPT_PERSO_COOKIES',
             'CHATGPT_COOKIES'
         ].filter(Boolean);
 
-        for (const key of candidateKeys) {
-            if (process.env[key] && process.env[key].trim().length > 0) {
-                cookiesRaw = process.env[key].trim();
-                usedKey = key;
+        let workEntry = null;
+        for (const k of workKeyCandidates) {
+            if (availableCookiesMap[k]) {
+                workEntry = { name: 'Plan PRO / Work', key: k, raw: availableCookiesMap[k] };
                 break;
             }
         }
 
-        // 2. Recherche universelle insensible à la casse sur n'importe quelle variable non vide contenant COOKIE
-        if (!cookiesRaw) {
-            for (const [envKey, envVal] of Object.entries(process.env)) {
-                if (!envVal || envVal.trim().length === 0) continue;
-                const normKey = envKey.toUpperCase();
-                if (normKey.includes('COOKIE')) {
-                    if (opUpper && (normKey.includes(opUpper) || normKey.includes('PERSO'))) {
-                        cookiesRaw = envVal.trim();
-                        usedKey = envKey;
-                        break;
-                    }
-                    if (!cookiesRaw) {
-                        cookiesRaw = envVal.trim();
-                        usedKey = envKey;
-                    }
-                }
+        let persoEntry = null;
+        for (const k of persoKeyCandidates) {
+            if (availableCookiesMap[k] && (!workEntry || availableCookiesMap[k] !== workEntry.raw)) {
+                persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: availableCookiesMap[k] };
+                break;
             }
         }
 
-        if (cookiesRaw) {
-            console.log(`🔑 Cookies ChatGPT chargés avec succès depuis le secret GitHub : "${usedKey}" !`);
-        } else {
-            console.log("⚠️ Aucun secret GitHub valide trouvé en variable d'environnement. Diagnostic des variables reçues :");
-            const allKeys = Object.keys(process.env).sort();
-            console.log(`📋 Clés ENV disponibles (${allKeys.length}) : ${allKeys.join(', ')}`);
-            
-            console.log("🔄 Recherche de secours dans la table Supabase app_settings...");
-            try {
-                const { data: settingData } = await supabase
-                    .from('app_settings')
-                    .select('key, value');
-                if (settingData && settingData.length > 0) {
-                    for (const item of settingData) {
-                        const k = (item.key || '').toUpperCase();
-                        const v = (item.value || '').trim();
-                        if (v.length > 20 && k.includes('COOKIE')) {
-                            if (opUpper && (k.includes(opUpper) || k.includes('PERSO'))) {
-                                cookiesRaw = v;
-                                usedKey = item.key;
-                                break;
-                            }
-                            if (!cookiesRaw) {
-                                cookiesRaw = v;
-                                usedKey = item.key;
-                            }
-                        }
-                    }
+        const cookieSets = [];
+        if (workEntry) cookieSets.push(workEntry);
+        if (persoEntry) cookieSets.push(persoEntry);
+
+        // Backup générique si pas de clé explicite
+        if (cookieSets.length === 0) {
+            for (const [k, v] of Object.entries(availableCookiesMap)) {
+                if (opUpper && k.includes(opUpper)) {
+                    cookieSets.push({ name: 'Plan ChatGPT', key: k, raw: v });
+                    break;
                 }
-                if (cookiesRaw) {
-                    console.log(`🔄 Cookies ChatGPT récupérés avec succès depuis Supabase app_settings ("${usedKey}") !`);
-                }
-            } catch (dbErr) {
-                console.log("Erreur lors de la lecture Supabase :", dbErr.message);
             }
         }
+        if (cookieSets.length === 0 && Object.keys(availableCookiesMap).length > 0) {
+            const k = Object.keys(availableCookiesMap)[0];
+            cookieSets.push({ name: 'Plan ChatGPT (Fallback)', key: k, raw: availableCookiesMap[k] });
+        }
 
-        if (!cookiesRaw) {
-            throw new Error(`❌ Aucun cookie ChatGPT trouvé ni dans GitHub Secrets ni dans Supabase. Veuillez créer le secret CHATGPT_PERSO_COOKIES_KEVIN sous Repository secrets dans GitHub.`);
+        if (cookieSets.length === 0) {
+            throw new Error(`❌ Aucun cookie ChatGPT disponible. Veuillez enregistrer au moins un compte dans l'extension ou dans GitHub Secrets (CHATGPT_WORK_COOKIES_KEVIN / CHATGPT_PERSO_COOKIES_KEVIN).`);
+        }
+
+        console.log(`🔑 Jeux de cookies ChatGPT configurés (${cookieSets.length}) :`);
+        for (const s of cookieSets) {
+            console.log(`   - ${s.name} : Clé "${s.key}" (${s.raw.length} caractères)`);
         }
 
         function parseCookiesHelper(raw) {
@@ -774,32 +778,29 @@ async function main() {
             return JSON.parse(str);
         }
 
-        let cookies = parseCookiesHelper(cookiesRaw);
-        
-        // Sanitisation stricte des cookies pour Playwright & Correction automatique des domaines openai.com -> .chatgpt.com
-        cookies = cookies.map(c => {
-            let dom = c.domain || '.chatgpt.com';
-            if (dom.includes('openai.com')) dom = '.chatgpt.com';
-            
-            const clean = {
-                name: c.name,
-                value: c.value,
-                domain: dom,
-                path: c.path || '/',
-                secure: c.secure !== undefined ? Boolean(c.secure) : true,
-                httpOnly: Boolean(c.httpOnly),
-            };
-            if (typeof c.expires === 'number') {
-                clean.expires = c.expires;
-            }
-            if (c.sameSite && typeof c.sameSite === 'string') {
-                const s = c.sameSite.toLowerCase();
-                if (s === 'strict') clean.sameSite = 'Strict';
-                else if (s === 'lax') clean.sameSite = 'Lax';
-                else if (s === 'none' || s === 'no_restriction') clean.sameSite = 'None';
-            }
-            return clean;
-        });
+        function sanitizeCookiesList(raw) {
+            const parsed = parseCookiesHelper(raw);
+            return parsed.map(c => {
+                let dom = c.domain || '.chatgpt.com';
+                if (dom.includes('openai.com')) dom = '.chatgpt.com';
+                const clean = {
+                    name: c.name,
+                    value: c.value,
+                    domain: dom,
+                    path: c.path || '/',
+                    secure: c.secure !== undefined ? Boolean(c.secure) : true,
+                    httpOnly: Boolean(c.httpOnly),
+                };
+                if (typeof c.expires === 'number') clean.expires = c.expires;
+                if (c.sameSite && typeof c.sameSite === 'string') {
+                    const s = c.sameSite.toLowerCase();
+                    if (s === 'strict') clean.sameSite = 'Strict';
+                    else if (s === 'lax') clean.sameSite = 'Lax';
+                    else if (s === 'none' || s === 'no_restriction') clean.sameSite = 'None';
+                }
+                return clean;
+            });
+        }
 
         console.log(`✅ ${cookies.length} cookies valides extraits et sanitités pour la session ChatGPT ("${rawOp || 'Global'}").`);
 
@@ -1113,10 +1114,38 @@ async function main() {
             console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 150)}...`);
             
             try {
-                // Generate Image
-                const rawImageBuffer = await generateImageWithChatGPT(finalPrompt, cookies);
+                // Generate Image avec bascule automatique Multi-Plans (PRO -> PERSO)
+                let rawImageBuffer = null;
+                let usedPlanName = null;
+
+                for (let planIdx = 0; planIdx < cookieSets.length; planIdx++) {
+                    const plan = cookieSets[planIdx];
+                    console.log(`\n🤖 [Avis ID ${task.id}] Tentative avec le ${plan.name} (Secret: "${plan.key}")...`);
+                    try {
+                        const parsedCookies = sanitizeCookiesList(plan.raw);
+                        if (!parsedCookies || parsedCookies.length === 0) {
+                            throw new Error(`Cookies vides pour le secret ${plan.key}`);
+                        }
+                        rawImageBuffer = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur);
+                        if (rawImageBuffer) {
+                            usedPlanName = plan.name;
+                            console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
+                            break;
+                        }
+                    } catch (planErr) {
+                        console.warn(`⚠️ ÉCHEC avec le ${plan.name} ("${plan.key}") : ${planErr.message}`);
+                        if (planIdx < cookieSets.length - 1) {
+                            console.log(`🔄 BASCULE AUTOMATIQUE SUR LE PLAN DE SECOURS : "${cookieSets[planIdx + 1].name}" ("${cookieSets[planIdx + 1].key}")...`);
+                            await new Promise(r => setTimeout(r, 4000));
+                        } else {
+                            console.error(`❌ TOUS LES PLANS ONT ÉCHOUÉ pour la tâche ID ${task.id}.`);
+                            throw planErr;
+                        }
+                    }
+                }
+
                 if (!rawImageBuffer) {
-                    throw new Error("Impossible d'extraire l'image générée par DALL-E 3 (cookies expirés, quota atteint ou sécurité).");
+                    throw new Error("Impossible d'extraire l'image (tous les comptes ChatGPT ont échoué).");
                 }
                 
                 // Contrôle anti-doublon binaire : bloquer l'upload si la photo est strictement identique à une tâche précédente du même run
