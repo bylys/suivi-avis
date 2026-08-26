@@ -3956,13 +3956,13 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
         const d = await res.json().catch(() => ({}));
         const profileId = d.id || d.profile?.id || null;
         if (profileId) {
-          // Attacher au dossier VA TEAM (id: 69e5a54f0213fbdbd5796404)
-          const patchUrl = resolveGologinUrl(`/browser/${profileId}`);
+          // Confirmer l'association au dossier VA TEAM (id: 69e5a54f0213fbdbd5796404) via PUT
+          const putUrl = resolveGologinUrl(`/browser/${profileId}`);
           try {
-            await _fetchTimeout(patchUrl, {
-              method: 'PATCH',
+            await _fetchTimeout(putUrl, {
+              method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ folders: ['69e5a54f0213fbdbd5796404'] })
+              body: JSON.stringify({ ...profileBody, folders: ['69e5a54f0213fbdbd5796404'] })
             }, 6000);
           } catch (e) {}
         }
@@ -3992,9 +3992,9 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
         if (profileId) {
           try {
             await _fetchTimeout(`https://api.gologin.com/browser/${profileId}`, {
-              method: 'PATCH',
+              method: 'PUT',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify({ folders: ['69e5a54f0213fbdbd5796404'] })
+              body: JSON.stringify({ ...profileBody, folders: ['69e5a54f0213fbdbd5796404'] })
             }, 6000);
           } catch (e) {}
         }
