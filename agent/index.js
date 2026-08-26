@@ -411,13 +411,15 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null) {
             await page.keyboard.press('Enter');
         }
         
-        // Détection immédiate de message de limite/quota de génération d'images DALL-E 3
+        // Détection immédiate de message de limite/quota de génération d'images DALL-E 3 (ex: "You've hit the Business plan limit...")
         const limitDetected = await page.evaluate(() => {
             const bodyText = document.body.innerText || '';
             const lower = bodyText.toLowerCase();
-            if (lower.includes("reached your limit") || lower.includes("limite de génération") || lower.includes("too many requests") || lower.includes("reached the limit") || lower.includes("try again after") || lower.includes("upgrade to plus") || lower.includes("free tier limit") || lower.includes("quota de génération")) {
-                return bodyText;
-            }
+            if (lower.includes("hit the") && lower.includes("limit")) return bodyText;
+            if (lower.includes("reached your limit") || lower.includes("reached the limit")) return bodyText;
+            if (lower.includes("limite de génération") || lower.includes("quota de génération") || lower.includes("business plan limit")) return bodyText;
+            if (lower.includes("too many requests") || lower.includes("try again after") || lower.includes("resets in")) return bodyText;
+            if (lower.includes("upgrade to plus") || lower.includes("free tier limit")) return bodyText;
             return null;
         });
 
