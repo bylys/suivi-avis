@@ -3916,9 +3916,12 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
 
   const profileBody = {
     name: profileName,
+    browserType: 'chrome',
     os: 'mac',
     navigator: {
-      language: 'fr-FR,fr;q=0.9',
+      language: 'fr-FR',
+      platform: 'MacIntel',
+      resolution: '1920x1080',
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     },
     proxy: {
