@@ -200,6 +200,26 @@ def normalize_city_for_proxy(ville):
 
     return res
 
+VALID_DECODO_CITIES_PYTHON = {
+    'paris', 'marseille', 'lyon', 'toulouse', 'nice', 'nantes', 'montpellier', 'strasbourg',
+    'bordeaux', 'lille', 'rennes', 'reims', 'toulon', 'saint_etienne', 'le_mans', 'grenoble',
+    'dijon', 'angers', 'nimes', 'villeurbanne', 'caen', 'clermont_ferrand', 'le_havre', 'brest',
+    'tours', 'amiens', 'limoges', 'annecy', 'perpignan', 'boulogne_billancourt', 'metz', 'besancon',
+    'orleans', 'rouen', 'mulhouse', 'nancy', 'argenteuil', 'montreuil', 'saint_denis', 'versailles',
+    'avignon', 'poitiers', 'courbevoie', 'dunkerque', 'valence', 'pau', 'la_rochelle', 'tarbes',
+    'troyes', 'evreux', 'beauvais', 'cergy', 'melun', 'evry', 'bobigny', 'creteil', 'nanterre',
+    'bayeux', 'lisieux', 'chalon_sur_saone', 'macon', 'nevers', 'bourges', 'blois', 'chartres',
+    'chateauroux', 'niort', 'la_roche_sur_yon', 'cholet', 'saumur', 'laval', 'flers', 'argentan',
+    'alencon', 'saint_lo', 'cherbourg', 'granville', 'dieppe', 'saint_quentin', 'soissons', 'laon',
+    'charleville_mezieres', 'sedan', 'verdun', 'bar_le_duc', 'epinal', 'chaumont', 'belfort',
+    'vesoul', 'lure', 'dole', 'lons_le_saunier', 'chambery', 'albertville', 'gap', 'digne_les_bains',
+    'manosque', 'privas', 'aubenas', 'roanne', 'aurillac', 'moulins', 'montlucon', 'vichy', 'rodez',
+    'millau', 'cahors', 'figeac', 'agen', 'marmande', 'mont_de_marsan', 'dax', 'lourdes', 'foix',
+    'carcassonne', 'narbonne', 'albi', 'castres', 'montauban', 'beziers', 'sete', 'agde', 'ales',
+    'arles', 'aubagne', 'martigues', 'salon_de_provence', 'hyeres', 'frejus', 'draguignan', 'grasse',
+    'cannes', 'antibes', 'menton', 'bastia', 'ajaccio'
+}
+
 def get_decodo_city_slug_python(ville, pays="FR"):
     p = (pays or "FR").upper()
     slug = normalize_city_for_proxy(ville)
@@ -216,7 +236,22 @@ def get_decodo_city_slug_python(ville, pays="FR"):
     if p == "LU":
         return 'luxembourg'
 
-    return DECODO_CITY_MAP_PYTHON.get(slug, slug or 'paris')
+    if slug in DECODO_CITY_MAP_PYTHON:
+        return DECODO_CITY_MAP_PYTHON[slug]
+
+    if slug in VALID_DECODO_CITIES_PYTHON:
+        return slug
+
+    parts = slug.split('_')
+    for part in parts:
+        if part in VALID_DECODO_CITIES_PYTHON:
+            return part
+
+    for key, val in DECODO_CITY_MAP_PYTHON.items():
+        if key in slug:
+            return val
+
+    return 'paris'
 
 def build_proxy_config(pays, ville, mobile=False):
     """Retourne le dict proxy Decodo selon le pays, la ville et le type."""

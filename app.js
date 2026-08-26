@@ -3936,6 +3936,26 @@ const DECODO_CITY_MAP = {
   'aix_en_provence': 'marseille', 'aubagne': 'marseille', 'vitrolles': 'marseille'
 };
 
+const VALID_DECODO_CITIES = new Set([
+  'paris', 'marseille', 'lyon', 'toulouse', 'nice', 'nantes', 'montpellier', 'strasbourg',
+  'bordeaux', 'lille', 'rennes', 'reims', 'toulon', 'saint_etienne', 'le_mans', 'grenoble',
+  'dijon', 'angers', 'nimes', 'villeurbanne', 'caen', 'clermont_ferrand', 'le_havre', 'brest',
+  'tours', 'amiens', 'limoges', 'annecy', 'perpignan', 'boulogne_billancourt', 'metz', 'besancon',
+  'orleans', 'rouen', 'mulhouse', 'nancy', 'argenteuil', 'montreuil', 'saint_denis', 'versailles',
+  'avignon', 'poitiers', 'courbevoie', 'dunkerque', 'valence', 'pau', 'la_rochelle', 'tarbes',
+  'troyes', 'evreux', 'beauvais', 'cergy', 'melun', 'evry', 'bobigny', 'creteil', 'nanterre',
+  'bayeux', 'lisieux', 'chalon_sur_saone', 'macon', 'nevers', 'bourges', 'blois', 'chartres',
+  'chateauroux', 'niort', 'la_roche_sur_yon', 'cholet', 'saumur', 'laval', 'flers', 'argentan',
+  'alencon', 'saint_lo', 'cherbourg', 'granville', 'dieppe', 'saint_quentin', 'soissons', 'laon',
+  'charleville_mezieres', 'sedan', 'verdun', 'bar_le_duc', 'epinal', 'chaumont', 'belfort',
+  'vesoul', 'lure', 'dole', 'lons_le_saunier', 'chambery', 'albertville', 'gap', 'digne_les_bains',
+  'manosque', 'privas', 'aubenas', 'roanne', 'aurillac', 'moulins', 'montlucon', 'vichy', 'rodez',
+  'millau', 'cahors', 'figeac', 'agen', 'marmande', 'mont_de_marsan', 'dax', 'lourdes', 'foix',
+  'carcassonne', 'narbonne', 'albi', 'castres', 'montauban', 'beziers', 'sete', 'agde', 'ales',
+  'arles', 'aubagne', 'martigues', 'salon_de_provence', 'hyeres', 'frejus', 'draguignan', 'grasse',
+  'cannes', 'antibes', 'menton', 'bastia', 'ajaccio'
+]);
+
 function getDecodoCitySlug(ville, pays = 'FR') {
   const p = (pays || 'FR').toUpperCase();
   const slug = normalizeCityForProxy(ville);
@@ -3956,8 +3976,29 @@ function getDecodoCitySlug(ville, pays = 'FR') {
     return 'luxembourg';
   }
 
-  // France (par défaut)
-  return DECODO_CITY_MAP[slug] || slug || 'paris';
+  // 1. Découpage et recherche directe dans DECODO_CITY_MAP
+  if (DECODO_CITY_MAP[slug]) return DECODO_CITY_MAP[slug];
+
+  // 2. Si le slug est déjà une ville Decodo valide
+  if (VALID_DECODO_CITIES.has(slug)) return slug;
+
+  // 3. Si le slug est composé (ex: dijon_cote_d_or), extraire la sous-chaîne ville valide
+  const parts = slug.split('_');
+  for (const part of parts) {
+    if (VALID_DECODO_CITIES.has(part)) {
+      return part;
+    }
+  }
+
+  // 4. Tester la combinaison de mots clés dans DECODO_CITY_MAP
+  for (const key of Object.keys(DECODO_CITY_MAP)) {
+    if (slug.includes(key)) {
+      return DECODO_CITY_MAP[key];
+    }
+  }
+
+  // 5. Fallback sécurisé sur Paris
+  return 'paris';
 }
 
 function getGologinToken() {
