@@ -3813,7 +3813,7 @@ function normalizeCityForProxy(ville) {
     .replace(/_+/g, '_')
     .replace(/^_+|_+$/g, '');
 
-  // 3. Filtrer les mots métiers résiduels qui pourraient subsister
+  // 3. Filtrer uniquement les vrais mots métiers (SANS supprimer les prépositions comme 'en', 'sur', 'la', 'de')
   const tradeWords = [
     'entreprise', 'elagueur', 'societe', 'artisan', 'eurl', 'sarl', 'sas',
     'elagage', 'abattage', 'taille', 'haie', 'arboriste', 'grimpeur', 'paysagiste',
@@ -3825,9 +3825,7 @@ function normalizeCityForProxy(ville) {
     'voiture', 'garage', 'jardinage', 'jardin', 'batiment', 'couverture'
   ];
 
-  const stopWords = ['et', 'de', 'du', 'des', 'la', 'le', 'les', 'en', 'sur'];
-
-  const parts = clean.split('_').filter(p => p && !tradeWords.includes(p) && !stopWords.includes(p));
+  const parts = clean.split('_').filter(p => p && !tradeWords.includes(p));
 
   let result = parts.join('_');
   if (!result || result.length < 2) {
@@ -3894,7 +3892,7 @@ const DECODO_CITY_MAP = {
   'vienne': 'poitiers', '86': 'poitiers',
   'yonne': 'auxerre', '89': 'auxerre',
 
-  // Banlieues et communes rattachées
+  // Banlieues et communes rattachées (France)
   'reze': 'nantes', 'saint_herblain': 'nantes', 'orvault': 'nantes', 'vertou': 'nantes', 'carquefou': 'nantes', 'bouguenais': 'nantes',
   'villeurbanne': 'lyon', 'venissieux': 'lyon', 'vaulx_en_velin': 'lyon', 'saint_priest': 'lyon', 'caluire_et_cuire': 'lyon',
   'pessac': 'bordeaux', 'merignac': 'bordeaux', 'talence': 'bordeaux', 'villenave_d_ornon': 'bordeaux', 'begles': 'bordeaux', 'gradignan': 'bordeaux',
@@ -3907,9 +3905,28 @@ const DECODO_CITY_MAP = {
   'aix_en_provence': 'marseille', 'aubagne': 'marseille', 'vitrolles': 'marseille'
 };
 
-function getDecodoCitySlug(ville) {
+function getDecodoCitySlug(ville, pays = 'FR') {
+  const p = (pays || 'FR').toUpperCase();
   const slug = normalizeCityForProxy(ville);
-  return DECODO_CITY_MAP[slug] || slug;
+
+  if (p === 'BE') {
+    const mapBE = { 'bruxelles': 'bruxelles', 'brussels': 'bruxelles', 'anvers': 'anvers', 'antwerpen': 'anvers', 'liege': 'liege', 'gand': 'gand', 'gent': 'gand', 'charleroi': 'charleroi', 'namur': 'namur', 'mons': 'mons' };
+    return mapBE[slug] || 'bruxelles';
+  }
+  if (p === 'CA') {
+    const mapCA = { 'montreal': 'montreal', 'toronto': 'toronto', 'vancouver': 'vancouver', 'quebec': 'quebec', 'ottawa': 'ottawa' };
+    return mapCA[slug] || 'montreal';
+  }
+  if (p === 'US') {
+    const mapUS = { 'new_york': 'new_york', 'los_angeles': 'los_angeles', 'chicago': 'chicago', 'miami': 'miami', 'houston': 'houston' };
+    return mapUS[slug] || 'new_york';
+  }
+  if (p === 'LU') {
+    return 'luxembourg';
+  }
+
+  // France (par défaut)
+  return DECODO_CITY_MAP[slug] || slug || 'paris';
 }
 
 function getGologinToken() {
@@ -3931,7 +3948,7 @@ function resolveGologinUrl(path = '/browser') {
 
 async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '') {
   const rawCitySlug = normalizeCityForProxy(ville);
-  const citySlug    = getDecodoCitySlug(ville);
+  const citySlug    = getDecodoCitySlug(ville, pays);
 
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
   const cfg = { host: 'gate.decodo.com', port: 10001 };
@@ -4055,7 +4072,7 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
 
   // 1. Créer le proxy Decodo pour cette ville (avec résolution automatique Préfecture / Sous-Préfecture)
   const rawCitySlug = normalizeCityForProxy(ville);
-  const citySlug    = getDecodoCitySlug(ville);
+  const citySlug    = getDecodoCitySlug(ville, pays);
   const backupSlug  = DECODO_CITY_MAP[rawCitySlug] ? rawCitySlug : 'paris';
 
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';

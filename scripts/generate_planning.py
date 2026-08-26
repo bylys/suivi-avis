@@ -190,8 +190,7 @@ def normalize_city_for_proxy(ville):
         'maconnerie', 'macon', 'beton', 'dalle', 'terrassement', 'terrasse', 'enduit',
         'facadier', 'isolation', 'debarras', 'etancheite', 'plomberie', 'plombier',
         'electricite', 'reparation', 'renovation', 'depannage', 'remorquage', 'auto',
-        'voiture', 'garage', 'jardinage', 'jardin', 'batiment', 'couverture',
-        'et', 'de', 'du', 'des', 'la', 'le', 'les', 'en', 'sur'
+        'voiture', 'garage', 'jardinage', 'jardin', 'batiment', 'couverture'
     }
 
     parts = [p for p in v.split('_') if p and p not in trade_words]
@@ -199,13 +198,31 @@ def normalize_city_for_proxy(ville):
     if not res or len(res) < 2:
         res = 'paris'
 
-    return DECODO_CITY_MAP_PYTHON.get(res, res)
+    return res
+
+def get_decodo_city_slug_python(ville, pays="FR"):
+    p = (pays or "FR").upper()
+    slug = normalize_city_for_proxy(ville)
+
+    if p == "BE":
+        map_be = {'bruxelles': 'bruxelles', 'brussels': 'bruxelles', 'anvers': 'anvers', 'liege': 'liege', 'gand': 'gand', 'charleroi': 'charleroi', 'namur': 'namur', 'mons': 'mons'}
+        return map_be.get(slug, 'bruxelles')
+    if p == "CA":
+        map_ca = {'montreal': 'montreal', 'toronto': 'toronto', 'vancouver': 'vancouver', 'quebec': 'quebec', 'ottawa': 'ottawa'}
+        return map_ca.get(slug, 'montreal')
+    if p == "US":
+        map_us = {'new_york': 'new_york', 'los_angeles': 'los_angeles', 'chicago': 'chicago', 'miami': 'miami', 'houston': 'houston'}
+        return map_us.get(slug, 'new_york')
+    if p == "LU":
+        return 'luxembourg'
+
+    return DECODO_CITY_MAP_PYTHON.get(slug, slug or 'paris')
 
 def build_proxy_config(pays, ville, mobile=False):
     """Retourne le dict proxy Decodo selon le pays, la ville et le type."""
     cfg = DECODO_PROXY_CONFIG.get(pays, DECODO_PROXY_CONFIG["FR"])
     host, port, user_res, user_mob = cfg
-    city_slug = normalize_city_for_proxy(ville)
+    city_slug = get_decodo_city_slug_python(ville, pays)
     user_tpl = user_mob if mobile else user_res
     username = user_tpl.replace("{city}", city_slug)
     password = DECODO_PASS_MOBILE if mobile else DECODO_PASS
