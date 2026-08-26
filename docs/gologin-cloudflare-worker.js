@@ -1,5 +1,5 @@
 /**
- * Code COMPLET du Cloudflare Worker (contenant OpenAI, Gemini, Sheets et GoLogin)
+ * Code COMPLET du Cloudflare Worker (sans OpenAI, avec Gemini, Sheets et GoLogin)
  * À remplacer dans votre Cloudflare Worker Dashboard : gmb-openai-proxy.m-payot76.workers.dev
  */
 
@@ -10,9 +10,6 @@ const ALLOWED_ORIGINS = [
 ];
 
 function matchRoute(pathname) {
-  if (pathname === '/v1/images/generations' || pathname === '/v1/chat/completions') {
-    return { host: 'https://api.openai.com', upstreamPath: pathname, auth: 'bearer', secret: 'OPENAI_API_KEY' };
-  }
   if (pathname.startsWith('/gemini/')) {
     return { host: 'https://generativelanguage.googleapis.com', upstreamPath: pathname.slice('/gemini'.length), auth: 'query', secret: 'GEMINI_API_KEY' };
   }
