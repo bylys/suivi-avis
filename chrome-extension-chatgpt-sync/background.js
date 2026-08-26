@@ -78,7 +78,7 @@ async function syncCookiesToSupabase() {
   }
 }
 
-// Écouteur de messages depuis le popup
+// Écouteur de messages depuis le popup et content.js
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'FORCE_SYNC') {
     syncCookiesToSupabase().then(() => sendResponse({ status: 'DONE' }));
@@ -86,7 +86,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-// Déclencheur : chaque fois qu'un cookie change sur chatgpt.com
+// Déclencheur 1 : Navigation sur ChatGPT (ouverture de page ou nouvelle conversation)
+if (chrome.webNavigation) {
+  chrome.webNavigation.onCompleted.addListener((details) => {
+    if (details.url && details.url.includes('chatgpt.com')) {
+      console.log('[GMB Sync] Navigation ChatGPT détectée :', details.url);
+      syncCookiesToSupabase();
+    }
+  }, { url: [{ hostContains: 'chatgpt.com' }] });
+}
+
+// Déclencheur 2 : Mise à jour de Tab URL sur ChatGPT
+if (chrome.tabs) {
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url && changeInfo.url.includes('chatgpt.com')) {
+      console.log('[GMB Sync] Tab ChatGPT mis à jour :', changeInfo.url);
+      syncCookiesToSupabase();
+    }
+  });
+}
+
+// Déclencheur 3 : Chaque fois qu'un cookie change sur chatgpt.com
 chrome.cookies.onChanged.addListener((changeInfo) => {
   if (changeInfo.cookie.domain.includes('chatgpt.com')) {
     syncCookiesToSupabase();
