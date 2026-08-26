@@ -803,7 +803,7 @@ async function main() {
             });
         }
 
-        console.log(`✅ ${cookies.length} cookies valides extraits et sanitités pour la session ChatGPT ("${rawOp || 'Global'}").`);
+        console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
 
         // Formatage de la date courte pour le nom du fichier (ex: 24-08-26)
         const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
