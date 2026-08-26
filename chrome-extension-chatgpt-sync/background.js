@@ -12,7 +12,13 @@ async function syncCookiesToSupabase() {
     const isPerso = accountType === 'PERSO';
 
     const cookies = await chrome.cookies.getAll({ domain: 'chatgpt.com' });
-    if (!cookies || cookies.length === 0) return;
+    if (!cookies || cookies.length === 0) {
+      await chrome.storage.local.set({
+        lastSyncStatus: `⚠️ Aucun cookie ChatGPT trouvé (ouvre chatgpt.com)`,
+        lastSyncTime: Date.now()
+      });
+      return;
+    }
 
     const cleanCookies = cookies.map(c => ({
       name: c.name,
@@ -73,9 +79,10 @@ async function syncCookiesToSupabase() {
 }
 
 // Écouteur de messages depuis le popup
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'FORCE_SYNC') {
-    syncCookiesToSupabase();
+    syncCookiesToSupabase().then(() => sendResponse({ status: 'DONE' }));
+    return true;
   }
 });
 

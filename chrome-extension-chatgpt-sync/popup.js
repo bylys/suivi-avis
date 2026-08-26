@@ -4,21 +4,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   const statusText = document.getElementById('status-text');
   const btnForce = document.getElementById('btn-force');
 
-  // Restaurer l'opérateur et le type de compte sélectionnés
-  const data = await chrome.storage.local.get(['operatorName', 'accountType', 'lastSyncStatus', 'lastSyncTime']);
-  if (data.operatorName) {
-    selectOp.value = data.operatorName;
-  }
-  if (data.accountType) {
-    selectAcc.value = data.accountType;
+  function updateStatusDisplay(data) {
+    if (data.lastSyncStatus) {
+      const timeStr = data.lastSyncTime ? new Date(data.lastSyncTime).toLocaleTimeString('fr-FR') : '';
+      statusText.textContent = `${data.lastSyncStatus} (${timeStr})`;
+    } else {
+      statusText.textContent = 'Dernière synchro : En attente...';
+    }
   }
 
-  if (data.lastSyncStatus) {
-    const timeStr = data.lastSyncTime ? new Date(data.lastSyncTime).toLocaleTimeString('fr-FR') : '';
-    statusText.textContent = `${data.lastSyncStatus} (${timeStr})`;
-  } else {
-    statusText.textContent = 'Dernière synchro : En attente...';
+  // Restaurer l'opérateur et le type de compte sélectionnés
+  const initialData = await chrome.storage.local.get(['operatorName', 'accountType', 'lastSyncStatus', 'lastSyncTime']);
+  if (initialData.operatorName) {
+    selectOp.value = initialData.operatorName;
   }
+  if (initialData.accountType) {
+    selectAcc.value = initialData.accountType;
+  }
+  updateStatusDisplay(initialData);
+
+  // Écouter en temps réel la fin de synchro de background.js
+  chrome.storage.onChanged.addListener((changes) => {
+    chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime'], (d) => {
+      updateStatusDisplay(d);
+    });
+  });
 
   selectOp.addEventListener('change', async () => {
     const op = selectOp.value;
@@ -35,7 +45,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   btnForce.addEventListener('click', () => {
-    statusText.textContent = 'Synchro manuelle lancée...';
-    chrome.runtime.sendMessage({ action: 'FORCE_SYNC' });
+    statusText.textContent = 'Synchro manuelle en cours...';
+    chrome.runtime.sendMessage({ action: 'FORCE_SYNC' }, async () => {
+      const latest = await chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime']);
+      updateStatusDisplay(latest);
+    });
   });
 });
