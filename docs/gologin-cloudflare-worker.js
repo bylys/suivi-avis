@@ -27,7 +27,7 @@ function corsHeaders(origin) {
   const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allow,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
     'Vary': 'Origin',
@@ -51,7 +51,7 @@ export default {
     if (!ALLOWED_ORIGINS.includes(origin)) {
       return json(403, { error: 'origin_not_allowed' }, origin);
     }
-    if (request.method !== 'GET' && request.method !== 'POST') {
+    if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
       return json(405, { error: 'method_not_allowed' }, origin);
     }
 
@@ -75,7 +75,7 @@ export default {
     }
 
     const init = { method: request.method, headers };
-    if (request.method === 'POST') init.body = request.body;
+    if (request.method !== 'GET' && request.method !== 'HEAD') init.body = request.body;
 
     let upstreamResp;
     try {
