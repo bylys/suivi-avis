@@ -3953,6 +3953,19 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }, 12000);
       if (res.ok) {
         created = true;
+        const d = await res.json().catch(() => ({}));
+        const profileId = d.id || d.profile?.id || null;
+        if (profileId) {
+          // Attacher au dossier VA TEAM (id: 69e5a54f0213fbdbd5796404)
+          const patchUrl = resolveGologinUrl(`/browser/${profileId}`);
+          try {
+            await _fetchTimeout(patchUrl, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ folders: ['69e5a54f0213fbdbd5796404'] })
+            }, 6000);
+          } catch (e) {}
+        }
         console.log('GoLogin profil créé via Cloudflare Worker:', profileName);
       } else {
         const txt = await res.text();
@@ -3974,6 +3987,17 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }, 12000);
       if (res.ok) {
         created = true;
+        const d = await res.json().catch(() => ({}));
+        const profileId = d.id || d.profile?.id || null;
+        if (profileId) {
+          try {
+            await _fetchTimeout(`https://api.gologin.com/browser/${profileId}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ folders: ['69e5a54f0213fbdbd5796404'] })
+            }, 6000);
+          } catch (e) {}
+        }
         console.log('GoLogin profil créé via API Cloud direct:', profileName);
       }
     } catch (e) {
