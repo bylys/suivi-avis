@@ -3875,6 +3875,135 @@ function getDecodoCitySlug(ville) {
   return DECODO_CITY_MAP[slug] || slug;
 }
 
+function getGologinToken() {
+  return localStorage.getItem('gologin_token') || '';
+}
+
+function getGologinBase() {
+  const port = localStorage.getItem('gologin_port') || '36912';
+  return `http://127.0.0.1:${port}`;
+}
+
+function resolveGologinUrl(path = '/browser') {
+  if (window.OPENAI_PROXY_URL || window._APP_CONFIG?.openai_proxy) {
+    const proxyBase = (window._APP_CONFIG?.openai_proxy || window.OPENAI_PROXY_URL || '').replace(/\/$/, '');
+    return `${proxyBase}/gologin${path}`;
+  }
+  return null;
+}
+
+async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
+  const rawCitySlug = normalizeCityForProxy(ville);
+  const citySlug    = getDecodoCitySlug(ville);
+
+  const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
+  const cfg = { host: 'gate.decodo.com', port: 10001 };
+  const decodoPass = isMobile ? DECODO_PASS_MOBILE : DECODO_PASS_RESIDENTIAL;
+  const baseUser   = isMobile ? 'user-VATeam' : 'user-VAteamR';
+
+  const sessionId = ('s' + citySlug.replace(/[^a-z0-9]/g, '') + Math.random().toString(36).slice(2, 8)).slice(0, 24);
+  const sessionSuffix = `-session-${sessionId}-sessionduration-1440`;
+  const usernameCityPrimary = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
+
+  const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
+    : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
+    : ficheNom.toLowerCase().includes('peintre') ? 'peintre'
+    : ficheNom.toLowerCase().includes('plombier') ? 'plombier'
+    : ficheNom.toLowerCase().includes('electricien') ? 'electricien'
+    : ficheNom.toLowerCase().includes('elagage') ? 'elagage'
+    : 'gmb';
+  const profileName = `GMB_${metier}_${citySlug}`;
+
+  const profileBody = {
+    name: profileName,
+    os: 'mac',
+    navigator: {
+      language: 'fr-FR,fr;q=0.9',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    },
+    proxy: {
+      mode: 'http',
+      host: cfg.host,
+      port: cfg.port,
+      username: usernameCityPrimary,
+      password: decodoPass
+    }
+  };
+
+  const _fetchTimeout = (url, opts, ms = 10000) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
+  };
+
+  let created = false;
+
+  // 1. Tenter via le Worker Cloudflare si disponible
+  const cloudflareUrl = resolveGologinUrl('/browser');
+  if (cloudflareUrl) {
+    try {
+      const res = await _fetchTimeout(cloudflareUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileBody)
+      }, 12000);
+      if (res.ok) {
+        created = true;
+        console.log('GoLogin profil créé via Cloudflare Worker:', profileName);
+      } else {
+        const txt = await res.text();
+        console.warn('GoLogin Cloudflare Worker status:', res.status, txt);
+      }
+    } catch (e) {
+      console.warn('GoLogin Cloudflare Worker fetch error:', e?.message || e);
+    }
+  }
+
+  // 2. Tenter via l'API Cloud directe GoLogin si Token présent dans localStorage
+  const token = getGologinToken();
+  if (!created && token) {
+    try {
+      const res = await _fetchTimeout('https://api.gologin.com/browser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(profileBody)
+      }, 12000);
+      if (res.ok) {
+        created = true;
+        console.log('GoLogin profil créé via API Cloud direct:', profileName);
+      }
+    } catch (e) {
+      console.warn('GoLogin Cloud API error:', e?.message || e);
+    }
+  }
+
+  // 3. Tenter via l'API locale GoLogin (port 36912)
+  if (!created) {
+    const localBase = getGologinBase();
+    try {
+      const res = await _fetchTimeout(`${localBase}/browser`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        body: JSON.stringify(profileBody)
+      }, 8000);
+      if (res.ok) {
+        created = true;
+        console.log('GoLogin profil créé via API locale:', profileName);
+      }
+    } catch (e) {
+      console.warn('GoLogin API locale indisponible:', e?.message || e);
+    }
+  }
+
+  if (created) {
+    showToast(`✅ Profil GoLogin "${profileName}" créé avec proxy Decodo (🇫🇷 ${citySlug}) !`, 'success', 6000);
+    return profileName;
+  } else {
+    console.warn('GoLogin: création non aboutie (fallback DonutBrowser disponible).');
+    return null;
+  }
+}
+
 async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const token = getDonutToken();
   if (!token) {
@@ -4166,11 +4295,26 @@ async function planningGenerer(id, ficheNom, gmail) {
     else _travaux = 'travaux à domicile';
   }
 
-  // Créer et lancer le profil DonutBrowser si token configuré.
-  // Isolé : une erreur/lenteur DonutBrowser ne doit JAMAIS bloquer la génération d'avis.
-  if (getDonutToken() && ville && ville !== '—') {
-    try { await donutCreerProfil(ville, gmail, ficheNom); }
-    catch (e) { console.warn('DonutBrowser ignoré (erreur, avis continue):', e?.message || e); }
+  // Créer et lancer le profil anti-détection (GoLogin pour Kevin/Fifiana, DonutBrowser pour les autres).
+  // Isolé : une erreur/lenteur de profil ne doit JAMAIS bloquer la génération d'avis.
+  if (ville && ville !== '—') {
+    const rowOp   = (row ? (row.querySelector('td:nth-child(4)')?.textContent || row.dataset?.operateur || '') : '').toLowerCase();
+    const opSaved = (localStorage.getItem('gmb_operateur') || '').toLowerCase();
+    const opVal   = (document.getElementById('planning-operateur')?.value || '').toLowerCase();
+    const isKevinOrFif = rowOp.includes('kevin') || rowOp.includes('fif') || opSaved.includes('kevin') || opSaved.includes('fif') || opVal.includes('kevin') || opVal.includes('fif');
+
+    try {
+      if (isKevinOrFif) {
+        const glRes = await gologinCreerProfil(ville, gmail, ficheNom);
+        if (!glRes && getDonutToken()) {
+          await donutCreerProfil(ville, gmail, ficheNom);
+        }
+      } else if (getDonutToken()) {
+        await donutCreerProfil(ville, gmail, ficheNom);
+      }
+    } catch (e) {
+      console.warn('Profil anti-detect ignoré (erreur, la génération d\'avis continue):', e?.message || e);
+    }
   }
 
 
