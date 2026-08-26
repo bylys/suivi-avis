@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const selectOp = document.getElementById('op-select');
-  const selectAcc = document.getElementById('account-select');
   const statusText = document.getElementById('status-text');
-  const btnForce = document.getElementById('btn-force');
+  const btnPro = document.getElementById('btn-sync-pro');
+  const btnPerso = document.getElementById('btn-sync-perso');
 
   function updateStatusDisplay(data) {
     if (data.lastSyncStatus) {
@@ -13,18 +13,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Restaurer l'opérateur et le type de compte sélectionnés
-  const initialData = await chrome.storage.local.get(['operatorName', 'accountType', 'lastSyncStatus', 'lastSyncTime']);
+  // Restaurer l'opérateur sélectionné
+  const initialData = await chrome.storage.local.get(['operatorName', 'lastSyncStatus', 'lastSyncTime']);
   if (initialData.operatorName) {
     selectOp.value = initialData.operatorName;
-  }
-  if (initialData.accountType) {
-    selectAcc.value = initialData.accountType;
   }
   updateStatusDisplay(initialData);
 
   // Écouter en temps réel la fin de synchro de background.js
-  chrome.storage.onChanged.addListener((changes) => {
+  chrome.storage.onChanged.addListener(() => {
     chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime'], (d) => {
       updateStatusDisplay(d);
     });
@@ -33,22 +30,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   selectOp.addEventListener('change', async () => {
     const op = selectOp.value;
     await chrome.storage.local.set({ operatorName: op });
-    statusText.textContent = `Opérateur réglé sur ${op}. Synchro en cours...`;
-    chrome.runtime.sendMessage({ action: 'FORCE_SYNC' });
+    statusText.textContent = `Opérateur réglé sur ${op}.`;
   });
 
-  selectAcc.addEventListener('change', async () => {
-    const type = selectAcc.value;
-    await chrome.storage.local.set({ accountType: type });
-    statusText.textContent = `Compte réglé sur ${type === 'PERSO' ? 'PERSO (Secours)' : 'PRO (Principal)'}. Synchro...`;
-    chrome.runtime.sendMessage({ action: 'FORCE_SYNC' });
+  btnPro.addEventListener('click', () => {
+    const op = selectOp.value;
+    statusText.textContent = `Enregistrement du Compte PRO (${op})...`;
+    chrome.runtime.sendMessage({ action: 'SYNC_NOW', targetType: 'WORK', operator: op });
   });
 
-  btnForce.addEventListener('click', () => {
-    statusText.textContent = 'Synchro manuelle en cours...';
-    chrome.runtime.sendMessage({ action: 'FORCE_SYNC' }, async () => {
-      const latest = await chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime']);
-      updateStatusDisplay(latest);
-    });
+  btnPerso.addEventListener('click', () => {
+    const op = selectOp.value;
+    statusText.textContent = `Enregistrement du Compte PERSO (${op})...`;
+    chrome.runtime.sendMessage({ action: 'SYNC_NOW', targetType: 'PERSO', operator: op });
   });
 });

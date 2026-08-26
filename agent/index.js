@@ -1152,7 +1152,12 @@ async function main() {
                             console.log(`🔄 BASCULE AUTOMATIQUE SUR LE PLAN DE SECOURS : "${taskCookieSets[planIdx + 1].name}" ("${taskCookieSets[planIdx + 1].key}")...`);
                             await new Promise(r => setTimeout(r, 4000));
                         } else {
-                            console.error(`❌ TOUS LES PLANS ONT ÉCHOUÉ pour la tâche ID ${task.id}. (Nombre de plans configurés pour cet opérateur : ${taskCookieSets.length})`);
+                            if (taskCookieSets.length === 1) {
+                                console.error(`🚨 ATTENTION : Seul 1 compte ("${taskCookieSets[0].key}") est enregistré pour ${taskOpName}. Aucun compte PERSO ("CHATGPT_PERSO_COOKIES_${taskOpName}") n'est enregistré dans Supabase.`);
+                                console.error(`👉 POUR ACTIVER LA BASCULE AUTOMATIQUE : Connectez-vous à votre compte ChatGPT PERSO dans Chrome, ouvrez l'extension et cliquez sur "🏠 Enregistrer comme Compte PERSO" !`);
+                            } else {
+                                console.error(`❌ TOUS LES ${taskCookieSets.length} PLANS ONT ÉCHOUÉ pour la tâche ID ${task.id}.`);
+                            }
                             throw planErr;
                         }
                     }

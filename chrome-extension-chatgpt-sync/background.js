@@ -1,20 +1,20 @@
 /**
- * background.js — Synchronisation automatique et privée des cookies ChatGPT par opérateur et type de compte (PRO vs PERSO) vers Supabase
+ * background.js — Synchronisation automatique et explicite des cookies ChatGPT par opérateur et type de compte (PRO vs PERSO) vers Supabase
  */
 
 const SUPABASE_URL = 'https://rrbvghxmnimusfyqixau.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_k0nVhKHWUT5kBW9xBNpLkA_AKam7uBa';
 
-async function syncCookiesToSupabase() {
+async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null) {
   try {
-    const { operatorName, accountType } = await chrome.storage.local.get(['operatorName', 'accountType']);
-    const targetOp = (operatorName || 'KEVIN').toUpperCase();
-    const isPerso = accountType === 'PERSO';
+    const { operatorName } = await chrome.storage.local.get(['operatorName']);
+    const targetOp = (forcedOp || operatorName || 'KEVIN').toUpperCase();
+    const isPerso = targetType === 'PERSO';
 
     const cookies = await chrome.cookies.getAll({ domain: 'chatgpt.com' });
     if (!cookies || cookies.length === 0) {
       await chrome.storage.local.set({
-        lastSyncStatus: `⚠️ Aucun cookie ChatGPT trouvé (ouvre chatgpt.com)`,
+        lastSyncStatus: `⚠️ Aucun cookie ChatGPT trouvé dans Chrome (ouvrez chatgpt.com)`,
         lastSyncTime: Date.now()
       });
       return;
@@ -45,7 +45,7 @@ async function syncCookiesToSupabase() {
         ];
 
     for (const keyName of keysToUpdate) {
-      // 1. Sauvegarde principale dans la table 'fiches' (nom = nom de clé, lien = cookies JSON)
+      // 1. Sauvegarde garantie dans la table 'fiches'
       try {
         await fetch(`${SUPABASE_URL}/rest/v1/fiches?nom=eq.${encodeURIComponent(keyName)}`, {
           method: 'DELETE',
@@ -68,28 +68,10 @@ async function syncCookiesToSupabase() {
           })
         });
       } catch (fErr) {}
-
-      // 2. Sauvegarde optionnelle dans app_settings si elle existe
-      try {
-        await fetch(`${SUPABASE_URL}/rest/v1/app_settings`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
-            key: keyName,
-            value: jsonStr,
-            updated_at: nowIso
-          })
-        });
-      } catch (aErr) {}
     }
 
     const typeLabel = isPerso ? 'PERSO (Secours)' : 'PRO (Principal)';
-    const msg = `✅ Synchro réussie pour ${targetOp} [${typeLabel}]`;
+    const msg = `✅ Compte ${typeLabel} enregistré pour ${targetOp}`;
     console.log(`[GMB Sync] ${msg}`);
     await chrome.storage.local.set({
       lastSyncStatus: msg,
@@ -107,38 +89,23 @@ async function syncCookiesToSupabase() {
 
 // Écouteur de messages depuis le popup et content.js
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.action === 'FORCE_SYNC') {
-    syncCookiesToSupabase().then(() => sendResponse({ status: 'DONE' }));
+  if (msg.action === 'SYNC_NOW') {
+    syncCookiesToSupabase(msg.targetType || 'WORK', msg.operator).then(() => sendResponse({ status: 'DONE' }));
+    return true;
+  } else if (msg.action === 'FORCE_SYNC') {
+    syncCookiesToSupabase('WORK').then(() => sendResponse({ status: 'DONE' }));
     return true;
   }
 });
 
-// Déclencheur 1 : Navigation sur ChatGPT (ouverture de page ou nouvelle conversation)
+// Déclencheur 1 : Navigation sur ChatGPT (met à jour le compte PRO par défaut si actif)
 if (chrome.webNavigation) {
   chrome.webNavigation.onCompleted.addListener((details) => {
     if (details.url && details.url.includes('chatgpt.com')) {
-      console.log('[GMB Sync] Navigation ChatGPT détectée :', details.url);
-      syncCookiesToSupabase();
+      syncCookiesToSupabase('WORK');
     }
   }, { url: [{ hostContains: 'chatgpt.com' }] });
 }
 
-// Déclencheur 2 : Mise à jour de Tab URL sur ChatGPT
-if (chrome.tabs) {
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.url && changeInfo.url.includes('chatgpt.com')) {
-      console.log('[GMB Sync] Tab ChatGPT mis à jour :', changeInfo.url);
-      syncCookiesToSupabase();
-    }
-  });
-}
-
-// Déclencheur 3 : Chaque fois qu'un cookie change sur chatgpt.com
-chrome.cookies.onChanged.addListener((changeInfo) => {
-  if (changeInfo.cookie.domain.includes('chatgpt.com')) {
-    syncCookiesToSupabase();
-  }
-});
-
 // Synchronisation initiale au démarrage
-syncCookiesToSupabase();
+syncCookiesToSupabase('WORK');
