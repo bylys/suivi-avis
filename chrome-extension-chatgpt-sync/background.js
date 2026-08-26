@@ -45,20 +45,47 @@ async function syncCookiesToSupabase() {
         ];
 
     for (const keyName of keysToUpdate) {
-      await fetch(`${SUPABASE_URL}/rest/v1/app_settings`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates'
-        },
-        body: JSON.stringify({
-          key: keyName,
-          value: jsonStr,
-          updated_at: nowIso
-        })
-      });
+      // 1. Sauvegarde principale dans la table 'fiches' (nom = nom de clé, lien = cookies JSON)
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/fiches?nom=eq.${encodeURIComponent(keyName)}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+
+        await fetch(`${SUPABASE_URL}/rest/v1/fiches`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            nom: keyName,
+            lien: jsonStr
+          })
+        });
+      } catch (fErr) {}
+
+      // 2. Sauvegarde optionnelle dans app_settings si elle existe
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/app_settings`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            key: keyName,
+            value: jsonStr,
+            updated_at: nowIso
+          })
+        });
+      } catch (aErr) {}
     }
 
     const typeLabel = isPerso ? 'PERSO (Secours)' : 'PRO (Principal)';

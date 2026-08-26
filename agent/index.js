@@ -666,7 +666,20 @@ async function main() {
             }
         }
 
-        // 2. Collecte depuis Supabase app_settings
+        // 2. Collecte depuis Supabase (tables fiches et app_settings)
+        try {
+            const { data: fichesData } = await supabase.from('fiches').select('nom, lien').ilike('nom', '%COOKIE%');
+            if (fichesData && fichesData.length > 0) {
+                for (const item of fichesData) {
+                    const k = (item.nom || '').toUpperCase();
+                    const v = (item.lien || '').trim();
+                    if (v.length > 20) {
+                        availableCookiesMap[k] = v;
+                    }
+                }
+            }
+        } catch (e) {}
+
         try {
             const { data: settingData } = await supabase.from('app_settings').select('key, value');
             if (settingData) {
