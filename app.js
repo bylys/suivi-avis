@@ -3892,7 +3892,7 @@ function resolveGologinUrl(path = '/browser') {
   return null;
 }
 
-async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
+async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '') {
   const rawCitySlug = normalizeCityForProxy(ville);
   const citySlug    = getDecodoCitySlug(ville);
 
@@ -3905,14 +3905,13 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const sessionSuffix = `-session-${sessionId}-sessionduration-1440`;
   const usernameCityPrimary = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
 
-  const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
-    : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
-    : ficheNom.toLowerCase().includes('peintre') ? 'peintre'
-    : ficheNom.toLowerCase().includes('plombier') ? 'plombier'
-    : ficheNom.toLowerCase().includes('electricien') ? 'electricien'
-    : ficheNom.toLowerCase().includes('elagage') ? 'elagage'
-    : 'gmb';
-  const profileName = `GMB_${metier}_${citySlug}`;
+  const opClean = operateurRaw.toLowerCase().includes('fif') ? 'Fifiana'
+    : operateurRaw.toLowerCase().includes('kevin') ? 'Kevin'
+    : operateurRaw ? (operateurRaw.trim().charAt(0).toUpperCase() + operateurRaw.trim().slice(1))
+    : 'Kevin';
+
+  const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
+  const profileName = `${opClean}_GMB_${villeClean}`;
 
   const profileBody = {
     name: profileName,
@@ -4309,7 +4308,8 @@ async function planningGenerer(id, ficheNom, gmail) {
 
     try {
       if (isKevinOrFif) {
-        const glRes = await gologinCreerProfil(ville, gmail, ficheNom);
+        const rawOpStr = rowOp || opSaved || opVal || '';
+        const glRes = await gologinCreerProfil(ville, gmail, ficheNom, 'FR', rawOpStr);
         if (!glRes && getDonutToken()) {
           await donutCreerProfil(ville, gmail, ficheNom);
         }
