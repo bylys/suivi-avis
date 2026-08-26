@@ -159,16 +159,47 @@ def get_gologin_folder_id():
         print(f"GoLogin folders erreur : {e}")
     return None
 
+DECODO_CITY_MAP_PYTHON = {
+    'bayeux': 'caen', 'calvados': 'caen', '14': 'caen',
+    'reze': 'nantes', 'saint_herblain': 'nantes', 'orvault': 'nantes', 'vertou': 'nantes',
+    'villeurbanne': 'lyon', 'venissieux': 'lyon', 'pessac': 'bordeaux', 'merignac': 'bordeaux',
+    'boulogne_billancourt': 'paris', 'nanterre': 'paris', 'courbevoie': 'paris',
+    'aix_en_provence': 'marseille', 'aubagne': 'marseille'
+}
+
 def normalize_city_for_proxy(ville):
-    """Normalise le nom de ville pour Decodo (minuscules, sans accents, underscores)."""
-    import unicodedata
-    ville = unicodedata.normalize('NFD', ville)
-    ville = ''.join(c for c in ville if unicodedata.category(c) != 'Mn')
-    ville = ville.lower().strip()
-    ville = ville.replace(' ', '_').replace("'", '_').replace('-', '_')
-    while '__' in ville:
-        ville = ville.replace('__', '_')
-    return ville
+    """Normalise le nom de ville pour Decodo (minuscules, sans accents, sans mots métiers ni parenthèses)."""
+    if not ville:
+        return "paris"
+    import unicodedata, re
+
+    # Nettoyer les parenthèses
+    v = re.sub(r'\(.*?\)', '', ville)
+    v = unicodedata.normalize('NFD', v)
+    v = ''.join(c for c in v if unicodedata.category(c) != 'Mn')
+    v = v.lower().strip()
+    v = re.sub(r'[^a-z0-9\s_-]', '', v)
+    v = re.sub(r'[\s\'-]+', '_', v)
+    v = re.sub(r'_+', '_', v).strip('_')
+
+    trade_words = {
+        'entreprise', 'elagueur', 'societe', 'artisan', 'eurl', 'sarl', 'sas',
+        'elagage', 'abattage', 'taille', 'haie', 'arboriste', 'grimpeur', 'paysagiste',
+        'ravalement', 'facade', 'nettoyage', 'demoussage', 'peintre', 'peinture',
+        'couvreur', 'toiture', 'toit', 'zinguerie', 'charpente', 'carreleur', 'carrelage',
+        'maconnerie', 'macon', 'beton', 'dalle', 'terrassement', 'terrasse', 'enduit',
+        'facadier', 'isolation', 'debarras', 'etancheite', 'plomberie', 'plombier',
+        'electricite', 'reparation', 'renovation', 'depannage', 'remorquage', 'auto',
+        'voiture', 'garage', 'jardinage', 'jardin', 'batiment', 'couverture',
+        'et', 'de', 'du', 'des', 'la', 'le', 'les', 'en', 'sur'
+    }
+
+    parts = [p for p in v.split('_') if p and p not in trade_words]
+    res = '_'.join(parts)
+    if not res or len(res) < 2:
+        res = 'paris'
+
+    return DECODO_CITY_MAP_PYTHON.get(res, res)
 
 def build_proxy_config(pays, ville, mobile=False):
     """Retourne le dict proxy Decodo selon le pays, la ville et le type."""

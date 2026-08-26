@@ -3799,11 +3799,42 @@ function getDonutToken() {
 }
 
 function normalizeCityForProxy(ville) {
-  return ville.normalize('NFD').replace(/[̀-ͯ]/g, '')
+  if (!ville) return 'paris';
+
+  // 1. Extraire la ville propre si du texte GMB ou mots métiers sont présents dans la chaîne
+  let clean = (typeof extraireVilleFiche === 'function' ? extraireVilleFiche(ville) : '') || ville;
+
+  // 2. Nettoyer les parenthèses, caractères spéciaux et ponctuation
+  clean = clean.replace(/\(.*?\)/g, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase().trim()
-    .replace(/[\s']+/g, '_')
-    .replace(/-+/g, '_')
-    .replace(/_+/g, '_');
+    .replace(/[^a-z0-9\s_-]/g, '')
+    .replace(/[\s'-]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  // 3. Filtrer les mots métiers résiduels qui pourraient subsister
+  const tradeWords = [
+    'entreprise', 'elagueur', 'societe', 'artisan', 'eurl', 'sarl', 'sas',
+    'elagage', 'abattage', 'taille', 'haie', 'arboriste', 'grimpeur', 'paysagiste',
+    'ravalement', 'facade', 'nettoyage', 'demoussage', 'peintre', 'peinture',
+    'couvreur', 'toiture', 'toit', 'zinguerie', 'charpente', 'carreleur', 'carrelage',
+    'maconnerie', 'macon', 'beton', 'dalle', 'terrassement', 'terrasse', 'enduit',
+    'facadier', 'isolation', 'debarras', 'etancheite', 'plomberie', 'plombier',
+    'electricite', 'reparation', 'renovation', 'depannage', 'remorquage', 'auto',
+    'voiture', 'garage', 'jardinage', 'jardin', 'batiment', 'couverture'
+  ];
+
+  const stopWords = ['et', 'de', 'du', 'des', 'la', 'le', 'les', 'en', 'sur'];
+
+  const parts = clean.split('_').filter(p => p && !tradeWords.includes(p) && !stopWords.includes(p));
+
+  let result = parts.join('_');
+  if (!result || result.length < 2) {
+    result = 'paris';
+  }
+
+  return result;
 }
 
 // Table de correspondance Départements / Subordonnées → Préfectures & Villes majeures Decodo
@@ -3836,7 +3867,7 @@ const DECODO_CITY_MAP = {
   'somme': 'amiens', '80': 'amiens',
   'finistere': 'brest', '29': 'brest',
   'loiret': 'orleans', '45': 'orleans',
-  'calvados': 'caen', '14': 'caen',
+  'calvados': 'caen', '14': 'caen', 'bayeux': 'caen',
   'haute_savoie': 'annecy', '74': 'annecy',
   'puy_de_dome': 'clermont_ferrand', '63': 'clermont_ferrand',
   'pyrenees_atlantiques': 'pau', '64': 'pau',
