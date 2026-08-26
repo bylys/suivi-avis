@@ -2123,14 +2123,13 @@ function extraireVilleFiche(nomFiche) {
   let str = nomFiche.trim();
   if (str.toLowerCase().includes('domiciliation')) return 'Saint-Herblain';
 
+  // 1. Recherche prioritaire dans le cache Supabase (_fichesCache)
   if (typeof _fichesCache !== 'undefined' && Array.isArray(_fichesCache)) {
     const found = _fichesCache.find(f => f.nom && f.nom.toLowerCase() === str.toLowerCase());
     if (found && found.ville) return found.ville.trim();
   }
 
-  let main = str.split(/\s+[-–—]\s+/)[0] || str;
-  main = main.replace(/\b(France|[0-9]{2,5}|[A-Z][a-z]+ [0-9]{2})\b/gi, '').trim();
-
+  // Mots métiers et mots vides à nettoyer
   const motsMetiers = [
     'Entreprise', 'Élagueur', 'Elagueur', 'Société', 'Societe', 'Artisan', 'EURL', 'SARL', 'SAS',
     'Élagage', 'Elagage', 'Abattage', 'Taille de Haie', 'Taille de haie', 'Taille', 'Haie', 'Arboriste', 'Grimpeur', 'Paysagiste',
@@ -2140,22 +2139,38 @@ function extraireVilleFiche(nomFiche) {
     'Terrassement', 'Terrasse', 'Façade', 'Facade', 'Enduit', 'Façadier', 'Facadier', 'Isolation',
     'Débarras', 'Debarras', 'Étanchéité', 'Etancheite', 'Plomberie', 'Plombier', 'Électricité', 'Electricite',
     'Réparation', 'Reparation', 'Rénovation', 'Renovation', 'Dépannage', 'Depannage', 'Remorquage', 'Auto', 'Voiture',
-    'Garage', 'Jardinage', 'Jardin', 'Bâtiment', 'Batiment'
+    'Garage', 'Jardinage', 'Jardin', 'Bâtiment', 'Batiment', 'Couverture'
   ];
 
-  let candidate = main;
-  for (const word of motsMetiers) {
-    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const reg = new RegExp('(^|[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ])' + escaped + '(?=[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]|$)', 'gi');
-    candidate = candidate.replace(reg, '$1');
-  }
+  const stopWords = ['d\'', 'l\'', 'et', 'de', 'du', 'des', 'par', 'pour', 'avec', 'les'];
 
-  candidate = candidate
-    .replace(/^[,\s;&|/-]+|[,\s;&|/-]+$/g, '')
-    .replace(/\s*&+\s*/g, ' ')
-    .replace(/\s*,\s*/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const cleanChunk = (text) => {
+    if (!text) return '';
+    let cleaned = text.replace(/\b(France|[0-9]{2,5}|[A-Z][a-z]+ [0-9]{2})\b/gi, '').trim();
+
+    for (const word of motsMetiers) {
+      const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const reg = new RegExp('(^|[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ])' + escaped + '(?=[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]|$)', 'gi');
+      cleaned = cleaned.replace(reg, '$1');
+    }
+
+    cleaned = cleaned
+      .replace(/^[,\s;&|/-]+|[,\s;&|/-]+$/g, '')
+      .replace(/\s*&+\s*/g, ' ')
+      .replace(/\s*,\s*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Supprimer les mots de liaison isolés en début ou fin de chaîne
+    for (const sw of stopWords) {
+      const escSw = sw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regStart = new RegExp('^' + escSw + '\\s+', 'gi');
+      const regEnd = new RegExp('\\s+' + escSw + '$', 'gi');
+      cleaned = cleaned.replace(regStart, '').replace(regEnd, '').trim();
+    }
+
+    return cleaned;
+  };
 
   const pickCity = (val) => {
     if (!val) return '';
@@ -2172,10 +2187,26 @@ function extraireVilleFiche(nomFiche) {
     return '';
   };
 
-  if (candidate && candidate.length >= 2) {
-    const matchDep = pickCity(candidate);
+  // Tester chaque morceau séparé par des tirets " - "
+  const chunks = str.split(/\s+[-–—]\s+/);
+  for (const chunk of chunks) {
+    const candidate = cleanChunk(chunk);
+    if (candidate && candidate.length >= 2) {
+      const matchDep = pickCity(candidate);
+      if (matchDep) return matchDep;
+      const normCand = candidate.toLowerCase().trim();
+      if (!['d', 'l', 'et', 'de', 'du', 'des'].includes(normCand)) {
+        return candidate;
+      }
+    }
+  }
+
+  // Fallback sur l'ensemble de la chaîne
+  const fullCandidate = cleanChunk(str);
+  if (fullCandidate && fullCandidate.length >= 2) {
+    const matchDep = pickCity(fullCandidate);
     if (matchDep) return matchDep;
-    return candidate;
+    return fullCandidate;
   }
 
   const matchDepStr = pickCity(str);
