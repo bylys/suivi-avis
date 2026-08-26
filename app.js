@@ -2145,11 +2145,17 @@ function extraireVilleFiche(nomFiche) {
 
   let candidate = main;
   for (const word of motsMetiers) {
-    const reg = new RegExp('\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
-    candidate = candidate.replace(reg, '');
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const reg = new RegExp('(^|[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ])' + escaped + '(?=[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]|$)', 'gi');
+    candidate = candidate.replace(reg, '$1');
   }
 
-  candidate = candidate.replace(/^[\s,;&|/-]+|[\s,;&|/-]+$/g, '').trim();
+  candidate = candidate
+    .replace(/^[,\s;&|/-]+|[,\s;&|/-]+$/g, '')
+    .replace(/\s*&+\s*/g, ' ')
+    .replace(/\s*,\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
   const pickCity = (val) => {
     if (!val) return '';
@@ -2159,9 +2165,9 @@ function extraireVilleFiche(nomFiche) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (_DEPARTEMENT_TO_VILLE[norm]) {
+    if (typeof _DEPARTEMENT_TO_VILLE !== 'undefined' && _DEPARTEMENT_TO_VILLE[norm]) {
       const target = _DEPARTEMENT_TO_VILLE[norm];
-      return Array.isArray(target) ? rnd(target) : target;
+      return Array.isArray(target) ? target[0] : target;
     }
     return '';
   };
