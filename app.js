@@ -4072,21 +4072,50 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
   const profileName = `${opClean}_GMB_${villeClean}`;
 
+  const isHostWindows = typeof navigator !== 'undefined' && /Windows|Win32/i.test(navigator.userAgent || navigator.platform || '');
+  const desktopOs = isHostWindows ? 'win' : 'mac';
+  const desktopPlatform = isHostWindows ? 'Win32' : 'MacIntel';
+  const desktopUA = isHostWindows
+    ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+    : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
+
   const profileBody = {
     name: profileName,
     browserType: 'chrome',
-    os: isMobile ? 'android' : 'mac',
+    os: isMobile ? 'android' : desktopOs,
     timezone: {
       mode: 'auto'
     },
     navigator: {
       language: countryCfg.lang,
-      platform: isMobile ? 'Linux armv8l' : 'MacIntel',
-      resolution: isMobile ? '390x844' : '1920x1080',
+      platform: isMobile ? 'Linux armv8l' : desktopPlatform,
+      resolution: isMobile ? '412x915' : '1920x1080',
       userAgent: isMobile
-        ? 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
-        : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+        ? 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
+        : desktopUA,
+      ...(isMobile ? {
+        devicePixelRatio: 3,
+        maxTouchPoints: 5,
+        hardwareConcurrency: 8,
+        deviceMemory: 8
+      } : {
+        devicePixelRatio: 1,
+        maxTouchPoints: 0,
+        hardwareConcurrency: 8,
+        deviceMemory: 8
+      })
     },
+    webGlMetadata: isMobile ? {
+      mode: 'mask',
+      vendor: 'Qualcomm',
+      renderer: 'Adreno (TM) 730'
+    } : {
+      mode: 'noise'
+    },
+    webgl: { mode: 'noise' },
+    canvas: { mode: 'noise' },
+    audioContext: { mode: 'noise' },
+    clientRects: { mode: 'noise' },
     ...(isMobile ? {
       mobile: {
         mode: true
