@@ -4008,7 +4008,15 @@ function getDecodoCitySlug(ville, pays = 'FR') {
 }
 
 function getGologinToken() {
-  return localStorage.getItem('gologin_token') || '';
+  return localStorage.getItem('gologin_token')
+      || localStorage.getItem('gologin_key')
+      || localStorage.getItem('gologin_api_key')
+      || localStorage.getItem('gologinToken')
+      || localStorage.getItem('gologinKey')
+      || window._APP_CONFIG?.gologin_token
+      || window._APP_CONFIG?.gologin_key
+      || window._APP_CONFIG?.gologin_api_key
+      || '';
 }
 
 function getGologinBase() {
