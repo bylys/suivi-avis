@@ -902,22 +902,43 @@ datalist { display: none; }
 .notes-header-btn:active {
   transform: scale(0.97);
 }
+body.light-theme .notes-header-btn {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+body.light-theme .notes-header-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
 
 #notes-panel {
   position: fixed;
-  right: -310px;
+  right: -320px;
   top: 0;
   height: 100vh;
-  width: 290px;
+  width: 300px;
   background: #0f172a;
   border-left: 1px solid #1e293b;
-  z-index: 999;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   transition: right 0.22s cubic-bezier(0.4,0,0.2,1);
   box-shadow: -8px 0 32px rgba(0,0,0,0.35);
 }
 #notes-panel.open { right: 0; }
+body.light-theme #notes-panel {
+  background: #ffffff !important;
+  border-left-color: #e2e8f0 !important;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.1) !important;
+}
+body.light-theme .notes-header {
+  border-bottom-color: #e2e8f0 !important;
+}
+body.light-theme #notes-textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
 
 .notes-header {
   display: flex;
