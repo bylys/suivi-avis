@@ -25,16 +25,9 @@ jobs:
         working-directory: ./agent
         run: npm install
         
-      - name: Run Drive Photos Fixer
+      - name: Restore to Original Folder
         working-directory: ./agent
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
-        run: node fix_drive_photos.js
-
-      - name: Generate Full Photo Report for All Operators
-        working-directory: ./agent
-        env:
-          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
-        run: node generate_full_report.js
+        run: node restore_to_original_folder.js
