@@ -1,0 +1,414 @@
+[
+  {
+    "id": "7ba80c3b-e351-4f45-b276-4ab12af32fcf",
+    "date": "2026-08-06",
+    "operateur": "Fifaliana",
+    "fiche_nom": "Peintre Mulhouse 68",
+    "gmb_metier": [
+      "Peinture"
+    ],
+    "texte_metier": [
+      "Ravalement de Façade"
+    ],
+    "photo": true,
+    "texte": "Une équipe exemplaire qui a réalisé un travail magnifique sur ma façade sans importuner les alentours. Ils sont restés discrets et ont bossé dur pour que tout soit fini dans les temps. Le nettoyage après leur passage a été parfait, aucune trace de leur intervention à part le résultat superbe. C'est rassurant de savoir qu'après leur départ, tout est déjà propre et rangé. Un grand merci pour votre sérieux !"
+  },
+  {
+    "id": "a3d7a693-d98b-4633-9768-421d4d122d67",
+    "date": "2026-08-06",
+    "operateur": "Fifaliana",
+    "fiche_nom": "Artisan Ravalement de Façade Aix en Provence",
+    "gmb_metier": [
+      "Ravalement de Façade"
+    ],
+    "texte_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "photo": true,
+    "texte": "J'ai fait appel à eux pour ma maison à Aix et le service a été impeccable du début à la fin. L'équipe est soudée, efficace et très respectueuse de mon jardin pendant le nettoyage. C’est un plaisir de voir des artisans qui travaillent aussi bien et avec autant de cœur à l'ouvrage. Je les recommande chaudement à tous les propriétaires qui veulent un résultat pro."
+  },
+  {
+    "id": "4c6cdea1-30b4-4d2c-84d5-ecabaf18eeee",
+    "date": "2026-08-07",
+    "operateur": "Kevin",
+    "fiche_nom": "Élagage, Abattage & Taille de Haie Reims - Élagueur Grimpeur Marne 51",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": true,
+    "texte": "J'avais un vieux chêne dont les branches commençaient à surplomber dangereusement la toiture de ma véranda. Avec les vents violents qu'on a parfois sur les hauteurs de Reims, j'étais assez inquiet. L'équipe est intervenue avec une maîtrise technique remarquable. Ils ont sécurisé l'arbre branche par branche avec un système de rétention pour ne rien abîmer en dessous. Travail d'expert, rapide et sécurisant. Un vrai soulagement pour nous"
+  },
+  {
+    "id": "a4eff00a-ac38-448e-bfc9-9b8564e58427",
+    "date": "2026-08-07",
+    "operateur": "Kintana",
+    "fiche_nom": "Couvreur Cherbourg-en-Cotentin - Manche",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Carrelage"
+    ],
+    "photo": true,
+    "texte": "On a fait appel a Carreleur Caen 14 pour la pose de carrelage au sol dans notre salon. Le devis était clair, le carreleur ponctuel et les délais respectés. Le boulot est vraiment soigné, les coupes sont propres et les joints bien tirés. Et le chantier a toujours été laissé propre, c'est appréciable ! Je recommande vivement pour leur sérieux."
+  },
+  {
+    "id": "07194c6f-68bd-43bb-9319-5a300ef00fbe",
+    "date": "2026-08-10",
+    "operateur": "Kevin",
+    "fiche_nom": "Couvreur Cherbourg - La Manche",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Étanchéité"
+    ],
+    "photo": false,
+    "texte": "Nous avons fait installer trois grands Velux pour aménager nos combles. L'étanchéité est parfaite (essentiel ici avec le vent de mer !) et la luminosité change complètement nos pièces. Ils ont même pris le temps de nous conseiller sur les stores extérieurs pour l'été. Travail soigné, rapide et conforme au devis."
+  },
+  {
+    "id": "39b969d2-b5c5-40c3-8ee9-cb0f9905f02f",
+    "date": "2026-08-10",
+    "operateur": "Kevin",
+    "fiche_nom": "Couvreur, Lyon Rhône",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Étanchéité"
+    ],
+    "photo": false,
+    "texte": "Nous avons fait installer trois grands Velux pour aménager nos combles à Villeurbanne. L'installation est parfaite, l'étanchéité est irréprochable malgré les grosses pluies récentes. Ils ont même pris le temps de nous conseiller sur les modèles avec volets solaires pour éviter la canicule lyonnaise en été. Très bons conseils et exécution rapide."
+  },
+  {
+    "id": "4ab0211b-8e9a-423e-9a9b-6d2f6907f112",
+    "date": "2026-08-10",
+    "operateur": "Kevin",
+    "fiche_nom": "Couvreur Lyon",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Terrassement"
+    ],
+    "photo": false,
+    "texte": "On en avait marre de s'embourber dès qu'il pleuvait trois gouttes sur notre chemin. L'équipe a réalisé un terrassement complet avec pose de géotextile et empierrement. C'est stable, propre et le drainage a été très bien pensé pour éviter les flaques devant le garage. Un artisan qui connaît son métier et qui donne de bons conseils techniques."
+  },
+  {
+    "id": "6ef48bf4-93fe-4b0d-8210-98601935fcad",
+    "date": "2026-08-10",
+    "operateur": "Anjara",
+    "fiche_nom": "Carreleur Mulhouse 68",
+    "gmb_metier": [
+      "Carrelage"
+    ],
+    "texte_metier": [
+      "Ravalement de Façade"
+    ],
+    "photo": false,
+    "texte": "Notre façade à Nantes avait vraiment besoin d'un coup de jeune. Les gars de l'Entreprise Ravalement de Facade Rezé Loire Atlantique sont intervenus, toujours à l'heure, le chantier était hyper propre. Le rendu est nickel, nos voisins ont même fait des compliments sur la qualité du travail. Le résultat parle de lui-même."
+  },
+  {
+    "id": "95da45cc-cc56-4c45-9fbd-e572a8a25349",
+    "date": "2026-08-10",
+    "operateur": "Kevin",
+    "fiche_nom": "Couvreur, Toiture Rouen",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Étanchéité"
+    ],
+    "photo": false,
+    "texte": "Nous avons fait installer trois grands Velux pour aménager nos combles. L'installation est parfaite, l'étanchéité est irréprochable malgré les averses normandes quotidiennes. Ils ont même pris le temps de nous conseiller sur les modèles avec isolation acoustique renforcée pour les bruits de pluie. Très bons conseils et exécution rapide. La pièce est métamorphosée"
+  },
+  {
+    "id": "b6d8a850-75c1-47d6-acee-bc491ecbeb88",
+    "date": "2026-08-10",
+    "operateur": "Kevin",
+    "fiche_nom": "Elagage et Abattage - Merignac 33",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": false,
+    "texte": "Pour réduire nos factures de chauffage, on a opté pour une isolation de la toiture par l'extérieur. Le patron est très pédagogue, il a pris le temps de nous expliquer les différentes options. On sent déjà la différence de température à l'étage. Une équipe courageuse qui n'a pas ménagé ses efforts malgré la météo capricieuse. Très satisfaits de l'investissement."
+  },
+  {
+    "id": "80f8eafd-d1bd-4580-86fe-0e0aed457d01",
+    "date": "2026-08-11",
+    "operateur": "Kevin",
+    "fiche_nom": "Elagage, Abattage et Taille de Haie - Charente 16",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": false,
+    "texte": "J’appréhendais de faire élaguer mon grand chêne centenaire qui menaçait la toiture. L’élagueur-grimpeur qui est intervenu a été tout simplement impressionnant. On sent tout de suite l'expérience du métier : une grimpe fluide, une sécurité irréprochable et surtout un grand respect pour l'arbre. Il n'a pas tout 'massacré', mais a réalisé une taille d'éclaircie magnifique qui redonne de la lumière tout en gardant une forme naturelle. Un vrai pro du 16 que je recommande sans hésiter."
+  },
+  {
+    "id": "ac81a61d-fbe6-4fc3-8db3-3bcdeb737e39",
+    "date": "2026-08-11",
+    "operateur": "Kevin",
+    "fiche_nom": "Couvreur Melun - Seine-et-Marne",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Étanchéité"
+    ],
+    "photo": false,
+    "texte": "Installation de deux fenêtres de toit Velux dans nos combles. Le travail est parfait : l'étanchéité extérieure est impeccable et la finition intérieure très soignée. Ils ont su nous conseiller sur la taille et le modèle idéal pour notre exposition. La pièce est transformée ! Si vous cherchez un poseur de Velux compétent en Seine-et-Marne, vous pouvez y aller les yeux fermés."
+  },
+  {
+    "id": "ecefe81f-7e44-4887-b7d5-ffbecdf8c31b",
+    "date": "2026-08-11",
+    "operateur": "Korail",
+    "fiche_nom": "Nettoyage Toiture, Terrasse & Façade Mulhouse - Démoussage 68",
+    "gmb_metier": [
+      "Couverture / Toiture",
+      "Ravalement de Façade",
+      "Nettoyage / Démoussage"
+    ],
+    "texte_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "photo": false,
+    "texte": "On avait des arbres à élaguer et un abattage à faire sur Nanterre. L'équipe d'Elagage Colombes Hauts-de-Seine est intervenue rapidement, les gars ont fait du très bon boulot et le chantier était nickel après leur passage, rien à redire ! On repassera par eux sans hésiter."
+  },
+  {
+    "id": "076f6d1d-ecbc-4626-9cfd-33a8f073df0c",
+    "date": "2026-08-12",
+    "operateur": "Korail",
+    "fiche_nom": "Elagage Abattage Jardinage Aisne - Paysagiste Saint-Quentin 02",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": true,
+    "texte": "Couvreur, Toulon Var. On vient de faire refaire notre toiture à Toulon par eux. Les gars ont été super ponctuel et le chantier était nickel après leur passage, vraiment propre ! Le résultat est là, rien à redire. Je recommande vivement pour leur sérieux."
+  },
+  {
+    "id": "46aa230c-df4c-4f21-a6e2-e69477aeef87",
+    "date": "2026-08-12",
+    "operateur": "Kevin",
+    "fiche_nom": "Elagage et Abattage - Hauts-de-Seine 92",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Terrassement"
+    ],
+    "photo": false,
+    "texte": "Le dessouchage par rognage a été la solution parfaite pour ma petite terrasse de ville. La machine est passée par mon portillon étroit et a réduit la souche de mon ancien cerisier en copeaux en un clin d'œil. Cela m'a permis de replanter immédiatement par-dessus. Un travail net, sans dégât pour les fondations du muret attenant. Très bonne solution technique"
+  },
+  {
+    "id": "69285178-5651-4c57-b799-9e5fb0978650",
+    "date": "2026-08-12",
+    "operateur": "Kevin",
+    "fiche_nom": "Maçon Colmar 68",
+    "gmb_metier": [
+      "Maçonnerie"
+    ],
+    "texte_metier": [
+      "Terrassement"
+    ],
+    "photo": true,
+    "texte": "Rénovation complète d'une grange ancienne. La reprise sous œuvre des fondations était un défi technique, mais le patron connaît parfaitement le bâti ancien alsacien. Ils ont utilisé des mortiers de chaux respectueux de la pierre de taille. On sent l'expérience et le respect des traditions architecturales de notre région. Je recommande les yeux fermés pour du patrimoine."
+  },
+  {
+    "id": "77835527-6817-466c-b847-1aa2d302944c",
+    "date": "2026-08-12",
+    "operateur": "Korail",
+    "fiche_nom": "Élagage, Abattage & Taille de Haie Cannes - Élagueur Grimpeur Alpes Maritimes 06",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": true,
+    "texte": "Couvreur, Toulon Var. On vient de faire refaire notre toiture à Toulon par eux. Les gars ont été super ponctuel et le chantier était nickel après leur passage, vraiment propre ! Le résultat est là, rien à redire. Je recommande vivement pour leur sérieux."
+  },
+  {
+    "id": "d3c75bd2-9631-4134-8be2-15771e9fd00e",
+    "date": "2026-08-12",
+    "operateur": "Kevin",
+    "fiche_nom": "Elagage et Abattage Cholet",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": true,
+    "texte": "Je tenais absolument à conserver mon chêne tout en dégageant les branches qui frottaient contre la toiture. L'élagueur a pratiqué une 'taille douce' très respectueuse de l'arbre. Il a su éclaircir la couronne sans le dénaturer. On sent une réelle passion pour le végétal et une connaissance approfondie de la biologie de l'arbre. C’est rassurant de confier son patrimoine vert à des experts aussi compétents. Un grand merci"
+  },
+  {
+    "id": "ffa9d5fd-2cb2-405b-b34b-d924c915287e",
+    "date": "2026-08-12",
+    "operateur": "Kevin",
+    "fiche_nom": "Couvreur, Essone Évry-Courcouronnes",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "photo": true,
+    "texte": "Abattage directionnel d'un groupe de thuyas malades en limite de propriété. Le travail a été réalisé avec une grande rapidité et une précision chirurgicale pour ne pas toucher la clôture mitoyenne. Le plus impressionnant a été le rognage de souche : en quelques minutes, la souche a été transformée en copeaux, laissant le sol prêt pour une nouvelle plantation. Une équipe équipée de matériel moderne et très performant."
+  },
+  {
+    "id": "10c2a0a5-c513-4493-a5cb-13f12f38994a",
+    "date": "2026-08-13",
+    "operateur": "Kevin",
+    "fiche_nom": "Rénovation, Couvreur Bayonne - Nettoyage Toiture & Dépannage 64",
+    "gmb_metier": [
+      "Couverture / Toiture",
+      "Nettoyage / Démoussage",
+      "Dépannage Auto"
+    ],
+    "texte_metier": [
+      "Étanchéité"
+    ],
+    "photo": false,
+    "texte": "Problème d'infiltration au niveau d'un Velux. Ce professionnel a su identifier le défaut d'étanchéité immédiatement. Il a refait l'entourage en zinc proprement. Depuis, plus aucune goutte d'eau malgré les pluies battantes de la côte basque. Un vrai savoir-faire."
+  },
+  {
+    "id": "7446ae79-cb20-4782-b673-d6c08e1bdadc",
+    "date": "2026-08-13",
+    "operateur": "Kevin",
+    "fiche_nom": "Elagage, Taille de haie Rhone Paysagiste - Abattage Villeurbanne 69",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": false,
+    "texte": "On a dû faire abattre un grand platane qui devenait dangereux avec les coups de vent à Villeurbanne. J'avais un peu peur pour ma toiture car l'arbre était très proche, mais les gars ont géré ça avec une précision de dingue. Ils travaillent en toute sécurité avec leurs cordes et leurs harnais, c'est impressionnant. Chantier propre, équipe polie, rien à redire."
+  },
+  {
+    "id": "5f97017b-add9-465a-a57a-300b46fd9bad",
+    "date": "2026-08-14",
+    "operateur": "Aina",
+    "fiche_nom": "Élagage Abattage Dessouchage Toulon - Paysagiste 83",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": true,
+    "texte": "Notre toiture à Rouen commençait vraiment à accuser le coup après tant d'années, on voyait les mousses s'accumuler et on craignait les futures infiltrations. J'ai contacté Rouen Rénovation Toiture pour un devis, et le contact a été direct et clair. L'équipe est venue travailler sur la rénovation comme prévu et ce que j'ai apprécié, c'est la propreté du chantier : chaque soir, tout était rangé, pas un débris qui trainait. Les gars étaient ponctuels, ça ne court pas les rues de nos jours. La qualité des finitions est impeccable, le toit a retrouvé une seconde jeunesse et même les voisins nous ont fait des remarques positives sur l'aspect neuf de la maison. Le devis a été respecté scrupuleusement, sans aucune mauvaise surprise à la fin. Un vrai soulagement ! Je recommande vivement pour leur sérieux et la qualité de leur boulot."
+  },
+  {
+    "id": "91668e84-ba5e-4594-8fe8-484fbe8e7443",
+    "date": "2026-08-14",
+    "operateur": "Fifaliana",
+    "fiche_nom": "Ravalement de façade, Dijon Côte-D'Or",
+    "gmb_metier": [
+      "Ravalement de Façade"
+    ],
+    "texte_metier": [
+      "Peinture"
+    ],
+    "photo": true,
+    "texte": "J'ai pris cette photo pendant les travaux car j'étais impressionné par le soin apporté aux finitions. Comme on le voit bien, l'équipe travaille proprement avec des protections partout au sol pour ne rien tacher. On remarque tout de suite la différence entre l'ancien mur abîmé et la nouvelle peinture qu'ils appliquent. C’est un vrai travail de pro pour une maison de ville à Dijon. Je suis super contente du résultat final qui redonne de la valeur à mon bien."
+  },
+  {
+    "id": "9d102d2f-a368-4465-bbee-43f243d04c20",
+    "date": "2026-08-14",
+    "operateur": "Kintana",
+    "fiche_nom": "Couvreur, Tours Indre-et-Loire",
+    "gmb_metier": [
+      "Couverture / Toiture"
+    ],
+    "texte_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "photo": true,
+    "texte": "On avait des arbres à abattre qui devenaient un peu dangereux près de la maison à Cherbourg. Les gars d'Elagage Cherbourg sont venus pile à l'heure convenu. Le boulot a été fait de manière efficace et surtout très proprement, le chantier était nickel après leur départ. On est très satisfait du service, on repassera par eux sans hésiter."
+  },
+  {
+    "id": "9fde88d2-b563-4ed1-a36b-285df9aaf4f6",
+    "date": "2026-08-14",
+    "operateur": "Kevin",
+    "fiche_nom": "Élagage et Abattage Caen Les Arbres en Fleur",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Dépannage Auto"
+    ],
+    "photo": false,
+    "texte": "Ma voiture a eu une panne ce matin devant la maison a Caen. J'ai contacté Depannage Remorquage Caen et ils ont été très réactifs, le gars était là en moins de 40 minutes. Il a pu faire le diagnostic directement et reparer sur place. Un boulot efficace, on n'a rien a redire. Je recommande vivement pour leur sérieux."
+  },
+  {
+    "id": "fd49fce8-f7b6-4f44-9ad4-51a752bc013b",
+    "date": "2026-08-14",
+    "operateur": "Fifaliana",
+    "fiche_nom": "Terrassement Lille TP",
+    "gmb_metier": [
+      "Terrassement"
+    ],
+    "texte_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "photo": false,
+    "texte": "Super expérience avec cette société pour la préparation de notre terrain avant la pose d'une piscine. Le conducteur d'engin était très habile et a su gérer les accès difficiles de notre jardin sans rien abîmer. Le devis a été respecté de A à Z sans aucune mauvaise surprise au moment de la facture. Une adresse de confiance sur Lille que je n'hésiterai pas à partager autour de moi."
+  },
+  {
+    "id": "ed738d32-2530-4c4b-adff-e9f1f84d907e",
+    "date": "2026-08-15",
+    "operateur": "Aina",
+    "fiche_nom": "Étanchéité Toiture Bordeaux",
+    "gmb_metier": [
+      "Couverture / Toiture",
+      "Étanchéité"
+    ],
+    "texte_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "photo": true,
+    "texte": "Un immense merci à toute l'équipe pour cette intervention au top ! Travail soigné, rapide et efficace, mon jardin n'a jamais été aussi beau. Des vrais pros, à l'écoute et de bon conseil. Je recommande sans hésiter !"
+  },
+  {
+    "id": "18865421-f6f4-4732-8c99-8de4347da13a",
+    "date": "2026-08-17",
+    "operateur": "Kevin",
+    "fiche_nom": "Ravalement Facade, peintre Bayonne - Isolation 64",
+    "gmb_metier": [
+      "Ravalement de Façade",
+      "Peinture"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": true,
+    "texte": "Expertise et savoir-faire pour notre villa à Anglet. Après des années de petites réparations, nous avons décidé de tout refaire. Ce couvreur nous a proposé un devis clair et détaillé. Le chantier a été mené avec un grand professionnalisme, les délais ont été respectés malgré une météo capricieuse. La nouvelle toiture est superbe et parfaitement étanche. Une référence pour la rénovation dans le Pays Basque."
+  },
+  {
+    "id": "aff50b14-e683-48c2-a256-75226bf1b1fa",
+    "date": "2026-08-17",
+    "operateur": "Kevin",
+    "fiche_nom": "Elagage et Abattage - Côtes d'Armor 22",
+    "gmb_metier": [
+      "Élagage / Espaces Verts"
+    ],
+    "texte_metier": [
+      "Couverture / Toiture"
+    ],
+    "photo": false,
+    "texte": "J’avais vraiment les boules avec les coups de vent qu’on se prend en ce moment dans les Côtes-d'Armor. Mon vieux pin menaçait de tomber sur la toiture et l'accès était vraiment galère, coincé entre la maison et le muret du voisin. Les gars ont été incroyables : ils ont tout démonté morceau par morceau avec une précision de dingue. Pas une branche n'a frôlé la maison. C’est là qu’on voit que c’est un vrai métier de grimpeur. Un énorme poids en moins, je recommande les yeux fermés"
+  }
+]
