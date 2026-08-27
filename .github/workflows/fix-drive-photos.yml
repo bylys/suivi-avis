@@ -32,9 +32,9 @@ jobs:
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
         run: node fix_drive_photos.js
 
-      - name: List All Drive Files
+      - name: Get Fifa & Kevin Photo Links
         working-directory: ./agent
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
-        run: node list_all_drive_files.js
+        run: node get_fifa_kevin_links.js
