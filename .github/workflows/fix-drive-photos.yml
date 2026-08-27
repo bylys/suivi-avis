@@ -25,9 +25,9 @@ jobs:
         working-directory: ./agent
         run: npm install
         
-      - name: Organize Operator Folders
+      - name: Restore Trash and Relink
         working-directory: ./agent
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
-        run: node organize_operator_folders.js
+        run: node check_and_restore_trash.js
