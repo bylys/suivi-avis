@@ -10,6 +10,9 @@ const IPHONE_MODELS = [
   { make: 'Apple', model: 'iPhone 14', software: '16.6', focalLength: [57, 10] },
   { make: 'Apple', model: 'iPhone 14 Pro', software: '17.0', focalLength: [68, 10] },
   { make: 'Apple', model: 'iPhone 15', software: '17.2', focalLength: [60, 10] },
+  { make: 'Apple', model: 'iPhone 15 Pro', software: '17.5', focalLength: [68, 10] },
+  { make: 'Apple', model: 'iPhone 16', software: '18.0', focalLength: [60, 10] },
+  { make: 'Apple', model: 'iPhone 16 Pro', software: '18.0', focalLength: [68, 10] },
 ];
 
 const SAMSUNG_MODELS = [
