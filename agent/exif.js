@@ -16,31 +16,41 @@ const IPHONE_MODELS = [
 ];
 
 const SAMSUNG_MODELS = [
-  { make: 'Samsung', model: 'Galaxy S21', software: 'G991BXXU5EWH1', focalLength: [54, 10] },
   { make: 'Samsung', model: 'Galaxy S22', software: 'S901BXXU2BVJA', focalLength: [54, 10] },
   { make: 'Samsung', model: 'Galaxy S23', software: 'S911BXXU1AWA6', focalLength: [54, 10] },
-  { make: 'Samsung', model: 'Galaxy A53 5G', software: 'A536BXXU4CWA2', focalLength: [52, 10] },
+  { make: 'Samsung', model: 'Galaxy S24', software: 'S921BXXU1AXB5', focalLength: [54, 10] },
+  { make: 'Samsung', model: 'Galaxy A54 5G', software: 'A546BXXU2AWB3', focalLength: [52, 10] },
+  { make: 'Samsung', model: 'Galaxy A55 5G', software: 'A556BXXU1AXB8', focalLength: [52, 10] },
 ];
 
-const OTHER_MODELS = [
-  { make: 'Xiaomi', model: 'Redmi Note 11', software: 'MIUI 13.0.5', focalLength: [43, 10] },
-  { make: 'Xiaomi', model: '12T Pro', software: 'MIUI 14.0.1', focalLength: [50, 10] },
-  { make: 'OPPO', model: 'Reno8 5G', software: 'ColorOS 13', focalLength: [48, 10] },
+const XIAOMI_MODELS = [
+  { make: 'Xiaomi', model: 'Redmi Note 12 Pro', software: 'MIUI 14.0.6', focalLength: [56, 10] },
+  { make: 'Xiaomi', model: 'Redmi Note 13 Pro', software: 'HyperOS 1.0.2', focalLength: [54, 10] },
+  { make: 'Xiaomi', model: 'Xiaomi 13T', software: 'MIUI 14.0.11', focalLength: [50, 10] },
+  { make: 'Xiaomi', model: 'Xiaomi 14', software: 'HyperOS 1.0.8', focalLength: [50, 10] },
+];
+
+const PIXEL_MODELS = [
   { make: 'Google', model: 'Pixel 7', software: 'TQ2A.230505.002', focalLength: [68, 10] },
-  { make: 'LG', model: 'VELVET 5G', software: 'G900N30a', focalLength: [47, 10] },
+  { make: 'Google', model: 'Pixel 7 Pro', software: 'TQ3A.230805.001', focalLength: [68, 10] },
+  { make: 'Google', model: 'Pixel 8', software: 'UD1A.230803.041', focalLength: [68, 10] },
+  { make: 'Google', model: 'Pixel 8 Pro', software: 'UD1A.231105.004', focalLength: [68, 10] },
 ];
 
 function pickSmartphone() {
   const rand = Math.random();
-  if (rand < 0.50) {
-    // 50% iPhone
+  if (rand < 0.40) {
+    // 40% iPhone (Leader France)
     return IPHONE_MODELS[Math.floor(Math.random() * IPHONE_MODELS.length)];
-  } else if (rand < 0.90) {
-    // 40% Samsung
+  } else if (rand < 0.75) {
+    // 35% Samsung Galaxy (Leader Android France)
     return SAMSUNG_MODELS[Math.floor(Math.random() * SAMSUNG_MODELS.length)];
+  } else if (rand < 0.90) {
+    // 15% Xiaomi / Redmi
+    return XIAOMI_MODELS[Math.floor(Math.random() * XIAOMI_MODELS.length)];
   } else {
-    // 10% Autres marques (Xiaomi, Oppo, Google Pixel, LG)
-    return OTHER_MODELS[Math.floor(Math.random() * OTHER_MODELS.length)];
+    // 10% Google Pixel
+    return PIXEL_MODELS[Math.floor(Math.random() * PIXEL_MODELS.length)];
   }
 }
 

@@ -4040,20 +4040,25 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
   const profileName = `${opClean}_GMB_${villeClean}`;
 
-  const mobileRes = '390x844';
-  const mobileUA = 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36';
+  const FRENCH_SMARTPHONES = [
+    { name: 'iPhone 15', os: 'mac', platform: 'iPhone', res: '393x852', w: 393, h: 852, dpr: 3, ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/128.0.6613.98 Mobile/15E148 Safari/604.1' },
+    { name: 'Samsung Galaxy S24', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: 'Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36' },
+    { name: 'Google Pixel 8', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36' },
+    { name: 'Xiaomi Redmi Note 13', os: 'android', platform: 'Linux armv8l', res: '393x873', w: 393, h: 873, dpr: 3, ua: 'Mozilla/5.0 (Linux; Android 14; 2312DRA50G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36' },
+  ];
+  const chosenPhone = FRENCH_SMARTPHONES[Math.floor(Math.random() * FRENCH_SMARTPHONES.length)];
 
   const profileBody = {
     name: profileName,
     browserType: 'chrome',
-    os: isMobile ? 'android' : 'mac',
+    os: isMobile ? (chosenPhone.os === 'mac' ? 'mac' : 'android') : 'mac',
     folders: ['VA TEAM'], // Dossier VA TEAM dans GoLogin
     navigator: {
       language: 'fr-FR',
-      platform: isMobile ? 'Linux armv8l' : 'MacIntel',
-      resolution: isMobile ? mobileRes : '1920x1080',
-      userAgent: isMobile ? mobileUA : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-      devicePixelRatio: isMobile ? 3 : 1
+      platform: isMobile ? chosenPhone.platform : 'MacIntel',
+      resolution: isMobile ? chosenPhone.res : '1920x1080',
+      userAgent: isMobile ? chosenPhone.ua : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      devicePixelRatio: isMobile ? chosenPhone.dpr : 1
     },
     ...(isMobile ? {
       mobile: {
@@ -4062,8 +4067,8 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
       },
       touchEvents: true,
       viewport: {
-        width: 390,
-        height: 844
+        width: chosenPhone.w,
+        height: chosenPhone.h
       }
     } : {}),
     proxy: {
