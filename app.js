@@ -4060,40 +4060,24 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
   const profileName = `${opClean}_GMB_${villeClean}`;
 
-  const FRENCH_SMARTPHONES = [
-    { name: 'iPhone 15', os: 'mac', platform: 'iPhone', res: '393x852', w: 393, h: 852, dpr: 3, ua: `Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/128.0.6613.98 Mobile/15E148 Safari/604.1` },
-    { name: 'Samsung Galaxy S24', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: `Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36` },
-    { name: 'Google Pixel 8', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: `Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36` },
-    { name: 'Xiaomi Redmi Note 13', os: 'android', platform: 'Linux armv8l', res: '393x873', w: 393, h: 873, dpr: 3, ua: `Mozilla/5.0 (Linux; Android 14; 2312DRA50G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36` },
-  ];
-  const chosenPhone = FRENCH_SMARTPHONES[Math.floor(Math.random() * FRENCH_SMARTPHONES.length)];
-
   const profileBody = {
     name: profileName,
     browserType: 'chrome',
-    os: isMobile ? (chosenPhone.os === 'mac' ? 'mac' : 'android') : 'mac',
-    folders: ['VA TEAM'], // Dossier VA TEAM dans GoLogin
+    os: isMobile ? 'android' : 'mac',
     timezone: {
-      auto: true,
-      timezone: countryCfg.timezone
+      mode: 'auto'
     },
     navigator: {
       language: countryCfg.lang,
-      languages: countryCfg.languages,
-      platform: isMobile ? chosenPhone.platform : 'MacIntel',
-      resolution: isMobile ? chosenPhone.res : '1920x1080',
-      userAgent: isMobile ? chosenPhone.ua : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-      devicePixelRatio: isMobile ? chosenPhone.dpr : 1
+      platform: isMobile ? 'Linux armv8l' : 'MacIntel',
+      resolution: isMobile ? '390x844' : '1920x1080',
+      userAgent: isMobile
+        ? 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
+        : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
     },
     ...(isMobile ? {
       mobile: {
-        mode: true,
-        enableTouch: true
-      },
-      touchEvents: true,
-      viewport: {
-        width: chosenPhone.w,
-        height: chosenPhone.h
+        mode: true
       }
     } : {}),
     proxy: {
@@ -4510,14 +4494,17 @@ async function planningGenerer(id, ficheNom, gmail) {
     const isKevinOrFif = rowOp.includes('kevin') || rowOp.includes('fif') || opSaved.includes('kevin') || opSaved.includes('fif') || opVal.includes('kevin') || opVal.includes('fif');
 
     try {
+      const ficheObj = (window._fichesCache || []).find(f => f.nom === ficheNom || f.nom_clean === ficheNom);
+      const rowPays  = ficheObj?.pays || row?.dataset?.pays || 'FR';
+
       if (isKevinOrFif) {
         const rawOpStr = rowOp || opSaved || opVal || '';
-        const glRes = await gologinCreerProfil(ville, gmail, ficheNom, 'FR', rawOpStr);
+        const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
         if (!glRes && getDonutToken()) {
-          await donutCreerProfil(ville, gmail, ficheNom);
+          await donutCreerProfil(ville, gmail, ficheNom, rowPays);
         }
       } else if (getDonutToken()) {
-        await donutCreerProfil(ville, gmail, ficheNom);
+        await donutCreerProfil(ville, gmail, ficheNom, rowPays);
       }
     } catch (e) {
       console.warn('Profil anti-detect ignoré (erreur, la génération d\'avis continue):', e?.message || e);
