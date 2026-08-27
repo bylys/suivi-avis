@@ -4040,17 +4040,32 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
   const profileName = `${opClean}_GMB_${villeClean}`;
 
+  const mobileRes = '390x844';
+  const mobileUA = 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36';
+
   const profileBody = {
     name: profileName,
     browserType: 'chrome',
-    os: 'mac',
+    os: isMobile ? 'android' : 'mac',
     folders: ['VA TEAM'], // Dossier VA TEAM dans GoLogin
     navigator: {
       language: 'fr-FR',
-      platform: 'MacIntel',
-      resolution: '1920x1080',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+      platform: isMobile ? 'Linux armv8l' : 'MacIntel',
+      resolution: isMobile ? mobileRes : '1920x1080',
+      userAgent: isMobile ? mobileUA : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      devicePixelRatio: isMobile ? 3 : 1
     },
+    ...(isMobile ? {
+      mobile: {
+        mode: true,
+        enableTouch: true
+      },
+      touchEvents: true,
+      viewport: {
+        width: 390,
+        height: 844
+      }
+    } : {}),
     proxy: {
       mode: 'http',
       host: cfg.host,
@@ -4250,7 +4265,23 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     }
 
     // Étape 2 : créer le profil SANS proxy (évite le hang de validation de connectivité)
-    const profileId = await _creerProfil({});
+    const extraMobileConfig = isMobile ? {
+      args: [
+        '--window-size=390,844',
+        '--window-position=100,50',
+        '--enable-viewport',
+        '--touch-events=enabled',
+        '--user-agent=Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
+      ],
+      navigator: {
+        resolution: '390x844',
+        platform: 'Linux armv8l',
+        user_agent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
+        device_pixel_ratio: 3
+      }
+    } : {};
+
+    const profileId = await _creerProfil(extraMobileConfig);
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
     // Étape 3 : attacher le proxy au profil en PUT (proxy_id, méthode documentée)
