@@ -11,7 +11,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=47" />
+  <link rel="stylesheet" href="style.css?v=48" />
   <script>if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){var s=document.createElement('script');s.src='config.local.js';document.head.appendChild(s);}</script>
 </head>
 <body>
@@ -35,11 +35,7 @@
   <header>
     <div class="header-top">
       <h1>📍 Suivi Avis GMB</h1>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="notes-header-btn" onclick="toggleNotes()" title="Bloc-notes rapide">
-          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:4px;"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
-          Notes
-        </button>
+      <div style="display:flex;align-items:center;gap:12px;">
         <div id="theme-switch" class="theme-switch" onclick="toggleTheme()" title="Basculer le Thème Mode Nuit / Mode Jour">
           <span class="theme-switch-icon moon">🌙</span>
           <span class="theme-switch-icon sun">☀️</span>
