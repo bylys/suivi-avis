@@ -25,9 +25,9 @@ jobs:
         working-directory: ./agent
         run: npm install
         
-      - name: Restore to Original Folder
+      - name: Organize Operator Folders
         working-directory: ./agent
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
-        run: node restore_to_original_folder.js
+        run: node organize_operator_folders.js
