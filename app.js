@@ -4269,24 +4269,44 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }
     }
 
+    const tz = (pays === 'BE') ? 'Europe/Brussels'
+             : (pays === 'LU') ? 'Europe/Luxembourg'
+             : (pays === 'CA') ? 'America/Montreal'
+             : (pays === 'US') ? 'America/New_York'
+             : 'Europe/Paris';
+
     // Étape 2 : créer le profil SANS proxy (évite le hang de validation de connectivité)
-    const extraMobileConfig = isMobile ? {
+    const extraConfig = {
+      timezone: tz,
+      locale: 'fr-FR',
       args: [
-        '--window-size=390,844',
-        '--window-position=100,50',
-        '--enable-viewport',
-        '--touch-events=enabled',
-        '--user-agent=Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
+        '--lang=fr-FR',
+        `--timezone=${tz}`,
+        ...(isMobile ? [
+          '--window-size=390,844',
+          '--window-position=100,50',
+          '--enable-viewport',
+          '--touch-events=enabled',
+          '--user-agent=Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
+        ] : [])
       ],
       navigator: {
-        resolution: '390x844',
-        platform: 'Linux armv8l',
-        user_agent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
-        device_pixel_ratio: 3
+        language: 'fr-FR',
+        languages: ['fr-FR', 'fr', 'en-US'],
+        timezone: tz,
+        ...(isMobile ? {
+          resolution: '390x844',
+          platform: 'Linux armv8l',
+          user_agent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
+          device_pixel_ratio: 3
+        } : {
+          resolution: '1920x1080',
+          platform: 'MacIntel'
+        })
       }
-    } : {};
+    };
 
-    const profileId = await _creerProfil(extraMobileConfig);
+    const profileId = await _creerProfil(extraConfig);
     if (!profileId) { console.error('DonutBrowser: impossible de créer le profil'); return null; }
 
     // Étape 3 : attacher le proxy au profil en PUT (proxy_id, méthode documentée)
