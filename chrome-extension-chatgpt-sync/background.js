@@ -1,21 +1,18 @@
 /**
- * background.js — Synchronisation automatique et explicite des cookies ET des URLs de conversation ChatGPT par opérateur vers Supabase
+ * background.js v2.0 — Sync complet cookies (chatgpt.com + openai.com) + URL fixe par opérateur
  */
 
 const SUPABASE_URL = 'https://rrbvghxmnimusfyqixau.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_k0nVhKHWUT5kBW9xBNpLkA_AKam7uBa';
 
+// ─── Sauvegarde Supabase ───────────────────────────────────────────────────────
 async function saveKeyToSupabase(keyName, valueStr) {
   if (!keyName || !valueStr) return;
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/fiches?nom=eq.${encodeURIComponent(keyName)}`, {
       method: 'DELETE',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      }
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
     });
-
     await fetch(`${SUPABASE_URL}/rest/v1/fiches`, {
       method: 'POST',
       headers: {
@@ -23,115 +20,166 @@ async function saveKeyToSupabase(keyName, valueStr) {
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        nom: keyName,
-        lien: valueStr
-      })
+      body: JSON.stringify({ nom: keyName, lien: valueStr })
     });
   } catch (err) {}
 }
 
+// ─── Lecture Supabase ──────────────────────────────────────────────────────────
+async function getKeyFromSupabase(keyName) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/fiches?nom=eq.${encodeURIComponent(keyName)}&select=lien`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await res.json();
+    return (data && data[0]) ? data[0].lien : null;
+  } catch (e) { return null; }
+}
+
+// ─── Récupération de tous les cookies (chatgpt.com + openai.com) ───────────────
+async function getAllChatGPTCookies() {
+  const domains = ['chatgpt.com', 'openai.com'];
+  const allCookies = [];
+  const seen = new Set();
+
+  for (const domain of domains) {
+    try {
+      const cookies = await chrome.cookies.getAll({ domain });
+      for (const c of (cookies || [])) {
+        const key = `${c.name}::${c.domain}::${c.path}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          allCookies.push({
+            name: c.name,
+            value: c.value,
+            domain: c.domain,
+            path: c.path || '/',
+            secure: Boolean(c.secure),
+            httpOnly: Boolean(c.httpOnly),
+            expires: c.expirationDate || undefined
+          });
+        }
+      }
+    } catch (e) {}
+  }
+  return allCookies;
+}
+
+// ─── Détection de l'onglet ChatGPT actif ──────────────────────────────────────
 async function getActiveChatGPTUrl() {
   try {
-    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (tabs && tabs[0] && tabs[0].url && tabs[0].url.includes('chatgpt.com')) {
-      return tabs[0].url;
-    }
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    if (tab && tab.url && tab.url.includes('chatgpt.com/c/')) return tab.url;
+    if (tab && tab.url && tab.url.includes('chatgpt.com/g/')) return tab.url;
+
     const allGptTabs = await chrome.tabs.query({ url: '*://*.chatgpt.com/*' });
-    if (allGptTabs && allGptTabs.length > 0) {
-      return allGptTabs[0].url;
+    for (const t of (allGptTabs || [])) {
+      if (t.url && (t.url.includes('/c/') || t.url.includes('/g/'))) return t.url;
     }
   } catch (e) {}
   return null;
 }
 
+// ─── Sync principal ────────────────────────────────────────────────────────────
 async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null, conversationUrl = null) {
   try {
     const { operatorName } = await chrome.storage.local.get(['operatorName']);
     const targetOp = (forcedOp || operatorName || 'KEVIN').toUpperCase();
     const isPerso = targetType === 'PERSO';
 
-    const activeUrl = conversationUrl || (await getActiveChatGPTUrl());
+    // 1. Collecte des cookies TOUS domaines confondus
+    const allCookies = await getAllChatGPTCookies();
 
-    const cookies = await chrome.cookies.getAll({ domain: 'chatgpt.com' });
-    if (!cookies || cookies.length === 0) {
-      await chrome.storage.local.set({
-        lastSyncStatus: `⚠️ Aucun cookie ChatGPT trouvé dans Chrome (ouvrez chatgpt.com)`,
-        lastSyncTime: Date.now()
-      });
+    if (!allCookies || allCookies.length === 0) {
+      const msg = `⚠️ Aucun cookie trouvé. Ouvrez chatgpt.com et connectez-vous.`;
+      await chrome.storage.local.set({ lastSyncStatus: msg, lastSyncTime: Date.now(), cookieCount: 0, sessionOk: false });
       return;
     }
 
-    const cleanCookies = cookies.map(c => ({
-      name: c.name,
-      value: c.value,
-      domain: c.domain,
-      path: c.path || '/',
-      secure: Boolean(c.secure),
-      httpOnly: Boolean(c.httpOnly),
-      expires: c.expirationDate
-    }));
+    // 2. Vérification du jeton de session critique
+    const sessionToken = allCookies.find(c =>
+      c.name === '__Secure-next-auth.session-token' ||
+      c.name === 'oai-sc' ||
+      c.name === 'oai-hlib' ||
+      c.name === '__cf_bm' ||
+      c.name === 'cf_clearance'
+    );
+    const sessionOk = Boolean(sessionToken);
 
-    const jsonStr = JSON.stringify(cleanCookies);
-
+    // 3. Sauvegarde des cookies
+    const jsonStr = JSON.stringify(allCookies);
     const keysToUpdate = isPerso
-      ? [
-          `CHATGPT_PERSO_COOKIES_${targetOp}`,
-          `CHATGPT_PERSO_COOKIES`
-        ]
-      : [
-          `CHATGPT_WORK_COOKIES_${targetOp}`,
-          `CHATGPT_COOKIES_${targetOp}`,
-          `CHATGPT_COOKIES`
-        ];
+      ? [`CHATGPT_PERSO_COOKIES_${targetOp}`, `CHATGPT_PERSO_COOKIES`]
+      : [`CHATGPT_WORK_COOKIES_${targetOp}`, `CHATGPT_COOKIES_${targetOp}`, `CHATGPT_COOKIES`];
 
     for (const keyName of keysToUpdate) {
       await saveKeyToSupabase(keyName, jsonStr);
     }
 
-    // Sauvegarde de l'URL de la conversation active si détectée
-    if (activeUrl && activeUrl.includes('chatgpt.com')) {
-      const urlKey = isPerso ? `CHATGPT_PERSO_CONVERSATION_URL_${targetOp}` : `CHATGPT_WORK_CONVERSATION_URL_${targetOp}`;
-      await saveKeyToSupabase(urlKey, activeUrl);
+    // 4. Gestion URL de conversation : récupérer l'URL existante ET ne la mettre à jour que si une vraie URL /c/ ou /g/ est détectée
+    const existingUrlKey = isPerso
+      ? `CHATGPT_PERSO_CONVERSATION_URL_${targetOp}`
+      : `CHATGPT_WORK_CONVERSATION_URL_${targetOp}`;
+
+    const existingUrl = await getKeyFromSupabase(existingUrlKey);
+    const activeUrl = conversationUrl || (await getActiveChatGPTUrl());
+
+    // On enregistre l'URL seulement si c'est une vraie URL de conversation (pas juste chatgpt.com/)
+    const isRealConvUrl = activeUrl && (activeUrl.includes('/c/') || activeUrl.includes('/g/g-'));
+    if (isRealConvUrl) {
+      await saveKeyToSupabase(existingUrlKey, activeUrl);
       await saveKeyToSupabase(`CHATGPT_CONVERSATION_URL_${targetOp}`, activeUrl);
+      console.log(`[GMB Sync] URL de conversation enregistrée pour ${targetOp} : ${activeUrl}`);
+    } else if (!existingUrl) {
+      // Pas d'URL existante et pas de nouvelle → on laisse vide (l'agent n'ira pas sur une mauvaise URL)
+      console.log(`[GMB Sync] Aucune URL de conversation /c/ détectée pour ${targetOp}. L'URL existante est conservée.`);
     }
 
     const typeLabel = isPerso ? 'PERSO (Secours)' : 'PRO (Principal)';
-    const msg = `✅ Compte ${typeLabel} & URL enregistrés pour ${targetOp}`;
-    console.log(`[GMB Sync] ${msg}`);
+    const urlInfo = isRealConvUrl ? ` | URL ✅` : (existingUrl ? ` | URL conservée ✅` : ` | ⚠️ Pas d'URL`);
+    const msg = sessionOk
+      ? `✅ ${typeLabel} | ${allCookies.length} cookies | Session active ✅${urlInfo}`
+      : `⚠️ ${typeLabel} | ${allCookies.length} cookies | Session ❌ (reconnectez-vous)${urlInfo}`;
+
     await chrome.storage.local.set({
       lastSyncStatus: msg,
-      lastSyncTime: Date.now()
+      lastSyncTime: Date.now(),
+      cookieCount: allCookies.length,
+      sessionOk
     });
 
   } catch (err) {
-    console.log('[GMB Sync Note]', err.message);
     await chrome.storage.local.set({
-      lastSyncStatus: `⚠️ Erreur : ${err.message}`,
-      lastSyncTime: Date.now()
+      lastSyncStatus: `❌ Erreur : ${err.message}`,
+      lastSyncTime: Date.now(),
+      sessionOk: false
     });
   }
 }
 
-// Écouteur de messages depuis le popup et content.js
+// ─── Écouteur messages popup ───────────────────────────────────────────────────
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'SYNC_NOW') {
-    syncCookiesToSupabase(msg.targetType || 'WORK', msg.operator, msg.conversationUrl).then(() => sendResponse({ status: 'DONE' }));
+    syncCookiesToSupabase(msg.targetType || 'WORK', msg.operator, msg.conversationUrl)
+      .then(() => sendResponse({ status: 'DONE' }));
     return true;
-  } else if (msg.action === 'FORCE_SYNC') {
-    syncCookiesToSupabase('WORK', null, msg.conversationUrl).then(() => sendResponse({ status: 'DONE' }));
+  }
+  if (msg.action === 'GET_STATUS') {
+    chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime', 'cookieCount', 'sessionOk'], sendResponse);
     return true;
   }
 });
 
-// Déclencheur 1 : Navigation sur ChatGPT
+// ─── Auto-sync à chaque navigation sur une conversation ChatGPT ────────────────
 if (chrome.webNavigation) {
   chrome.webNavigation.onCompleted.addListener((details) => {
-    if (details.url && details.url.includes('chatgpt.com')) {
-      syncCookiesToSupabase('WORK', null, details.url);
+    // Auto-sync cookies uniquement si c'est une conversation spécifique (pas la page d'accueil)
+    if (details.url && (details.url.includes('chatgpt.com/c/') || details.url.includes('chatgpt.com/g/'))) {
+      chrome.storage.local.get(['operatorName'], ({ operatorName }) => {
+        if (operatorName) {
+          syncCookiesToSupabase('WORK', operatorName, details.url);
+        }
+      });
     }
   }, { url: [{ hostContains: 'chatgpt.com' }] });
 }
-
-// Synchronisation initiale au démarrage
-syncCookiesToSupabase('WORK');

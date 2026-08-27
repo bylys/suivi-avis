@@ -3,28 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <style>
+    * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      width: 310px;
+      width: 320px;
       padding: 16px;
       margin: 0;
       background: #0f172a;
       color: #f8fafc;
     }
     h2 {
-      font-size: 15px;
-      margin-top: 0;
-      margin-bottom: 12px;
+      font-size: 14px;
+      margin: 0 0 12px 0;
       color: #38bdf8;
       display: flex;
       align-items: center;
       gap: 6px;
     }
     label {
-      font-size: 12px;
+      font-size: 11px;
       color: #94a3b8;
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     select {
       width: 100%;
@@ -37,17 +37,33 @@
       outline: none;
       margin-bottom: 12px;
     }
-    .status-box {
-      font-size: 11px;
+
+    /* Bandeau session */
+    .session-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       padding: 8px 10px;
       border-radius: 6px;
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #cbd5e1;
-      word-break: break-all;
       margin-bottom: 10px;
-      line-height: 1.4;
+      font-size: 12px;
+      font-weight: 600;
     }
+    .session-badge.ok    { background: #14532d; border: 1px solid #16a34a; color: #bbf7d0; }
+    .session-badge.warn  { background: #451a03; border: 1px solid #d97706; color: #fde68a; }
+    .session-badge.error { background: #450a0a; border: 1px solid #dc2626; color: #fca5a5; }
+
+    /* Infos */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .info-row span { color: #cbd5e1; font-weight: 500; }
+
+    /* URL conversation */
     .url-box {
       font-size: 10px;
       padding: 6px 8px;
@@ -57,14 +73,14 @@
       color: #38bdf8;
       word-break: break-all;
       margin-bottom: 12px;
-      max-height: 40px;
+      max-height: 36px;
       overflow: hidden;
+      line-height: 1.4;
     }
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .url-label { font-size: 10px; color: #64748b; margin-bottom: 3px; }
+
+    /* Boutons */
+    .btn-group { display: flex; flex-direction: column; gap: 8px; }
     .btn-sync {
       width: 100%;
       padding: 10px;
@@ -78,24 +94,25 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
+      transition: opacity 0.1s;
     }
-    .btn-pro {
-      background: #0284c7;
-    }
-    .btn-pro:hover {
-      background: #0369a1;
-    }
-    .btn-perso {
-      background: #16a34a;
-    }
-    .btn-perso:hover {
-      background: #15803d;
+    .btn-sync:active { opacity: 0.8; }
+    .btn-pro   { background: #0284c7; }
+    .btn-pro:hover { background: #0369a1; }
+    .btn-perso { background: #16a34a; }
+    .btn-perso:hover { background: #15803d; }
+
+    .sync-time {
+      font-size: 10px;
+      color: #475569;
+      text-align: center;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
-  <h2>📍 Sync Cookies & URL ChatGPT</h2>
-  
+  <h2>📍 GMB Cookie Sync v2.0</h2>
+
   <label for="op-select">Opérateur :</label>
   <select id="op-select">
     <option value="KEVIN">Kevin</option>
@@ -106,12 +123,29 @@
     <option value="KINTANA">Kintana</option>
   </select>
 
-  <div class="status-box" id="status-text">⏳ Chargement...</div>
-  <div class="url-box" id="url-text">🔗 URL : Recherche de l'onglet active...</div>
+  <!-- Bandeau statut session -->
+  <div class="session-badge warn" id="session-badge">
+    <span id="session-icon">⏳</span>
+    <span id="session-label">Vérification en cours...</span>
+  </div>
+
+  <!-- Infos cookies -->
+  <div class="info-row">
+    <span>🍪 Cookies capturés :</span>
+    <span id="cookie-count">—</span>
+  </div>
+  <div class="info-row" style="margin-bottom: 10px;">
+    <span>⏱️ Dernière sync :</span>
+    <span id="sync-time-inline">—</span>
+  </div>
+
+  <!-- URL de conversation enregistrée -->
+  <div class="url-label">🔗 URL conversation (onglet actif) :</div>
+  <div class="url-box" id="url-text">Recherche de l'onglet ChatGPT actif...</div>
 
   <div class="btn-group">
-    <button class="btn-sync btn-pro" id="btn-sync-pro">💼 Enregistrer comme Compte PRO</button>
-    <button class="btn-sync btn-perso" id="btn-sync-perso">🏠 Enregistrer comme Compte PERSO</button>
+    <button class="btn-sync btn-pro" id="btn-sync-pro">💼 Enregistrer Compte PRO</button>
+    <button class="btn-sync btn-perso" id="btn-sync-perso">🏠 Enregistrer Compte PERSO</button>
   </div>
 
   <script src="popup.js"></script>
