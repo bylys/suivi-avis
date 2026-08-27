@@ -2148,7 +2148,8 @@ function extraireVilleFiche(nomFiche) {
     'Garage', 'Jardinage', 'Jardin', 'Bâtiment', 'Batiment', 'Couverture'
   ];
 
-  const stopWords = ['d\'', 'l\'', 'et', 'de', 'du', 'des', 'par', 'pour', 'avec', 'les'];
+  const stopWordsList = ['d\'', 'l\'', 'et', 'de', 'du', 'des', 'par', 'pour', 'avec', 'les', 'le', 'la', 'en', 'sur', 'dans'];
+  const INVALID_CITIES = new Set(['et', 'de', 'du', 'des', 'le', 'la', 'les', 'en', 'sur', 'sous', 'par', 'pour', 'avec', 'dans', 'd', 'l', 'un', 'une', 'haie', 'haies', 'arbre', 'arbres', 'toit', 'toiture', 'facade']);
 
   const cleanChunk = (text) => {
     if (!text) return '';
@@ -2167,11 +2168,11 @@ function extraireVilleFiche(nomFiche) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    // Supprimer les mots de liaison isolés en début ou fin de chaîne
-    for (const sw of stopWords) {
+    // Supprimer les mots de liaison isolés en début, fin ou exact
+    for (const sw of stopWordsList) {
       const escSw = sw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regStart = new RegExp('^' + escSw + '\\s+', 'gi');
-      const regEnd = new RegExp('\\s+' + escSw + '$', 'gi');
+      const regStart = new RegExp('^' + escSw + '(\\s+|$)', 'gi');
+      const regEnd = new RegExp('(\\s+|^)' + escSw + '$', 'gi');
       cleaned = cleaned.replace(regStart, '').replace(regEnd, '').trim();
     }
 
@@ -2193,15 +2194,16 @@ function extraireVilleFiche(nomFiche) {
     return '';
   };
 
-  // Tester chaque morceau séparé par des tirets " - "
+  // Tester chaque morceau séparé par des tirets " - " en partant de la FIN (où se trouve la ville géographique)
   const chunks = str.split(/\s+[-–—]\s+/);
-  for (const chunk of chunks) {
+  for (let i = chunks.length - 1; i >= 0; i--) {
+    const chunk = chunks[i];
     const candidate = cleanChunk(chunk);
     if (candidate && candidate.length >= 2) {
       const matchDep = pickCity(candidate);
       if (matchDep) return matchDep;
       const normCand = candidate.toLowerCase().trim();
-      if (!['d', 'l', 'et', 'de', 'du', 'des'].includes(normCand)) {
+      if (!INVALID_CITIES.has(normCand)) {
         return candidate;
       }
     }
@@ -2212,13 +2214,15 @@ function extraireVilleFiche(nomFiche) {
   if (fullCandidate && fullCandidate.length >= 2) {
     const matchDep = pickCity(fullCandidate);
     if (matchDep) return matchDep;
-    return fullCandidate;
+    if (!INVALID_CITIES.has(fullCandidate.toLowerCase().trim())) {
+      return fullCandidate;
+    }
   }
 
   const matchDepStr = pickCity(str);
   if (matchDepStr) return matchDepStr;
 
-  return str;
+  return '';
 }
 
 function obtenirContexteMeteoSaisonnier(meteoSelectVal) {
