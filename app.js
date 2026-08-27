@@ -4214,7 +4214,7 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
     : ficheNom.toLowerCase().includes('electricien') ? 'electricien'
     : ficheNom.toLowerCase().includes('elagage') ? 'elagage'
     : 'gmb';
-  const profileName = `GMB_${metier}_${citySlug}`;
+  const profileName = isMobile ? `GMB_${metier}_${citySlug}_Mob` : `GMB_${metier}_${citySlug}`;
 
   const _fetchTimeout = (url, opts, ms = 8000) => {
     const ctrl = new AbortController();
@@ -4303,8 +4303,11 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
         `--lang=${countryCfg.lang}`,
         `--timezone=${countryCfg.timezone}`,
         ...(isMobile ? [
+          '--window-size=412,915',
+          '--force-device-scale-factor=3',
           '--enable-viewport',
-          '--touch-events=enabled'
+          '--touch-events=enabled',
+          '--user-agent=Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
         ] : [])
       ],
       navigator: {
@@ -4312,9 +4315,9 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
         languages: countryCfg.languages.split(','),
         timezone: countryCfg.timezone,
         ...(isMobile ? {
-          resolution: '390x844',
+          resolution: '412x915',
           platform: 'Linux armv8l',
-          user_agent: 'Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
+          user_agent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
           device_pixel_ratio: 3
         } : {
           resolution: '1920x1080',
