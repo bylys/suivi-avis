@@ -283,6 +283,7 @@ function showTab(name, skipUrlUpdate = false) {
   if (name === 'generateur') populateGenFiche();
   if (name === 'gmails') renderGmails();
   if (name === 'planning') renderPlanning();
+  if (name === 'images') renderImagesHistory();
 }
 
 window.addEventListener('popstate', () => {
@@ -5415,3 +5416,165 @@ function openOperatorDriveFolder(operatorName) {
   const searchUrl = `https://drive.google.com/drive/search?q=type:folder%20name:%22${encodeURIComponent(searchName)}%22`;
   window.open(searchUrl, '_blank');
 }
+
+// ─── Historique & Suivi des Images Générées ──────────────────────────────────
+async function renderImagesHistory() {
+  const container = document.getElementById('img-history-table-container');
+  if (!container) return;
+
+  const dateInput = document.getElementById('img-filter-date');
+  if (dateInput && !dateInput.value) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+  }
+
+  const selectedDate = dateInput ? dateInput.value : '';
+  const selectedOp   = document.getElementById('img-filter-operateur')?.value || '';
+  const selectedStat = document.getElementById('img-filter-statut')?.value || '';
+  const searchKw     = (document.getElementById('img-filter-search')?.value || '').toLowerCase().trim();
+
+  container.innerHTML = '<div style="text-align:center;padding:2.5rem;color:#94a3b8;font-size:14px;">⏳ Chargement de l\'historique des images...</div>';
+
+  try {
+    const [planningRows, allFiches] = await Promise.all([
+      getPlanning(),
+      getFiches()
+    ]);
+
+    const fichesMap = {};
+    for (const f of (allFiches || [])) {
+      fichesMap[f.nom] = f;
+    }
+
+    let filtered = planningRows || [];
+    if (selectedDate) {
+      filtered = filtered.filter(r => r.date === selectedDate);
+    }
+    if (selectedOp) {
+      filtered = filtered.filter(r => (r.operateur || '').toLowerCase().includes(selectedOp.toLowerCase()));
+    }
+    if (selectedStat) {
+      filtered = filtered.filter(r => r.statut === selectedStat);
+    }
+    if (searchKw) {
+      filtered = filtered.filter(r => 
+        (r.fiche_nom || '').toLowerCase().includes(searchKw) ||
+        (r.ville || '').toLowerCase().includes(searchKw) ||
+        (r.metier || '').toLowerCase().includes(searchKw) ||
+        (r.operateur || '').toLowerCase().includes(searchKw)
+      );
+    }
+
+    // Mettre à jour les stats rapides
+    const totalCount = filtered.length;
+    const genCount   = filtered.filter(r => r.statut === 'generated').length;
+    const pendCount  = filtered.filter(r => r.statut === 'pending').length;
+    const doneCount  = filtered.filter(r => r.statut === 'done').length;
+
+    const elTotal = document.getElementById('img-stat-total');
+    const elGen   = document.getElementById('img-stat-generated');
+    const elPend  = document.getElementById('img-stat-pending');
+    const elDone  = document.getElementById('img-stat-done');
+
+    if (elTotal) elTotal.textContent = totalCount;
+    if (elGen)   elGen.textContent = genCount;
+    if (elPend)  elPend.textContent = pendCount;
+    if (elDone)  elDone.textContent = doneCount;
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div class="empty-state" style="text-align:center;padding:2.5rem;background:#1e293b;border-radius:10px;border:1px dashed #334155;color:#94a3b8;font-size:14px;">Aucune image trouvée pour ces filtres.</div>';
+      return;
+    }
+
+    // Trier : plus récents d'abord
+    filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.operateur || '').localeCompare(b.operateur || ''));
+
+    let html = `
+      <div style="overflow-x:auto;">
+        <table class="avis-table">
+          <thead>
+            <tr>
+              <th style="width:105px;">Date</th>
+              <th>Fiche GMB</th>
+              <th style="width:140px;">Ville / Métier</th>
+              <th style="width:100px;">Opérateur</th>
+              <th style="width:140px;">Statut Image</th>
+              <th style="width:160px;text-align:center;">Accès Direct Drive</th>
+              <th style="width:110px;text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    for (const row of filtered) {
+      const f = fichesMap[row.fiche_nom] || {};
+      const mapsLien = f.lien || row.lien || '';
+      const op = row.operateur || 'Kevin';
+      const isKevin = op.toLowerCase().includes('kevin');
+      const opBadge = isKevin 
+        ? `<span style="background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Kevin</span>`
+        : `<span style="background:rgba(168,85,247,0.15);border:1px solid #a855f7;color:#d8b4fe;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Fifaliana</span>`;
+
+      let statutBadge = '';
+      if (row.statut === 'generated') {
+        statutBadge = `<span style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">✅ Générée</span>`;
+      } else if (row.statut === 'done') {
+        statutBadge = `<span style="background:rgba(234,179,8,0.15);border:1px solid #eab308;color:#fde047;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">✔️ Avis posté</span>`;
+      } else {
+        statutBadge = `<span style="background:rgba(148,163,184,0.15);border:1px solid #64748b;color:#cbd5e1;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">⏳ En attente</span>`;
+      }
+
+      const cleanFicheName = (row.fiche_nom || '').replace(/"/g, '&quot;');
+      const ficheLinkHtml = mapsLien 
+        ? `<a href="${mapsLien}" target="_blank" style="color:#38bdf8;text-decoration:none;font-weight:600;">${row.fiche_nom}</a>`
+        : `<span style="color:#f1f5f9;font-weight:600;">${row.fiche_nom}</span>`;
+
+      const villeMetier = `${row.ville || '—'} ${row.metier ? `• <span style="color:#94a3b8;font-size:11px;">${row.metier}</span>` : ''}`;
+
+      html += `
+        <tr>
+          <td style="white-space:nowrap;font-size:12px;color:#cbd5e1;">${row.date || '—'}</td>
+          <td>${ficheLinkHtml}</td>
+          <td style="font-size:12px;">${villeMetier}</td>
+          <td>${opBadge}</td>
+          <td>${statutBadge}</td>
+          <td style="text-align:center;">
+            <button onclick="openOperatorDriveFolder('${op}')" class="btn-secondary" style="padding:4px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
+              📂 Drive ${isKevin ? 'Kevin' : 'Fif'}
+            </button>
+          </td>
+          <td style="text-align:center;">
+            <button onclick="prefillSaisieFromImage('${cleanFicheName}', '${op}')" class="btn-primary" style="padding:4px 8px;font-size:11px;white-space:nowrap;">
+              ✍️ Saisir
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+  } catch (err) {
+    container.innerHTML = `<div style="color:#ef4444;padding:1.5rem;text-align:center;">❌ Erreur chargement images : ${err.message}</div>`;
+  }
+}
+
+function prefillSaisieFromImage(ficheNom, operateur) {
+  showTab('saisie');
+  const ficheInput = document.getElementById('form-fiche');
+  const opInput    = document.getElementById('form-operateur');
+  const dateInput  = document.getElementById('form-date');
+  const photoInput = document.getElementById('form-photo');
+
+  if (ficheInput) ficheInput.value = ficheNom;
+  if (opInput)    opInput.value = operateur || 'Kevin';
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  if (photoInput) photoInput.checked = true;
+}
+
