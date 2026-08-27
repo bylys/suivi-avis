@@ -4303,11 +4303,8 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
         `--lang=${countryCfg.lang}`,
         `--timezone=${countryCfg.timezone}`,
         ...(isMobile ? [
-          '--window-size=390,844',
-          '--window-position=100,50',
           '--enable-viewport',
-          '--touch-events=enabled',
-          '--user-agent=Mozilla/5.0 (Linux; Android 14; Pixel 7 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
+          '--touch-events=enabled'
         ] : [])
       ],
       navigator: {
