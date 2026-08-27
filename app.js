@@ -177,7 +177,12 @@ async function init() {
   if (savedId)  { const el = document.getElementById('sheets-id');      if (el) el.value = savedId; }
   // Note : La clé API OpenAI directe est désormais remplacée par l'Agent IA DALL-E (Playwright & ChatGPT)
 
-  // Restaurer config DonutBrowser
+  // Restaurer config Anti-Detect (GoLogin / DonutBrowser / Proxies)
+  const antidetectEngine = localStorage.getItem('antidetect_engine') || 'gologin';
+  const engineEl = document.getElementById('antidetect-engine-input');
+  if (engineEl) engineEl.value = antidetectEngine;
+  const gologinToken = localStorage.getItem('gologin_token');
+  if (gologinToken) { const el = document.getElementById('gologin-token-input'); if (el) el.value = gologinToken; }
   const donutToken = localStorage.getItem('donut_token');
   const donutPort  = localStorage.getItem('donut_port');
   if (donutToken) { const el = document.getElementById('donut-token-input'); if (el) el.value = donutToken; }
@@ -4485,29 +4490,44 @@ async function planningGenerer(id, ficheNom, gmail) {
     else _travaux = 'travaux à domicile';
   }
 
-  // Créer et lancer le profil anti-détection (GoLogin pour Kevin/Fifiana, DonutBrowser pour les autres).
-  // Isolé : une erreur/lenteur de profil ne doit JAMAIS bloquer la génération d'avis.
+  // Créer et lancer le profil anti-détection selon le choix utilisateur (GoLogin / DonutBrowser / Auto / Aucun)
   if (ville && ville !== '—') {
-    const rowOp   = (row ? (row.querySelector('td:nth-child(4)')?.textContent || row.dataset?.operateur || '') : '').toLowerCase();
-    const opSaved = (localStorage.getItem('gmb_operateur') || '').toLowerCase();
-    const opVal   = (document.getElementById('planning-operateur')?.value || '').toLowerCase();
-    const isKevinOrFif = rowOp.includes('kevin') || rowOp.includes('fif') || opSaved.includes('kevin') || opSaved.includes('fif') || opVal.includes('kevin') || opVal.includes('fif');
+    const engine = localStorage.getItem('antidetect_engine') || 'gologin';
+    if (engine !== 'none') {
+      const rowOp   = (row ? (row.querySelector('td:nth-child(4)')?.textContent || row.dataset?.operateur || '') : '').toLowerCase();
+      const opSaved = (localStorage.getItem('gmb_operateur') || '').toLowerCase();
+      const opVal   = (document.getElementById('planning-operateur')?.value || '').toLowerCase();
+      const rawOpStr = rowOp || opSaved || opVal || '';
 
-    try {
-      const ficheObj = (window._fichesCache || []).find(f => f.nom === ficheNom || f.nom_clean === ficheNom);
-      const rowPays  = ficheObj?.pays || row?.dataset?.pays || 'FR';
+      try {
+        const ficheObj = (window._fichesCache || []).find(f => f.nom === ficheNom || f.nom_clean === ficheNom);
+        const rowPays  = ficheObj?.pays || row?.dataset?.pays || 'FR';
 
-      if (isKevinOrFif) {
-        const rawOpStr = rowOp || opSaved || opVal || '';
-        const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
-        if (!glRes && getDonutToken()) {
-          await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+        if (engine === 'gologin') {
+          const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
+          if (!glRes) {
+            showToast('⚠️ GoLogin n\'a pas pu créer le profil (vérifie ton token GoLogin ou si GoLogin est lancé).', 'warn', 6000);
+          }
+        } else if (engine === 'donut') {
+          if (getDonutToken()) {
+            await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+          } else {
+            showToast('⚠️ Token DonutBrowser manquant dans ⚙️ Config Anti-Detect.', 'warn', 6000);
+          }
+        } else if (engine === 'auto') {
+          const isKevinOrFif = rawOpStr.includes('kevin') || rawOpStr.includes('fif');
+          if (isKevinOrFif) {
+            const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
+            if (!glRes && getDonutToken()) {
+              await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+            }
+          } else if (getDonutToken()) {
+            await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+          }
         }
-      } else if (getDonutToken()) {
-        await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+      } catch (e) {
+        console.warn('Profil anti-detect ignoré (erreur):', e?.message || e);
       }
-    } catch (e) {
-      console.warn('Profil anti-detect ignoré (erreur, la génération d\'avis continue):', e?.message || e);
     }
   }
 
