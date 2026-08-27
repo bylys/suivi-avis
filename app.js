@@ -4025,11 +4025,10 @@ function getGologinBase() {
 }
 
 function resolveGologinUrl(path = '/browser') {
-  if (window.OPENAI_PROXY_URL || window._APP_CONFIG?.openai_proxy) {
-    const proxyBase = (window._APP_CONFIG?.openai_proxy || window.OPENAI_PROXY_URL || '').replace(/\/$/, '');
-    return `${proxyBase}/gologin${path}`;
-  }
-  return null;
+  const proxyBase = window.OPENAI_PROXY_URL
+    || window._APP_CONFIG?.openai_proxy
+    || 'https://gmb-openai-proxy.m-payot76.workers.dev';
+  return `${proxyBase.replace(/\/$/, '')}/gologin${path}`;
 }
 
 function getCountryConfig(paysRaw = 'FR') {
@@ -4177,26 +4176,41 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
 }
 
 async function testGologinConnection() {
-  const token = getGologinToken();
-  if (!token) {
-    showToast('❌ Aucun token GoLogin trouvé. Renseigne ton token dans le champ dédié.', 'error', 6000);
-    return;
-  }
-  showToast('🔄 Test de connexion à l\'API GoLogin en cours...', 'info', 3000);
+  showToast('🔄 Test de connexion à GoLogin (via Cloudflare)...', 'info', 3000);
+  const cloudflareUrl = resolveGologinUrl('/browser/v2');
   try {
-    const res = await _fetchTimeout('https://api.gologin.com/browser/v2', {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const res = await _fetchTimeout(cloudflareUrl, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
     }, 8000);
     if (res.ok) {
       const data = await res.json();
-      const count = data?.profiles?.length ?? (Array.isArray(data) ? data.length : 'OK');
-      showToast(`✅ Connexion GoLogin réussie ! (${count} profils trouvés sur votre compte)`, 'success', 6000);
-    } else {
-      showToast(`❌ Erreur GoLogin (${res.status}) : Clé invalide ou problème réseau.`, 'error', 8000);
+      const count = data?.allProfilesCount ?? data?.profiles?.length ?? (Array.isArray(data) ? data.length : 'OK');
+      showToast(`✅ GoLogin connecté via Cloudflare ! (${count} profils trouvés sur votre compte GoLogin)`, 'success', 6000);
+      return true;
     }
   } catch (e) {
-    showToast(`❌ Impossible de contacter GoLogin : ${e?.message || e}`, 'error', 8000);
+    console.warn('Test Cloudflare GoLogin failed:', e?.message || e);
   }
+
+  // Fallback direct si token local présent
+  const token = getGologinToken();
+  if (token) {
+    try {
+      const res = await _fetchTimeout('https://api.gologin.com/browser/v2', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      }, 8000);
+      if (res.ok) {
+        const data = await res.json();
+        const count = data?.allProfilesCount ?? data?.profiles?.length ?? (Array.isArray(data) ? data.length : 'OK');
+        showToast(`✅ GoLogin connecté via API directe ! (${count} profils trouvés)`, 'success', 6000);
+        return true;
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  showToast('❌ Impossible de joindre GoLogin. Vérifie la connexion Cloudflare ou ton token.', 'error', 8000);
+  return false;
 }
 
 async function testDonutConnection() {

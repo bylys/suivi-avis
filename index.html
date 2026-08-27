@@ -552,10 +552,14 @@
           </select>
         </div>
 
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#1e293b55;padding:8px 12px;border-radius:6px;border:1px solid #33415555">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#1e293b55;padding:8px 12px;border-radius:6px;border:1px solid #3b82f644">
           <span style="font-size:12px;font-weight:600;color:#60a5fa;min-width:70px">🚀 GoLogin :</span>
-          <input type="password" id="gologin-token-input" placeholder="Clé / Token API GoLogin (ex: eyJ...)"
-            style="flex:1;min-width:240px;padding:6px 10px;border-radius:6px;border:1px solid #3b82f644;background:#0f172a;color:#f1f5f9;font-size:13px"
+          <span style="font-size:12px;color:#10b981;font-weight:600;display:flex;align-items:center;gap:4px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Clé Cloudflare intégrée
+          </span>
+          <input type="password" id="gologin-token-input" placeholder="Clé personnalisée (optionnel)"
+            style="flex:1;min-width:200px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px"
             oninput="localStorage.setItem('gologin_token', this.value); localStorage.setItem('gologin_key', this.value)" />
           <button onclick="testGologinConnection()" style="padding:6px 12px;border-radius:6px;background:#3b82f6;color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:600">
             🧪 Tester GoLogin
@@ -630,6 +634,6 @@
   </div>
 </div>
 
-<script src="app.js?v=61"></script>
+<script src="app.js?v=62"></script>
 </body>
 </html>
