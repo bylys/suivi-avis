@@ -44,28 +44,14 @@ DONUT_TOKEN   = os.environ.get("DONUT_TOKEN", "")    # remplace GOLOGIN_TOKEN
 SLACK_OPERATEURS = {
     "Kevin":     os.environ.get("SLACK_WEBHOOK_KEVIN", SLACK_WEBHOOK),
     "Fifaliana": os.environ.get("SLACK_WEBHOOK_FIFALIANA", SLACK_WEBHOOK),
-    "Aina":      os.environ.get("SLACK_WEBHOOK_AINA", SLACK_WEBHOOK),
-    "Kintana":   os.environ.get("SLACK_WEBHOOK_KINTANA", SLACK_WEBHOOK),
-    "Korail":    os.environ.get("SLACK_WEBHOOK_KORAIL", SLACK_WEBHOOK),
-    "Anjara":    os.environ.get("SLACK_WEBHOOK_ANJARA", SLACK_WEBHOOK),
 }
 
-DELAI_GMAIL_JOURS  = 3   # cooldown 3 j entre deux posts du même gmail (≥ minimum 1 j de repos exigé — stratégie Kevin)
+DELAI_GMAIL_JOURS  = 3   # cooldown 3 j entre deux posts du même gmail
 DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
-QUOTA_NOUVEAUX   = int(os.environ.get("QUOTA_PAR_OPERATEUR", "40"))  # Aina/Kintana/Korail/Anjara : max 40/jour
 QUOTA_KEVIN_FIF  = int(os.environ.get("QUOTA_KEVIN_FIF", "50"))      # Kevin & Fifaliana : max 50/jour
-OPERATEURS = ["Kevin", "Fifaliana", "Aina", "Kintana", "Korail", "Anjara"]
-OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]  # accès aux anciens gmails + fiches sans mail
-QUOTAS = {op: (QUOTA_KEVIN_FIF if op in OPERATEURS_ANCIENS_GMAILS else QUOTA_NOUVEAUX)
-          for op in OPERATEURS}
-
-# ── Rattrapage Aina (absence semaine 17-21 août, rattrapée sur les week-ends) ──
-# Jours de rattrapage : planning UNIQUEMENT pour Aina (le reste de l'équipe n'a rien ces jours-là)
-AINA_SOLO_DATES  = {"2026-08-08", "2026-08-09", "2026-08-15", "2026-08-29", "2026-08-30"}
-# Jours d'absence d'Aina : elle est exclue du planning ces jours-là (le reste de l'équipe travaille)
-AINA_SKIP_DATES  = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"}
-# Quota réduit les jours de rattrapage : 25/jour → 25 samedi + 25 dimanche (répartition équitable)
-AINA_SOLO_QUOTA  = 40
+OPERATEURS = ["Kevin", "Fifaliana"]
+OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
+QUOTAS = {op: QUOTA_KEVIN_FIF for op in OPERATEURS}
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 
@@ -382,20 +368,11 @@ def main():
     today_str = today.isoformat()
     is_sunday = today.weekday() == 6
 
-    # Déterminer les opérateurs actifs ce jour-là
-    if today_str in AINA_SOLO_DATES:
-        # Jour de rattrapage : uniquement Aina
-        operateurs_actifs = ["Aina"]
-        print(f"{today_str} — jour de rattrapage : Aina uniquement.")
-    elif is_sunday:
+    if is_sunday:
         # Dimanche normal : aucun planning pour personne
         print(f"{today_str} (dimanche) — aucun planning prévu.")
         sb_delete("planning", f"date=eq.{today_str}")
         return
-    elif today_str in AINA_SKIP_DATES:
-        # Absence d'Aina : le reste de l'équipe travaille
-        operateurs_actifs = [op for op in OPERATEURS if op != "Aina"]
-        print(f"{today_str} — Aina absente (rattrapage), exclue du planning.")
     else:
         operateurs_actifs = list(OPERATEURS)
 
