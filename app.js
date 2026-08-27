@@ -5489,18 +5489,26 @@ async function renderImagesHistory() {
     // Trier : plus récents d'abord
     filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.operateur || '').localeCompare(b.operateur || ''));
 
+    // URLs des conversations ChatGPT pour chaque opérateur
+    const chatGptUrls = {
+      'kevin': (fichesMap['CHATGPT_WORK_CONVERSATION_URL_KEVIN']?.lien || fichesMap['CHATGPT_CONVERSATION_URL_KEVIN']?.lien || 'https://chatgpt.com/'),
+      'fif': (fichesMap['CHATGPT_WORK_CONVERSATION_URL_FIF']?.lien || fichesMap['CHATGPT_CONVERSATION_URL_FIF']?.lien || 'https://chatgpt.com/'),
+      'fifaliana': (fichesMap['CHATGPT_WORK_CONVERSATION_URL_FIF']?.lien || fichesMap['CHATGPT_CONVERSATION_URL_FIF']?.lien || 'https://chatgpt.com/')
+    };
+
     let html = `
       <div style="overflow-x:auto;">
         <table class="avis-table">
           <thead>
             <tr>
-              <th style="width:105px;">Date</th>
+              <th style="width:100px;">Date</th>
               <th>Fiche GMB</th>
-              <th style="width:140px;">Ville / Métier</th>
-              <th style="width:100px;">Opérateur</th>
-              <th style="width:140px;">Statut Image</th>
-              <th style="width:160px;text-align:center;">Accès Direct Drive</th>
-              <th style="width:110px;text-align:center;">Action</th>
+              <th style="width:130px;">Ville / Métier</th>
+              <th style="width:90px;">Opérateur</th>
+              <th style="width:120px;">Statut</th>
+              <th style="width:140px;text-align:center;">Lien Web ChatGPT</th>
+              <th style="width:140px;text-align:center;">Dossier Drive</th>
+              <th style="width:90px;text-align:center;">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -5514,6 +5522,8 @@ async function renderImagesHistory() {
       const opBadge = isKevin 
         ? `<span style="background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Kevin</span>`
         : `<span style="background:rgba(168,85,247,0.15);border:1px solid #a855f7;color:#d8b4fe;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Fifaliana</span>`;
+
+      const gptUrl = isKevin ? chatGptUrls['kevin'] : chatGptUrls['fifaliana'];
 
       let statutBadge = '';
       if (row.statut === 'generated') {
@@ -5538,6 +5548,11 @@ async function renderImagesHistory() {
           <td style="font-size:12px;">${villeMetier}</td>
           <td>${opBadge}</td>
           <td>${statutBadge}</td>
+          <td style="text-align:center;">
+            <a href="${gptUrl}" target="_blank" class="btn-secondary" style="padding:4px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;white-space:nowrap;color:#38bdf8;border-color:#0284c7;">
+              💬 Ouvrir ChatGPT
+            </a>
+          </td>
           <td style="text-align:center;">
             <button onclick="openOperatorDriveFolder('${op}')" class="btn-secondary" style="padding:4px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
               📂 Drive ${isKevin ? 'Kevin' : 'Fif'}
