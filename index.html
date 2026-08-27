@@ -530,36 +530,53 @@
       </select>
       <button onclick="renderPlanning()" style="padding:6px 14px;border-radius:6px;background:#3b82f6;color:#fff;border:none;cursor:pointer;font-size:14px">🔄 Actualiser</button>
     </div>
-    <details style="margin-bottom:14px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px">
-      <summary style="cursor:pointer;font-size:12px;color:#94a3b8;user-select:none;font-weight:600">⚙️ Config Anti-Detect Browsers (Choix du Navigateur & Proxy)</summary>
-      <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <select id="antidetect-engine-input"
-          style="padding:6px 12px;border-radius:6px;border:1px solid #3b82f6;background:#1e293b;color:#60a5fa;font-size:13px;font-weight:600"
-          onchange="localStorage.setItem('antidetect_engine', this.value)">
-          <option value="gologin">🚀 GoLogin (Recommandé)</option>
-          <option value="donut">🍩 DonutBrowser</option>
-          <option value="auto">🤖 Auto (GoLogin pour Kevin/Fif, Donut sinon)</option>
-          <option value="none">❌ Aucun (Désactiver)</option>
-        </select>
-        <select id="decodo-type-input"
-          style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
-          onchange="localStorage.setItem('decodo_type', this.value)">
-          <option value="residential">Résidentiel (ville ciblée)</option>
-          <option value="mobile">Mobile (4G)</option>
-        </select>
-        <input type="password" id="gologin-token-input" placeholder="Token GoLogin"
-          style="flex:1;min-width:180px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
-          oninput="localStorage.setItem('gologin_token', this.value)" />
-        <input type="password" id="donut-token-input" placeholder="Token DonutBrowser (optionnel)"
-          style="flex:1;min-width:180px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
-          oninput="localStorage.setItem('donut_token', this.value)" />
-        <input type="number" id="donut-port-input" placeholder="Port Donut (10108)"
-          style="width:120px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
-          oninput="localStorage.setItem('donut_port', this.value)" />
-        <button onclick="donutRafraichirProxy()"
-          style="padding:6px 14px;border-radius:6px;background:#8b5cf6;color:#fff;border:none;cursor:pointer;font-size:13px">
-          🔄 Rafraîchir proxy Donut
-        </button>
+    <details style="margin-bottom:14px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 16px">
+      <summary style="cursor:pointer;font-size:13px;color:#94a3b8;user-select:none;font-weight:600">⚙️ Config Anti-Detect Browsers (Choix du Navigateur & Clés API)</summary>
+      <div style="margin-top:12px;display:flex;gap:12px;flex-direction:column">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:12px;color:#94a3b8;font-weight:600">Moteur actif :</label>
+          <select id="antidetect-engine-input"
+            style="padding:6px 12px;border-radius:6px;border:1px solid #3b82f6;background:#1e293b;color:#60a5fa;font-size:13px;font-weight:600"
+            onchange="localStorage.setItem('antidetect_engine', this.value)">
+            <option value="gologin">🚀 GoLogin (Recommandé)</option>
+            <option value="donut">🍩 DonutBrowser</option>
+            <option value="auto">🤖 Auto (GoLogin si Kevin/Fif, Donut sinon)</option>
+            <option value="none">❌ Aucun (Désactiver)</option>
+          </select>
+          <label style="font-size:12px;color:#94a3b8;font-weight:600;margin-left:8px">Type Proxy :</label>
+          <select id="decodo-type-input"
+            style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
+            onchange="localStorage.setItem('decodo_type', this.value)">
+            <option value="residential">Résidentiel (ville ciblée)</option>
+            <option value="mobile">Mobile (4G)</option>
+          </select>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#1e293b55;padding:8px 12px;border-radius:6px;border:1px solid #33415555">
+          <span style="font-size:12px;font-weight:600;color:#60a5fa;min-width:70px">🚀 GoLogin :</span>
+          <input type="password" id="gologin-token-input" placeholder="Clé / Token API GoLogin (ex: eyJ...)"
+            style="flex:1;min-width:240px;padding:6px 10px;border-radius:6px;border:1px solid #3b82f644;background:#0f172a;color:#f1f5f9;font-size:13px"
+            oninput="localStorage.setItem('gologin_token', this.value); localStorage.setItem('gologin_key', this.value)" />
+          <button onclick="testGologinConnection()" style="padding:6px 12px;border-radius:6px;background:#3b82f6;color:#fff;border:none;cursor:pointer;font-size:12px;font-weight:600">
+            🧪 Tester GoLogin
+          </button>
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#1e293b55;padding:8px 12px;border-radius:6px;border:1px solid #33415555">
+          <span style="font-size:12px;font-weight:600;color:#f59e0b;min-width:70px">🍩 Donut :</span>
+          <input type="password" id="donut-token-input" placeholder="Token DonutBrowser (optionnel)"
+            style="flex:1;min-width:200px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px"
+            oninput="localStorage.setItem('donut_token', this.value)" />
+          <input type="number" id="donut-port-input" placeholder="Port (10108)"
+            style="width:100px;padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:13px"
+            oninput="localStorage.setItem('donut_port', this.value)" />
+          <button onclick="testDonutConnection()" style="padding:6px 10px;border-radius:6px;background:#334155;color:#f1f5f9;border:none;cursor:pointer;font-size:12px">
+            🧪 Tester Donut
+          </button>
+          <button onclick="donutRafraichirProxy()" style="padding:6px 12px;border-radius:6px;background:#8b5cf6;color:#fff;border:none;cursor:pointer;font-size:12px">
+            🔄 Rafraîchir IP Donut
+          </button>
+        </div>
       </div>
     </details>
     <div id="planning-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
@@ -613,6 +630,6 @@
   </div>
 </div>
 
-<script src="app.js?v=60"></script>
+<script src="app.js?v=61"></script>
 </body>
 </html>

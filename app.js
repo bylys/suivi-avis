@@ -4176,6 +4176,49 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   }
 }
 
+async function testGologinConnection() {
+  const token = getGologinToken();
+  if (!token) {
+    showToast('❌ Aucun token GoLogin trouvé. Renseigne ton token dans le champ dédié.', 'error', 6000);
+    return;
+  }
+  showToast('🔄 Test de connexion à l\'API GoLogin en cours...', 'info', 3000);
+  try {
+    const res = await _fetchTimeout('https://api.gologin.com/browser/v2', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }, 8000);
+    if (res.ok) {
+      const data = await res.json();
+      const count = data?.profiles?.length ?? (Array.isArray(data) ? data.length : 'OK');
+      showToast(`✅ Connexion GoLogin réussie ! (${count} profils trouvés sur votre compte)`, 'success', 6000);
+    } else {
+      showToast(`❌ Erreur GoLogin (${res.status}) : Clé invalide ou problème réseau.`, 'error', 8000);
+    }
+  } catch (e) {
+    showToast(`❌ Impossible de contacter GoLogin : ${e?.message || e}`, 'error', 8000);
+  }
+}
+
+async function testDonutConnection() {
+  const token = getDonutToken();
+  const base = getDonutBase();
+  showToast('🔄 Test de connexion à DonutBrowser en cours...', 'info', 3000);
+  try {
+    const res = await _fetchTimeout(`${base}/v1/profiles`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    }, 5000);
+    if (res.ok) {
+      const data = await res.json();
+      const list = data.profiles || data.data || [];
+      showToast(`✅ DonutBrowser connecté avec succès ! (${list.length} profils trouvés)`, 'success', 6000);
+    } else {
+      showToast(`❌ DonutBrowser a renvoyé le statut ${res.status}. Vérifie le port et le token.`, 'error', 8000);
+    }
+  } catch (e) {
+    showToast('❌ Impossible de joindre DonutBrowser en local (Vérifie que l\'app Donut est ouverte).', 'error', 8000);
+  }
+}
+
 async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const token = getDonutToken();
   if (!token) {
