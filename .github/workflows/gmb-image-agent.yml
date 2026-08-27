@@ -4,6 +4,10 @@ on:
   schedule:
     # Exécution automatique chaque jour à 01h00 du matin heure de Thaïlande (UTC+7 -> 18h00 UTC la veille)
     - cron: '0 18 * * *'
+  push:
+    paths:
+      - 'agent/**'
+      - '.github/workflows/gmb-image-agent.yml'
   workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
 
 jobs:
