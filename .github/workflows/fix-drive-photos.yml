@@ -32,9 +32,9 @@ jobs:
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
         run: node fix_drive_photos.js
 
-      - name: Search Fifa Photos on Drive
+      - name: Generate Full Photo Report for All Operators
         working-directory: ./agent
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
           DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
-        run: node search_fifa_drive.js
+        run: node generate_full_report.js
