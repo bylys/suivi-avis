@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📍 Suivi Avis GMB</title>
+  <title>Suivi Avis GMB – Kevin</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📍</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -98,6 +98,22 @@
         <span id="stat-fifaliana">0</span>
         <label>Avis Fifaliana</label>
       </div>
+      <div class="stat-card">
+        <span id="stat-aina">0</span>
+        <label>Avis Aina</label>
+      </div>
+      <div class="stat-card">
+        <span id="stat-kintana">0</span>
+        <label>Avis Kintana</label>
+      </div>
+      <div class="stat-card">
+        <span id="stat-korail">0</span>
+        <label>Avis Korail</label>
+      </div>
+      <div class="stat-card">
+        <span id="stat-anjara">0</span>
+        <label>Avis Anjara</label>
+      </div>
       <div class="stat-card highlight">
         <span id="stat-j30">0</span>
         <label>Toujours en ligne J+30</label>
@@ -149,10 +165,14 @@
         <datalist id="datalist-form-fiche"></datalist>
       </label>
       <label>Ton prénom *
-        <input type="text" id="form-operateur" list="datalist-operateur" placeholder="Kevin, Fifaliana..." autocomplete="off" required />
+        <input type="text" id="form-operateur" list="datalist-operateur" placeholder="Kevin, Fifaliana, Aina..." autocomplete="off" required />
         <datalist id="datalist-operateur">
           <option value="Kevin"/>
           <option value="Fifaliana"/>
+          <option value="Aina"/>
+          <option value="Kintana"/>
+          <option value="Korail"/>
+          <option value="Anjara"/>
         </datalist>
       </label>
       <label>Gmail de l'auteur *
@@ -311,6 +331,10 @@
           <option value="">Tous les opérateurs</option>
           <option value="Kevin">Kevin</option>
           <option value="Fifaliana">Fifaliana</option>
+          <option value="Aina">Aina</option>
+          <option value="Kintana">Kintana</option>
+          <option value="Korail">Korail</option>
+          <option value="Anjara">Anjara</option>
           <option value="__none__">Sans opérateur</option>
         </select>
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -346,6 +370,10 @@
       <div class="drive-buttons-group">
         <button class="btn-drive-op" onclick="openOperatorDriveFolder('Kevin')">📂 Kevin</button>
         <button class="btn-drive-op" onclick="openOperatorDriveFolder('Fif')">📂 Fif</button>
+        <button class="btn-drive-op" onclick="openOperatorDriveFolder('Aina')">📂 Aina</button>
+        <button class="btn-drive-op" onclick="openOperatorDriveFolder('Anjara')">📂 Anjara</button>
+        <button class="btn-drive-op" onclick="openOperatorDriveFolder('Korail')">📂 Korail</button>
+        <button class="btn-drive-op" onclick="openOperatorDriveFolder('Kintana')">📂 Kintana</button>
         <a href="https://drive.google.com/drive/my-drive" target="_blank" class="btn-drive-op btn-drive-all">📁 Tout le Drive</a>
       </div>
     </div>
@@ -471,6 +499,10 @@
         <option value="">Tous les opérateurs</option>
         <option value="Kevin">Kevin</option>
         <option value="Fifaliana">Fifaliana</option>
+        <option value="Aina">Aina</option>
+        <option value="Kintana">Kintana</option>
+        <option value="Korail">Korail</option>
+        <option value="Anjara">Anjara</option>
       </select>
       <select id="planning-statut-filter" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
         <option value="">Tous les statuts</option>
