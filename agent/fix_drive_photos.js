@@ -126,7 +126,8 @@ async function main() {
         '1lk4hEew3BnGPGAEOd86E8HRmidG6NTDj',
         '1SvRR_oep7juLPzjfne04jDjAXHSEMRRb',
         '1AOu-6dMAa4dK-XmQsbVEvNpL6Hdgt_MA',
-        '1Rs73ZIf3XGeoIxW3tndaBjb1n6x2Rgyt'
+        '1Rs73ZIf3XGeoIxW3tndaBjb1n6x2Rgyt',
+        '1wqiEfimc75DH-94EckHGMNLgExSoc6td'
     ];
 
     const credentials = JSON.parse(credentialsRaw);
