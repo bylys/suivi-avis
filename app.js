@@ -4019,9 +4019,29 @@ function resolveGologinUrl(path = '/browser') {
   return null;
 }
 
+function getCountryConfig(paysRaw = 'FR') {
+  const p = (paysRaw || 'FR').toUpperCase().trim();
+  switch (p) {
+    case 'BE':
+      return { pays: 'BE', lang: 'fr-BE', languages: 'fr-BE,fr,nl-BE,nl,en-US', timezone: 'Europe/Brussels', countryName: 'Belgium' };
+    case 'LU':
+      return { pays: 'LU', lang: 'fr-LU', languages: 'fr-LU,fr,de-LU,de,en-US', timezone: 'Europe/Luxembourg', countryName: 'Luxembourg' };
+    case 'CH':
+      return { pays: 'CH', lang: 'fr-CH', languages: 'fr-CH,fr,de-CH,de,en-US', timezone: 'Europe/Zurich', countryName: 'Switzerland' };
+    case 'CA':
+      return { pays: 'CA', lang: 'fr-CA', languages: 'fr-CA,fr,en-CA,en-US', timezone: 'America/Montreal', countryName: 'Canada' };
+    case 'US':
+      return { pays: 'US', lang: 'en-US', languages: 'en-US,en', timezone: 'America/New_York', countryName: 'United States' };
+    case 'FR':
+    default:
+      return { pays: 'FR', lang: 'fr-FR', languages: 'fr-FR,fr,en-US', timezone: 'Europe/Paris', countryName: 'France' };
+  }
+}
+
 async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '') {
+  const countryCfg  = getCountryConfig(pays);
   const rawCitySlug = normalizeCityForProxy(ville);
-  const citySlug    = getDecodoCitySlug(ville, pays);
+  const citySlug    = getDecodoCitySlug(ville, countryCfg.pays);
 
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
   const cfg = { host: 'gate.decodo.com', port: 10001 };
@@ -4030,7 +4050,7 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
 
   const sessionId = ('s' + citySlug.replace(/[^a-z0-9]/g, '') + Math.random().toString(36).slice(2, 8)).slice(0, 24);
   const sessionSuffix = `-session-${sessionId}-sessionduration-1440`;
-  const usernameCityPrimary = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
+  const usernameCityPrimary = `${baseUser}-country-${countryCfg.pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
 
   const opClean = operateurRaw.toLowerCase().includes('fif') ? 'Fifiana'
     : operateurRaw.toLowerCase().includes('kevin') ? 'Kevin'
@@ -4041,10 +4061,10 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   const profileName = `${opClean}_GMB_${villeClean}`;
 
   const FRENCH_SMARTPHONES = [
-    { name: 'iPhone 15', os: 'mac', platform: 'iPhone', res: '393x852', w: 393, h: 852, dpr: 3, ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/128.0.6613.98 Mobile/15E148 Safari/604.1' },
-    { name: 'Samsung Galaxy S24', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: 'Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36' },
-    { name: 'Google Pixel 8', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36' },
-    { name: 'Xiaomi Redmi Note 13', os: 'android', platform: 'Linux armv8l', res: '393x873', w: 393, h: 873, dpr: 3, ua: 'Mozilla/5.0 (Linux; Android 14; 2312DRA50G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36' },
+    { name: 'iPhone 15', os: 'mac', platform: 'iPhone', res: '393x852', w: 393, h: 852, dpr: 3, ua: `Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/128.0.6613.98 Mobile/15E148 Safari/604.1` },
+    { name: 'Samsung Galaxy S24', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: `Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36` },
+    { name: 'Google Pixel 8', os: 'android', platform: 'Linux armv8l', res: '412x915', w: 412, h: 915, dpr: 3, ua: `Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36` },
+    { name: 'Xiaomi Redmi Note 13', os: 'android', platform: 'Linux armv8l', res: '393x873', w: 393, h: 873, dpr: 3, ua: `Mozilla/5.0 (Linux; Android 14; 2312DRA50G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36` },
   ];
   const chosenPhone = FRENCH_SMARTPHONES[Math.floor(Math.random() * FRENCH_SMARTPHONES.length)];
 
@@ -4053,8 +4073,13 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
     browserType: 'chrome',
     os: isMobile ? (chosenPhone.os === 'mac' ? 'mac' : 'android') : 'mac',
     folders: ['VA TEAM'], // Dossier VA TEAM dans GoLogin
+    timezone: {
+      auto: true,
+      timezone: countryCfg.timezone
+    },
     navigator: {
-      language: 'fr-FR',
+      language: countryCfg.lang,
+      languages: countryCfg.languages,
       platform: isMobile ? chosenPhone.platform : 'MacIntel',
       resolution: isMobile ? chosenPhone.res : '1920x1080',
       userAgent: isMobile ? chosenPhone.ua : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
@@ -4164,8 +4189,9 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   // 1. Créer le proxy Decodo pour cette ville (avec résolution automatique Préfecture / Sous-Préfecture)
+  const countryCfg  = getCountryConfig(pays);
   const rawCitySlug = normalizeCityForProxy(ville);
-  const citySlug    = getDecodoCitySlug(ville, pays);
+  const citySlug    = getDecodoCitySlug(ville, countryCfg.pays);
   const backupSlug  = DECODO_CITY_MAP[rawCitySlug] ? rawCitySlug : 'paris';
 
   const isMobile = (localStorage.getItem('decodo_type') || 'residential') === 'mobile';
@@ -4178,8 +4204,8 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const sessionSuffix = `-session-${sessionId}-sessionduration-1440`;
 
   // Stratégie 100% City-Forced : cibler toujours une ville préfecture/sous-préfecture valide chez Decodo
-  const usernameCityPrimary   = `${baseUser}-country-${pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
-  const usernameCitySecondary = `${baseUser}-country-${pays.toLowerCase()}-city-${backupSlug}${sessionSuffix}`;
+  const usernameCityPrimary   = `${baseUser}-country-${countryCfg.pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
+  const usernameCitySecondary = `${baseUser}-country-${countryCfg.pays.toLowerCase()}-city-${backupSlug}${sessionSuffix}`;
 
   const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
     : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
@@ -4269,19 +4295,13 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
       }
     }
 
-    const tz = (pays === 'BE') ? 'Europe/Brussels'
-             : (pays === 'LU') ? 'Europe/Luxembourg'
-             : (pays === 'CA') ? 'America/Montreal'
-             : (pays === 'US') ? 'America/New_York'
-             : 'Europe/Paris';
-
     // Étape 2 : créer le profil SANS proxy (évite le hang de validation de connectivité)
     const extraConfig = {
-      timezone: tz,
-      locale: 'fr-FR',
+      timezone: countryCfg.timezone,
+      locale: countryCfg.lang,
       args: [
-        '--lang=fr-FR',
-        `--timezone=${tz}`,
+        `--lang=${countryCfg.lang}`,
+        `--timezone=${countryCfg.timezone}`,
         ...(isMobile ? [
           '--window-size=390,844',
           '--window-position=100,50',
@@ -4291,9 +4311,9 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
         ] : [])
       ],
       navigator: {
-        language: 'fr-FR',
-        languages: ['fr-FR', 'fr', 'en-US'],
-        timezone: tz,
+        language: countryCfg.lang,
+        languages: countryCfg.languages.split(','),
+        timezone: countryCfg.timezone,
         ...(isMobile ? {
           resolution: '390x844',
           platform: 'Linux armv8l',

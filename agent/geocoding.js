@@ -29,10 +29,38 @@ const KNOWN_CITIES = {
   'angers': { lat: 47.478419, lng: -0.563166 },
   'dijon': { lat: 47.322047, lng: 5.041480 },
   'brest': { lat: 48.390394, lng: -4.486076 },
+  // Belgique (BE)
+  'bruxelles': { lat: 50.850346, lng: 4.351721 },
+  'liege': { lat: 50.632557, lng: 5.579666 },
+  'liège': { lat: 50.632557, lng: 5.579666 },
+  'namur': { lat: 50.467388, lng: 4.871985 },
+  'charleroi': { lat: 50.410810, lng: 4.444643 },
+  'mons': { lat: 50.454138, lng: 3.952290 },
+  'anvers': { lat: 51.219448, lng: 4.402464 },
+  'waterloo': { lat: 50.714690, lng: 4.399120 },
+  // Luxembourg (LU)
+  'luxembourg': { lat: 49.611622, lng: 6.131935 },
+  'esch-sur-alzette': { lat: 49.495821, lng: 5.980556 },
+  // Suisse (CH)
+  'geneve': { lat: 46.204391, lng: 6.143158 },
+  'genève': { lat: 46.204391, lng: 6.143158 },
+  'lausanne': { lat: 46.519653, lng: 6.632273 },
+  // Canada (CA)
+  'montreal': { lat: 45.501689, lng: -73.567256 },
+  'montréal': { lat: 45.501689, lng: -73.567256 },
+  'quebec': { lat: 46.813878, lng: -71.207981 },
+  'québec': { lat: 46.813878, lng: -71.207981 },
+  'laval': { lat: 45.606552, lng: -73.712395 },
+  'gatineau': { lat: 45.476544, lng: -75.701272 },
+  // USA (US)
   'augusta': { lat: 33.473498, lng: -82.010515 },
   'atlanta': { lat: 33.748995, lng: -84.387982 },
   'dallas': { lat: 32.776664, lng: -96.796988 },
   'miami': { lat: 25.761680, lng: -80.191790 },
+  'new york': { lat: 40.712776, lng: -74.005974 },
+  'los angeles': { lat: 34.052235, lng: -118.243683 },
+  'chicago': { lat: 41.878113, lng: -87.629799 },
+  'houston': { lat: 29.760427, lng: -95.369804 },
 };
 
 async function getCoordinatesForCity(cityName, country = 'France') {
