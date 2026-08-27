@@ -122,10 +122,10 @@ async function main() {
         process.exit(1);
     }
 
-    const defaultParentFolderId = (process.env.DRIVE_PARENT_FOLDER_ID || '').trim();
     const targetIds = [
         '1lk4hEew3BnGPGAEOd86E8HRmidG6NTDj',
-        '1SvRR_oep7juLPzjfne04jDjAXHSEMRRb'
+        '1SvRR_oep7juLPzjfne04jDjAXHSEMRRb',
+        '1AOu-6dMAa4dK-XmQsbVEvNpL6Hdgt_MA'
     ];
 
     const credentials = JSON.parse(credentialsRaw);
@@ -135,6 +135,27 @@ async function main() {
     });
 
     const drive = google.drive({ version: 'v3', auth });
+
+    // Recherche automatique globale de tous les dossiers/fichiers 26-08-26 sur le Drive
+    try {
+        const autoFind = await drive.files.list({
+            q: `(name contains '26-08-26' or name contains '2026-08-26') and trashed=false`,
+            fields: 'files(id, name, mimeType)',
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true
+        });
+        if (autoFind.data.files && autoFind.data.files.length > 0) {
+            for (const f of autoFind.data.files) {
+                if (!targetIds.includes(f.id)) {
+                    targetIds.push(f.id);
+                }
+            }
+        }
+    } catch (e) {
+        console.log("Note auto-find Drive :", e.message);
+    }
+
+    console.log(`🎯 Total d'éléments/dossiers identifiés à traiter : ${targetIds.length}`);
 
     for (const targetId of targetIds) {
         await processSourceId(drive, targetId, defaultParentFolderId);
