@@ -563,8 +563,8 @@ async function main() {
     try {
         console.log("Démarrage du job de génération d'images GMB...");
         
-        // Recherche de la date (TARGET_DATE ou date du jour par défaut)
-        const dateStr = process.env.TARGET_DATE || new Date().toISOString().split('T')[0];
+        // Recherche de la date (TARGET_DATE ou date du jour en heure locale Asia/Bangkok par défaut)
+        const dateStr = process.env.TARGET_DATE || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
         
         const rawOp = (TARGET_OPERATOR || '').trim();
         const opUpper = rawOp ? rawOp.toUpperCase() : '';
@@ -824,11 +824,11 @@ async function main() {
         console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
         const activePlanUrls = {};
 
-        // Formatage de la date courte pour le nom du fichier (ex: 24-08-26)
+        // Formatage de la date courte pour le nom du fichier et du dossier Drive (ex: 27-08-26)
         const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
-        const dayStr = targetDateObj.getDate().toString().padStart(2, '0');
-        const monthStr = (targetDateObj.getMonth() + 1).toString().padStart(2, '0');
-        const yearStr = targetDateObj.getFullYear().toString().slice(-2);
+        const dayStr = targetDateObj.getUTCDate().toString().padStart(2, '0');
+        const monthStr = (targetDateObj.getUTCMonth() + 1).toString().padStart(2, '0');
+        const yearStr = targetDateObj.getUTCFullYear().toString().slice(-2);
         const dateFormatShort = `${dayStr}-${monthStr}-${yearStr}`;
 
         const uploadedImageHashes = new Set();

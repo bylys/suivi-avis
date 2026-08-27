@@ -9,7 +9,7 @@ Génère le planning quotidien des avis GMB.
 """
 
 import os, sys, json, urllib.request, urllib.error, urllib.parse
-from datetime import date
+from datetime import date, datetime
 from collections import defaultdict, Counter
 import random
 
@@ -372,7 +372,13 @@ def build_slack_planning(operateur, taches, today_str):
 # ── Algorithme principal ──────────────────────────────────────────────────────
 
 def main():
-    today = date.today()
+    try:
+        import zoneinfo
+        tz = zoneinfo.ZoneInfo("Asia/Bangkok")
+        today = datetime.now(tz).date()
+    except Exception:
+        today = date.today()
+
     today_str = today.isoformat()
     is_sunday = today.weekday() == 6
 
