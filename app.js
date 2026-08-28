@@ -4098,7 +4098,7 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
         ? 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36'
         : desktopUA,
       ...(isMobile ? {
-        devicePixelRatio: 3,
+        devicePixelRatio: 2.625,
         maxTouchPoints: 5,
         hardwareConcurrency: 8,
         deviceMemory: 8
@@ -4114,12 +4114,18 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
       vendor: 'Qualcomm',
       renderer: 'Adreno (TM) 730'
     } : {
-      mode: 'noise'
+      mode: 'off'
     },
-    webgl: { mode: 'noise' },
-    canvas: { mode: 'noise' },
-    audioContext: { mode: 'noise' },
-    clientRects: { mode: 'noise' },
+    webgl: { mode: 'off' },
+    canvas: { mode: 'off' },
+    audioContext: { mode: 'off' },
+    clientRects: { mode: 'off' },
+    fonts: isMobile ? {
+      enableMasking: false,
+      families: ['Roboto', 'Noto Sans', 'Google Sans']
+    } : {
+      enableMasking: false
+    },
     ...(isMobile ? {
       mobile: {
         mode: true
