@@ -4272,6 +4272,7 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
 
   let created = false;
   let createdId = null;
+  let lastGlError = '';
 
   // 1. Tenter via le Worker Cloudflare si disponible
   const cloudflareUrl = resolveGologinUrl('/browser');
@@ -4289,9 +4290,11 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
         console.log('GoLogin profil créé via Cloudflare Worker:', profileName, createdId);
       } else {
         const txt = await res.text();
+        lastGlError = `Cloudflare (${res.status}): ${txt.slice(0, 120)}`;
         console.warn('GoLogin Cloudflare Worker status:', res.status, txt);
       }
     } catch (e) {
+      lastGlError = `Cloudflare Réseau: ${e?.message || e}`;
       console.warn('GoLogin Cloudflare Worker fetch error:', e?.message || e);
     }
   }
@@ -4310,8 +4313,12 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
         created = true;
         createdId = data?.id || null;
         console.log('GoLogin profil créé via API Cloud direct:', profileName, createdId);
+      } else {
+        const txt = await res.text();
+        lastGlError = `API GoLogin (${res.status}): ${txt.slice(0, 120)}`;
       }
     } catch (e) {
+      lastGlError = `API GoLogin: ${e?.message || e}`;
       console.warn('GoLogin Cloud API error:', e?.message || e);
     }
   }
@@ -4346,7 +4353,8 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
     showToast(`✅ Profil GoLogin "${profileName}" prêt avec proxy Decodo (🇫🇷 ${citySlug}) !`, 'success', 6000);
     return profileName;
   } else {
-    console.warn('GoLogin: création non aboutie (fallback DonutBrowser disponible).');
+    const errDetail = lastGlError ? ` (${lastGlError})` : '';
+    showToast(`⚠️ Échec création GoLogin${errDetail}. Si tu es en local, colle ton token GoLogin dans Config.`, 'error', 8000);
     return null;
   }
 }

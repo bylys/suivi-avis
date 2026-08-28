@@ -9,6 +9,14 @@ const ALLOWED_ORIGINS = [
   'http://127.0.0.1:3333',
 ];
 
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.github\.io$/.test(origin)) return true;
+  return false;
+}
+
 function matchRoute(pathname) {
   if (pathname.startsWith('/gemini/')) {
     return { host: 'https://generativelanguage.googleapis.com', upstreamPath: pathname.slice('/gemini'.length), auth: 'query', secret: 'GEMINI_API_KEY' };
@@ -24,7 +32,7 @@ function matchRoute(pathname) {
 }
 
 function corsHeaders(origin) {
-  const allow = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allow = isOriginAllowed(origin) ? (origin || '*') : ALLOWED_ORIGINS[0];
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
@@ -48,7 +56,7 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
-    if (!ALLOWED_ORIGINS.includes(origin)) {
+    if (!isOriginAllowed(origin)) {
       return json(403, { error: 'origin_not_allowed' }, origin);
     }
     if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
