@@ -2126,19 +2126,182 @@ const _DEPARTEMENT_TO_VILLE = {
 
 function extraireVilleFiche(nomFiche) {
   if (!nomFiche) return '';
-  let str = nomFiche.trim();
-  if (str.toLowerCase().includes('domiciliation')) return 'Saint-Herblain';
+  const rawStr = nomFiche.trim();
+  if (rawStr.toLowerCase().includes('domiciliation')) return 'Saint-Herblain';
 
   // 1. Recherche prioritaire dans le cache Supabase (_fichesCache)
   if (typeof _fichesCache !== 'undefined' && Array.isArray(_fichesCache)) {
-    const found = _fichesCache.find(f => f.nom && f.nom.toLowerCase() === str.toLowerCase());
-    if (found && found.ville) return found.ville.trim();
+    const found = _fichesCache.find(f => f.nom && f.nom.toLowerCase() === rawStr.toLowerCase());
+    if (found && found.ville && found.ville.trim()) return found.ville.trim();
   }
 
-  // Mots métiers et mots vides à nettoyer
+  // Normalisation du texte pour recherche exacte sans accents ni ponctuation
+  const normText = ' ' + rawStr.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() + ' ';
+
+  // 2. Dictionnaire exhaustif des villes connues (France, Belgique, Suisse, Luxembourg, Canada)
+  // Recherche par ordre décroissant de longueur pour éviter les faux positifs (ex: Bourg-en-Bresse avant Bresse)
+  const VILLES_CONNUES = {
+    // Villes majeures & moyennes France
+    'boulogne billancourt': 'Boulogne-Billancourt', 'clermont ferrand': 'Clermont-Ferrand', 'la roche sur yon': 'La Roche-sur-Yon',
+    'saint etienne': 'Saint-Étienne', 'chalon sur saone': 'Chalon-sur-Saône', 'bourg en bresse': 'Bourg-en-Bresse',
+    'aix en provence': 'Aix-en-Provence', 'saint herblain': 'Saint-Herblain', 'saint nazaire': 'Saint-Nazaire',
+    'villeurbanne': 'Villeurbanne', 'saint quentin': 'Saint-Quentin', 'charleville mezieres': 'Charleville-Mézières',
+    'chateauroux': 'Châteauroux', 'mont de marsan': 'Mont-de-Marsan', 'lons le saunier': 'Lons-le-Saunier',
+    'digne les bains': 'Digne-les-Bains', 'le puy en velay': 'Le Puy-en-Velay', 'saint brieuc': 'Saint-Brieuc',
+    'saint lo': 'Saint-Lô', 'la rochelle': 'La Rochelle', 'le havre': 'Le Havre', 'le mans': 'Le Mans',
+    'mulhouse': 'Mulhouse', 'strasbourg': 'Strasbourg', 'bordeaux': 'Bordeaux', 'toulouse': 'Toulouse',
+    'marseille': 'Marseille', 'lyon': 'Lyon', 'nice': 'Nice', 'nantes': 'Nantes', 'montpellier': 'Montpellier',
+    'lille': 'Lille', 'rennes': 'Rennes', 'reims': 'Reims', 'toulon': 'Toulon', 'grenoble': 'Grenoble',
+    'dijon': 'Dijon', 'angers': 'Angers', 'nimes': 'Nîmes', 'caen': 'Caen', 'brest': 'Brest', 'tours': 'Tours',
+    'amiens': 'Amiens', 'limoges': 'Limoges', 'annecy': 'Annecy', 'perpignan': 'Perpignan', 'metz': 'Metz',
+    'besancon': 'Besançon', 'orleans': 'Orléans', 'rouen': 'Rouen', 'nancy': 'Nancy', 'avignon': 'Avignon',
+    'poitiers': 'Poitiers', 'versailles': 'Versailles', 'melun': 'Melun', 'cergy': 'Cergy', 'evreux': 'Évreux',
+    'beauvais': 'Beauvais', 'troyes': 'Troyes', 'tarbes': 'Tarbes', 'pau': 'Pau', 'valence': 'Valence',
+    'dunkerque': 'Dunkerque', 'courbevoie': 'Courbevoie', 'nanterre': 'Nanterre', 'bobigny': 'Bobigny',
+    'creteil': 'Créteil', 'evry': 'Évry', 'chartres': 'Chartres', 'blois': 'Blois', 'bourges': 'Bourges',
+    'nevers': 'Nevers', 'macon': 'Mâcon', 'niort': 'Niort', 'laval': 'Laval', 'albi': 'Albi', 'montauban': 'Montauban',
+    'agen': 'Agen', 'rodez': 'Rodez', 'aurillac': 'Aurillac', 'moulins': 'Moulins', 'vichy': 'Vichy',
+    'privas': 'Privas', 'aubenas': 'Aubenas', 'gap': 'Gap', 'chambery': 'Chambéry', 'dole': 'Dole',
+    'vesoul': 'Vesoul', 'belfort': 'Belfort', 'chaumont': 'Chaumont', 'epinal': 'Épinal', 'bar le duc': 'Bar-le-Duc',
+    'verdun': 'Verdun', 'laon': 'Laon', 'soissons': 'Soissons', 'dieppe': 'Dieppe', 'alencon': 'Alençon',
+    'flers': 'Flers', 'argentan': 'Argentan', 'cherbourg': 'Cherbourg', 'cholet': 'Cholet', 'saumur': 'Saumur',
+    'reze': 'Rezé', 'perigueux': 'Périgueux', 'carcassonne': 'Carcassonne', 'narbonne': 'Narbonne',
+    'beziers': 'Béziers', 'sete': 'Sète', 'agde': 'Agde', 'ales': 'Alès', 'arles': 'Arles', 'aubagne': 'Aubagne',
+    'martigues': 'Martigues', 'hyeres': 'Hyères', 'frejus': 'Fréjus', 'draguignan': 'Draguignan', 'grasse': 'Grasse',
+    'cannes': 'Cannes', 'antibes': 'Antibes', 'menton': 'Menton', 'bastia': 'Bastia', 'ajaccio': 'Ajaccio',
+    'paris': 'Paris', 'pessac': 'Pessac', 'merignac': 'Mérignac', 'talence': 'Talence', 'tourcoing': 'Tourcoing',
+    'roubaix': 'Roubaix', 'calais': 'Calais', 'arras': 'Arras', 'lens': 'Lens', 'douai': 'Douai',
+    'colmar': 'Colmar', 'frontignan': 'Frontignan',
+    // Belgique
+    'bruxelles': 'Bruxelles', 'brussels': 'Bruxelles', 'charleroi': 'Charleroi', 'liege': 'Liège', 'namur': 'Namur',
+    'anvers': 'Anvers', 'antwerpen': 'Anvers', 'gand': 'Gand', 'gent': 'Gand', 'mons': 'Mons', 'louvain': 'Louvain',
+    // Luxembourg / Suisse / Canada
+    'luxembourg': 'Luxembourg', 'geneve': 'Genève', 'lausanne': 'Lausanne', 'zurich': 'Zurich',
+    'montreal': 'Montréal', 'quebec': 'Québec', 'ottawa': 'Ottawa', 'toronto': 'Toronto'
+  };
+
+  const sortedVillesKeys = Object.keys(VILLES_CONNUES).sort((a, b) => b.length - a.length);
+  for (const k of sortedVillesKeys) {
+    if (normText.includes(' ' + k + ' ')) {
+      return VILLES_CONNUES[k];
+    }
+  }
+
+  // 3. Dictionnaire complet des départements français (noms & numéros vers ville principale)
+  const DEPARTEMENT_MAP = {
+    '01': 'Bourg-en-Bresse', 'ain': 'Bourg-en-Bresse',
+    '02': 'Laon', 'aisne': 'Laon',
+    '03': 'Moulins', 'allier': 'Moulins',
+    '04': 'Digne-les-Bains', 'alpes de haute provence': 'Digne-les-Bains',
+    '05': 'Gap', 'hautes alpes': 'Gap',
+    '06': 'Nice', 'alpes maritimes': 'Nice',
+    '07': 'Privas', 'ardeche': 'Privas',
+    '08': 'Charleville-Mézières', 'ardennes': 'Charleville-Mézières',
+    '09': 'Foix', 'ariege': 'Foix',
+    '10': 'Troyes', 'aube': 'Troyes',
+    '11': 'Carcassonne', 'aude': 'Carcassonne',
+    '12': 'Rodez', 'aveyron': 'Rodez',
+    '13': 'Marseille', 'bouches du rhone': 'Marseille',
+    '14': 'Caen', 'calvados': 'Caen',
+    '15': 'Aurillac', 'cantal': 'Aurillac',
+    '16': 'Angoulême', 'charente': 'Angoulême',
+    '17': 'La Rochelle', 'charente maritime': 'La Rochelle',
+    '18': 'Bourges', 'cher': 'Bourges',
+    '19': 'Tulle', 'correze': 'Tulle',
+    '2a': 'Ajaccio', 'corse du sud': 'Ajaccio',
+    '2b': 'Bastia', 'haute corse': 'Bastia',
+    '21': 'Dijon', 'cote d or': 'Dijon',
+    '22': 'Saint-Brieuc', 'cotes d armor': 'Saint-Brieuc',
+    '23': 'Guéret', 'creuse': 'Guéret',
+    '24': 'Périgueux', 'dordogne': 'Périgueux',
+    '25': 'Besançon', 'doubs': 'Besançon',
+    '26': 'Valence', 'drome': 'Valence',
+    '27': 'Évreux', 'eure': 'Évreux',
+    '28': 'Chartres', 'eure et loir': 'Chartres',
+    '29': 'Brest', 'finistere': 'Brest',
+    '30': 'Nîmes', 'gard': 'Nîmes',
+    '31': 'Toulouse', 'haute garonne': 'Toulouse',
+    '32': 'Auch', 'gers': 'Auch',
+    '33': 'Bordeaux', 'gironde': 'Bordeaux',
+    '34': 'Montpellier', 'herault': 'Montpellier',
+    '35': 'Rennes', 'ille et vilaine': 'Rennes',
+    '36': 'Châteauroux', 'indre': 'Châteauroux',
+    '37': 'Tours', 'indre et loire': 'Tours',
+    '38': 'Grenoble', 'isere': 'Grenoble',
+    '39': 'Lons-le-Saunier', 'jura': 'Lons-le-Saunier',
+    '40': 'Mont-de-Marsan', 'landes': 'Mont-de-Marsan',
+    '41': 'Blois', 'loir et cher': 'Blois',
+    '42': 'Saint-Étienne', 'loire': 'Saint-Étienne',
+    '43': 'Le Puy-en-Velay', 'haute loire': 'Le Puy-en-Velay',
+    '44': 'Nantes', 'loire atlantique': 'Nantes',
+    '45': 'Orléans', 'loiret': 'Orléans',
+    '46': 'Cahors', 'lot': 'Cahors',
+    '47': 'Agen', 'lot et garonne': 'Agen',
+    '48': 'Mende', 'lozere': 'Mende',
+    '49': 'Angers', 'maine et loire': 'Angers',
+    '50': 'Saint-Lô', 'manche': 'Saint-Lô',
+    '51': 'Reims', 'marne': 'Reims',
+    '52': 'Chaumont', 'haute marne': 'Chaumont',
+    '53': 'Laval', 'mayenne': 'Laval',
+    '54': 'Nancy', 'meurthe et moselle': 'Nancy',
+    '55': 'Bar-le-Duc', 'meuse': 'Bar-le-Duc',
+    '56': 'Vannes', 'morbihan': 'Vannes',
+    '57': 'Metz', 'moselle': 'Metz',
+    '58': 'Nevers', 'nievre': 'Nevers',
+    '59': 'Lille', 'nord': 'Lille',
+    '60': 'Beauvais', 'oise': 'Beauvais',
+    '61': 'Alençon', 'orne': 'Alençon',
+    '62': 'Arras', 'pas de calais': 'Arras',
+    '63': 'Clermont-Ferrand', 'puy de dome': 'Clermont-Ferrand',
+    '64': 'Pau', 'pyrenees atlantiques': 'Pau',
+    '65': 'Tarbes', 'hautes pyrenees': 'Tarbes',
+    '66': 'Perpignan', 'pyrenees orientales': 'Perpignan',
+    '67': 'Strasbourg', 'bas rhin': 'Strasbourg',
+    '68': 'Mulhouse', 'haut rhin': 'Mulhouse',
+    '69': 'Lyon', 'rhone': 'Lyon',
+    '70': 'Vesoul', 'haute saone': 'Vesoul',
+    '71': 'Mâcon', 'saone et loire': 'Mâcon',
+    '72': 'Le Mans', 'sarthe': 'Le Mans',
+    '73': 'Chambéry', 'savoie': 'Chambéry',
+    '74': 'Annecy', 'haute savoie': 'Annecy',
+    '75': 'Paris',
+    '76': 'Rouen', 'seine maritime': 'Rouen',
+    '77': 'Melun', 'seine et marne': 'Melun',
+    '78': 'Versailles', 'yvelines': 'Versailles',
+    '79': 'Niort', 'deux sevres': 'Niort',
+    '80': 'Amiens', 'somme': 'Amiens',
+    '81': 'Albi', 'tarn': 'Albi',
+    '82': 'Montauban', 'tarn et garonne': 'Montauban',
+    '83': 'Toulon', 'var': 'Toulon',
+    '84': 'Avignon', 'vaucluse': 'Avignon',
+    '85': 'La Roche-sur-Yon', 'vendee': 'La Roche-sur-Yon',
+    '86': 'Poitiers', 'vienne': 'Poitiers',
+    '87': 'Limoges', 'haute vienne': 'Limoges',
+    '88': 'Épinal', 'vosges': 'Épinal',
+    '89': 'Auxerre', 'yonne': 'Auxerre',
+    '90': 'Belfort', 'territoire de belfort': 'Belfort',
+    '91': 'Évry', 'essonne': 'Évry',
+    '92': 'Nanterre', 'hauts de seine': 'Nanterre',
+    '93': 'Bobigny', 'seine saint denis': 'Bobigny',
+    '94': 'Créteil', 'val de marne': 'Créteil',
+    '95': 'Cergy', 'val d oise': 'Cergy', 'val doise': 'Cergy'
+  };
+
+  const sortedDepsKeys = Object.keys(DEPARTEMENT_MAP).sort((a, b) => b.length - a.length);
+  for (const d of sortedDepsKeys) {
+    if (normText.includes(' ' + d + ' ')) {
+      return DEPARTEMENT_MAP[d];
+    }
+  }
+
+  // 4. Nettoyage et fallback sur les morceaux séparés par tirets
   const motsMetiers = [
     'Entreprise', 'Élagueur', 'Elagueur', 'Société', 'Societe', 'Artisan', 'EURL', 'SARL', 'SAS',
-    'Élagage', 'Elagage', 'Abattage', 'Taille de Haie', 'Taille de haie', 'Taille', 'Haie', 'Arboriste', 'Grimpeur', 'Paysagiste',
+    'Élagage', 'Elagage', 'Abattage', 'Taille de Haie', 'Taille de haie', 'Taille', 'Haie', 'Haies', 'Arboriste', 'Grimpeur', 'Paysagiste',
     'Ravalement de Façade', 'Ravalement de façade', 'Ravalement', 'Ravelement', 'Nettoyage', 'Démoussage', 'Demoussage',
     'Peintre en Bâtiment', 'Peintre', 'Peinture', 'Couvreur', 'Toiture', 'Toit', 'Zinguerie', 'Zingu', 'Charpente',
     'Carreleur', 'Carrelage', 'Maçonnerie', 'Maconnerie', 'Maçon', 'Macon', 'Béton', 'Beton', 'Dalle',
@@ -2147,80 +2310,20 @@ function extraireVilleFiche(nomFiche) {
     'Réparation', 'Reparation', 'Rénovation', 'Renovation', 'Dépannage', 'Depannage', 'Remorquage', 'Auto', 'Voiture',
     'Garage', 'Jardinage', 'Jardin', 'Bâtiment', 'Batiment', 'Couverture'
   ];
+  const INVALID_CITIES = new Set(['haut', 'bas', 'grand', 'petit', 'nord', 'sud', 'est', 'ouest', 'centre', 'pro', 'plus', 'france', 'idf', 'et', 'de', 'du', 'des', 'le', 'la', 'les', 'en', 'sur', 'sous', 'par', 'pour', 'avec', 'dans', 'd', 'l', 'un', 'une', 'haie', 'haies', 'arbre', 'arbres', 'toit', 'toiture', 'facade']);
 
-  const stopWordsList = ['d\'', 'l\'', 'et', 'de', 'du', 'des', 'par', 'pour', 'avec', 'les', 'le', 'la', 'en', 'sur', 'dans'];
-  const INVALID_CITIES = new Set(['et', 'de', 'du', 'des', 'le', 'la', 'les', 'en', 'sur', 'sous', 'par', 'pour', 'avec', 'dans', 'd', 'l', 'un', 'une', 'haie', 'haies', 'arbre', 'arbres', 'toit', 'toiture', 'facade']);
-
-  const cleanChunk = (text) => {
-    if (!text) return '';
-    let cleaned = text.replace(/\b(France|[0-9]{2,5}|[A-Z][a-z]+ [0-9]{2})\b/gi, '').trim();
-
-    for (const word of motsMetiers) {
-      const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const reg = new RegExp('(^|[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ])' + escaped + '(?=[^a-zA-Z0-9àâäéèêëîïôöùûüçÀÂÄÉÈÊËÎÏÔÖÙÛÜÇ]|$)', 'gi');
-      cleaned = cleaned.replace(reg, '$1');
-    }
-
-    cleaned = cleaned
-      .replace(/^[,\s;&|/-]+|[,\s;&|/-]+$/g, '')
-      .replace(/\s*&+\s*/g, ' ')
-      .replace(/\s*,\s*/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Supprimer les mots de liaison isolés en début, fin ou exact
-    for (const sw of stopWordsList) {
-      const escSw = sw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regStart = new RegExp('^' + escSw + '(\\s+|$)', 'gi');
-      const regEnd = new RegExp('(\\s+|^)' + escSw + '$', 'gi');
-      cleaned = cleaned.replace(regStart, '').replace(regEnd, '').trim();
-    }
-
-    return cleaned;
-  };
-
-  const pickCity = (val) => {
-    if (!val) return '';
-    const norm = val.toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/['’\-_]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (typeof _DEPARTEMENT_TO_VILLE !== 'undefined' && _DEPARTEMENT_TO_VILLE[norm]) {
-      const target = _DEPARTEMENT_TO_VILLE[norm];
-      return Array.isArray(target) ? target[0] : target;
-    }
-    return '';
-  };
-
-  // Tester chaque morceau séparé par des tirets " - " en partant de la FIN (où se trouve la ville géographique)
-  const chunks = str.split(/\s+[-–—]\s+/);
+  const chunks = rawStr.split(/\s+[-–—]\s+/);
   for (let i = chunks.length - 1; i >= 0; i--) {
-    const chunk = chunks[i];
-    const candidate = cleanChunk(chunk);
-    if (candidate && candidate.length >= 2) {
-      const matchDep = pickCity(candidate);
-      if (matchDep) return matchDep;
-      const normCand = candidate.toLowerCase().trim();
-      if (!INVALID_CITIES.has(normCand)) {
-        return candidate;
-      }
+    let chunk = chunks[i].trim();
+    for (const w of motsMetiers) {
+      const reg = new RegExp('\\b' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+      chunk = chunk.replace(reg, '');
+    }
+    chunk = chunk.replace(/[0-9]{2,5}|[,\s;&|/-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (chunk.length >= 3 && !INVALID_CITIES.has(chunk.toLowerCase())) {
+      return chunk.charAt(0).toUpperCase() + chunk.slice(1);
     }
   }
-
-  // Fallback sur l'ensemble de la chaîne
-  const fullCandidate = cleanChunk(str);
-  if (fullCandidate && fullCandidate.length >= 2) {
-    const matchDep = pickCity(fullCandidate);
-    if (matchDep) return matchDep;
-    if (!INVALID_CITIES.has(fullCandidate.toLowerCase().trim())) {
-      return fullCandidate;
-    }
-  }
-
-  const matchDepStr = pickCity(str);
-  if (matchDepStr) return matchDepStr;
 
   return '';
 }
