@@ -4753,10 +4753,7 @@ async function planningGenerer(id, ficheNom, gmail) {
         const rowPays  = ficheObj?.pays || row?.dataset?.pays || 'FR';
 
         if (engine === 'gologin') {
-          const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
-          if (!glRes) {
-            showToast('⚠️ GoLogin n\'a pas pu créer le profil (vérifie ton token GoLogin ou si GoLogin est lancé).', 'warn', 6000);
-          }
+          await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
         } else if (engine === 'donut') {
           if (getDonutToken()) {
             await donutCreerProfil(ville, gmail, ficheNom, rowPays);
