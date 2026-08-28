@@ -4271,6 +4271,7 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   };
 
   let created = false;
+  let createdId = null;
 
   // 1. Tenter via le Worker Cloudflare si disponible
   const cloudflareUrl = resolveGologinUrl('/browser');
@@ -4282,8 +4283,10 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
         body: JSON.stringify(profileBody)
       }, 12000);
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         created = true;
-        console.log('GoLogin profil créé via Cloudflare Worker:', profileName);
+        createdId = data?.id || null;
+        console.log('GoLogin profil créé via Cloudflare Worker:', profileName, createdId);
       } else {
         const txt = await res.text();
         console.warn('GoLogin Cloudflare Worker status:', res.status, txt);
@@ -4303,8 +4306,10 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
         body: JSON.stringify(profileBody)
       }, 12000);
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         created = true;
-        console.log('GoLogin profil créé via API Cloud direct:', profileName);
+        createdId = data?.id || null;
+        console.log('GoLogin profil créé via API Cloud direct:', profileName, createdId);
       }
     } catch (e) {
       console.warn('GoLogin Cloud API error:', e?.message || e);
@@ -4321,8 +4326,10 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
         body: JSON.stringify(profileBody)
       }, 8000);
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         created = true;
-        console.log('GoLogin profil créé via API locale:', profileName);
+        createdId = data?.id || null;
+        console.log('GoLogin profil créé via API locale:', profileName, createdId);
       }
     } catch (e) {
       console.warn('GoLogin API locale indisponible:', e?.message || e);
@@ -4330,7 +4337,13 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   }
 
   if (created) {
-    showToast(`✅ Profil GoLogin "${profileName}" créé avec proxy Decodo (🇫🇷 ${citySlug}) !`, 'success', 6000);
+    if (createdId) {
+      try {
+        const localPort = localStorage.getItem('gologin_port') || '36912';
+        await fetch(`http://127.0.0.1:${localPort}/browser/start-profile?profileId=${createdId}`, { method: 'GET' }).catch(() => {});
+      } catch (e) {}
+    }
+    showToast(`✅ Profil GoLogin "${profileName}" prêt avec proxy Decodo (🇫🇷 ${citySlug}) !`, 'success', 6000);
     return profileName;
   } else {
     console.warn('GoLogin: création non aboutie (fallback DonutBrowser disponible).');
