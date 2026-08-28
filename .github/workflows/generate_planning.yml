@@ -1,12 +1,15 @@
 name: Génération planning quotidien GMB
 
 on:
+  schedule:
+    # Exécution automatique chaque jour à 00h30 heure de Thaïlande (UTC+7 -> 17h30 UTC la veille)
+    - cron: '30 17 * * *'
   workflow_dispatch:
     inputs:
       quota:
-        description: "Quota des nouveaux VA (Korail/Anjara/Kintana/Aina) — Kevin/Fif restent à 50"
+        description: "Quota des opérateurs (Kevin/Fif à 50)"
         required: false
-        default: "40"
+        default: "50"
 
 jobs:
   planning:

@@ -464,7 +464,6 @@ def main():
     # Pool de gmails par opérateur — stratégie Kevin généralisée :
     # chaque VA pioche dans SES gmails perso + le pool commun des gmails "AUCUN"
     # (anciens comptes réutilisables, partagés par toute l'équipe).
-    is_solo_aina = today_str in AINA_SOLO_DATES
     pools = {}
     for operateur in operateurs_actifs:
         pools[operateur] = {
@@ -473,10 +472,8 @@ def main():
             or g not in gmail_operateur              # + pool commun (gmails sans opérateur)
         }
 
-    # Quotas du jour (rattrapage Aina : 25 pour équilibrer samedi/dimanche)
+    # Quotas du jour par opérateur
     quotas_jour = dict(QUOTAS)
-    if is_solo_aina:
-        quotas_jour["Aina"] = AINA_SOLO_QUOTA
 
     gmails_utilises = {op: set() for op in operateurs_actifs}
     gmails_used_today = set()   # garde-fou global : un gmail ne sert qu'une fois par jour, tous VA confondus
