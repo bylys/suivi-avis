@@ -2310,7 +2310,17 @@ function extraireVilleFiche(nomFiche) {
     'Réparation', 'Reparation', 'Rénovation', 'Renovation', 'Dépannage', 'Depannage', 'Remorquage', 'Auto', 'Voiture',
     'Garage', 'Jardinage', 'Jardin', 'Bâtiment', 'Batiment', 'Couverture'
   ];
-  const INVALID_CITIES = new Set(['haut', 'bas', 'grand', 'petit', 'nord', 'sud', 'est', 'ouest', 'centre', 'pro', 'plus', 'france', 'idf', 'et', 'de', 'du', 'des', 'le', 'la', 'les', 'en', 'sur', 'sous', 'par', 'pour', 'avec', 'dans', 'd', 'l', 'un', 'une', 'haie', 'haies', 'arbre', 'arbres', 'toit', 'toiture', 'facade']);
+  const INVALID_CITIES = new Set([
+    'haut', 'haute', 'hauts', 'hautes',
+    'bas', 'basse', 'basses',
+    'grand', 'grande', 'grands', 'grandes',
+    'petit', 'petite', 'petits', 'petites',
+    'nord', 'sud', 'est', 'ouest', 'centre',
+    'pro', 'plus', 'expert', 'service', 'services', 'concept', 'travaux', 'chantier', 'chantiers',
+    'france', 'idf', 'ile de france', 'national', 'regional', 'region', 'departement',
+    'et', 'de', 'du', 'des', 'le', 'la', 'les', 'en', 'sur', 'sous', 'par', 'pour', 'avec', 'dans', 'a', 'au', 'aux', 'chez',
+    'd', 'l', 'un', 'une', 'haie', 'haies', 'arbre', 'arbres', 'toit', 'toiture', 'facade', 'facades', 'peinture', 'elagage', 'abattage', 'jardin', 'terrasse'
+  ]);
 
   const chunks = rawStr.split(/\s+[-–—]\s+/);
   for (let i = chunks.length - 1; i >= 0; i--) {
