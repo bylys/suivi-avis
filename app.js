@@ -2145,14 +2145,25 @@ function extraireVilleFiche(nomFiche) {
   // 2. Dictionnaire exhaustif des villes connues (France, Belgique, Suisse, Luxembourg, Canada)
   // Recherche par ordre décroissant de longueur pour éviter les faux positifs (ex: Bourg-en-Bresse avant Bresse)
   const VILLES_CONNUES = {
+    // Villes avec articles préservés
+    'la roche sur yon': 'La Roche-sur-Yon', 'le puy en velay': 'Le Puy-en-Velay', 'le havre': 'Le Havre',
+    'la rochelle': 'La Rochelle', 'le mans': 'Le Mans', 'les sables d olonne': 'Les Sables-d\'Olonne',
+    'la ciotat': 'La Ciotat', 'la seyne sur mer': 'La Seyne-sur-Mer', 'le cannet': 'Le Cannet',
+    'le grand quevilly': 'Le Grand-Quevilly', 'la chapelle sur erdre': 'La Chapelle-sur-Erdre',
+    'la garde': 'La Garde', 'le bouscat': 'Le Bouscat', 'le kremlin bicetre': 'Le Kremlin-Bicêtre',
+    'le blanc mesnil': 'Le Blanc-Mesnil', 'le perreux sur marne': 'Le Perreux-sur-Marne',
+    'l hay les roses': 'L\'Haÿ-les-Roses', 'la courneuve': 'La Courneuve', 'les pavillons sous bois': 'Les Pavillons-sous-Bois',
+    'les mureaux': 'Les Mureaux', 'la garenne colombes': 'La Garenne-Colombes', 'le raincy': 'Le Raincy',
+    'les lilas': 'Les Lilas', 'l isle d abeau': 'L\'Isle-d\'Abeau', 'l isle sur la sorgue': 'L\'Isle-sur-la-Sorgue',
+    'le cres': 'Le Crès', 'la possession': 'La Possession', 'le port': 'Le Port', 'le tampon': 'Le Tampon',
+    'saint lo': 'Saint-Lô', 'laon': 'Laon', 'sainte genevieve des bois': 'Sainte-Geneviève-des-Bois',
     // Villes majeures & moyennes France
-    'boulogne billancourt': 'Boulogne-Billancourt', 'clermont ferrand': 'Clermont-Ferrand', 'la roche sur yon': 'La Roche-sur-Yon',
+    'boulogne billancourt': 'Boulogne-Billancourt', 'clermont ferrand': 'Clermont-Ferrand',
     'saint etienne': 'Saint-Étienne', 'chalon sur saone': 'Chalon-sur-Saône', 'bourg en bresse': 'Bourg-en-Bresse',
     'aix en provence': 'Aix-en-Provence', 'saint herblain': 'Saint-Herblain', 'saint nazaire': 'Saint-Nazaire',
     'villeurbanne': 'Villeurbanne', 'saint quentin': 'Saint-Quentin', 'charleville mezieres': 'Charleville-Mézières',
     'chateauroux': 'Châteauroux', 'mont de marsan': 'Mont-de-Marsan', 'lons le saunier': 'Lons-le-Saunier',
-    'digne les bains': 'Digne-les-Bains', 'le puy en velay': 'Le Puy-en-Velay', 'saint brieuc': 'Saint-Brieuc',
-    'saint lo': 'Saint-Lô', 'la rochelle': 'La Rochelle', 'le havre': 'Le Havre', 'le mans': 'Le Mans',
+    'digne les bains': 'Digne-les-Bains', 'saint brieuc': 'Saint-Brieuc',
     'mulhouse': 'Mulhouse', 'strasbourg': 'Strasbourg', 'bordeaux': 'Bordeaux', 'toulouse': 'Toulouse',
     'marseille': 'Marseille', 'lyon': 'Lyon', 'nice': 'Nice', 'nantes': 'Nantes', 'montpellier': 'Montpellier',
     'lille': 'Lille', 'rennes': 'Rennes', 'reims': 'Reims', 'toulon': 'Toulon', 'grenoble': 'Grenoble',
@@ -2167,7 +2178,7 @@ function extraireVilleFiche(nomFiche) {
     'agen': 'Agen', 'rodez': 'Rodez', 'aurillac': 'Aurillac', 'moulins': 'Moulins', 'vichy': 'Vichy',
     'privas': 'Privas', 'aubenas': 'Aubenas', 'gap': 'Gap', 'chambery': 'Chambéry', 'dole': 'Dole',
     'vesoul': 'Vesoul', 'belfort': 'Belfort', 'chaumont': 'Chaumont', 'epinal': 'Épinal', 'bar le duc': 'Bar-le-Duc',
-    'verdun': 'Verdun', 'laon': 'Laon', 'soissons': 'Soissons', 'dieppe': 'Dieppe', 'alencon': 'Alençon',
+    'verdun': 'Verdun', 'soissons': 'Soissons', 'dieppe': 'Dieppe', 'alencon': 'Alençon',
     'flers': 'Flers', 'argentan': 'Argentan', 'cherbourg': 'Cherbourg', 'cholet': 'Cholet', 'saumur': 'Saumur',
     'reze': 'Rezé', 'perigueux': 'Périgueux', 'carcassonne': 'Carcassonne', 'narbonne': 'Narbonne',
     'beziers': 'Béziers', 'sete': 'Sète', 'agde': 'Agde', 'ales': 'Alès', 'arles': 'Arles', 'aubagne': 'Aubagne',
