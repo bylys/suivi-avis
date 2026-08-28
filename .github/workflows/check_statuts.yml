@@ -2,8 +2,8 @@ name: Vérification automatique statuts avis
 
 on:
   schedule:
-    # Chaque nuit à 1h00 heure de Paris (UTC+2 en été = 23h UTC)
-    - cron: "0 23 * * *"
+    # Chaque jour à 8h00 heure de Thaïlande (UTC+7 -> 01h00 UTC)
+    - cron: "0 1 * * *"
   workflow_dispatch:
 
 jobs:
