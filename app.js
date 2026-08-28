@@ -4248,7 +4248,8 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
       enableMasking: false,
       families: ['Roboto', 'Noto Sans', 'Google Sans']
     } : {
-      enableMasking: false
+      enableMasking: false,
+      families: ['Arial', 'Helvetica', 'Times New Roman']
     },
     ...(isMobile ? {
       mobile: {
