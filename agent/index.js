@@ -918,8 +918,18 @@ async function main() {
                     ];
                     return pick(roofCleaningChoices);
                 }
-                if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('gutter')) {
-                    return 'nettoyage et vidage de gouttières (artisan retirant les feuilles et résidus accumulés dans la gouttière depuis une échelle, nettoyage au jet d\'eau, sans pose ni réfection)';
+                if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('chéneau') || f.includes('gutter')) {
+                    const gutterChoices = [
+                        'nettoyage et curage de gouttières (artisan retirant manuellement les feuilles et mousses de la gouttière et rinçage)',
+                        'débouchage de gouttières et descentes d\'eaux pluviales (furet de débouchage ou nettoyage de regard)',
+                        'nettoyage et curage complet de chéneaux encastrés sur toiture de maison ou immeuble',
+                        'réparation de gouttières et traitement des fuites de joints par un artisan',
+                        'pose de protège-gouttières, grilles et filets anti-feuilles avec crapaudines sur gouttières',
+                        'pose et remplacement de gouttières neuves en zinc ou PVC avec réglage des pentes',
+                        'pose haut de gamme de gouttières en cuivre avec soudures soignées sur maison de caractère',
+                        'pose de tuyaux de descentes d\'eaux pluviales et dauphins en fonte le long de la façade'
+                    ];
+                    return pick(gutterChoices);
                 }
                 if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit plat') || f.includes('toiture terrasse') || f.includes('terrasse toit plat') || f.includes('waterproof') || f.includes('waterproofing')) {
                     const etancheiteChoices = [
@@ -1044,6 +1054,7 @@ async function main() {
             const detectedTrade = detectMetierFromFiche(task.fiche_nom);
             // Mapping direct des services précis s'ils sont renseignés dans task.travaux
             const exactServiceMap = {
+                // Terrassement
                 'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
                 'nivellement de terrain': 'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
                 'vrd': 'travaux de VRD (Voirie et Réseaux Divers) et pose de gaines techniques dans tranchée ouverte',
@@ -1056,7 +1067,29 @@ async function main() {
                 'voie d\'accès': 'création de voie d\'accès et allée avec décaissement et empierrement concassé',
                 'murs de soutènement': 'construction de mur de soutènement de talus en blocs béton ou gabions',
                 'enrochement': 'enrochement de talus et pose de gros blocs de roches massives à la pelle mécanique',
-                'terrassement pour piscine': 'terrassement et creusement précis de terrain pour piscine enterrée avec mini-pelle'
+                'terrassement pour piscine': 'terrassement et creusement précis de terrain pour piscine enterrée avec mini-pelle',
+
+                // Gouttières & Chéneaux
+                'nettoyage & curage de gouttières': 'nettoyage et curage de gouttières avec retrait des feuilles et rinçage',
+                'nettoyage et curage de gouttières': 'nettoyage et curage de gouttières avec retrait des feuilles et rinçage',
+                'nettoyage gouttières': 'nettoyage et curage de gouttières avec retrait manuel des feuilles',
+                'nettoyage gouttieres': 'nettoyage et curage de gouttières avec retrait manuel des feuilles',
+                'débouchage de gouttières & descentes d\'eaux pluviales': 'débouchage de gouttières et descentes d\'eaux pluviales avec furet et vérification d\'écoulement',
+                'débouchage de gouttières': 'débouchage de gouttières et descentes d\'eaux pluviales',
+                'nettoyage de chéneaux': 'nettoyage et curage complet de chéneaux encastrés sur toiture de maison ou immeuble',
+                'nettoyage de chenaux': 'nettoyage et curage complet de chéneaux encastrés sur toiture de maison ou immeuble',
+                'réparation de gouttières & fuites': 'réparation de gouttières, reprise de fuites de joints et refixation de crochets',
+                'reparation de gouttieres': 'réparation de gouttières et reprise d\'étanchéité de joints',
+                'pose de protège-gouttières & filets anti-feuilles': 'pose de protège-gouttières, grilles pare-feuilles et crapaudines anti-débris',
+                'pose de protège-gouttières': 'pose de protège-gouttières et grilles anti-feuilles',
+                'pose de protege gouttieres': 'pose de protège-gouttières et grilles anti-feuilles',
+                'pose & remplacement de gouttières': 'pose et remplacement de gouttières neuves en zinc ou PVC avec réglage des pentes',
+                'pose et remplacement de gouttières': 'pose et remplacement de gouttières neuves en zinc ou PVC avec réglage des pentes',
+                'pose de gouttières': 'pose et remplacement de gouttières neuves avec réglage des pentes',
+                'gouttières cuivre': 'pose haut de gamme de gouttières en cuivre avec soudures soignées',
+                'gouttieres cuivre': 'pose haut de gamme de gouttières en cuivre avec soudures soignées',
+                'pose de descentes d\'eaux pluviales': 'pose de tuyaux de descentes d\'eaux pluviales avec colliers muraux et dauphin fonte',
+                'pose de descentes': 'pose de descentes d\'eaux pluviales le long de la façade'
             };
 
             const tNorm = (task.travaux || '').toLowerCase().trim();
@@ -1193,6 +1226,9 @@ async function main() {
             } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";
+            } else if (lowerLabel.includes('gouttière') || lowerLabel.includes('gouttiere') || lowerLabel.includes('chéneau') || lowerLabel.includes('cheneau') || lowerLabel.includes('descente')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: GUTTER WORK & MAINTENANCE (NETTOYAGE, CURAGE, DÉBOUCHAGE, RÉPARATION OU POSE DE GOUTTIÈRES ET CHÉNEAUX).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN élagage d'arbre, AUCUN abattage, AUCUNE dépanneuse, AUCUN terrassement lourd, AUCUN travailleur debout sans protection sur tuiles glissantes. UNIQUEMENT intervention ciblée sur gouttière de rive, chéneau encastré ou tuyau de descente pluviale.";
             }
 
             const coreTradeBlock = `\n🎯 OBJET UNIQUE ET OBLIGATOIRE DU CHANTIER :\n- Métier & Travaux réels : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;

@@ -24,7 +24,15 @@ ABSOLUTE PROHIBITION & SAFETY BAN:
 Worker MUST be standing safely on the GROUND with a telescopic lance OR inside an aerial basket lift.`,
   nettoyage_terrasse: `SAFETY RULES — Terrace / Deck cleaning: Ground level work on outdoor patio/deck/driveway. NO HARD HAT / NO HELMET on head (bare head or casual cap). High-pressure washer or patio cleaner attachment in use. Waterproof boots, work trousers. NEVER: bare feet, jet aimed at people.`,
   nettoyage_facade: `SAFETY RULES — Facade cleaning: High-pressure washer or softwash lance aimed at exterior wall. Scaffold or ground level. Hard hat MANDATORY if under scaffold. Safety goggles/visor + work boots.`,
-  nettoyage_gouttieres: `SAFETY RULES — Gutter cleaning: NEVER: worker standing on gutter channel, on top ladder rung, dangerously leaning sideways, improvised access (chair, crate). ALLOWED: simple ladder, 1 worker.`,
+  nettoyage_gouttieres: `SAFETY RULES — Gutter Cleaning & Gutter Installation (Nettoyage et Travaux de Gouttières):
+MANDATORY SAFETY PROTOCOL IN FRANCE:
+OPTION 1 (GROUND LEVEL): Cleaner operating from the ground using a long telescopic curved lance or inspecting drain collector at ground level.
+OPTION 2 (SECURED STEPLADDER): Worker on a stable stepladder with wall standoff bracket, wearing sturdy work gloves and protective glasses.
+OPTION 3 (SCAFFOLDING / MEWP): For high gutters or chéneaux on buildings, intervention from certified rolling scaffold or cherry picker basket.
+ABSOLUTE PROHIBITION & BAN:
+❌ NEVER stand directly inside the gutter channel or walk unsupported on wet roof slope!
+❌ NO dangerous leaning sideways off a ladder!
+❌ NO bare hands when handling sharp zinc, aluminium or copper gutter profiles.`,
   etancheite: `SAFETY RULES — Waterproofing & Roof Sealing: Single-family house terrace/balcony: 1 worker, NO HARD HAT / NO HELMET on head (bare head or cap). Warehouse / Building flat roof: minimum 2 workers, hard hats + high-vis vests + safety boots. EPDM membrane, PVC or bitumen rolls being torched/welded or applied with roller. NEVER: worker standing on parapet edge, blowtorch aimed toward another worker, access hatch blocked by rolls.`,
   ravalement: `SAFETY RULES — Facade rendering: Scaffold above 2m: mandatory guardrail on void side. NEVER: worker leaning beyond guardrail.`,
   maconnerie: `SAFETY RULES — Masonry: NEVER: worker above unfinished wall at more than 1.5m without scaffold. All workers ground level beside wall (max 1.0-1.2m during block construction).`,
@@ -55,11 +63,21 @@ const VISUAL_RULES_BY_SERVICE = {
   'Remplacement tuiles': `VISUAL: Targeted tile replacement. Roofers at ground level handling tiles or on roofer scaffold.`,
   'Faitage et Rive': `VISUAL: Roofers working on ridge capping or verge edging from scaffolding with safety harness.`,
   'Charpente': `VISUAL: Wooden roof trusses or rafters visible, minimum 2 carpenters working with circular saw or nail gun, safety harness connected, hard hats mandatory.`,
-  'Nettoyage gouttieres': `VISUAL: Gutter visible and accessible, active intervention at gutter or downpipe level from ground or small stepladder.`,
-  'Debouchage gouttieres': `VISUAL: Gutter and downpipe visible, active intervention at downpipe level.`,
-  'Ravalement facade': `VISUAL: Scaffold visible, worker applying render with float, freshly applied coat on part of facade.`,
-  'Demossage toiture': `VISUAL: Roof moss removal and treatment. Cleaner standing on the GROUND holding a long TELESCOPIC LANCE spraying the roof from below OR working from an aerial cherry picker basket. ABSOLUTE BAN: NO worker climbing tall extension ladders or standing freely on wet sloped tiles!`,
-  'Nettoyage toiture': `VISUAL: Roof cleaning. Cleaner standing on the GROUND holding a long TELESCOPIC LANCE spraying the roof from below OR working from an aerial cherry picker basket. ABSOLUTE BAN: NO worker standing freely on wet sloped tiles!`,
+  'Nettoyage & curage de gouttières': `VISUAL: Gutter cleaning and curage. Artisan wearing sturdy work gloves scooping out accumulated wet leaves, moss and debris from half-round zinc/PVC gutter into a hanging bucket, rinsing gutter channel with water hose and testing downpipe drainage.`,
+  'Nettoyage et curage de gouttières': `VISUAL: Gutter cleaning and curage. Artisan scooping out leaves and moss from roof gutter into a bucket, rinsing gutter channel with water hose.`,
+  'Nettoyage gouttieres': `VISUAL: Gutter cleaning and curage. Worker removing leaves and silt from gutter trough, checking flow into downpipe.`,
+  'Débouchage de gouttières & descentes d\'eaux pluviales': `VISUAL: Rainwater downpipe unblocking. Artisan clearing blocked elbow or vertical downpipe using plumber pipe snake or pressure unblocker, water draining freely into ground drainage gully.`,
+  'Débouchage de gouttières': `VISUAL: Rainwater downpipe unblocking. Clearing obstruction from vertical downpipe or collector elbow, water flow restored.`,
+  'Nettoyage de chéneaux': `VISUAL: Parapet and boxed gutter cleaning (nettoyage de chéneaux encastrés). Artisan carefully cleaning wide built-in metal/zinc gutter behind parapet wall on house or classic building, clearing silt and checking water outlets.`,
+  'Réparation de gouttières & fuites': `VISUAL: Gutter leak repair. Artisan repairing leaking joint or seam on zinc/PVC gutter with waterproofing sealant mastic or soldering tool, refastening loose gutter bracket hooks on fascia board.`,
+  'Réparation de gouttières': `VISUAL: Gutter repair and leak sealing. Artisan applying sealant mastic to joint and securing loose gutter brackets.`,
+  'Pose de protège-gouttières & filets anti-feuilles': `VISUAL: Installing gutter guards (pose de protège-gouttières et grilles anti-feuilles). Artisan clipping continuous perforated gutter leaf guards and mesh filters with downpipe strainers (crapaudines) over gutter trough to keep leaves out.`,
+  'Pose de protège-gouttières': `VISUAL: Installing perforated gutter leaf guard mesh and downpipe balloon strainers (crapaudines) along gutter channel.`,
+  'Pose & remplacement de gouttières': `VISUAL: Installing new zinc, PVC or aluminium gutters. Artisan mounting new gutter section into gutter brackets (crochets bandeau) along roof eaves, checking slope alignment with spirit level.`,
+  'Pose de gouttières': `VISUAL: Installing new zinc or PVC gutters with slope alignment, brackets and downpipe fittings.`,
+  'Gouttières cuivre': `VISUAL: Premium copper gutter installation (gouttières en cuivre). Artisan fitting shining natural copper gutter profiles and soldered copper downpipes on character home or heritage property.`,
+  'Pose de descentes d\'eaux pluviales': `VISUAL: Rainwater downpipe installation. Artisan attaching vertical rainwater downpipe pipe to exterior rendered wall with wall bracket collars, connecting cast iron boot (dauphin fonte) at ground level.`,
+  'Pose de descentes': `VISUAL: Rainwater downpipe installation with wall collars and drainage shoe connection along facade wall.`,
   'Mur parpaing': `VISUAL: Grey concrete blocks, worker at ground level, trowel and mortar visible.`,
   'Mur brique': `VISUAL: Red or orange bricks, mortar between joints, worker laying bricks at ground level.`,
   'Rejointoiement': `VISUAL: Joints between elements visible, grouting gun or trowel in use, no paint on facade.`,
