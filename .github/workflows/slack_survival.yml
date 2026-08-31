@@ -1,9 +1,6 @@
 name: Slack — Rapport survie J+30
 
 on:
-  schedule:
-    # 1er et 15 du mois à 9h30 Paris (UTC+2 en été = 7h30 UTC)
-    - cron: "30 7 1,15 * *"
   workflow_dispatch:
     inputs:
       force_full:
