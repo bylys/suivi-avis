@@ -390,6 +390,15 @@ def main():
     gmail_ville    = {g['email'].lower(): g['ville']      for g in gmails_data if g['ville']}
     gmail_operateur = {g['email'].lower(): g['operateur'] for g in gmails_data if g.get('operateur')}
 
+    # Charger les statuts personnalisés (Fonctionnel, Chauffe en cours, Indisponible)
+    gmail_statuses = {}
+    try:
+        st_rows = sb_get("fiches?nom=eq.GMAIL_STATUSES&select=lien")
+        if st_rows and len(st_rows) > 0 and st_rows[0].get("lien"):
+            gmail_statuses = json.loads(st_rows[0]["lien"])
+    except Exception as e:
+        print(f"Statuts gmails non chargés: {e}")
+
     # Déduire la ville de chaque fiche depuis l'historique (vote majoritaire)
     fiche_villes_votes = defaultdict(list)
     for a in all_avis:
@@ -447,15 +456,15 @@ def main():
     # Trier par ancienneté décroissante (priorité aux fiches les plus anciennes)
     fiches_dispo.sort(key=lambda fn: (today - last_fiche_date[fn]).days, reverse=True)
 
-    # Gmails éligibles : jamais utilisés OU cooldown passé
-    # (inclut les gmails SANS ville — rattachés à une ville lors de leur 1re utilisation)
+    # Gmails éligibles : statut 'Fonctionnel' + jamais utilisés OU cooldown passé
+    # (les comptes 'Chauffe en cours' et 'Indisponible' sont exclus)
     gmails_dispo = {
         g for g in all_gmails
-        if g not in last_gmail_date
-        or (today - last_gmail_date[g]).days >= DELAI_GMAIL_JOURS
+        if gmail_statuses.get(g, "Fonctionnel") == "Fonctionnel"
+        and (g not in last_gmail_date or (today - last_gmail_date[g]).days >= DELAI_GMAIL_JOURS)
     }
 
-    print(f"Fiches dispo : {len(fiches_dispo)} | Gmails dispo : {len(gmails_dispo)}")
+    print(f"Fiches dispo : {len(fiches_dispo)} | Gmails dispo (Fonctionnels + Cooldown) : {len(gmails_dispo)}")
 
     # Générer les assignations en round-robin (répartition équitable des fiches)
     planning_rows = []

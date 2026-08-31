@@ -318,6 +318,11 @@
     <form id="form-gmail" onsubmit="addGmail(event)" style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;align-items:center;">
       <input type="email" id="gmail-email" placeholder="exemple@gmail.com" required style="flex:2;min-width:180px;width:auto;display:inline-block;" />
       <input type="text" id="gmail-ville" placeholder="Ville (optionnel)" style="flex:1;min-width:120px;width:auto;display:inline-block;" />
+      <select id="gmail-statut" style="padding:8px 10px;border-radius:6px;background:#1e293b;color:#f1f5f9;border:1px solid #334155;font-size:0.88rem;outline:none;">
+        <option value="Fonctionnel">🟢 Fonctionnel</option>
+        <option value="Chauffe en cours">🔥 Chauffe en cours</option>
+        <option value="Indisponible">⛔ Indisponible</option>
+      </select>
       <label class="checkbox-label" style="margin:0;white-space:nowrap;flex-shrink:0;">
         <input type="checkbox" id="gmail-local-guide" />
         ⭐ Local Guide
@@ -328,6 +333,16 @@
       <div class="gmail-search-wrap">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="gmail-filter-ville" placeholder="Rechercher par email ou ville..." oninput="renderGmails()" />
+      </div>
+      <div class="gmail-toolbar-sep"></div>
+      <div class="gmail-sort-wrap">
+        <select id="gmail-filter-statut" onchange="renderGmails()">
+          <option value="">Tous les statuts</option>
+          <option value="Fonctionnel">🟢 Fonctionnel</option>
+          <option value="Chauffe en cours">🔥 Chauffe en cours</option>
+          <option value="Indisponible">⛔ Indisponible</option>
+        </select>
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="gmail-toolbar-sep"></div>
       <div class="gmail-sort-wrap">

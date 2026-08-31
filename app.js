@@ -4817,7 +4817,51 @@ async function planningSkip(id) {
 // ── GMAILS ──
 
 async function getGmails() {
-  return await sbGet('gmails', 'select=*&order=ville.asc,email.asc');
+// ── GMAIL STATUSES (Fonctionnel, Chauffe en cours, Indisponible) ──
+let _gmailStatusesCache = null;
+
+async function getGmailStatuses() {
+  if (_gmailStatusesCache) return _gmailStatusesCache;
+  try {
+    const local = localStorage.getItem('gmb_gmail_statuses');
+    if (local) _gmailStatusesCache = JSON.parse(local);
+  } catch (e) {}
+
+  try {
+    const rows = await sbGet('fiches', 'select=lien&nom=eq.GMAIL_STATUSES');
+    if (rows && rows.length > 0 && rows[0].lien) {
+      _gmailStatusesCache = JSON.parse(rows[0].lien);
+      localStorage.setItem('gmb_gmail_statuses', JSON.stringify(_gmailStatusesCache));
+    }
+  } catch (e) {}
+
+  if (!_gmailStatusesCache) _gmailStatusesCache = {};
+  return _gmailStatusesCache;
+}
+
+async function updateGmailStatus(email, newStatus) {
+  if (!email) return;
+  const emKey = email.toLowerCase().trim();
+  const statuses = await getGmailStatuses();
+  statuses[emKey] = newStatus;
+  _gmailStatusesCache = statuses;
+  localStorage.setItem('gmb_gmail_statuses', JSON.stringify(statuses));
+
+  // Sauvegarde Supabase
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/fiches?nom=eq.GMAIL_STATUSES`, {
+      method: 'DELETE',
+      headers: SB_HEADERS
+    });
+    await fetch(`${SUPABASE_URL}/rest/v1/fiches`, {
+      method: 'POST',
+      headers: { ...SB_HEADERS, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ nom: 'GMAIL_STATUSES', lien: JSON.stringify(statuses) })
+    });
+  } catch (e) {
+    console.error('Erreur sauvegarde statut gmail:', e);
+  }
+  renderGmails();
 }
 
 async function renderGmails() {
@@ -4825,9 +4869,10 @@ async function renderGmails() {
   if (!container) return;
   container.innerHTML = '<p style="color:#64748b;">Chargement...</p>';
 
-  const [gmails, avis] = await Promise.all([
+  const [gmails, avis, statuses] = await Promise.all([
     getGmails(),
-    sbGet('avis', 'select=auteur,date&order=date.desc')
+    sbGet('avis', 'select=auteur,date&order=date.desc'),
+    getGmailStatuses()
   ]);
 
   if (!gmails.length) {
@@ -4856,10 +4901,27 @@ async function renderGmails() {
   });
 
   const filterQuery    = (document.getElementById('gmail-filter-ville')?.value || '').toLowerCase().trim();
+  const filterStatut   = document.getElementById('gmail-filter-statut')?.value || '';
   const filterOp       = document.getElementById('gmail-filter-operateur')?.value || '';
   const sort           = document.getElementById('gmail-filter-sort')?.value || 'az';
 
+  // Calcul des compteurs par statut
+  let countFonctionnel = 0;
+  let countChauffe     = 0;
+  let countIndispo     = 0;
+
+  gmails.forEach(g => {
+    const emKey = (g.email || '').toLowerCase().trim();
+    const st = statuses[emKey] || 'Fonctionnel';
+    if (st === 'Chauffe en cours') countChauffe++;
+    else if (st === 'Indisponible') countIndispo++;
+    else countFonctionnel++;
+  });
+
   let list = gmails.filter(g => {
+    const emKey = (g.email || '').toLowerCase().trim();
+    const st = statuses[emKey] || 'Fonctionnel';
+    if (filterStatut && st !== filterStatut) return false;
     if (filterQuery && !((g.ville || '').toLowerCase().includes(filterQuery) || (g.email || '').toLowerCase().includes(filterQuery))) return false;
     if (filterOp === '__none__' && g.operateur) return false;
     if (filterOp && filterOp !== '__none__' && g.operateur !== filterOp) return false;
@@ -4872,17 +4934,27 @@ async function renderGmails() {
   if (sort === 'ancien')  list.sort((a, b) => (derniereUtilisation[a.email] || '9999') > (derniereUtilisation[b.email] || '9999') ? 1 : -1);
 
   container.innerHTML = `
-    <p style="color:#64748b;font-size:0.82rem;margin-bottom:0.5rem;">${list.length} Gmail${list.length > 1 ? 's' : ''}</p>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;">
+      <span style="color:#94a3b8;font-size:0.82rem;font-weight:600;">${list.length} Gmail${list.length > 1 ? 's' : ''} affiché${list.length > 1 ? 's' : ''}</span>
+      <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);">🟢 ${countFonctionnel} Fonctionnel${countFonctionnel > 1 ? 's' : ''}</span>
+      <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">🔥 ${countChauffe} Chauffe en cours</span>
+      <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);">⛔ ${countIndispo} Indisponible${countIndispo > 1 ? 's' : ''}</span>
+    </div>
     <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
       <thead><tr style="background:#1e293b;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">
         <th style="padding:10px;text-align:left;">Email</th>
         <th style="padding:10px;text-align:left;">Ville</th>
+        <th style="padding:10px;text-align:center;">Statut</th>
         <th style="padding:10px;text-align:center;">Local Guide</th>
         <th style="padding:10px;text-align:left;">Dernière utilisation</th>
         <th style="padding:10px;"></th>
       </tr></thead>
       <tbody>
         ${list.map(g => {
+          const emKey = (g.email || '').toLowerCase().trim();
+          const st = statuses[emKey] || 'Fonctionnel';
+          const stClass = st === 'Chauffe en cours' ? 'status-chauffe' : (st === 'Indisponible' ? 'status-indisponible' : 'status-fonctionnel');
+
           const lastUse = derniereUtilisation[g.email];
           const lastLabel = lastUse ? lastUse.split('-').reverse().join('/') : '–';
           const villeCell = g.ville
@@ -4907,6 +4979,13 @@ async function renderGmails() {
               ${pts > 0 ? `<div style="font-size:11px;color:#f59e0b;margin-top:2px;" title="${_escHtml(ptsTooltip)}">⚡ ~${pts} pts est. (${photosCount} 📷)</div>` : ''}
             </td>
             <td style="padding:10px;">${villeCell}</td>
+            <td style="padding:10px;text-align:center;">
+              <select class="gmail-status-select ${stClass}" onchange="updateGmailStatus('${(g.email || '').replace(/'/g, "\\'")}', this.value)">
+                <option value="Fonctionnel" ${st === 'Fonctionnel' ? 'selected' : ''}>🟢 Fonctionnel</option>
+                <option value="Chauffe en cours" ${st === 'Chauffe en cours' ? 'selected' : ''}>🔥 Chauffe en cours</option>
+                <option value="Indisponible" ${st === 'Indisponible' ? 'selected' : ''}>⛔ Indisponible</option>
+              </select>
+            </td>
             <td style="padding:10px;text-align:center;">
               ${(() => {
                 const lvl = g.local_guide_level || (g.local_guide ? 5 : 0);
@@ -4935,10 +5014,15 @@ async function addGmail(e) {
   e.preventDefault();
   const email       = document.getElementById('gmail-email').value.trim();
   const ville       = document.getElementById('gmail-ville').value.trim();
+  const statut      = document.getElementById('gmail-statut')?.value || 'Fonctionnel';
   const local_guide = document.getElementById('gmail-local-guide').checked;
 
   const ok = await sbInsert('gmails', { email, ville: ville || null, local_guide });
   if (!ok) return;
+
+  if (statut && statut !== 'Fonctionnel') {
+    await updateGmailStatus(email, statut);
+  }
 
   document.getElementById('form-gmail').reset();
   renderGmails();

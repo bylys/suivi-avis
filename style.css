@@ -1766,6 +1766,51 @@ body.light-theme #notes-textarea {
   color: #f87171;
 }
 
+/* ── Statuts GMails : Fonctionnel, Chauffe en cours, Indisponible ── */
+.gmail-status-select {
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+}
+.gmail-status-select.status-fonctionnel {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+.gmail-status-select.status-chauffe {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fbbf24;
+}
+.gmail-status-select.status-indisponible {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+body.light-theme .gmail-status-select.status-fonctionnel {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+body.light-theme .gmail-status-select.status-chauffe {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #b45309;
+}
+body.light-theme .gmail-status-select.status-indisponible {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
 /* Interrupteur Switch Theme (Lune / Soleil) */
 .theme-switch {
   position: relative;
