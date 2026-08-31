@@ -911,7 +911,12 @@ async function main() {
                 
                 // 1. Spécialités spécifiques Toiture & Extérieur (FR & EN)
                 if (hasRoofCleaning || f.includes('pressure wash') || f.includes('power wash') || f.includes('soft wash') || f.includes('softwash')) {
-                    return 'démoussage, traitement hydrofuge et nettoyage haute pression de toiture (nettoyage des tuiles au jet haute pression)';
+                    const roofCleaningChoices = [
+                        'démoussage et traitement hydrofuge de toiture (artisan au sol avec perche télescopique de pulvérisation)',
+                        'nettoyage haute pression et traitement de toiture au sol avec perche télescopique de nettoyage',
+                        'démoussage de toiture réalisé depuis une nacelle élévatrice sécurisée avec perche de pulvérisation'
+                    ];
+                    return pick(roofCleaningChoices);
                 }
                 if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('gutter')) {
                     return 'nettoyage et vidage de gouttières (artisan retirant les feuilles et résidus accumulés dans la gouttière depuis une échelle, nettoyage au jet d\'eau, sans pose ni réfection)';
@@ -955,9 +960,9 @@ async function main() {
                 // 3. Couverture, Couvreur & Réfection de Toiture (FR & EN)
                 if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage') || f.includes('zinguerie') || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle')) {
                     const roofingChoices = [
-                        'travaux de couverture, pose et réfection de tuiles en terre cuite par un couvreur (artisan sur échelle de toit)',
-                        'travaux de couverture et étanchéité de faîtage de toiture',
-                        'travaux de zinguerie, étanchéité et finition de toiture par un artisan couvreur'
+                        'travaux de couverture et réfection de tuiles en terre cuite par des artisans couvreurs avec échafaudage de sécurité',
+                        'travaux de couverture, préparation et pose de tuiles par des artisans couvreurs au sol et sur échafaudage',
+                        'travaux de zinguerie, étanchéité et finition de toiture par des artisans couvreurs avec échafaudage'
                     ];
                     return pick(roofingChoices);
                 }

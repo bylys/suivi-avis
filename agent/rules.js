@@ -3,8 +3,25 @@
  */
 
 const SAFETY_RULES = {
-  toiture: `SAFETY RULES — Roofing: Minimum 2 workers visible. MANDATORY ROOF LADDER RULE: If a roofer is working on the roof slope, the roof ladder MUST reach all the way up and have its top ridge hooks (crochets de faîtage) SECURELY HOOKED OVER THE TOP RIDGE OF THE ROOF (faîtage). NEVER allow a roof ladder that stops floating mid-slope without being hooked over the ridge! IF THE LADDER IS NOT HOOKED OVER THE TOP RIDGE, THEN BOTH WORKERS MUST STAND AT GROUND LEVEL (in the yard/driveway), looking up at the roof structure, carrying replacement terracotta tiles, or preparing tools at ground level. ABSOLUTE PROHIBITION: NO unhooked mid-slope ladders, NO loose stacks of tiles floating on open laths. Connected safety harness is MANDATORY for any worker on roof slope.`,
-  nettoyage_toiture: `SAFETY RULES — Roof cleaning & Moss removal: Minimum 2 workers visible. Worker on roof ladder MUST have the ladder top ridge hooks SECURELY HOOKED OVER THE TOP RIDGE (faîtage), with connected safety harness. IF NOT HOOKED AT THE TOP RIDGE, BOTH WORKERS MUST STAY AT GROUND LEVEL operating the pressure washer or inspecting the roof from below. Hard hat MANDATORY. NEVER: unhooked ladder floating mid-roof, worker standing freely on tiles without harness.`,
+  toiture: `SAFETY RULES — Roofing & Roof Renovation (Couvreur / Rénovation de toiture):
+MANDATORY PROFESSIONAL PROTOCOL IN FRANCE:
+Minimum 2 workers visible.
+POSITION A (SCAFFOLDING): Roofers working safely from a certified facade scaffolding platform (échafaudage de couvreur avec garde-corps) along the roof edge/eaves.
+POSITION B (GROUND LEVEL): Both roofers working at GROUND LEVEL in the driveway or garden, preparing new terracotta tiles, cutting zinc flashing on a portable workbench, or inspecting the roof from below.
+ABSOLUTE PROHIBITION & SAFETY BAN:
+❌ NO giant tall extension ladders leaning against the house reaching up to the roof slope!
+❌ NO lone worker standing unsupported on steep roof slope!
+❌ NO unsafe balancing on wet or steep tiles!`,
+
+  nettoyage_toiture: `SAFETY RULES — Roof Cleaning & Moss Removal (Nettoyage Toiture & Démoussage):
+MANDATORY PROFESSIONAL PROTOCOL IN FRANCE:
+OPTION 1 (GROUND LEVEL TELESCOPIC LANCE - STANDARD): The cleaner stands safely on the GROUND (in the courtyard, driveway, or garden) holding a long black TELESCOPIC CARBON SPRAY LANCE (perche télescopique de pulvérisation) spraying the roof tiles from below.
+OPTION 2 (AERIAL BASKET LIFT / NACELLE): Cleaner working safely inside an aerial cherry picker basket (nacelle élévatrice) parked beside the house.
+ABSOLUTE PROHIBITION & SAFETY BAN:
+❌ NEVER place a worker standing freely on steep sloped roof tiles while spraying water!
+❌ NO single extension ladders leaning against the gutter or roof slope!
+❌ NO worker balancing on wet slippery roof tiles!
+Worker MUST be standing safely on the GROUND with a telescopic lance OR inside an aerial basket lift.`,
   nettoyage_terrasse: `SAFETY RULES — Terrace / Deck cleaning: Ground level work on outdoor patio/deck/driveway. NO HARD HAT / NO HELMET on head (bare head or casual cap). High-pressure washer or patio cleaner attachment in use. Waterproof boots, work trousers. NEVER: bare feet, jet aimed at people.`,
   nettoyage_facade: `SAFETY RULES — Facade cleaning: High-pressure washer or softwash lance aimed at exterior wall. Scaffold or ground level. Hard hat MANDATORY if under scaffold. Safety goggles/visor + work boots.`,
   nettoyage_gouttieres: `SAFETY RULES — Gutter cleaning: NEVER: worker standing on gutter channel, on top ladder rung, dangerously leaning sideways, improvised access (chair, crate). ALLOWED: simple ladder, 1 worker.`,
@@ -31,17 +48,18 @@ const VISUAL_RULES_BY_SERVICE = {
   'Taille arbre haute tige': `VISUAL: TALL TREE (Arbre haute tige > 8m): MANDATORY SAFETY GLASSES on climber and assistant. Arborist climbing harness + ropes anchored high in main crotch. Realistic human-to-tree scale mandatory.`,
   'Elagage arbre': `VISUAL: SMALL/MEDIUM GARDEN TREE (< 5m): Gardener standing on a double A-frame garden step-ladder (escabeau double de jardin) or at ground level trimming branches with hand saw or secateurs. NO CLIMBING HARNESS! NO ROPES ON TRUNK! MANDATORY SAFETY GLASSES on eyes.`,
   'Elalgage en hauteur': `VISUAL: TALL TREE (High-canopy > 8m): Climbing harness + ropes anchored high in main crotch. Minimum 2 workers.`,
-  'Reparation toiture': `VISUAL: Targeted roof tile repair. Roofer on roof-ladder (SECURELY HOOKED AT TOP RIDGE WITH RIDGE HOOKS) replacing 1 or 2 damaged tiles, or both roofers standing at ground level inspecting roof. Spare terracotta tiles sitting nearby. ABSOLUTE PROHIBITION: NO unhooked ladder floating mid-slope!`,
-  'Renovation tuiles toiture': `VISUAL: Mostly finished tiled roof with roofer on roof ladder HOOKED OVER TOP RIDGE (faîtage) performing tile maintenance, or both workers at ground level handling tiles.`,
-  'Changement tuiles': `VISUAL: Targeted tile replacement. Roofer on roof ladder HOOKED OVER TOP RIDGE replacing 1 or 2 broken tiles, or 2 roofers at ground level preparing new terracotta tiles. ABSOLUTE PROHIBITION: NO unhooked ladder floating mid-roof!`,
-  'Reparation tuiles': `VISUAL: Targeted tile repair. Roofer on roof ladder HOOKED OVER TOP RIDGE replacing 1 or 2 damaged tiles on a fully tiled roof, or 2 roofers at ground level observing roof. ABSOLUTE PROHIBITION: NO unhooked ladder floating mid-roof!`,
-  'Remplacement tuiles': `VISUAL: Targeted tile replacement. Roofer on roof ladder HOOKED OVER TOP RIDGE replacing 1 or 2 broken terracotta tiles on slope, or 2 roofers at ground level handling tiles. ABSOLUTE PROHIBITION: NO unhooked ladder floating mid-roof!`,
-  'Faitage et Rive': `VISUAL: Roofers working specifically on top ridge capping tiles (faîtage) or verge/bargeboard tile edging (rive) with mortar or zinc flashing, minimum 2 workers with connected harnesses.`,
+  'Reparation toiture': `VISUAL: Roof repair on house. Roofers working safely from scaffolding along roof edge OR at ground level handling terracotta tiles. ABSOLUTE PROHIBITION: NO worker climbing tall straight extension ladders leaning against roof slope!`,
+  'Renovation tuiles toiture': `VISUAL: Roofers with scaffolding or at ground level handling terracotta tiles for roof maintenance. ABSOLUTE PROHIBITION: NO worker standing freely on steep sloped roof without scaffold!`,
+  'Changement tuiles': `VISUAL: Targeted tile replacement. Roofers at ground level preparing new terracotta tiles or working from roofer scaffold.`,
+  'Reparation tuiles': `VISUAL: Targeted tile repair. Roofers at ground level handling terracotta tiles or on roofer scaffold.`,
+  'Remplacement tuiles': `VISUAL: Targeted tile replacement. Roofers at ground level handling tiles or on roofer scaffold.`,
+  'Faitage et Rive': `VISUAL: Roofers working on ridge capping or verge edging from scaffolding with safety harness.`,
   'Charpente': `VISUAL: Wooden roof trusses or rafters visible, minimum 2 carpenters working with circular saw or nail gun, safety harness connected, hard hats mandatory.`,
-  'Nettoyage gouttieres': `VISUAL: Gutter visible and accessible, active intervention at gutter or downpipe level.`,
+  'Nettoyage gouttieres': `VISUAL: Gutter visible and accessible, active intervention at gutter or downpipe level from ground or small stepladder.`,
   'Debouchage gouttieres': `VISUAL: Gutter and downpipe visible, active intervention at downpipe level.`,
   'Ravalement facade': `VISUAL: Scaffold visible, worker applying render with float, freshly applied coat on part of facade.`,
-  'Demossage toiture': `VISUAL: Moss or lichen visible on tiles, worker NOT standing freely on slope.`,
+  'Demossage toiture': `VISUAL: Roof moss removal and treatment. Cleaner standing on the GROUND holding a long TELESCOPIC LANCE spraying the roof from below OR working from an aerial cherry picker basket. ABSOLUTE BAN: NO worker climbing tall extension ladders or standing freely on wet sloped tiles!`,
+  'Nettoyage toiture': `VISUAL: Roof cleaning. Cleaner standing on the GROUND holding a long TELESCOPIC LANCE spraying the roof from below OR working from an aerial cherry picker basket. ABSOLUTE BAN: NO worker standing freely on wet sloped tiles!`,
   'Mur parpaing': `VISUAL: Grey concrete blocks, worker at ground level, trowel and mortar visible.`,
   'Mur brique': `VISUAL: Red or orange bricks, mortar between joints, worker laying bricks at ground level.`,
   'Rejointoiement': `VISUAL: Joints between elements visible, grouting gun or trowel in use, no paint on facade.`,
