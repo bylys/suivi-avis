@@ -688,12 +688,12 @@ async function main() {
 
         // 2. Collecte depuis Supabase (tables fiches et app_settings)
         try {
-            const { data: fichesData } = await supabase.from('fiches').select('nom, lien').ilike('nom', '%COOKIE%');
+            const { data: fichesData } = await supabase.from('fiches').select('nom, lien').or('nom.ilike.%COOKIE%,nom.ilike.%URL%,nom.ilike.%CONVERSATION%');
             if (fichesData && fichesData.length > 0) {
                 for (const item of fichesData) {
                     const k = (item.nom || '').toUpperCase();
                     const v = (item.lien || '').trim();
-                    if (v.length > 20) {
+                    if (v.length > 5) {
                         availableCookiesMap[k] = v;
                     }
                 }
@@ -706,7 +706,7 @@ async function main() {
                 for (const item of settingData) {
                     const k = (item.key || '').toUpperCase();
                     const v = (item.value || '').trim();
-                    if (v.length > 20 && k.includes('COOKIE')) {
+                    if (v.length > 5 && (k.includes('COOKIE') || k.includes('URL'))) {
                         if (!availableCookiesMap[k]) availableCookiesMap[k] = v;
                     }
                 }
