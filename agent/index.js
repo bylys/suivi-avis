@@ -1127,31 +1127,29 @@ async function main() {
             let negativeConstraint = "";
             const lowerLabel = travauxLabel.toLowerCase();
             
-            // Header de reset de contexte — force DALL-E 3 à ignorer les images précédentes du fil
-            let contextReset = "";
-            if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage') || lowerLabel.includes('façade') || lowerLabel.includes('terrasse')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: PRESSURE WASHING / SURFACE CLEANING workers only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO jackhammers, NO concrete demolition tools, NO jackhammering, NO heavy power tools breaking ground, NO trees being cut, NO arborists, NO chainsaws, NO towing trucks, NO cars. ONLY high-pressure washer or surface cleaning with water spray lance.";
+            // Header de reset de contexte ultra-strict — force DALL-E 3 à ignorer les images précédentes du fil unique
+            let contextReset = "🔴 NOUVELLE DEMANDE INDÉPENDANTE — IGNORE TOTALEMENT TOUTES LES IMAGES PRÉCÉDENTES DE CE FIL DE DISCUSSION.\nTHIS IS A COMPLETELY NEW AND INDEPENDENT PHOTO. DO NOT REUSE ANY PREVIOUS SCENE OR TRADE.\n\n";
+            if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage toiture') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture'))) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOF CLEANING & MOSS REMOVAL (NETTOYAGE HAUTE PRESSION DE TOITURE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre coupé, AUCUN élagage, AUCUN sécateur, AUCUN jardinier, AUCUNE dépanneuse. UNIQUEMENT nettoyage haute pression ou démoussage de tuiles sur toiture.";
             } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: TREE TRIMMING / ARBORIST / HEDGE CUTTING workers only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO tall straight extension ladders leaning against hedges, NO workers climbing tall leaning ladders against bushes, NO roof tiles, NO pressure washing, NO tow trucks, NO cars, NO facade scaffolding. ONLY ground-level hedge trimming or low A-frame garden step-ladder.";
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TREE TRIMMING & HEDGE CUTTING IN GARDEN (ÉLAGAGE D'ARBRE OU TAILLE DE HAIE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN nettoyeur haute pression sur tuiles. UNIQUEMENT des jardiniers taillant des végétaux ou arbres dans un jardin au sol.";
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROADSIDE BREAKDOWN / TOW TRUCK / AUTOMOTIVE REPAIR only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof workers, NO trees, NO scaffolding, NO pressure washers, NO garden tools. ONLY roadside vehicle towing or breakdown assistance with a tow truck.";
-            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('inondation') || lowerLabel.includes('infiltration')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: FLAT ROOF WATERPROOFING MEMBRANE / EPDM / PVC / SYNTHETIC RESIN ON FLAT ROOFTOP ONLY.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO sloped roofs! NO terracotta roof tiles! NO high-pressure jet washing of roof tiles! NO pitched house roofs! NO tree trimming! The building roof MUST be 100% FLAT (toit plat/terrasse). ONLY flat roof waterproofing membrane (EPDM, PVC, bitumen) applied with torch or resin roller on a flat rooftop surface.";
-            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('charpente') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: ROOFER / ROOF TILE REPLACEMENT / ROOFING WORK on a fully tiled finished roof only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO exposed bare wooden laths/battens, NO skeletal uncovered roof structure, NO giant tall extension ladders leaning against the front of the house reaching up the roof slope, NO single worker climbing a giant ladder in front of a house, NO hedge trimming, NO tree surgeons, NO pressure washing patio, NO tow trucks, NO arborists. ONLY roofing work on a fully tiled roof surface with a hooked roof ladder laid flat on tiles.";
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN & TOW TRUCK (DÉPANNAGE ET REMORQUAGE AUTO).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN jardinier. UNIQUEMENT assistance dépannage ou remorquage automobile avec dépanneuse.";
+            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING (ÉTANCHÉITÉ TOIT PLAT / TERRASSE EN RÉSINE OU MEMBRANE EPDM).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS de toit incliné, PAS de tuiles en terre cuite, AUCUN arbre, AUCUN élagage. Bâtiment à toit 100% PLAT uniquement.";
+            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('charpente') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUN nettoyeur de terrasse. UNIQUEMENT réfection ou pose de tuiles de toiture par un artisan couvreur.";
             } else if (lowerLabel.includes('peinture')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: INDOOR PAINTER / WALL PAINTING with roller and drop cloths only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO outdoor trees, NO tow trucks, NO pressure washers. ONLY indoor wall or ceiling painting in bathroom, kitchen, bedroom or living room.";
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: INDOOR WALL PAINTING (PEINTURE INTÉRIEURE AU ROULEAU).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN véhicule. UNIQUEMENT peinture intérieure de pièce.";
             } else if (lowerLabel.includes('carrelage') || lowerLabel.includes('faïence') || lowerLabel.includes('faience')) {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nThis image must show: TILER / FLOOR OR WALL TILING with tile spacers and trowel only.\nDO NOT reproduce or reference any previous image style. Start completely fresh.\n\n";
-                negativeConstraint = "\n\n❌ ABSOLUTE PROHIBITION: NO roof tiles, NO outdoor trees, NO tow trucks, NO painting rollers. ONLY indoor floor tiling or wall ceramic tile installation.";
-            } else {
-                contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nStart completely fresh with the following scene.\n\n";
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: INDOOR TILER (POSE DE CARRELAGE OU FAÏENCE INTÉRIEURE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre. UNIQUEMENT pose de carrelage au sol ou faïence murale.";
             }
 
             const coreTradeBlock = `\n🎯 OBJET UNIQUE ET OBLIGATOIRE DU CHANTIER :\n- Métier & Travaux réels : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;
@@ -1175,20 +1173,16 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        // Fil de discussion vierge à chaque image pour éliminer à 100% les hallucinations entre métiers
-                        let cleanChatUrl = plan.url || 'https://chatgpt.com/';
-                        if (cleanChatUrl.includes('/g/')) {
-                            const gptBase = cleanChatUrl.match(/(https:\/\/chatgpt\.com\/g\/[^\/]+)/);
-                            if (gptBase) cleanChatUrl = gptBase[1];
-                        } else {
-                            cleanChatUrl = 'https://chatgpt.com/';
-                        }
-
-                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, cleanChatUrl);
+                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url;
+                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
+                            if (res.finalUrl && res.finalUrl.includes('/c/')) {
+                                activePlanUrls[plan.key] = res.finalUrl;
+                                console.log(`📌 Fil de conversation unique conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
+                            }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
                         }
