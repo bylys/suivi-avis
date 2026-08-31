@@ -1,9 +1,6 @@
 name: Slack — Rapport quotidien avis
 
 on:
-  schedule:
-    # Rapport quotidien lun-ven à 11h00 heure TH (UTC+7 -> 04h00 UTC)
-    - cron: "0 4 * * 1-5"
   workflow_dispatch:
 
 jobs:
