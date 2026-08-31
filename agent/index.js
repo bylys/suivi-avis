@@ -1021,20 +1021,55 @@ async function main() {
                     ];
                     return pick(maconnerieChoices);
                 }
-                if (f.includes('terrassement') || f.includes('dessouchage') || f.includes('dallage') || f.includes('paving') || f.includes('driveway') || f.includes('excavation') || f.includes('concrete') || f.includes('cement')) {
-                    const concreteChoices = [
-                        'travaux de terrassement, nivellement du sol et coulage de dalle béton extérieure (coffrage en bois, treillis métallique et terrassement par un terrasseur)',
-                        'travaux de terrassement et préparation du sol pour allée de jardin ou terrasse extérieure',
-                        'aménagement de dalle béton extérieure avec mini-pelle de terrassement ou engin de chantier'
+                if (f.includes('terrassement') || f.includes('terrassier') || f.includes('excavation') || f.includes('dallage') || f.includes('vrd') || f.includes('assainissement') || f.includes('enrochement') || f.includes('nivellement') || f.includes('viabilisation') || f.includes('drainage') || f.includes('soutènement') || f.includes('soutenement') || f.includes('piscine') || f.includes('paving') || f.includes('driveway') || f.includes('concrete') || f.includes('cement')) {
+                    const terrassementChoices = [
+                        'travaux de terrassement général et excavation avec mini-pelle de chantier et ouvrier au sol',
+                        'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
+                        'travaux de VRD (Voirie et Réseaux Divers) et pose de gaines techniques dans tranchée ouverte',
+                        'viabilisation de terrain avec tranchée technique pour réseaux eau, électricité et tout-à-l\'égout',
+                        'assainissement individuel et installation de fosse septique ou micro-station dans excavation',
+                        'raccordement aux réseaux publics et pose de canalisations d\'eaux usées dans tranchée',
+                        'fouilles en rigole pour fondations de maison avec armatures métalliques de semelles',
+                        'drainage de fondations avec pose de tuyau drain perforé, géotextile et gravier concassé',
+                        'création de voie d\'accès, allée et parking avec décaissement, géotextile et grave concassée',
+                        'construction de mur de soutènement de talus avec blocs de béton ou gabions',
+                        'enrochement de talus et pose de gros blocs de roches massives à la pelle mécanique',
+                        'terrassement et creusement précis de terrain pour piscine enterrée avec mini-pelle'
                     ];
-                    return pick(concreteChoices);
+                    return pick(terrassementChoices);
                 }
                 return 'travaux de rénovation';
             }
 
             const detectedTrade = detectMetierFromFiche(task.fiche_nom);
-            // Priorité absolue au métier réel de la Fiche GMB pour éviter que task.travaux/metier vague n'écrase la fiche
-            let travauxLabel = detectedTrade;
+            // Mapping direct des services précis s'ils sont renseignés dans task.travaux
+            const exactServiceMap = {
+                'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
+                'nivellement de terrain': 'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
+                'vrd': 'travaux de VRD (Voirie et Réseaux Divers) et pose de gaines techniques dans tranchée ouverte',
+                'viabilisation de terrain': 'viabilisation de terrain avec tranchée technique pour réseaux eau, électricité et tout-à-l\'égout',
+                'assainissement individuel': 'assainissement individuel et installation de fosse septique ou micro-station dans excavation',
+                'raccordement': 'raccordement aux réseaux publics et pose de canalisations dans tranchée technique',
+                'fondations': 'fouilles en rigole pour fondations de maison avec armatures de ferraillage',
+                'drainage': 'drainage de fondations avec pose de tuyau drain perforé, géotextile et gravier concassé',
+                'voie d\'accès, allées et parking': 'création de voie d\'accès, allée et parking avec décaissement, géotextile et empierrement',
+                'voie d\'accès': 'création de voie d\'accès et allée avec décaissement et empierrement concassé',
+                'murs de soutènement': 'construction de mur de soutènement de talus en blocs béton ou gabions',
+                'enrochement': 'enrochement de talus et pose de gros blocs de roches massives à la pelle mécanique',
+                'terrassement pour piscine': 'terrassement et creusement précis de terrain pour piscine enterrée avec mini-pelle'
+            };
+
+            const tNorm = (task.travaux || '').toLowerCase().trim();
+            let matchedExactService = null;
+            for (const [sKey, sLabel] of Object.entries(exactServiceMap)) {
+                if (tNorm.includes(sKey)) {
+                    matchedExactService = sLabel;
+                    break;
+                }
+            }
+
+            // Priorité absolue au service précis de la tâche s'il existe, sinon au métier réel de la Fiche GMB
+            let travauxLabel = matchedExactService || detectedTrade;
             if (!travauxLabel || travauxLabel === 'travaux d\'artisanat et d\'entretien') {
                 travauxLabel = task.travaux || task.metier || 'travaux d\'artisanat';
             }
@@ -1155,6 +1190,9 @@ async function main() {
             } else if (lowerLabel.includes('carrelage') || lowerLabel.includes('faïence') || lowerLabel.includes('faience')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: INDOOR TILER (POSE DE CARRELAGE OU FAÏENCE INTÉRIEURE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre. UNIQUEMENT pose de carrelage au sol ou faïence murale.";
+            } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";
             }
 
             const coreTradeBlock = `\n🎯 OBJET UNIQUE ET OBLIGATOIRE DU CHANTIER :\n- Métier & Travaux réels : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;
