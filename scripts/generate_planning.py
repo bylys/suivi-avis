@@ -46,9 +46,9 @@ SLACK_OPERATEURS = {
     "Fifaliana": os.environ.get("SLACK_WEBHOOK_FIFALIANA", SLACK_WEBHOOK),
 }
 
-DELAI_GMAIL_JOURS  = 3   # cooldown 3 j entre deux posts du même gmail
-DELAI_FICHE_JOURS  = 2   # délai min entre deux posts sur la même fiche
-QUOTA_KEVIN_FIF  = int(os.environ.get("QUOTA_KEVIN_FIF", "50"))      # Kevin & Fifaliana : max 50/jour
+DELAI_GMAIL_JOURS  = int(os.environ.get("DELAI_GMAIL_JOURS", "8"))   # cooldown 8 j entre deux posts du même gmail
+DELAI_FICHE_JOURS  = int(os.environ.get("DELAI_FICHE_JOURS", "2"))   # délai min entre deux posts sur la même fiche
+QUOTA_KEVIN_FIF    = int(os.environ.get("QUOTA_PAR_OPERATEUR", os.environ.get("QUOTA_KEVIN_FIF", "68")))      # Kevin & Fifaliana : 65-70/jour (défaut 68)
 OPERATEURS = ["Kevin", "Fifaliana"]
 OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
 QUOTAS = {op: QUOTA_KEVIN_FIF for op in OPERATEURS}
@@ -462,17 +462,19 @@ def main():
     villes_a_persister = {}          # gmails neufs → ville rattachée (à écrire en base)
 
     # Pool de gmails par opérateur — stratégie Kevin généralisée :
-    # chaque VA pioche dans SES gmails perso + le pool commun des gmails "AUCUN"
-    # (anciens comptes réutilisables, partagés par toute l'équipe).
+    # Pool de gmails par opérateur :
+    # chaque VA pioche dans SES gmails perso + le pool commun des gmails sans opérateur
+    # + les gmails disponibles des comptes partagés/autres opérateurs non actifs.
     pools = {}
     for operateur in operateurs_actifs:
         pools[operateur] = {
             g for g in gmails_dispo
             if gmail_operateur.get(g) == operateur   # ses gmails perso
-            or g not in gmail_operateur              # + pool commun (gmails sans opérateur)
+            or not gmail_operateur.get(g)            # + pool commun (gmails sans opérateur)
+            or gmail_operateur.get(g) not in operateurs_actifs # + gmails partagés
         }
 
-    # Quotas du jour par opérateur
+    # Quotas du jour par opérateur (65-70 par défaut)
     quotas_jour = dict(QUOTAS)
 
     gmails_utilises = {op: set() for op in operateurs_actifs}
@@ -480,7 +482,7 @@ def main():
     assignations = {op: [] for op in operateurs_actifs}
 
     def pick_gmail(operateur, fn):
-        """Trouve le meilleur gmail de l'opérateur pour cette fiche (ou None)."""
+        """Trouve le meilleur gmail disponible de l'opérateur pour cette fiche (ou None)."""
         ville = fiche_ville[fn]
         fn_key = fn.strip().lower()
         # 1. Priorité : gmails déjà rattachés à cette ville
@@ -496,6 +498,13 @@ def main():
                 g for g in pools[operateur]
                 if g not in gmail_ville
                 and g not in gmails_used_today
+                and (g, fn_key) not in used_pairs
+            ]
+        # 3. Fallback : gmails disponibles du pool pour assurer le quota de 65-70 sans fiche vide
+        if not candidats:
+            candidats = [
+                g for g in pools[operateur]
+                if g not in gmails_used_today
                 and (g, fn_key) not in used_pairs
             ]
         if not candidats:
