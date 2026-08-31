@@ -1,4 +1,4 @@
-name: GMB Image Generator Agent (2 Opérateurs Parallèles)
+name: GMB Image Generator Agent (Séquentiel)
 
 on:
   schedule:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 1
       matrix:
         operator: [Kevin, Fif]
     
