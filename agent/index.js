@@ -233,17 +233,36 @@ async function uploadImage(fileName, imageBuffer, operatorName) {
         return { provider: 'Supabase Storage', url: publicUrlData.publicUrl };
     }
 }
+function getOperatorAliases(opName) {
+    const raw = (opName || '').trim().toUpperCase();
+    if (!raw) return [];
+    const aliases = [raw];
+    if (raw.includes('FIF')) {
+        if (!aliases.includes('FIF')) aliases.push('FIF');
+        if (!aliases.includes('FIFALIANA')) aliases.push('FIFALIANA');
+        if (!aliases.includes('FIFIANA')) aliases.push('FIFIANA');
+        if (!aliases.includes('FIFA')) aliases.push('FIFA');
+    }
+    if (raw.includes('KEV')) {
+        if (!aliases.includes('KEVIN')) aliases.push('KEVIN');
+        if (!aliases.includes('KEV')) aliases.push('KEV');
+    }
+    return aliases;
+}
+
 // Dynamic Operator & ChatGPT Conversation Resolution
 const TARGET_OPERATOR = process.env.OPERATOR_NAME ? process.env.OPERATOR_NAME.trim() : null;
 
 function getConversationUrlForOperator(operatorName) {
-    const op = (operatorName || TARGET_OPERATOR || '').trim().toUpperCase();
-    if (!op) return process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
-    
-    const workVar = `CHATGPT_WORK_CONVERSATION_URL_${op}`;
-    const persoVar = `CHATGPT_PERSO_CONVERSATION_URL_${op}`;
-    const stdVar = `CHATGPT_CONVERSATION_URL_${op}`;
-    return process.env[workVar] || process.env[persoVar] || process.env[stdVar] || process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    const aliases = getOperatorAliases(operatorName || TARGET_OPERATOR);
+    for (const alias of aliases) {
+        const workVar = `CHATGPT_WORK_CONVERSATION_URL_${alias}`;
+        const persoVar = `CHATGPT_PERSO_CONVERSATION_URL_${alias}`;
+        const stdVar = `CHATGPT_CONVERSATION_URL_${alias}`;
+        const match = process.env[workVar] || process.env[persoVar] || process.env[stdVar];
+        if (match) return match;
+    }
+    return process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null) {
@@ -695,27 +714,35 @@ async function main() {
         } catch (e) {}
 
         function resolveCookieSetsForOp(opName) {
-            const opUpper = (opName || '').trim().toUpperCase();
+            const aliases = getOperatorAliases(opName);
             
-            const workUrl = availableCookiesMap[`CHATGPT_WORK_CONVERSATION_URL_${opUpper}`] || process.env[`CHATGPT_WORK_CONVERSATION_URL_${opUpper}`] || process.env.CHATGPT_WORK_CONVERSATION_URL;
-            const persoUrl = availableCookiesMap[`CHATGPT_PERSO_CONVERSATION_URL_${opUpper}`] || process.env[`CHATGPT_PERSO_CONVERSATION_URL_${opUpper}`] || process.env.CHATGPT_PERSO_CONVERSATION_URL;
-            const fallbackUrl = availableCookiesMap[`CHATGPT_CONVERSATION_URL_${opUpper}`] || process.env[`CHATGPT_CONVERSATION_URL_${opUpper}`] || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+            let workUrl = null;
+            let persoUrl = null;
+            let fallbackUrl = null;
+            for (const alias of aliases) {
+                if (!workUrl) workUrl = availableCookiesMap[`CHATGPT_WORK_CONVERSATION_URL_${alias}`] || process.env[`CHATGPT_WORK_CONVERSATION_URL_${alias}`];
+                if (!persoUrl) persoUrl = availableCookiesMap[`CHATGPT_PERSO_CONVERSATION_URL_${alias}`] || process.env[`CHATGPT_PERSO_CONVERSATION_URL_${alias}`];
+                if (!fallbackUrl) fallbackUrl = availableCookiesMap[`CHATGPT_CONVERSATION_URL_${alias}`] || process.env[`CHATGPT_CONVERSATION_URL_${alias}`];
+            }
+            workUrl = workUrl || process.env.CHATGPT_WORK_CONVERSATION_URL;
+            persoUrl = persoUrl || process.env.CHATGPT_PERSO_CONVERSATION_URL;
+            fallbackUrl = fallbackUrl || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 
-            const workKeyCandidates = [
-                opUpper ? `CHATGPT_WORK_COOKIES_${opUpper}` : null,
-                opUpper ? `CHATGPT_WORK_COOKIE_${opUpper}` : null,
-                'CHATGPT_WORK_COOKIES',
-                'CHATGPT_WORK_COOKIE'
-            ].filter(Boolean);
+            const workKeyCandidates = [];
+            for (const alias of aliases) {
+                workKeyCandidates.push(`CHATGPT_WORK_COOKIES_${alias}`);
+                workKeyCandidates.push(`CHATGPT_WORK_COOKIE_${alias}`);
+            }
+            workKeyCandidates.push('CHATGPT_WORK_COOKIES', 'CHATGPT_WORK_COOKIE');
 
-            const persoKeyCandidates = [
-                opUpper ? `CHATGPT_PERSO_COOKIES_${opUpper}` : null,
-                opUpper ? `CHATGPT_COOKIES_${opUpper}` : null,
-                opUpper ? `CHATGPT_PERSO_COOKIE_${opUpper}` : null,
-                opUpper ? `CHATGPT_COOKIE_${opUpper}` : null,
-                'CHATGPT_PERSO_COOKIES',
-                'CHATGPT_COOKIES'
-            ].filter(Boolean);
+            const persoKeyCandidates = [];
+            for (const alias of aliases) {
+                persoKeyCandidates.push(`CHATGPT_PERSO_COOKIES_${alias}`);
+                persoKeyCandidates.push(`CHATGPT_COOKIES_${alias}`);
+                persoKeyCandidates.push(`CHATGPT_PERSO_COOKIE_${alias}`);
+                persoKeyCandidates.push(`CHATGPT_COOKIE_${alias}`);
+            }
+            persoKeyCandidates.push('CHATGPT_PERSO_COOKIES', 'CHATGPT_COOKIES');
 
             let workEntry = null;
             for (const k of workKeyCandidates) {
