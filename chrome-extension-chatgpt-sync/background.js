@@ -135,25 +135,41 @@ async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null, conve
       console.log(`[GMB Sync] Aucune URL de conversation /c/ détectée pour ${targetOp}. L'URL existante est conservée.`);
     }
 
-    const typeLabel = isPerso ? 'PERSO (Secours)' : 'PRO (Principal)';
+    const typeLabel = isPerso ? 'Compte PERSO' : 'Compte PRO';
     const urlInfo = isRealConvUrl ? ` | URL ✅` : (existingUrl ? ` | URL conservée ✅` : ` | ⚠️ Pas d'URL`);
     const msg = sessionOk
       ? `✅ ${typeLabel} | ${allCookies.length} cookies | Session active ✅${urlInfo}`
       : `⚠️ ${typeLabel} | ${allCookies.length} cookies | Session ❌ (reconnectez-vous)${urlInfo}`;
 
-    await chrome.storage.local.set({
+    const saveObj = {
       lastSyncStatus: msg,
       lastSyncTime: Date.now(),
       cookieCount: allCookies.length,
-      sessionOk
-    });
+      sessionOk,
+      lastType: targetType,
+      operatorName: targetOp
+    };
+
+    await chrome.storage.local.set(saveObj);
+
+    return {
+      status: 'DONE',
+      count: allCookies.length,
+      sessionOk,
+      targetType,
+      operator: targetOp,
+      msg,
+      url: isRealConvUrl ? activeUrl : existingUrl
+    };
 
   } catch (err) {
-    await chrome.storage.local.set({
+    const errorObj = {
       lastSyncStatus: `❌ Erreur : ${err.message}`,
       lastSyncTime: Date.now(),
       sessionOk: false
-    });
+    };
+    await chrome.storage.local.set(errorObj);
+    return { status: 'ERROR', message: err.message };
   }
 }
 
@@ -161,11 +177,32 @@ async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null, conve
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'SYNC_NOW') {
     syncCookiesToSupabase(msg.targetType || 'WORK', msg.operator, msg.conversationUrl)
-      .then(() => sendResponse({ status: 'DONE' }));
+      .then(res => sendResponse(res || { status: 'DONE' }))
+      .catch(err => sendResponse({ status: 'ERROR', message: err.message }));
     return true;
   }
   if (msg.action === 'GET_STATUS') {
-    chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime', 'cookieCount', 'sessionOk'], sendResponse);
+    getAllChatGPTCookies().then(cookies => {
+      const sessionToken = cookies.find(c =>
+        c.name === '__Secure-next-auth.session-token' ||
+        c.name === 'oai-sc' ||
+        c.name === 'oai-hlib' ||
+        c.name === '__cf_bm' ||
+        c.name === 'cf_clearance' ||
+        c.name === '_puid' ||
+        c.name === '__Secure-oai-is'
+      );
+      const sessionOk = Boolean(sessionToken);
+      chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime', 'cookieCount', 'operatorName', 'lastType'], (stored) => {
+        sendResponse({
+          ...stored,
+          cookieCount: (cookies && cookies.length > 0) ? cookies.length : (stored.cookieCount || 0),
+          sessionOk: sessionOk || stored.sessionOk || false
+        });
+      });
+    }).catch(() => {
+      chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime', 'cookieCount', 'operatorName', 'lastType'], sendResponse);
+    });
     return true;
   }
 });

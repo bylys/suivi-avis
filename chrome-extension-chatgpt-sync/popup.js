@@ -9,19 +9,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnPro       = document.getElementById('btn-sync-pro');
   const btnPerso     = document.getElementById('btn-sync-perso');
 
-  // ─── Mise à jour UI depuis storage ─────────────────────────────────────────
+  // ─── Mise à jour UI ────────────────────────────────────────────────────────
   function refreshUI(data) {
-    const { lastSyncStatus, lastSyncTime, cookieCount: count, sessionOk } = data;
+    if (!data) return;
+    const { lastSyncStatus, lastSyncTime, cookieCount: count, sessionOk, lastType } = data;
 
     // Badge session
     if (sessionOk === true) {
       sessionBadge.className = 'session-badge ok';
       sessionIcon.textContent = '✅';
-      sessionLabel.textContent = 'Session active — ChatGPT connecté';
+      const label = lastType === 'PERSO' ? 'Compte PERSO actif & synchronisé' : 'Compte PRO actif & synchronisé';
+      sessionLabel.textContent = lastSyncStatus ? lastSyncStatus.replace(/^[✅⚠️❌]\s*/, '') : label;
     } else if (sessionOk === false) {
       sessionBadge.className = 'session-badge error';
       sessionIcon.textContent = '❌';
-      sessionLabel.textContent = 'Session expirée — Reconnectez-vous !';
+      sessionLabel.textContent = 'Session expirée — Reconnectez-vous sur ChatGPT';
     } else {
       sessionBadge.className = 'session-badge warn';
       sessionIcon.textContent = '⏳';
@@ -29,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Compteur cookies
-    cookieCount.textContent = count != null ? `${count} cookies` : '—';
+    cookieCount.textContent = (count != null && count > 0) ? `${count} cookies` : '—';
 
     // Heure de sync
     if (lastSyncTime) {
@@ -58,14 +60,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ─── Init ───────────────────────────────────────────────────────────────────
-  const initialData = await chrome.storage.local.get(['operatorName', 'lastSyncStatus', 'lastSyncTime', 'cookieCount', 'sessionOk']);
+  const initialData = await chrome.storage.local.get(['operatorName', 'lastSyncStatus', 'lastSyncTime', 'cookieCount', 'sessionOk', 'lastType']);
   if (initialData.operatorName) selectOp.value = initialData.operatorName;
   refreshUI(initialData);
   await detectActiveTabUrl();
 
+  // Interroger immédiatement l'état live des cookies
+  chrome.runtime.sendMessage({ action: 'GET_STATUS' }, (res) => {
+    if (res) refreshUI(res);
+  });
+
   // ─── Écoute changements storage ────────────────────────────────────────────
   chrome.storage.onChanged.addListener(() => {
-    chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime', 'cookieCount', 'sessionOk'], refreshUI);
+    chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime', 'cookieCount', 'sessionOk', 'lastType'], refreshUI);
   });
 
   // ─── Changement opérateur ──────────────────────────────────────────────────
@@ -73,33 +80,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     await chrome.storage.local.set({ operatorName: selectOp.value });
   });
 
-  // ─── Bouton PRO ────────────────────────────────────────────────────────────
-  btnPro.addEventListener('click', async () => {
+  // ─── Handler Sync ──────────────────────────────────────────────────────────
+  async function handleSync(targetType) {
     const op = selectOp.value;
     const activeUrl = await detectActiveTabUrl();
-    sessionBadge.className = 'session-badge warn';
-    sessionIcon.textContent = '⏳';
-    sessionLabel.textContent = `Enregistrement PRO (${op})...`;
-    chrome.runtime.sendMessage({
-      action: 'SYNC_NOW',
-      targetType: 'WORK',
-      operator: op,
-      conversationUrl: activeUrl
-    });
-  });
+    const isPerso = targetType === 'PERSO';
 
-  // ─── Bouton PERSO ──────────────────────────────────────────────────────────
-  btnPerso.addEventListener('click', async () => {
-    const op = selectOp.value;
-    const activeUrl = await detectActiveTabUrl();
     sessionBadge.className = 'session-badge warn';
     sessionIcon.textContent = '⏳';
-    sessionLabel.textContent = `Enregistrement PERSO (${op})...`;
+    sessionLabel.textContent = `Enregistrement ${isPerso ? 'PERSO' : 'PRO'} (${op})...`;
+    btnPro.disabled = true;
+    btnPerso.disabled = true;
+
     chrome.runtime.sendMessage({
       action: 'SYNC_NOW',
-      targetType: 'PERSO',
+      targetType,
       operator: op,
       conversationUrl: activeUrl
+    }, (res) => {
+      btnPro.disabled = false;
+      btnPerso.disabled = false;
+      if (res && res.status === 'DONE') {
+        sessionBadge.className = 'session-badge ok';
+        sessionIcon.textContent = '✅';
+        sessionLabel.textContent = res.msg ? res.msg.replace(/^[✅⚠️❌]\s*/, '') : `Compte ${isPerso ? 'PERSO' : 'PRO'} synchronisé avec succès !`;
+        cookieCount.textContent = `${res.count} cookies`;
+        syncTimeEl.textContent = new Date().toLocaleTimeString('fr-FR');
+      } else if (res && res.status === 'ERROR') {
+        sessionBadge.className = 'session-badge error';
+        sessionIcon.textContent = '❌';
+        sessionLabel.textContent = `Erreur : ${res.message || 'Échec de synchronisation'}`;
+      }
     });
-  });
+  }
+
+  btnPro.addEventListener('click', () => handleSync('WORK'));
+  btnPerso.addEventListener('click', () => handleSync('PERSO'));
 });
