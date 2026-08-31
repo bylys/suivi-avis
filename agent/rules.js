@@ -33,7 +33,15 @@ ABSOLUTE PROHIBITION & BAN:
 ❌ NEVER stand directly inside the gutter channel or walk unsupported on wet roof slope!
 ❌ NO dangerous leaning sideways off a ladder!
 ❌ NO bare hands when handling sharp zinc, aluminium or copper gutter profiles.`,
-  etancheite: `SAFETY RULES — Waterproofing & Roof Sealing: Single-family house terrace/balcony: 1 worker, NO HARD HAT / NO HELMET on head (bare head or cap). Warehouse / Building flat roof: minimum 2 workers, hard hats + high-vis vests + safety boots. EPDM membrane, PVC or bitumen rolls being torched/welded or applied with roller. NEVER: worker standing on parapet edge, blowtorch aimed toward another worker, access hatch blocked by rolls.`,
+  etancheite: `SAFETY RULES — Waterproofing & Leak Detection (Étanchéité toiture-terrasse, toit plat & recherche de fuite):
+MANDATORY SAFETY & PROFESSIONAL PROTOCOL IN FRANCE:
+OPTION 1 (FLAT ROOF / TOITURE TERRASSE): 1 or 2 workers on 100% FLAT surface unrolling EPDM membrane, welding PVC sheets with hot-air gun, or torching bitumen rolls with propane blowtorch. Relevés d'étanchéité on low parapet walls (acrotères).
+OPTION 2 (OUTDOOR PATIO / BALCONY UNDER TILING): Artisan applying liquid waterproofing resin (Système d'Étanchéité Liquide SEL) with paint roller and reinforcing mesh tape in corners.
+OPTION 3 (LEAK DETECTION): Technician with smoke generator (fumigène), tracer gas or thermal inspection camera locating infiltration on flat roof or wall.
+ABSOLUTE PROHIBITION & BAN:
+❌ ABSOLUTE FORBIDDEN: NO sloped roofs! NO terracotta roof tiles! The roof MUST be 100% FLAT!
+❌ NEVER stand on the very edge of an unprotected parapet!
+❌ NO blowtorch aimed towards another worker or flammable materials.`,
   ravalement: `SAFETY RULES — Facade rendering: Scaffold above 2m: mandatory guardrail on void side. NEVER: worker leaning beyond guardrail.`,
   maconnerie: `SAFETY RULES — Masonry: NEVER: worker above unfinished wall at more than 1.5m without scaffold. All workers ground level beside wall (max 1.0-1.2m during block construction).`,
   elagage: `SAFETY RULES — Tree Pruning & Trimming: MANDATORY PROPORTION & EQUIPMENT LOGIC BASED ON TREE HEIGHT:
@@ -102,11 +110,21 @@ const VISUAL_RULES_BY_SERVICE = {
   'Escalier beton': `VISUAL: Stair formwork visible, steps being formed.`,
   'Reparation fissure': `VISUAL: Crack visible on facade or wall, worker with patching material.`,
   'Linteau': `VISUAL: Opening in wall, lintel on 2 supports, temporary shoring visible.`,
-  'Etancheite toit terrasse': `VISUAL: Flat rooftop, waterproofing membrane visible (EPDM, PVC or bitumen), propane blowtorch or resin roller in use, rolls of membrane stacked neatly.`,
+  'Étanchéité de toit-terrasse & toit plat': `VISUAL: Flat roof waterproofing. Waterproofing artisan (étancheur) unrolling dark bitumen membrane or grey EPDM/PVC synthetic sheet on 100% flat rooftop, welding seams with propane blowtorch or hot-air welder, low parapet wall (acrotère) visible.`,
+  'Étanchéité de toit-terrasse': `VISUAL: Flat roof waterproofing. Artisan applying EPDM membrane or bituminous waterproofing on 100% flat rooftop with low parapet.`,
+  'Etancheite toit terrasse': `VISUAL: Flat rooftop, waterproofing membrane visible (EPDM, PVC or bitumen), propane blowtorch or resin roller in use on 100% flat surface.`,
+  'Etancheite toit plat': `VISUAL: Flat roof waterproofing. EPDM/PVC synthetic membrane or bitumen roll being applied on flat roof deck.`,
+  'Recherche de fuite & réparation d\'infiltration': `VISUAL: Leak detection and infiltration repair. Technician using non-destructive inspection equipment (smoke generator machine, tracer gas probe or thermal camera) on flat roof terrace to pinpoint water leak, targeted sealant patch applied.`,
+  'Recherche de fuite': `VISUAL: Leak detection on flat roof terrace or terrace joint, technician checking water infiltration point with test equipment and applying waterproof repair patch.`,
+  'Réparation d\'infiltration': `VISUAL: Water leak / infiltration repair, targeted sealant or waterproofing membrane application on flat terrace or wall.`,
+  'Étanchéité & isolation de toiture-terrasse': `VISUAL: Thermal insulation and flat roof waterproofing. Rigid insulation foam boards (panneaux isolants PIR/polyuréthane) neatly laid across flat rooftop concrete slab, covered by two-layer bituminous waterproofing membrane welded with torch.`,
+  'Étanchéité et isolation de toiture-terrasse': `VISUAL: Flat roof insulation boards and waterproofing membrane installation on concrete flat roof deck.`,
+  'Étanchéité sous carrelage & terrasse carrelée': `VISUAL: Under-tile waterproofing for outdoor terrace/balcony (SEL - Système d'Étanchéité Liquide). Artisan using roller or notched trowel to apply waterproof elastomeric liquid resin with reinforcing fiberglass mesh tape in wall-to-floor corners before tiling.`,
+  'Étanchéité sous carrelage': `VISUAL: Waterproofing under outdoor terrace tiles. Applying liquid resin membrane (SEL) with roller and corner sealing strips over concrete balcony/terrace slab.`,
   'Etancheite PVC': `VISUAL: Flat roof or terrace, workers unrolling and welding grey PVC synthetic waterproofing membrane, hot air welding gun, minimum 2 workers.`,
   'Inondation': `VISUAL: Water extraction / flood recovery, wet floor, industrial water pump or vacuum, workers in rubber boots drying/repairing wall or floor.`,
   'Infiltration': `VISUAL: Water leak / infiltration repair, targeted sealant or waterproofing membrane application on wall or ceiling.`,
-  'Etancheite maison': `VISUAL: Single-family home terrace or flat extension, 1 worker applying waterproofing membrane or liquid resin with roller, bare-headed or in cap.`,
+  'Etancheite maison': `VISUAL: Single-family home terrace or flat extension, 1 worker applying waterproofing membrane or liquid resin with roller on flat surface.`,
   'Etancheite entrepot': `VISUAL: Large commercial warehouse flat roof, minimum 2 workers in hard hats and high-vis vests unrolling bitumen membranes and using propane blowtorch on large flat surface.`,
   'Peinture salle de bain': `VISUAL: Painter painting bathroom wall or ceiling, moisture-resistant paint, roller, stepladder, drop cloth protecting bathroom tiles and sink.`,
   'Peinture cuisine': `VISUAL: Painter painting kitchen wall, paint roller, masking tape around splashback, drop cloths protecting countertops.`,

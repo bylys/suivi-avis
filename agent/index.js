@@ -931,10 +931,12 @@ async function main() {
                     ];
                     return pick(gutterChoices);
                 }
-                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit plat') || f.includes('toiture terrasse') || f.includes('terrasse toit plat') || f.includes('waterproof') || f.includes('waterproofing')) {
+                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit plat') || f.includes('toiture terrasse') || f.includes('terrasse toit plat') || f.includes('waterproof') || f.includes('waterproofing') || f.includes('infiltration') || f.includes('fuite')) {
                     const etancheiteChoices = [
-                        'travaux d\'étanchéité de toit terrasse et toit plat (pose de membrane EPDM / PVC synthétique ou membrane bitumineuse au chalumeau sur toit terrasse plat, sans tuiles ni pente)',
-                        'étanchéité de toit terrasse plat (artisan étancheur étalant la résine synthétique d\'étanchéité au rouleau sur surface plate)'
+                        'étanchéité de toit-terrasse et toit plat (pose de membrane EPDM, PVC ou bitumineuse au chalumeau sur toit plat avec acrotères)',
+                        'recherche de fuite et réparation d\'infiltration d\'eau sur toit-terrasse avec matériel de détection et patch d\'étanchéité',
+                        'étanchéité et isolation thermique de toiture-terrasse (pose de panneaux isolants rigides et membrane d\'étanchéité bicouche)',
+                        'étanchéité sous carrelage et terrasse carrelée (application de résine d\'étanchéité liquide SEL et bandes d\'armature dans les angles)'
                     ];
                     return pick(etancheiteChoices);
                 }
@@ -1089,7 +1091,28 @@ async function main() {
                 'gouttières cuivre': 'pose haut de gamme de gouttières en cuivre avec soudures soignées',
                 'gouttieres cuivre': 'pose haut de gamme de gouttières en cuivre avec soudures soignées',
                 'pose de descentes d\'eaux pluviales': 'pose de tuyaux de descentes d\'eaux pluviales avec colliers muraux et dauphin fonte',
-                'pose de descentes': 'pose de descentes d\'eaux pluviales le long de la façade'
+                'pose de descentes': 'pose de descentes d\'eaux pluviales le long de la façade',
+
+                // Étanchéité
+                'étanchéité de toit-terrasse & toit plat': 'étanchéité de toit-terrasse et toit plat avec membrane EPDM ou bitumineuse sur toit plat',
+                'étanchéité de toit-terrasse et toit plat': 'étanchéité de toit-terrasse et toit plat avec membrane EPDM ou bitumineuse sur toit plat',
+                'étanchéité de toit-terrasse': 'étanchéité de toit-terrasse et toit plat avec membrane synthétique EPDM',
+                'étanchéité de toit terrasse': 'étanchéité de toit-terrasse et toit plat avec membrane synthétique EPDM',
+                'étanchéité toit plat': 'étanchéité de toit plat et toiture-terrasse',
+                'etancheite toit terrasse': 'étanchéité de toiture-terrasse et toit plat',
+                'recherche de fuite & réparation d\'infiltration': 'recherche de fuite et réparation d\'infiltration d\'eau sur toiture-terrasse',
+                'recherche de fuite et réparation d\'infiltration': 'recherche de fuite et réparation d\'infiltration d\'eau sur toiture-terrasse',
+                'recherche de fuite': 'recherche de fuite et localisation d\'infiltration sur toiture-terrasse',
+                'réparation d\'infiltration': 'réparation d\'infiltration d\'eau et patch d\'étanchéité sur toiture-terrasse',
+                'reparation d\'infiltration': 'réparation d\'infiltration d\'eau et patch d\'étanchéité sur toiture-terrasse',
+                'étanchéité & isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane',
+                'étanchéité et isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane',
+                'étanchéité & isolation': 'étanchéité et isolation thermique de toiture-terrasse',
+                'etancheite & isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse',
+                'étanchéité sous carrelage & terrasse carrelée': 'étanchéité sous carrelage et terrasse carrelée avec résine liquide SEL et bandes d\'angle',
+                'étanchéité sous carrelage et terrasse carrelée': 'étanchéité sous carrelage et terrasse carrelée avec résine liquide SEL et bandes d\'angle',
+                'étanchéité sous carrelage': 'étanchéité sous carrelage avec résine d\'étanchéité liquide SEL',
+                'etancheite sous carrelage': 'étanchéité sous carrelage avec résine d\'étanchéité liquide SEL'
             };
 
             const tNorm = (task.travaux || '').toLowerCase().trim();
@@ -1211,9 +1234,9 @@ async function main() {
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN & TOW TRUCK (DÉPANNAGE ET REMORQUAGE AUTO).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN jardinier. UNIQUEMENT assistance dépannage ou remorquage automobile avec dépanneuse.";
-            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING (ÉTANCHÉITÉ TOIT PLAT / TERRASSE EN RÉSINE OU MEMBRANE EPDM).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS de toit incliné, PAS de tuiles en terre cuite, AUCUN arbre, AUCUN élagage. Bâtiment à toit 100% PLAT uniquement.";
+            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('infiltration') || lowerLabel.includes('fuite') || lowerLabel.includes('sel') || lowerLabel.includes('carrelée')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING, LEAK REPAIR OR UNDER-TILE SEALING (ÉTANCHÉITÉ TOIT PLAT / TOITURE-TERRASSE, ISOLATION THERMIQUE, RECHERCHE DE FUITE OU RÉSINE SOUS CARRELAGE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS de toit incliné avec tuiles traditionnelles ! AUCUN couvreur posant des tuiles en terre cuite, AUCUN nettoyeur haute pression sur tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse extérieure).";
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('charpente') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUN nettoyeur de terrasse. UNIQUEMENT réfection ou pose de tuiles de toiture par un artisan couvreur.";
