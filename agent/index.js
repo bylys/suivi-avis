@@ -1154,9 +1154,11 @@ async function main() {
                 contextReset = "🔴 NEW INDEPENDENT IMAGE REQUEST — IGNORE ALL PREVIOUS IMAGES IN THIS CONVERSATION.\nStart completely fresh with the following scene.\n\n";
             }
 
+            const coreTradeBlock = `\n🎯 OBJET UNIQUE ET OBLIGATOIRE DU CHANTIER :\n- Métier & Travaux réels : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;
+
             // Injection des règles de sécurité et visuelles selon le métier et le service
             const rulesBlock = buildRulesBlock(task.metier || travauxLabel, task.travaux || travauxLabel, etatChantier);
-            const finalPrompt = contextReset + prompt + rulesBlock + negativeConstraint;
+            const finalPrompt = contextReset + coreTradeBlock + "\n" + prompt + "\n" + rulesBlock + "\n" + negativeConstraint;
             
             console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 150)}...`);
             
@@ -1173,16 +1175,20 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url;
-                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse);
+                        // Fil de discussion vierge à chaque image pour éliminer à 100% les hallucinations entre métiers
+                        let cleanChatUrl = plan.url || 'https://chatgpt.com/';
+                        if (cleanChatUrl.includes('/g/')) {
+                            const gptBase = cleanChatUrl.match(/(https:\/\/chatgpt\.com\/g\/[^\/]+)/);
+                            if (gptBase) cleanChatUrl = gptBase[1];
+                        } else {
+                            cleanChatUrl = 'https://chatgpt.com/';
+                        }
+
+                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, cleanChatUrl);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
-                            if (res.finalUrl && res.finalUrl.includes('/c/')) {
-                                activePlanUrls[plan.key] = res.finalUrl;
-                                console.log(`📌 Fil de conversation conservé et réutilisé pour les prochaines images (${plan.name}) : ${res.finalUrl}`);
-                            }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
                         }
