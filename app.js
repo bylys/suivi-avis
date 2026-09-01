@@ -1411,6 +1411,9 @@ async function submitAvis(e) {
   });
   if (!ok) { alert('Erreur lors de l\'enregistrement.'); return; }
   invalidateAvisCache();
+  if (auteur && auteur.includes('@')) {
+    markGmailUsed(auteur.toLowerCase());
+  }
 
   document.getElementById('form-avis').reset();
   if (opEl) opEl.value = operateur;
