@@ -3218,11 +3218,9 @@ async function getAssets() {
     // Tab 1 : comptes avec domaine (ville extraite du domaine)
     const res = await fetch(ASSETS_URL);
     const text = await res.text();
-    const rows = text.split('
-').filter(l => l.trim()).map(l => {
+    const rows = text.split('\n').filter(l => l.trim()).map(l => {
       const c = parseCSVLine(l);
-      const rawGmail = (c[2] || '').split(/[\s\/,
-]/)[0].trim();
+      const rawGmail = (c[2] || '').split(/[\s\/,\n]/)[0].trim();
       const gmail = rawGmail.includes('@') ? rawGmail : '';
       return { domain: (c[0] || '').trim(), gmail, statut: (c[3] || '').trim(), city: null };
     }).filter(r => r.statut === 'Enable' && r.gmail);
@@ -3232,8 +3230,7 @@ async function getAssets() {
     try {
       const res2 = await fetch(ASSETS_CITIES_URL);
       const text2 = await res2.text();
-      extra = text2.split('
-').filter(l => l.trim()).map(l => {
+      extra = text2.split('\n').filter(l => l.trim()).map(l => {
         const c = parseCSVLine(l);
         const gmail = (c[0] || '').trim().toLowerCase();
         const city  = normalizeReco((c[1] || '').replace(/_/g, ' '));
