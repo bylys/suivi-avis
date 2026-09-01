@@ -149,7 +149,8 @@ async function getAvisArchives(mois) {
 let _fichesCache = null;
 async function getFiches() {
   if (_fichesCache) return _fichesCache;
-  _fichesCache = await sbGet('fiches', 'select=*&order=nom.asc');
+  const raw = await sbGet('fiches', 'select=*&order=nom.asc');
+  _fichesCache = (raw || []).filter(f => f && f.nom && !f.nom.startsWith('CHATGPT_') && !f.nom.startsWith('CONFIG_') && f.nom !== 'GMAIL_STATUSES');
   return _fichesCache;
 }
 function invalidateFichesCache() { _fichesCache = null; }
@@ -1197,7 +1198,7 @@ async function syncAllFichesDataForSEO() {
   if (btn2) { btn2.disabled = true; btn2.textContent = '⌛ Sync en cours...'; }
 
   try {
-    const fiches = await sbGet('fiches');
+    const fiches = await getFiches();
     if (!fiches || !fiches.length) {
       showToast('Aucune fiche à synchroniser.', 'warn');
       return;
