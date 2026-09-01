@@ -3495,7 +3495,9 @@ async function computeRecos(offset) {
       )
       .map(f => {
         const geoBonus = getGeoScore(city, f.nom, lg);
-        const score = (500 - f.count * 10) + (f.ageDays * 2) + geoBonus;
+        // Priorité absolue aux fiches de moins de 6 semaines (<= 42 jours)
+        const newFicheBonus = (f.ageDays <= 42) ? (1000 + (42 - f.ageDays) * 10) : 0;
+        const score = (500 - f.count * 10) + newFicheBonus + geoBonus;
         return { ...f, score, geoBonus };
       })
       .sort((a, b) => b.score - a.score);
