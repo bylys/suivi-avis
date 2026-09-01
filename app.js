@@ -3198,9 +3198,9 @@ const ASSETS_DATES_URL  = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WU
 const ASSETS_CITIES_URL = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=987118741';
 
 const STATIC_EXTRA_ASSETS = [
-  { domain: '', gmail: 'naveenkumar936850@gmail.com', statut: 'Enable', city: '' },
-  { domain: '', gmail: 'sk9118419232@gmail.com', statut: 'Enable', city: 'perpignan' },
-  { domain: '', gmail: 'pradeepchoudhary942446@gmail.com', statut: 'Enable', city: 'nanterre' },
+  { domain: '', gmail: 'naveenkumar936850@gmail.com', statut: 'Enable', city: '', operateur: 'Fifaliana' },
+  { domain: '', gmail: 'sk9118419232@gmail.com', statut: 'Enable', city: 'perpignan', operateur: 'Fifaliana' },
+  { domain: '', gmail: 'pradeepchoudhary942446@gmail.com', statut: 'Enable', city: 'nanterre', operateur: 'Fifaliana' },
   { domain: '', gmail: 'ketabulnadap18@gmail.com', statut: 'Enable', city: '' },
   { domain: '', gmail: 'naseemkhan708817@gmail.com', statut: 'Enable', city: '' },
   { domain: '', gmail: 'angooridevibnt11@gmail.com', statut: 'Enable', city: '' },
