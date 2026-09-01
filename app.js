@@ -4817,6 +4817,9 @@ async function planningSkip(id) {
 // ── GMAILS ──
 
 async function getGmails() {
+  return await sbGet('gmails', 'select=*&order=ville.asc,email.asc');
+}
+
 // ── GMAIL STATUSES (Fonctionnel, Chauffe en cours, Indisponible) ──
 let _gmailStatusesCache = null;
 
