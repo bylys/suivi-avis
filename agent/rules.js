@@ -57,6 +57,7 @@ NEVER: Put heavy climbing harnesses, ropes or climbing spurs on a small garden t
   vitrier: `SAFETY RULES — Glazier: Cut-resistant safety gloves and protective safety glasses/goggles MANDATORY when handling glass panes. Glass suction cup lifters MUST be firmly attached to the flat central surface of the glass pane (held by glazier hands), NEVER floating mid-air or overlapping window frames. NO HARD HAT / NO HELMET on head (bare head or casual cap). Outdoor height intervention (scaffolding/basket): hard hat mandatory. NEVER: bare hands touching glass edge, glass pane resting unsupported on wall.`,
   depannage_auto: `SAFETY RULES — Auto breakdown & Towing: MANDATORY HIGH-VISIBILITY FLUORESCENT YELLOW VEST (gilet de sécurité fluo avec bandes rétro-réfléchissantes) on all technicians. Emergency warning triangle positioned behind vehicle, recovery truck with amber warning beacons (gyrophares orange). All interventions safely off-traffic on road shoulder, parking or driveway. NEVER: technician standing in live traffic lane, person under vehicle without axle stands/security chocks, winch cable stepped over under tension.`,
   debarras: `SAFETY RULES — Clearance & Waste Removal (Débarras & Encombrants): MANDATORY REINFORCED WORK GLOVES (gants anti-coupure et manutention) and steel-toe safety boots. For extreme clutter / Diogenes / hazardous materials: MANDATORY full white protective coverall suit + FFP3 respirator mask + nitrile gloves. Heavy items handled in pairs with wheeled dollies, pallet jack or hand trucks (diable de manutention). NEVER: lifting heavy bulky furniture solo without ergonomic posture, worker standing under items hoisted, blocking fire exits.`,
+  carrelage: `SAFETY RULES — Tiling & Floor Coverings (Carrelage intérieur et extérieur): MANDATORY KNEE PADS (genouillères de carreleur renforcées) and safety glasses when cutting tiles with wet diamond saw or manual tile cutter (carrelette). NO HARD HAT / NO HELMET on head for indoor tiling (bare head or casual work cap). Cut-resistant gloves when handling sharp tile edges. NEVER: worker standing on freshly glued tiles without load-spreading boards, electrical tile saw operated near standing water pools.`,
   charpente: `SAFETY RULES — Carpentry & Woodwork: MANDATORY SAFETY GLASSES / PROTECTIVE GOGGLES on all workers' faces (eye protection against wood dust). Wooden roof trusses or rafters visible, minimum 2 carpenters working with circular saw or nail gun, safety harness connected, hard hats mandatory. NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
 };
 
@@ -257,6 +258,32 @@ const VISUAL_RULES_BY_SERVICE = {
   'Débarras industriel': `VISUAL: Industrial facility clearance (Débarras industriel). Team in safety vests and hard hats sorting scrap metal parts and heavy equipment with pallet jacks.`,
   'Débarras de véhicule': `VISUAL: Vehicle removal (Débarras de véhicule). Old vehicle being safely prepared and loaded onto a flatbed recovery transporter.`,
   'Débarras de matériaux dangereux': `VISUAL: Hazardous material clearance (Débarras de matériaux dangereux). Certified technicians in specialized protective PPE suits with sealed respiratory masks handling labeled hazardous containment drums and sealed disposal bags.`,
+
+  // ── SITES CARRELAGE (4 services officiels) ──
+  'Revêtements de sols extérieur': `VISUAL: Outdoor terrace floor tiling & paving (Revêtements de sols extérieur). Professional tiler kneeling on protective knee pads laying 20mm thick non-slip porcelain stoneware tiles (grès cérame extérieur antidérapant) on a garden terrace slab with notched adhesive trowel, self-leveling tile spacers (croisillons autonivelants) and rubber mallet.`,
+  'Revêtements de sols extérieurs': `VISUAL: Outdoor terrace floor tiling with 20mm porcelain stoneware tiles, notched trowel and leveling spacers.`,
+  'Revêtement de sol extérieur': `VISUAL: Outdoor terrace floor tiling with 20mm porcelain stoneware tiles, notched trowel and leveling spacers.`,
+  'Revetement de sol exterieur': `VISUAL: Outdoor terrace floor tiling with 20mm porcelain stoneware tiles, notched trowel and leveling spacers.`,
+  'Carrelage extérieur': `VISUAL: Outdoor terrace floor tiling with porcelain stoneware tiles, notched trowel and leveling spacers.`,
+  'Carrelage exterieur': `VISUAL: Outdoor terrace floor tiling with porcelain stoneware tiles, notched trowel and leveling spacers.`,
+  'Revêtements de sols intérieurs': `VISUAL: Interior floor tiling installation (Revêtements de sols intérieurs). Craftsman tiler kneeling with knee pads spreading flex adhesive mortar with notched trowel on prepared living room floor, laying large 60x60cm or 80x80cm ceramic floor tiles with leveling clips, spirit level and manual tile cutter nearby.`,
+  'Revêtements de sols intérieur': `VISUAL: Interior floor tiling installation. Tiler laying large-format ceramic floor tiles with notched trowel and leveling clips.`,
+  'Revêtement de sol intérieur': `VISUAL: Interior floor tiling installation. Tiler laying large-format ceramic floor tiles with notched trowel and leveling clips.`,
+  'Revetement de sol interieur': `VISUAL: Interior floor tiling installation. Tiler laying large-format ceramic floor tiles with notched trowel and leveling clips.`,
+  'Carrelage intérieur': `VISUAL: Interior ceramic floor tiling installation with tiler kneeling, leveling spacers and notched trowel.`,
+  'Carrelage interieur': `VISUAL: Interior ceramic floor tiling installation with tiler kneeling, leveling spacers and notched trowel.`,
+  'Cuisine': `VISUAL: Kitchen wall and floor tiling (Cuisine). Artisan tiler installing ceramic subway tiles or porcelain splashback tiles (crédence cuisine) above kitchen countertop with notched adhesive trowel, tile spacers and sponge cleaning float.`,
+  'Carrelage cuisine': `VISUAL: Kitchen splashback and wall tiling installation above countertop with notched trowel.`,
+  'Crédence cuisine': `VISUAL: Kitchen splashback tiling installation above countertop with ceramic tiles and adhesive mortar.`,
+  'Credence cuisine': `VISUAL: Kitchen splashback tiling installation above countertop with ceramic tiles and adhesive mortar.`,
+  'Faïence cuisine': `VISUAL: Kitchen wall ceramic tiles installation with leveling spacers.`,
+  'Faience cuisine': `VISUAL: Kitchen wall ceramic tiles installation with leveling spacers.`,
+  'Salle de bain': `VISUAL: Bathroom wall tiling & walk-in shower installation (Salle de bain). Artisan tiler tiling walk-in shower walls (douche à l'italienne) and bathroom floor with luxury stone-effect or marble-effect ceramic tiles, laser level tripod projecting green reference lines on waterproof membrane.`,
+  'Carrelage salle de bain': `VISUAL: Bathroom and walk-in shower tiling with stone-effect ceramic tiles and laser level.`,
+  'Faïence salle de bain': `VISUAL: Bathroom wall ceramic tiling with leveling spacers and grout float.`,
+  'Faience salle de bain': `VISUAL: Bathroom wall ceramic tiling with leveling spacers and grout float.`,
+  'Douche à l\'italienne': `VISUAL: Walk-in Italian shower tiling with waterproof membrane and stone-effect wall tiles.`,
+  'Douche a l\'italienne': `VISUAL: Walk-in Italian shower tiling with waterproof membrane and stone-effect wall tiles.`,
 
   // Autres métiers
   'Reparation toiture': `VISUAL: Roof repair on house. Roofers working safely from scaffolding along roof edge OR at ground level handling terracotta tiles. ABSOLUTE PROHIBITION: NO worker climbing tall straight extension ladders leaning against roof slope!`,

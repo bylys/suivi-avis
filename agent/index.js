@@ -1018,11 +1018,13 @@ async function main() {
                     return pick(towingChoices);
                 }
 
-                // 9. Second œuvre & Intérieur (FR & EN)
-                if (f.includes('carrelage') || f.includes('carreleur') || f.includes('faïence') || f.includes('tile') || f.includes('tiling') || f.includes('tiler')) {
+                // ── 12. CARRELAGE & REVÊTEMENTS DE SOL (4 services officiels) ──
+                if (f.includes('carrelage') || f.includes('carreleur') || f.includes('faïence') || f.includes('faience') || f.includes('tile') || f.includes('tiling') || f.includes('tiler') || f.includes('revêtement de sol') || f.includes('revetement de sol')) {
                     const tileChoices = [
-                        'pose de carrelage intérieur au sol (artisan carreleur appliquant le mortier-colle et les croisillons sur sol intérieur)',
-                        'pose de faïence murale céramique dans une salle de bain ou cuisine intérieure'
+                        'revêtements de sols extérieur (pose de dalles en grès cérame 20mm antidérapant sur terrasse avec peigne à colle et croisillons autonivelants)',
+                        'revêtements de sols intérieurs (pose de carrelage grand format au sol intérieur avec mortier-colle, peigne cranté et croisillons nivelants)',
+                        'cuisine (pose de carrelage au sol et crédence murale en faïence ou carrelage métro au-dessus du plan de travail)',
+                        'salle de bain (pose de carrelage mural, faïence et carrelage de douche à l\'italienne avec niveau laser)'
                     ];
                     return pick(tileChoices);
                 }
@@ -1342,6 +1344,37 @@ async function main() {
                 'débarras de matériaux dangereux': 'débarras de matériaux dangereux avec techniciens en équipement spécialisé',
                 'debarras de materiaux dangereux': 'débarras de matériaux dangereux avec techniciens en équipement spécialisé',
 
+                // ── SITES CARRELAGE (4 services officiels) ──
+                'revêtements de sols extérieur': 'pose de carrelage et revêtements de sol extérieur antidérapant en grès cérame sur terrasse',
+                'revetements de sols exterieur': 'pose de carrelage et revêtements de sol extérieur antidérapant en grès cérame sur terrasse',
+                'revêtements de sols extérieurs': 'pose de carrelage et revêtements de sol extérieur antidérapant sur terrasse',
+                'revetements de sols exterieurs': 'pose de carrelage et revêtements de sol extérieur antidérapant sur terrasse',
+                'revêtement de sol extérieur': 'pose de carrelage et revêtement de sol extérieur sur terrasse',
+                'revetement de sol exterieur': 'pose de carrelage et revêtement de sol extérieur sur terrasse',
+                'carrelage extérieur': 'pose de carrelage extérieur antidérapant sur terrasse',
+                'carrelage exterieur': 'pose de carrelage extérieur antidérapant sur terrasse',
+                'revêtements de sols intérieurs': 'pose de carrelage grand format et revêtements de sol intérieur avec peigne cranté et croisillons nivelants',
+                'revetements de sols interieurs': 'pose de carrelage grand format et revêtements de sol intérieur avec peigne cranté et croisillons nivelants',
+                'revêtements de sols intérieur': 'pose de carrelage grand format au sol intérieur avec croisillons autonivelants',
+                'revetements de sols interieur': 'pose de carrelage grand format au sol intérieur avec croisillons autonivelants',
+                'revêtement de sol intérieur': 'pose de carrelage grand format au sol intérieur avec croisillons autonivelants',
+                'revetement de sol interieur': 'pose de carrelage grand format au sol intérieur avec croisillons autonivelants',
+                'carrelage intérieur': 'pose de carrelage de sol intérieur avec mortier-colle et croisillons nivelants',
+                'carrelage interieur': 'pose de carrelage de sol intérieur avec mortier-colle et croisillons nivelants',
+                'carrelage sol': 'pose de carrelage au sol intérieur avec mortier-colle',
+                'cuisine': 'pose de carrelage au sol de cuisine et crédence murale en faïence au-dessus du plan de travail',
+                'carrelage cuisine': 'pose de carrelage au sol et crédence de cuisine au-dessus du plan de travail',
+                'crédence cuisine': 'pose de crédence de cuisine en faïence ou carrelage métro avec peigne à colle',
+                'credence cuisine': 'pose de crédence de cuisine en faïence ou carrelage métro avec peigne à colle',
+                'faïence cuisine': 'pose de faïence murale de cuisine au-dessus du plan de travail',
+                'faience cuisine': 'pose de faïence murale de cuisine au-dessus du plan de travail',
+                'salle de bain': 'pose de carrelage mural, faïence et carrelage de douche à l\'italienne avec niveau laser',
+                'carrelage salle de bain': 'pose de carrelage et faïence dans salle de bain et douche à l\'italienne',
+                'faïence salle de bain': 'pose de faïence murale et carrelage de salle de bain avec croisillons',
+                'faience salle de bain': 'pose de faïence murale et carrelage de salle de bain avec croisillons',
+                'douche à l\'italienne': 'pose de carrelage et étanchéité de douche à l\'italienne avec receveur carrelé',
+                'douche a l\'italienne': 'pose de carrelage et étanchéité de douche à l\'italienne avec receveur carrelé',
+
                 // ── AUTRES MÉTIERS (Terrassement, Gouttières, etc.) ──
                 'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
                 'nivellement de terrain': 'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
@@ -1523,6 +1556,9 @@ async function main() {
             } else if (lowerLabel.includes('débarras') || lowerLabel.includes('debarras') || lowerLabel.includes('diogène') || lowerLabel.includes('diogene') || lowerLabel.includes('encombrant') || lowerLabel.includes('vide maison') || lowerLabel.includes('vide grenier') || lowerLabel.includes('clearance')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: PROPERTY & WASTE CLEARANCE / DECLUTTERING (DÉBARRAS BUREAUX, APPARTEMENT, MAISON, GARAGE, ENTREPÔT, ARCHIVES, COMBLES, OU SYNDROME DE DIOGÈNE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUN engin de terrassement lourd. UNIQUEMENT des professionnels du débarras/déménagement avec diables de manutention, cartons empilés, meubles protégés ou techniciens en tenue de protection blanche pour le syndrome de Diogène.";
+            } else if (lowerLabel.includes('carrelage') || lowerLabel.includes('carreleur') || lowerLabel.includes('faïence') || lowerLabel.includes('faience') || lowerLabel.includes('revêtement de sol') || lowerLabel.includes('revetement de sol') || lowerLabel.includes('crédence') || lowerLabel.includes('credence') || (lowerLabel.includes('douche') && lowerLabel.includes('italienne'))) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TILING & FLOOR/WALL COVERINGS (REVÊTEMENTS DE SOLS EXTÉRIEUR, REVÊTEMENTS DE SOLS INTÉRIEURS, CARRELAGE CUISINE OU SALLE DE BAIN).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN élagage d'arbre, AUCUNE dépanneuse, AUCUN casque de chantier lourd pour la pose intérieure. UNIQUEMENT artisan carreleur à genoux avec genouillères, mortier-colle, peigne cranté, croisillons autonivelants, carreaux céramiques/grès cérame posés au cordeau et niveau à bulle.";
             } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";
