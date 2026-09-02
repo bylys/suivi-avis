@@ -976,32 +976,22 @@ async function main() {
                     return pick(couvertureChoices);
                 }
 
-                // 7. Paysagiste & Aménagement Paysager (FR & EN)
-                const isLandscape = f.includes('paysagiste') || f.includes('paysagisme') || f.includes('landscaping') || f.includes('landscape designer');
-                if (isLandscape && !f.includes('elagage') && !f.includes('élagage') && !f.includes('abattage')) {
-                    const landscapeChoices = [
-                        'aménagement paysager de jardin (création et plantation de massifs de fleurs et arbustes décoratifs par un paysagiste)',
-                        'création de pelouse et engazonnement de jardin paysagé par un artisan paysagiste',
-                        'aménagement d\'allée paysagère en dalles de pierre et murets de jardin'
+                // ── 7. ÉLAGAGE, ABATTAGE & PAYSAGISME (6 services officiels) ──
+                const hasTreeOrGarden = f.includes('elagage') || f.includes('élagage') || f.includes('emondage') || f.includes('émondage') || f.includes('emondeur') || f.includes('émondeur') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge') || f.includes('debroussaillage') || f.includes('débroussaillage') || f.includes('paysagiste') || f.includes('paysagisme') || f.includes('landscaping') || f.includes('paysage');
+
+                if (hasTreeOrGarden) {
+                    const elagageChoices = [
+                        'élagage d\'arbre de jardin sur escabeau double ou au sol (taille douce de branches à la scie d\'élagage sans harnais, ou arboriste qualifié en hauteur pour grand arbre)',
+                        'abattage d\'arbre au sol avec tronçonneuse professionnelle, équipement de sécurité forestier et billes de bois débitées',
+                        'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin avec ramassage des végétaux',
+                        'dessouchage et rognage de souche d\'arbre au sol avec rogneuse de souche et projection de copeaux de bois',
+                        'débroussaillage de terrain et fauchage de broussailles denses à la débroussailleuse thermique avec visière intégrale',
+                        'paysagisme et création de massifs paysagers avec plantations d\'arbustes, paillage végétal et allée en dalles'
                     ];
-                    return pick(landscapeChoices);
+                    return pick(elagageChoices);
                 }
 
-                // 8. Élagage, Émondage, Abattage, Taille de Haies & Dessouchage (FR & EN)
-                const hasTree = f.includes('elagage') || f.includes('élagage') || f.includes('emondage') || f.includes('émondage') || f.includes('emondeur') || f.includes('émondeur') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge');
-
-                if (hasTree || isLandscape) {
-                    const treeChoices = [
-                        'élagage doux d\'arbre de jardin sur un escabeau double de jardin (artisan jardinier taillant les branches à la scie de jardin, sans harnais ni cordages)',
-                        'élagage et entretien d\'arbre de jardin (branches taillées depuis un escabeau double de jardin ou à hauteur d\'homme par des jardiniers)',
-                        'élagage en hauteur de grand arbre haute tige (élagueur arboriste qualifié avec harnais de sécurité et cordages ancrés dans les grandes branches en hauteur)',
-                        'taille de haie haute sur escabeau double de jardin (artisan jardinier utilisant un taille-haie professionnel)',
-                        'dessouchage et rognage de souche d\'arbre au sol dans un jardin (extraction de la souche)'
-                    ];
-                    return pick(treeChoices);
-                }
-
-                // 9. Dépannage & Remorquage Automobile (FR & EN)
+                // 8. Dépannage & Remorquage Automobile (FR & EN)
                 if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown')) {
                     const towingChoices = [
                         'dépannage automobile et chargement de voiture en panne sur camion dépanneuse plateau',
@@ -1011,7 +1001,7 @@ async function main() {
                     return pick(towingChoices);
                 }
 
-                // 10. Second œuvre & Intérieur (FR & EN)
+                // 9. Second œuvre & Intérieur (FR & EN)
                 if (f.includes('carrelage') || f.includes('carreleur') || f.includes('faïence') || f.includes('tile') || f.includes('tiling') || f.includes('tiler')) {
                     const tileChoices = [
                         'pose de carrelage intérieur au sol (artisan carreleur appliquant le mortier-colle et les croisillons sur sol intérieur)',
@@ -1068,6 +1058,27 @@ async function main() {
             const detectedTrade = detectMetierFromFiche(task.fiche_nom);
             // Mapping direct des services précis s'ils sont renseignés dans task.travaux
             const exactServiceMap = {
+                // ── SITES ÉLAGAGE & PAYSAGISTE (6 services officiels) ──
+                'élagage d\'arbre': 'élagage d\'arbre de jardin sur escabeau double ou au sol avec scie d\'élagage',
+                'elagage d\'arbre': 'élagage d\'arbre de jardin sur escabeau double ou au sol avec scie d\'élagage',
+                'élagage arbre': 'élagage d\'arbre de jardin sur escabeau double de jardin avec scie d\'élagage',
+                'elagage arbre': 'élagage d\'arbre de jardin sur escabeau double de jardin avec scie d\'élagage',
+                'abattage d\'arbre': 'abattage d\'arbre au sol avec tronçonneuse professionnelle et équipement forestier',
+                'abattage arbre': 'abattage d\'arbre au sol avec tronçonneuse professionnelle et équipement forestier',
+                'abattage': 'abattage d\'arbre au sol avec tronçonneuse professionnelle et équipement forestier',
+                'taille d\'haies': 'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin',
+                'taille d\'haie': 'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin',
+                'taille de haies': 'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin',
+                'taille de haie': 'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin',
+                'dessouchage': 'dessouchage et rognage de souche d\'arbre au sol avec rogneuse de souche',
+                'rognage de souche': 'dessouchage et rognage de souche d\'arbre au sol avec rogneuse de souche',
+                'débroussaillage': 'débroussaillage de terrain et fauchage de broussailles à la débroussailleuse avec visière intégrale',
+                'debroussaillage': 'débroussaillage de terrain et fauchage de broussailles à la débroussailleuse avec visière intégrale',
+                'paysagisme': 'paysagisme, création de massifs et aménagement de jardin avec plantations et paillage',
+                'aménagement paysager': 'paysagisme, création de massifs et aménagement de jardin avec plantations et paillage',
+                'amenagement paysager': 'paysagisme, création de massifs et aménagement de jardin avec plantations et paillage',
+                'paysagiste': 'paysagisme, création de massifs et aménagement de jardin avec plantations et paillage',
+
                 // ── SITES COUVERTURE (8 services officiels) ──
                 'couverture & pose de toiture': 'travaux de couverture et pose de toiture neuve sur liteaux avec échafaudage de sécurité',
                 'couverture et pose de toiture': 'travaux de couverture et pose de toiture neuve sur liteaux avec échafaudage de sécurité',
@@ -1224,6 +1235,8 @@ async function main() {
             }
 
             // Règle du nombre d'ouvriers :
+            // Taille de haies : exactement 2 ouvriers en duo
+            // Débroussaillage / Dessouchage : 2 ouvriers (1 opérateur et 1 assistant)
             // Nettoyage terrasse / vitrerie simple : 1 artisan solo (ou 2 pour double vitrage/vitrine)
             // Nettoyage façade / toiture : 1 à 2 ouvriers (50% solo / 50% duo)
             // Extérieurs lourds à risque (couverture, charpente, élagage, abattage, maçonnerie, terrassement) : 70% 2 ouvriers / 30% 3 ouvriers.
@@ -1232,8 +1245,10 @@ async function main() {
             const randWorker = Math.random();
             let nbOuvriers = '1 ou 2 artisans';
 
-            if (metierText.includes('haie') || metierText.includes('taille de haie')) {
+            if (metierText.includes('haie') || metierText.includes('taille')) {
                 nbOuvriers = 'exactement 2 ouvriers en duo';
+            } else if (metierText.includes('debroussaillage') || metierText.includes('débroussaillage') || metierText.includes('dessouchage')) {
+                nbOuvriers = '2 ouvriers (1 opérateur et 1 assistant au sol)';
             } else if (metierText.includes('double vitrage') || metierText.includes('vitrine')) {
                 nbOuvriers = '2 artisans vitriers';
             } else if (metierText.includes('terrasse') || metierText.includes('patio')) {
@@ -1334,9 +1349,9 @@ async function main() {
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUNE grande échelle instable posée sur la pente du toit. Artisans couvreurs sur échafaudage de sécurité ou au sol.";
-            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TREE TRIMMING & HEDGE CUTTING IN GARDEN (ÉLAGAGE D'ARBRE OU TAILLE DE HAIE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN nettoyeur haute pression sur tuiles. UNIQUEMENT des jardiniers taillant des végétaux ou arbres dans un jardin au sol.";
+            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('elagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin') || lowerLabel.includes('paysag') || lowerLabel.includes('dessouch') || lowerLabel.includes('débroussaill') || lowerLabel.includes('debroussaill')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TREE PRUNING, FELLING, HEDGE TRIMMING, BRUSH CLEARING OR LANDSCAPING IN GARDEN (ÉLAGAGE D'ARBRE, ABATTAGE D'ARBRE, TAILLE D'HAIES, DESSOUCHAGE, DÉBROUSSAILLAGE OU PAYSAGISME).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN nettoyeur haute pression sur tuiles, AUCUNE dépanneuse. UNIQUEMENT des jardiniers/élagueurs travaillant au sol ou sur escabeau dans un jardin avec pelouse et végétation.";
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN & TOW TRUCK (DÉPANNAGE ET REMORQUAGE AUTO).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN jardinier. UNIQUEMENT assistance dépannage ou remorquage automobile avec dépanneuse.";
