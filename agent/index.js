@@ -91,7 +91,7 @@ async function cleanOldPhotosFromDrive(drive, parentFolderId) {
 }
 
 // --- Google Drive Upload Function ---
-async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
+async function uploadToGoogleDrive(fileName, imageBuffer, operatorName, targetDate = null) {
     const credentialsRaw = process.env.GOOGLE_DRIVE_CREDENTIALS;
     let folderId = process.env.DRIVE_PARENT_FOLDER_ID ? process.env.DRIVE_PARENT_FOLDER_ID.trim() : '';
     if (folderId.includes('/folders/')) {
@@ -121,12 +121,15 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
     // 1. Nettoyage automatique des photos > 7 jours
     await cleanOldPhotosFromDrive(drive, folderId);
 
-    // 2. Dossier opérateur (ex: "Kevin")
+    // 2. Dossier opérateur (ex: "Kevin", "Fifaliana")
     const opFolderId = await getOrCreateDriveFolder(drive, folderId, operatorName);
 
-    // 3. Sous-dossier avec la date du jour (ex: "2026-08-25")
-    const todayDate = new Date().toISOString().split('T')[0];
-    const targetFolderId = await getOrCreateDriveFolder(drive, opFolderId, todayDate);
+    // 3. Sous-dossier avec la date exacte du planning (priorité: targetDate -> date locale Bangkok -> date du jour)
+    const effectiveDate = (targetDate || '').trim() 
+        || (process.env.TARGET_DATE ? process.env.TARGET_DATE.trim() : null)
+        || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+
+    const targetFolderId = await getOrCreateDriveFolder(drive, opFolderId, effectiveDate);
 
     // Anti-doublon Google Drive : vérifier si un fichier portant le même nom existe déjà dans le dossier opérateur
     const checkQuery = `'${targetFolderId}' in parents and name='${fileName}' and trashed=false`;
@@ -146,7 +149,7 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
         parents: [targetFolderId]
     };
 
-    console.log(`Upload en cours de la photo sur Google Drive (Sous-dossier Opérateur: "${operatorName || 'Défaut'}")...`);
+    console.log(`Upload en cours de la photo sur Google Drive (Sous-dossier Opérateur: "${operatorName || 'Défaut'}" / Date: "${effectiveDate}")...`);
 
     let res;
     try {
@@ -185,7 +188,7 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
     }
 
     const fileId = res.data.id;
-    console.log(`✅ Photo uploadée avec succès sur Google Drive dans le sous-dossier opérateur ! File ID : ${fileId}`);
+    console.log(`✅ Photo uploadée avec succès sur Google Drive dans le sous-dossier [${operatorName || 'Défaut'}/${effectiveDate}] ! File ID : ${fileId}`);
 
     try {
         await drive.permissions.create({
@@ -205,9 +208,9 @@ async function uploadToGoogleDrive(fileName, imageBuffer, operatorName) {
 }
 
 // --- Upload Hybride (Google Drive en priorité, Supabase Storage en fallback) ---
-async function uploadImage(fileName, imageBuffer, operatorName) {
+async function uploadImage(fileName, imageBuffer, operatorName, targetDate = null) {
     try {
-        const driveRes = await uploadToGoogleDrive(fileName, imageBuffer, operatorName);
+        const driveRes = await uploadToGoogleDrive(fileName, imageBuffer, operatorName, targetDate);
         return { provider: 'Google Drive', url: driveRes.driveUrl };
     } catch (driveErr) {
         console.log("⚠️ Transfert Google Drive indisponible. Bascule automatique sur Supabase Storage...");
@@ -1478,10 +1481,15 @@ async function main() {
                 // Formatage exact demandé : [NOM OPERATEUR]_21-08-26_[GMB NAME]
                 const safeOpName = (task.operateur || 'OPERATEUR').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
                 const safeGmbName = (task.fiche_nom || 'GMB').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+                const taskDate = task.date || dateStr;
+                const dateParts = taskDate.split('-');
+                const dateFormatShort = dateParts.length === 3 
+                    ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0].slice(-2)}` 
+                    : taskDate.replace(/[^0-9]/g, '');
                 const fileName = `${safeOpName}_${dateFormatShort}_${safeGmbName}_img${taskIndex + 1}.jpg`;
                 
-                // Upload de l'image (Google Drive par sous-dossier opérateur + fallback Supabase Storage)
-                const uploadResult = await uploadImage(fileName, imageBuffer, task.operateur);
+                // Upload de l'image (Google Drive par sous-dossier opérateur + sous-dossier date exacte + fallback Supabase Storage)
+                const uploadResult = await uploadImage(fileName, imageBuffer, task.operateur, taskDate);
                 
                 // Mettre à jour la base de données Supabase (uniquement en mode prod)
                 if (isTestFallback) {
