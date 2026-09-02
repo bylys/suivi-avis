@@ -1036,10 +1036,17 @@ async function main() {
                 if (f.includes('plombier') || f.includes('plomberie') || f.includes('plumber') || f.includes('plumbing')) {
                     return 'travaux de plomberie';
                 }
-                if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk') || f.includes('encombrant')) {
+                // ── 11. DÉBARRAS & ENCOMBRANTS (Services officiels & Situations) ──
+                if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk') || f.includes('encombrant') || f.includes('vide maison') || f.includes('vide grenier') || f.includes('diogène') || f.includes('diogene')) {
                     const debarrasChoices = [
-                        'débarras et nettoyage d\'intérieur de maison, appartement ou grenier (cartons empilés, objets et meubles en cours de rangement par des déménageurs sans camion à l\'image)',
-                        'débarras de locaux et maison individuelle avec camionnette utilitaire aux portes arrière ouvertes garée devant l\'allée'
+                        'débarras de bureaux (déménagement de mobilier de bureau, bureaux démontés et cartons d\'archives sur diable)',
+                        'débarras appartement et maison (tri et évacuation de meubles, cartons et objets encombrants avec diables de manutention)',
+                        'débarras syndrome de Diogène (techniciens d\'hygiène en combinaison blanche intégrale, masque FFP3 et sacs renforcés)',
+                        'débarras de garage ou box (tri d\'outils, étagères métalliques et cartons stockés avec porte de garage ouverte)',
+                        'débarras d\'entrepôt (évacuation de palettes bois et rayonnages métalliques avec transpalette manuel)',
+                        'débarras d\'archives (tri et manutention de cartons d\'archives professionnels numérotés)',
+                        'débarras de combles et grenier (évacuation de malles anciennes, objets stockés sous charpente bois)',
+                        'débarras de local commercial (démontage d\'étagères de magasin et mobilier de vente)'
                     ];
                     return pick(debarrasChoices);
                 }
@@ -1269,6 +1276,72 @@ async function main() {
                 'demarrage batterie': 'démarrage de batterie avec câbles de démarrage ou booster portable',
                 'changement de batterie': 'remplacement et installation de batterie neuve sous le capot de voiture',
 
+                // ── SITES DÉBARRAS (Services officiels & Situations) ──
+                'débarras bureaux': 'débarras de mobilier de bureau, bureaux démontés et cartons avec diables de manutention',
+                'debarras bureaux': 'débarras de mobilier de bureau, bureaux démontés et cartons avec diables de manutention',
+                'débarras bureau': 'débarras de bureau, mobilier et équipement de travail',
+                'debarras bureau': 'débarras de bureau, mobilier et équipement de travail',
+                'débarras de bureaux': 'débarras de locaux professionnels et bureaux avec manutention de cartons',
+                'debarras de bureaux': 'débarras de locaux professionnels et bureaux avec manutention de cartons',
+                'débarras appartement': 'débarras complet d\'appartement, meubles anciens et cartons transportés par des déménageurs',
+                'debarras appartement': 'débarras complet d\'appartement, meubles anciens et cartons transportés par des déménageurs',
+                'débarras d\'appartement': 'débarras d\'appartement avec tri de meubles et cartons sur diable',
+                'debarras d\'appartement': 'débarras d\'appartement avec tri de meubles et cartons sur diable',
+                'débarras maison': 'débarras complet de maison, tri d\'objets encombrants et cartons de déménagement',
+                'debarras maison': 'débarras complet de maison, tri d\'objets encombrants et cartons de déménagement',
+                'débarras logement': 'débarras et désencombrement de logement d\'habitation',
+                'debarras logement': 'débarras et désencombrement de logement d\'habitation',
+                'autres débarras': 'débarras général, tri d\'encombrants et évacuation d\'objets volumineux',
+                'autres debarras': 'débarras général, tri d\'encombrants et évacuation d\'objets volumineux',
+                'débarras syndrome de diogène': 'débarras extrême syndrome de Diogène avec techniciens en combinaison blanche et masques FFP3',
+                'debarras syndrome de diogene': 'débarras extrême syndrome de Diogène avec techniciens en combinaison blanche et masques FFP3',
+                'débarras diogène': 'débarras et nettoyage Diogène avec techniciens en combinaison de protection intégrale',
+                'debarras diogene': 'débarras et nettoyage Diogène avec techniciens en combinaison de protection intégrale',
+                'débarras de garage ou box': 'débarras de garage et box de stockage avec tri d\'outils, rayonnages et cartons',
+                'debarras de garage ou box': 'débarras de garage et box de stockage avec tri d\'outils, rayonnages et cartons',
+                'débarras de garage': 'débarras de garage avec tri d\'outils, rayonnages et cartons',
+                'debarras de garage': 'débarras de garage avec tri d\'outils, rayonnages et cartons',
+                'débarras garage': 'débarras de garage avec tri d\'outils, rayonnages et cartons',
+                'debarras garage': 'débarras de garage avec tri d\'outils, rayonnages et cartons',
+                'débarras box': 'débarras de box de stockage et cave',
+                'debarras box': 'débarras de box de stockage et cave',
+                'débarras d\'entrepôt': 'débarras d\'entrepôt et local industriel avec palettes et transpalette manuel',
+                'debarras d\'entrepot': 'débarras d\'entrepôt et local industriel avec palettes et transpalette manuel',
+                'débarras entrepôt': 'débarras d\'entrepôt avec palettes bois et étagères industrielles',
+                'debarras entrepot': 'débarras d\'entrepôt avec palettes bois et étagères industrielles',
+                'débarras d\'archives': 'débarras et manutention de boîtes d\'archives professionnelles numérotées',
+                'debarras d\'archives': 'débarras et manutention de boîtes d\'archives professionnelles numérotées',
+                'débarras archives': 'débarras et tri d\'archives d\'entreprise avec cartons d\'archives',
+                'debarras archives': 'débarras et tri d\'archives d\'entreprise avec cartons d\'archives',
+                'débarras de chantier': 'débarras de chantier et évacuation de gravats, plaques de plâtre et chutes de bois',
+                'debarras de chantier': 'débarras de chantier et évacuation de gravats, plaques de plâtre et chutes de bois',
+                'débarras chantier': 'débarras de chantier avec évacuation de gravats en sacs renforcés',
+                'debarras chantier': 'débarras de chantier avec évacuation de gravats en sacs renforcés',
+                'débarras de matériel informatique': 'débarras et recyclage de matériel informatique, écrans et unités centrales',
+                'debarras de materiel informatique': 'débarras et recyclage de matériel informatique, écrans et unités centrales',
+                'débarras informatique': 'débarras de matériel informatique et serveurs',
+                'debarras informatique': 'débarras de matériel informatique et serveurs',
+                'débarras de jardin': 'débarras de jardin et évacuation de déchets verts, vieux mobilier et abris démontés',
+                'debarras de jardin': 'débarras de jardin et évacuation de déchets verts, vieux mobilier et abris démontés',
+                'débarras jardin': 'débarras de jardin et évacuation d\'encombrants extérieurs',
+                'debarras jardin': 'débarras de jardin et évacuation d\'encombrants extérieurs',
+                'débarras de local commercial': 'débarras de local commercial, démontage de présentoirs et rayonnages de magasin',
+                'debarras de local commercial': 'débarras de local commercial, démontage de présentoirs et rayonnages de magasin',
+                'débarras local commercial': 'débarras de local commercial et mobilier de boutique',
+                'debarras local commercial': 'débarras de local commercial et mobilier de boutique',
+                'débarras de combles': 'débarras de combles et grenier sous charpente bois avec cartons et malles anciennes',
+                'debarras de combles': 'débarras de combles et grenier sous charpente bois avec cartons et malles anciennes',
+                'débarras combles': 'débarras de combles sous toiture avec malles et cartons anciens',
+                'debarras combles': 'débarras de combles sous toiture avec malles et cartons anciens',
+                'débarras grenier': 'débarras de grenier sous charpente avec cartons et objets anciens',
+                'debarras grenier': 'débarras de grenier sous charpente avec cartons et objets anciens',
+                'débarras industriel': 'débarras industriel avec tri de ferrailles et pièces d\'atelier',
+                'debarras industriel': 'débarras industriel avec tri de ferrailles et pièces d\'atelier',
+                'débarras de véhicule': 'débarras et évacuation de véhicule hors d\'usage avec dépanneuse',
+                'debarras de vehicule': 'débarras et évacuation de véhicule hors d\'usage avec dépanneuse',
+                'débarras de matériaux dangereux': 'débarras de matériaux dangereux avec techniciens en équipement spécialisé',
+                'debarras de materiaux dangereux': 'débarras de matériaux dangereux avec techniciens en équipement spécialisé',
+
                 // ── AUTRES MÉTIERS (Terrassement, Gouttières, etc.) ──
                 'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
                 'nivellement de terrain': 'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
@@ -1447,6 +1520,9 @@ async function main() {
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('depannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture') || lowerLabel.includes('moto') || lowerLabel.includes('batterie') || lowerLabel.includes('towing') || lowerLabel.includes('breakdown')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN ASSISTANCE & VEHICLE TOWING (REMORQUAGE DE VOITURE, REMORQUAGE DE MOTO, DÉPANNAGE AUTO SUR PLACE OU DÉPANNAGE BATTERIE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN couvreur, AUCUN maçon. UNIQUEMENT dépanneuse à plateau, technicien avec gilet haute visibilité jaune fluo, véhicule d'assistance routière ou dépannage de batterie sur bord de route sécurisé.";
+            } else if (lowerLabel.includes('débarras') || lowerLabel.includes('debarras') || lowerLabel.includes('diogène') || lowerLabel.includes('diogene') || lowerLabel.includes('encombrant') || lowerLabel.includes('vide maison') || lowerLabel.includes('vide grenier') || lowerLabel.includes('clearance')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: PROPERTY & WASTE CLEARANCE / DECLUTTERING (DÉBARRAS BUREAUX, APPARTEMENT, MAISON, GARAGE, ENTREPÔT, ARCHIVES, COMBLES, OU SYNDROME DE DIOGÈNE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUN engin de terrassement lourd. UNIQUEMENT des professionnels du débarras/déménagement avec diables de manutention, cartons empilés, meubles protégés ou techniciens en tenue de protection blanche pour le syndrome de Diogène.";
             } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";
