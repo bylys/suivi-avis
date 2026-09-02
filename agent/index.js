@@ -991,7 +991,20 @@ async function main() {
                     return pick(elagageChoices);
                 }
 
-                // 8. Dépannage & Remorquage Automobile (FR & EN)
+                // ── 8. FAÇADE & RAVALEMENT (5 services officiels) ──
+                const isFacadeTrade = f.includes('façade') || f.includes('facade') || f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit') || f.includes('fissure') || f.includes('peintre en bâtiment') || f.includes('peinture extérieure') || f.includes('peintre');
+                if (isFacadeTrade && !f.includes('couvreur') && !f.includes('toiture')) {
+                    const facadeChoices = [
+                        'ravalement & nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
+                        'rénovation de façade & traitement des fissures avec pose de bande armée et mortier de réparation souple',
+                        'enduit de façade taloché ou monocouche à la chaux appliqué à la taloche sur mur extérieur',
+                        'peinture de façade extérieure au rouleau professionnel microporeux siloxane/pliolite avec échafaudage',
+                        'traitement façade & humidité avec pulvérisation de produit hydrofuge incolore et traitement anti-salpêtre'
+                    ];
+                    return pick(facadeChoices);
+                }
+
+                // 9. Dépannage & Remorquage Automobile (FR & EN)
                 if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown')) {
                     const towingChoices = [
                         'dépannage automobile et chargement de voiture en panne sur camion dépanneuse plateau',
@@ -1104,6 +1117,36 @@ async function main() {
                 'faitage et rive': 'rénovation et fixation de faîtage et rives de toiture avec mortier ou closoir ventilé',
                 'charpente & ossature bois': 'travaux de charpente et ossature bois de toiture par des charpentiers',
                 'charpente et ossature bois': 'travaux de charpente et ossature bois de toiture par des charpentiers',
+
+                // ── SITES FAÇADE & RAVALEMENT (5 services officiels) ──
+                'ravalement & nettoyage de façade': 'ravalement et nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
+                'ravalement et nettoyage de façade': 'ravalement et nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
+                'ravalement & nettoyage de facade': 'ravalement et nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
+                'ravalement et nettoyage de facade': 'ravalement et nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
+                'ravalement de façade': 'ravalement de façade et application d\'enduit ou crépi neuf depuis un échafaudage',
+                'ravalement de facade': 'ravalement de façade et application d\'enduit ou crépi neuf depuis un échafaudage',
+                'ravalement': 'ravalement de façade et rénovation de mur extérieur avec échafaudage',
+                'rénovation de façade & traitement des fissures': 'rénovation de façade et traitement des fissures avec mortier souple et bande armée',
+                'rénovation de façade et traitement des fissures': 'rénovation de façade et traitement des fissures avec mortier souple et bande armée',
+                'renovation de facade & traitement des fissures': 'rénovation de façade et traitement des fissures avec mortier souple et bande armée',
+                'renovation de facade et traitement des fissures': 'rénovation de façade et traitement des fissures avec mortier souple et bande armée',
+                'traitement des fissures': 'traitement des fissures de façade avec pose de bande armée et enduit de rebouchage',
+                'traitement fissures': 'traitement des fissures de façade avec pose de bande armée et enduit de rebouchage',
+                'enduit de façade': 'application d\'enduit de façade taloché ou monocouche à la chaux sur mur extérieur',
+                'enduit de facade': 'application d\'enduit de façade taloché ou monocouche à la chaux sur mur extérieur',
+                'enduit': 'application d\'enduit de façade extérieur sur échafaudage',
+                'enduit projeté': 'application d\'enduit de façade projeté avec machine à projeter et talochage',
+                'enduit taloché': 'application d\'enduit de façade taloché avec taloche éponge sur mur extérieur',
+                'peinture de façade': 'peinture de façade extérieure au rouleau spécial maçonnerie avec échafaudage',
+                'peinture de facade': 'peinture de façade extérieure au rouleau spécial maçonnerie avec échafaudage',
+                'peinture façade': 'peinture de façade extérieure au rouleau sur mur de maison',
+                'peinture facade': 'peinture de façade extérieure au rouleau sur mur de maison',
+                'traitement façade & humidité': 'traitement hydrofuge et imperméabilisant de façade contre l\'humidité et le salpêtre',
+                'traitement façade et humidité': 'traitement hydrofuge et imperméabilisant de façade contre l\'humidité et le salpêtre',
+                'traitement facade & humidite': 'traitement hydrofuge et imperméabilisant de façade contre l\'humidité et le salpêtre',
+                'traitement facade et humidite': 'traitement hydrofuge et imperméabilisant de façade contre l\'humidité et le salpêtre',
+                'traitement humidité': 'traitement de l\'humidité de façade et injection de résine hydrofuge en bas de mur',
+                'hydrofuge façade': 'application de traitement hydrofuge incolore et imperméabilisant sur façade de maison',
 
                 // ── SITES NETTOYAGE (7 services officiels) ──
                 'nettoyage & démoussage de toiture': 'démoussage et nettoyage de toiture au sol avec perche télescopique de pulvérisation',
@@ -1346,6 +1389,9 @@ async function main() {
             } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('infiltration') || lowerLabel.includes('fuite') || lowerLabel.includes('sel') || lowerLabel.includes('carrelée') || lowerLabel.includes('carrelee') || lowerLabel.includes('réfection') || lowerLabel.includes('refection')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING, LEAK REPAIR OR UNDER-TILE SEALING (ÉTANCHÉITÉ TOIT PLAT / TOITURE-TERRASSE, ISOLATION THERMIQUE, RECHERCHE DE FUITE OU RÉSINE SOUS CARRELAGE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS de toit incliné avec tuiles traditionnelles ! AUCUN couvreur posant des tuiles en terre cuite, AUCUN nettoyeur haute pression sur tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse extérieure).";
+            } else if (lowerLabel.includes('façade') || lowerLabel.includes('facade') || lowerLabel.includes('ravalement') || lowerLabel.includes('crépi') || lowerLabel.includes('crepi') || lowerLabel.includes('enduit') || lowerLabel.includes('fissure') || (lowerLabel.includes('peinture') && lowerLabel.includes('extérieure')) || (lowerLabel.includes('traitement') && lowerLabel.includes('humidité'))) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FACADE RENOVATION, CRACK REPAIR, RENDERING, EXTERIOR PAINTING OR ANTI-HUMIDITY TREATMENT (RAVALEMENT, RÉNOVATION DE FAÇADE, TRAITEMENT DES FISSURES, ENDUIT DE FAÇADE, PEINTURE DE FAÇADE OU TRAITEMENT HUMIDITÉ).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs de la maison avec échafaudage sécurisé ou au sol.";
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUNE grande échelle instable posée sur la pente du toit. Artisans couvreurs sur échafaudage de sécurité ou au sol.";
