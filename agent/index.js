@@ -882,42 +882,71 @@ async function main() {
                     ];
                     return pick(choices);
                 }
-                
-                // Si la fiche mentionne plusieurs services de nettoyage (Toiture, Terrasse, Façade) — FR & EN
-                const hasRoofCleaning = f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || f.includes('moss removal') || f.includes('roof cleaning') || (f.includes('nettoyage') && f.includes('toiture'));
-                const hasFacade = f.includes('façade') || f.includes('facade') || f.includes('ravalement') || f.includes('siding') || f.includes('stucco') || f.includes('cladding');
-                const hasTerrace = f.includes('terrasse') || f.includes('terrace') || f.includes('patio') || f.includes('driveway');
 
-                if (hasRoofCleaning && (hasFacade || hasTerrace)) {
-                    const cleaningChoices = [];
-                    if (hasRoofCleaning) cleaningChoices.push('démoussage, traitement hydrofuge et nettoyage haute pression de toiture (nettoyage des tuiles au jet haute pression)');
-                    if (hasFacade) cleaningChoices.push('nettoyage haute pression et ravalement de façade de maison (artisan nettoyant les murs au jet haute pression)');
-                    if (hasTerrace) cleaningChoices.push('nettoyage haute pression de terrasse extérieure et dalles de jardin');
-                    return pick(cleaningChoices);
-                }
-
-                // Multi-services Façade & Peinture (Ravalement, Peinture extérieure, Nettoyage façade) — FR & EN
-                const hasRavalement = f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit') || f.includes('render') || f.includes('stucco');
-                const hasPainting = f.includes('peinture') || f.includes('peintre') || f.includes('painting') || f.includes('painter');
-                const hasFacadeCleaning = (f.includes('façade') || f.includes('facade') || f.includes('siding')) && (f.includes('nettoyage') || f.includes('lavage') || f.includes('cleaning') || f.includes('washing'));
-
-                if ((hasRavalement || hasFacadeCleaning) && (hasPainting || hasFacadeCleaning)) {
-                    const facadeChoices = [];
-                    if (hasRavalement) facadeChoices.push('ravalement de façade de maison individuelle avec application d\'enduit ou crépi neuf');
-                    if (hasPainting) facadeChoices.push('travaux de peinture extérieure sur façade de maison, boiseries et volets');
-                    if (hasFacadeCleaning) facadeChoices.push('nettoyage haute pression et démoussage de façade extérieure');
-                    return pick(facadeChoices);
-                }
-                
-                // 1. Spécialités spécifiques Toiture & Extérieur (FR & EN)
-                if (hasRoofCleaning || f.includes('pressure wash') || f.includes('power wash') || f.includes('soft wash') || f.includes('softwash')) {
-                    const roofCleaningChoices = [
-                        'démoussage et traitement hydrofuge de toiture (artisan au sol avec perche télescopique de pulvérisation)',
-                        'nettoyage haute pression et traitement de toiture au sol avec perche télescopique de nettoyage',
-                        'démoussage de toiture réalisé depuis une nacelle élévatrice sécurisée avec perche de pulvérisation'
+                // ── 1. VITRIER & MIROITERIE (6 services officiels) ──
+                if (f.includes('vitrier') || f.includes('vitrerie') || f.includes('miroiterie') || f.includes('miroir') || f.includes('vitrage') || f.includes('glazier') || f.includes('glass')) {
+                    const vitrierChoices = [
+                        'dépannage vitrerie d\'urgence (sécurisation de vitre brisée ou mise en sécurité provisoire par un vitrier avec ventouses)',
+                        'remplacement de vitre cassée (artisan vitrier retirant la vitre endommagée et posant un vitrage neuf avec poignées ventouses)',
+                        'double vitrage et isolation (pose et remplacement de double vitrage thermique isolant dans châssis fenêtre)',
+                        'réparation de fenêtre (réglage des ouvrants, remplacement de crémone et réfection de joints d\'étanchéité)',
+                        'vitrine et vitrage de sécurité (pose de vitrage feuilleté anti-effraction et vitrine de commerce par des vitriers avec ventouses triples)',
+                        'miroiterie et verre sur mesure (installation de grand miroir mural ou paroi de verre avec ventouses et niveau)'
                     ];
-                    return pick(roofCleaningChoices);
+                    return pick(vitrierChoices);
                 }
+
+                // ── 2. CHARPENTE & OSSATURE BOIS (14 services officiels) ──
+                // Détecter si la fiche est spécifiquement dédiée à la charpente / ossature bois
+                const isExplicitCharpente = f.includes('charpente') || f.includes('charpentier') || f.includes('fermette') || f.includes('ossature bois') || f.includes('solivage') || f.includes('combles') || f.includes('surélévation') || f.includes('surelevation') || f.includes('carpenter') || f.includes('framing');
+                if (isExplicitCharpente && !f.includes('couvreur') && !f.includes('toiture')) {
+                    const charpenteChoices = [
+                        'traitement de charpente (traitement curatif et préventif du bois par injection sous pression avec équipement de protection)',
+                        'réparation de charpente (remplacement de chevrons ou pannes abîmées avec renforts métalliques)',
+                        'renforcement & consolidation de charpente (pose de moises en bois massif ou plaques d\'acier sur poutres de toiture)',
+                        'modification de fermette (transformation de combles perdus en combles habitables avec pose d\'entraits porteurs)',
+                        'aménagement de combles (isolation sous rampants et pose de plancher porteur sous toiture par des charpentiers)',
+                        'surélévation de toiture (création d\'étage supérieur en structure ossature bois avec panneaux préfabriqués)',
+                        'extension & ossature bois (montage de murs à ossature bois avec contreventement OSB et pare-pluie sur dalle)',
+                        'charpente traditionnelle (assemblage de ferme traditionnelle en chêne ou douglas avec arbalétriers et pannes)',
+                        'charpente neuve & levage (levage et pose de charpente neuve à la grue avec charpentiers équipés de harnais)',
+                        'plancher, solivage & mezzanine (pose de solives en bois massif et plancher rainuré pour création de mezzanine)',
+                        'bardage bois & isolation extérieure (pose de lames de bardage bois extérieur sur liteaux et isolant de façade)',
+                        'terrasse bois (pose de lambourdes sur plots réglables et vissage de lames de terrasse bois par des artisans)',
+                        'carport, pergola & abris (construction d\'un carport ou pergola en bois massif sur poteaux dans le jardin)',
+                        'lucarne & fenêtre de toit (création de chevêtre de toiture et installation de lucarne ou fenêtre de toit)'
+                    ];
+                    return pick(charpenteChoices);
+                }
+
+                // ── 3. ÉTANCHÉITÉ (5 services officiels) ──
+                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit plat') || f.includes('toiture terrasse') || f.includes('terrasse toit plat') || f.includes('waterproof') || f.includes('waterproofing') || f.includes('infiltration') || f.includes('fuite')) {
+                    const etancheiteChoices = [
+                        'étanchéité de toit-terrasse & toit plat (pose de membrane EPDM, PVC ou bitumineuse au chalumeau sur toit plat avec acrotères)',
+                        'recherche de fuite & réparation d\'infiltration (détection de fuite au fumigène/caméra thermique et pose de patch d\'étanchéité)',
+                        'étanchéité sous carrelage & terrasse carrelée (application de résine d\'étanchéité liquide SEL et bandes d\'angle sur terrasse)',
+                        'réfection complète d\'étanchéité (remplacement complet du complexe d\'étanchéité bicouche et couvertines sur toiture-terrasse)',
+                        'étanchéité & isolation de toiture-terrasse (pose de panneaux isolants thermiques rigides et membrane d\'étanchéité bicouche)'
+                    ];
+                    return pick(etancheiteChoices);
+                }
+
+                // ── 4. NETTOYAGE EXTÉRIEUR (7 services officiels) ──
+                const isExplicitNettoyage = f.includes('nettoyage') || f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || f.includes('lavage') || f.includes('pressure wash') || f.includes('soft wash') || f.includes('softwash') || f.includes('power wash');
+                if (isExplicitNettoyage && !f.includes('couvreur') && !f.includes('couverture')) {
+                    const nettoyageChoices = [
+                        'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
+                        'traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)',
+                        'nettoyage de façade (nettoyage moyenne pression ou softwash de façade de maison avec contraste propre)',
+                        'ravalement de façade (application d\'enduit neuf ou crépi taloché sur façade depuis un échafaudage)',
+                        'nettoyage panneaux solaires (nettoyage de panneaux solaires photovoltaïques avec perche télescopique à eau pure et brosse douce)',
+                        'nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)',
+                        'nettoyage gouttières & chéneaux (curage manuel et retrait des feuilles mortes dans gouttières en zinc ou PVC)'
+                    ];
+                    return pick(nettoyageChoices);
+                }
+
+                // ── 5. GOUTTIÈRES SPÉCIFIQUES ──
                 if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('chéneau') || f.includes('gutter')) {
                     const gutterChoices = [
                         'nettoyage et curage de gouttières (artisan retirant manuellement les feuilles et mousses de la gouttière et rinçage)',
@@ -931,20 +960,23 @@ async function main() {
                     ];
                     return pick(gutterChoices);
                 }
-                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit plat') || f.includes('toiture terrasse') || f.includes('terrasse toit plat') || f.includes('waterproof') || f.includes('waterproofing') || f.includes('infiltration') || f.includes('fuite')) {
-                    const etancheiteChoices = [
-                        'étanchéité de toit-terrasse et toit plat (pose de membrane EPDM, PVC ou bitumineuse au chalumeau sur toit plat avec acrotères)',
-                        'recherche de fuite et réparation d\'infiltration d\'eau sur toit-terrasse avec matériel de détection et patch d\'étanchéité',
-                        'étanchéité et isolation thermique de toiture-terrasse (pose de panneaux isolants rigides et membrane d\'étanchéité bicouche)',
-                        'étanchéité sous carrelage et terrasse carrelée (application de résine d\'étanchéité liquide SEL et bandes d\'armature dans les angles)'
+
+                // ── 6. COUVERTURE & TOITURE (8 services officiels) ──
+                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('tuile') || f.includes('zinguerie') || f.includes('faîtage') || f.includes('faitage') || f.includes('rive') || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle')) {
+                    const couvertureChoices = [
+                        'couverture & pose de toiture (pose de tuiles en terre cuite neuves ou ardoises sur liteaux avec échafaudage de couvreur)',
+                        'remplacement & réparation de tuiles cassées ou déplacées sur toiture de maison avec échafaudage de sécurité',
+                        'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
+                        'traitement hydrofuge & imperméabilisant de toiture (pulvérisation de produit hydrofuge incolore sur tuiles propres)',
+                        'étanchéité toiture-terrasse (pose de membrane d\'étanchéité EPDM ou bitume sur toit 100% plat avec acrotères)',
+                        'zinguerie & gouttières (pose de gouttières en zinc et solins de rives d\'étanchéité)',
+                        'faîtage & rive (scellement ou pose à sec de faîtières ventilées et rives de toiture avec harnais)',
+                        'charpente & ossature bois (assemblage de fermettes ou chevrons de toiture par des charpentiers)'
                     ];
-                    return pick(etancheiteChoices);
+                    return pick(couvertureChoices);
                 }
-                if (f.includes('ravalement') || f.includes('façade') || f.includes('facade') || f.includes('crépi') || f.includes('crepi') || f.includes('siding')) {
-                    return 'ravalement et nettoyage de façade';
-                }
-                
-                // 2. Paysagiste & Aménagement Paysager (FR & EN)
+
+                // 7. Paysagiste & Aménagement Paysager (FR & EN)
                 const isLandscape = f.includes('paysagiste') || f.includes('paysagisme') || f.includes('landscaping') || f.includes('landscape designer');
                 if (isLandscape && !f.includes('elagage') && !f.includes('élagage') && !f.includes('abattage')) {
                     const landscapeChoices = [
@@ -955,7 +987,7 @@ async function main() {
                     return pick(landscapeChoices);
                 }
 
-                // 3. Élagage, Émondage, Abattage, Taille de Haies & Dessouchage (FR & EN)
+                // 8. Élagage, Émondage, Abattage, Taille de Haies & Dessouchage (FR & EN)
                 const hasTree = f.includes('elagage') || f.includes('élagage') || f.includes('emondage') || f.includes('émondage') || f.includes('emondeur') || f.includes('émondeur') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge');
 
                 if (hasTree || isLandscape) {
@@ -969,17 +1001,7 @@ async function main() {
                     return pick(treeChoices);
                 }
 
-                // 3. Couverture, Couvreur & Réfection de Toiture (FR & EN)
-                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('charpente') || f.includes('faîtage') || f.includes('zinguerie') || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle')) {
-                    const roofingChoices = [
-                        'travaux de couverture et réfection de tuiles en terre cuite par des artisans couvreurs avec échafaudage de sécurité',
-                        'travaux de couverture, préparation et pose de tuiles par des artisans couvreurs au sol et sur échafaudage',
-                        'travaux de zinguerie, étanchéité et finition de toiture par des artisans couvreurs avec échafaudage'
-                    ];
-                    return pick(roofingChoices);
-                }
-
-                // 4. Dépannage & Remorquage Automobile (FR & EN)
+                // 9. Dépannage & Remorquage Automobile (FR & EN)
                 if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown')) {
                     const towingChoices = [
                         'dépannage automobile et chargement de voiture en panne sur camion dépanneuse plateau',
@@ -989,7 +1011,7 @@ async function main() {
                     return pick(towingChoices);
                 }
 
-                // 5. Second œuvre & Intérieur (FR & EN)
+                // 10. Second œuvre & Intérieur (FR & EN)
                 if (f.includes('carrelage') || f.includes('carreleur') || f.includes('faïence') || f.includes('tile') || f.includes('tiling') || f.includes('tiler')) {
                     const tileChoices = [
                         'pose de carrelage intérieur au sol (artisan carreleur appliquant le mortier-colle et les croisillons sur sol intérieur)',
@@ -1004,18 +1026,8 @@ async function main() {
                     ];
                     return pick(paintChoices);
                 }
-                if (f.includes('nettoyage extérieur') || f.includes('nettoyage exterieur')) {
-                    const extCleaningChoices = [
-                        'nettoyage haute pression et démoussage de façade extérieure de maison',
-                        'nettoyage haute pression de terrasse extérieure en dalles de pierre ou pavés'
-                    ];
-                    return pick(extCleaningChoices);
-                }
                 if (f.includes('plombier') || f.includes('plomberie') || f.includes('plumber') || f.includes('plumbing')) {
                     return 'travaux de plomberie';
-                }
-                if (f.includes('vitrier') || f.includes('miroiterie') || f.includes('vitrage') || f.includes('glass') || f.includes('glazier')) {
-                    return 'remplacement de vitrage et vitrerie';
                 }
                 if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk') || f.includes('encombrant')) {
                     const debarrasChoices = [
@@ -1056,7 +1068,111 @@ async function main() {
             const detectedTrade = detectMetierFromFiche(task.fiche_nom);
             // Mapping direct des services précis s'ils sont renseignés dans task.travaux
             const exactServiceMap = {
-                // Terrassement
+                // ── SITES COUVERTURE (8 services officiels) ──
+                'couverture & pose de toiture': 'travaux de couverture et pose de toiture neuve sur liteaux avec échafaudage de sécurité',
+                'couverture et pose de toiture': 'travaux de couverture et pose de toiture neuve sur liteaux avec échafaudage de sécurité',
+                'pose de toiture': 'travaux de couverture et pose de toiture neuve sur liteaux',
+                'remplacement & réparation de tuiles': 'remplacement et réparation de tuiles en terre cuite sur toiture de maison avec échafaudage',
+                'remplacement et réparation de tuiles': 'remplacement et réparation de tuiles en terre cuite sur toiture de maison avec échafaudage',
+                'remplacement de tuiles': 'remplacement et réparation de tuiles en terre cuite sur toiture de maison',
+                'réparation de tuiles': 'remplacement et réparation de tuiles en terre cuite sur toiture de maison',
+                'reparation de tuiles': 'remplacement et réparation de tuiles en terre cuite sur toiture de maison',
+                'nettoyage & démoussage de toiture': 'démoussage et nettoyage de toiture au sol avec perche télescopique de pulvérisation',
+                'nettoyage et démoussage de toiture': 'démoussage et nettoyage de toiture au sol avec perche télescopique de pulvérisation',
+                'traitement hydrofuge & imperméabilisant': 'traitement hydrofuge et imperméabilisant toiture au sol avec perche télescopique',
+                'traitement hydrofuge et imperméabilisant': 'traitement hydrofuge et imperméabilisant toiture au sol avec perche télescopique',
+                'étanchéité toiture-terrasse': 'étanchéité de toiture-terrasse et toit plat avec membrane EPDM ou bitumineuse',
+                'etancheite toiture-terrasse': 'étanchéité de toiture-terrasse et toit plat avec membrane EPDM ou bitumineuse',
+                'etancheite toiture terrasse': 'étanchéité de toiture-terrasse et toit plat avec membrane EPDM ou bitumineuse',
+                'zinguerie & gouttières': 'travaux de zinguerie, pose de gouttières zinc et solins d\'étanchéité sur toiture',
+                'zinguerie et gouttières': 'travaux de zinguerie, pose de gouttières zinc et solins d\'étanchéité sur toiture',
+                'zinguerie': 'travaux de zinguerie, pose de gouttières zinc et solins d\'étanchéité',
+                'faîtage & rive': 'rénovation et fixation de faîtage et rives de toiture avec mortier ou closoir ventilé',
+                'faîtage et rive': 'rénovation et fixation de faîtage et rives de toiture avec mortier ou closoir ventilé',
+                'faitage & rive': 'rénovation et fixation de faîtage et rives de toiture avec mortier ou closoir ventilé',
+                'faitage et rive': 'rénovation et fixation de faîtage et rives de toiture avec mortier ou closoir ventilé',
+                'charpente & ossature bois': 'travaux de charpente et ossature bois de toiture par des charpentiers',
+                'charpente et ossature bois': 'travaux de charpente et ossature bois de toiture par des charpentiers',
+
+                // ── SITES NETTOYAGE (7 services officiels) ──
+                'nettoyage & démoussage de toiture': 'démoussage et nettoyage de toiture au sol avec perche télescopique de pulvérisation',
+                'nettoyage et démoussage de toiture': 'démoussage et nettoyage de toiture au sol avec perche télescopique de pulvérisation',
+                'traitement hydrofuge toiture': 'traitement hydrofuge toiture au sol avec perche télescopique',
+                'traitement hydrofuge': 'traitement hydrofuge toiture au sol avec perche télescopique',
+                'nettoyage de façade': 'nettoyage de façade au jet moyenne pression avec contraste de propreté',
+                'nettoyage de facade': 'nettoyage de façade au jet moyenne pression avec contraste de propreté',
+                'ravalement de façade': 'ravalement de façade et application d\'enduit ou crépi neuf depuis un échafaudage',
+                'ravalement de facade': 'ravalement de façade et application d\'enduit ou crépi neuf depuis un échafaudage',
+                'nettoyage panneaux solaires': 'nettoyage de panneaux solaires photovoltaïques à la perche télescopique à eau pure',
+                'nettoyage terrasses, allées & dallages': 'nettoyage haute pression de terrasses, allées et dallages avec cloche de lavage de sol',
+                'nettoyage terrasses, allées et dallages': 'nettoyage haute pression de terrasses, allées et dallages avec cloche de lavage de sol',
+                'nettoyage terrasse': 'nettoyage haute pression de terrasse extérieure en dalles',
+                'nettoyage gouttières & chéneaux': 'nettoyage et curage de gouttières et chéneaux avec retrait des débris',
+                'nettoyage gouttières et chéneaux': 'nettoyage et curage de gouttières et chéneaux avec retrait des débris',
+
+                // ── SITES VITRIER (6 services officiels) ──
+                'dépannage vitrerie d\'urgence': 'dépannage de vitrerie d\'urgence et mise en sécurité avec ventouses de vitrier',
+                'depannage vitrerie d\'urgence': 'dépannage de vitrerie d\'urgence et mise en sécurité avec ventouses de vitrier',
+                'remplacement de vitre cassée': 'remplacement de vitre cassée et pose de nouveau vitrage dans châssis avec ventouses',
+                'remplacement de vitre cassee': 'remplacement de vitre cassée et pose de nouveau vitrage dans châssis avec ventouses',
+                'double vitrage et isolation': 'pose et remplacement de double vitrage isolant thermique argon dans fenêtre',
+                'double vitrage': 'pose et remplacement de double vitrage isolant thermique argon dans fenêtre',
+                'réparation de fenêtre': 'réparation de fenêtre, réglage des charnières, crémone et joints d\'étanchéité',
+                'reparation de fenetre': 'réparation de fenêtre, réglage des charnières, crémone et joints d\'étanchéité',
+                'vitrine et vitrage de sécurité': 'pose de vitrine de magasin et vitrage feuilleté de sécurité anti-effraction avec ventouses',
+                'vitrine et vitrage de securite': 'pose de vitrine de magasin et vitrage feuilleté de sécurité anti-effraction avec ventouses',
+                'miroiterie et verre sur mesure': 'travaux de miroiterie et pose de grand miroir mural ou paroi de verre sur mesure',
+                'miroiterie': 'travaux de miroiterie et pose de grand miroir mural ou paroi de verre sur mesure',
+
+                // ── SITES CHARPENTE (14 services officiels) ──
+                'traitement de charpente': 'traitement curatif et préventif de charpente par injection sous pression contre les insectes xylophages',
+                'réparation de charpente': 'réparation de charpente bois, renforts métalliques et remplacement de chevrons abîmés',
+                'reparation de charpente': 'réparation de charpente bois, renforts métalliques et remplacement de chevrons abîmés',
+                'renforcement & consolidation': 'renforcement et consolidation de charpente avec moises en bois et ferrures acier',
+                'renforcement et consolidation': 'renforcement et consolidation de charpente avec moises en bois et ferrures acier',
+                'modification de fermette': 'modification de fermette industrielle pour aménagement de combles avec pose d\'entraits porteurs',
+                'aménagement de combles': 'aménagement de combles, isolation sous toiture et pose de plancher porteur',
+                'amenagement de combles': 'aménagement de combles, isolation sous toiture et pose de plancher porteur',
+                'surélévation de toiture': 'surélévation de toiture en ossature bois pour création d\'étage supérieur',
+                'surelevation de toiture': 'surélévation de toiture en ossature bois pour création d\'étage supérieur',
+                'extension & ossature bois': 'construction d\'extension de maison en ossature bois avec panneaux OSB et pare-pluie',
+                'extension et ossature bois': 'construction d\'extension de maison en ossature bois avec panneaux OSB et pare-pluie',
+                'charpente traditionnelle': 'fabrication et assemblage de charpente traditionnelle en bois massif avec tenons et mortaises',
+                'charpente neuve & levage': 'pose de charpente neuve et levage de fermes à la grue avec charpentiers équipés de harnais',
+                'charpente neuve et levage': 'pose de charpente neuve et levage de fermes à la grue avec charpentiers équipés de harnais',
+                'plancher, solivage & mezzanine': 'création de plancher, solivage en bois massif et mezzanine par des charpentiers',
+                'plancher, solivage et mezzanine': 'création de plancher, solivage en bois massif et mezzanine par des charpentiers',
+                'bardage bois & isolation extérieure': 'pose de bardage bois extérieur sur liteaux avec isolation thermique par l\'extérieur',
+                'bardage bois et isolation extérieure': 'pose de bardage bois extérieur sur liteaux avec isolation thermique par l\'extérieur',
+                'terrasse bois': 'construction de terrasse bois sur lambourdes et plots avec vissage inox',
+                'carport, pergola & abris': 'construction de carport, pergola et abri en bois massif dans le jardin',
+                'carport, pergola et abris': 'construction de carport, pergola et abri en bois massif dans le jardin',
+                'lucarne & fenêtre de toit': 'création de chevêtre et pose de lucarne de toit ou fenêtre de toit Velux',
+                'lucarne et fenêtre de toit': 'création de chevêtre et pose de lucarne de toit ou fenêtre de toit Velux',
+
+                // ── SITES ÉTANCHÉITÉ (5 services officiels) ──
+                'étanchéité de toit-terrasse & toit plat': 'étanchéité de toit-terrasse et toit plat avec membrane EPDM ou bitumineuse sur toit 100% plat',
+                'étanchéité de toit-terrasse et toit plat': 'étanchéité de toit-terrasse et toit plat avec membrane EPDM ou bitumineuse sur toit 100% plat',
+                'étanchéité de toit-terrasse': 'étanchéité de toit-terrasse et toit plat avec membrane synthétique EPDM',
+                'étanchéité de toit terrasse': 'étanchéité de toit-terrasse et toit plat avec membrane synthétique EPDM',
+                'étanchéité toit plat': 'étanchéité de toit plat et toiture-terrasse',
+                'etancheite toit terrasse': 'étanchéité de toiture-terrasse et toit plat',
+                'recherche de fuite & réparation d\'infiltration': 'recherche de fuite non destructive et réparation d\'infiltration d\'eau sur toiture-terrasse',
+                'recherche de fuite et réparation d\'infiltration': 'recherche de fuite non destructive et réparation d\'infiltration d\'eau sur toiture-terrasse',
+                'recherche de fuite': 'recherche de fuite et localisation d\'infiltration sur toiture-terrasse',
+                'réparation d\'infiltration': 'réparation d\'infiltration d\'eau et patch d\'étanchéité sur toiture-terrasse',
+                'reparation d\'infiltration': 'réparation d\'infiltration d\'eau et patch d\'étanchéité sur toiture-terrasse',
+                'étanchéité sous carrelage & terrasse carrelée': 'application de résine d\'étanchéité liquide SEL et bandes d\'armature sous carrelage de terrasse',
+                'étanchéité sous carrelage et terrasse carrelée': 'application de résine d\'étanchéité liquide SEL et bandes d\'armature sous carrelage de terrasse',
+                'étanchéité sous carrelage': 'étanchéité sous carrelage avec résine d\'étanchéité liquide SEL',
+                'etancheite sous carrelage': 'étanchéité sous carrelage avec résine d\'étanchéité liquide SEL',
+                'réfection complète d\'étanchéité': 'réfection complète d\'étanchéité de toiture-terrasse avec complexe multicouche neuf et couvertines',
+                'refection complete d\'etancheite': 'réfection complète d\'étanchéité de toiture-terrasse avec complexe multicouche neuf et couvertines',
+                'étanchéité & isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane bicouche',
+                'étanchéité et isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane bicouche',
+                'étanchéité & isolation': 'étanchéité et isolation thermique de toiture-terrasse',
+
+                // ── AUTRES MÉTIERS (Terrassement, Gouttières, etc.) ──
                 'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
                 'nivellement de terrain': 'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
                 'vrd': 'travaux de VRD (Voirie et Réseaux Divers) et pose de gaines techniques dans tranchée ouverte',
@@ -1070,8 +1186,6 @@ async function main() {
                 'murs de soutènement': 'construction de mur de soutènement de talus en blocs béton ou gabions',
                 'enrochement': 'enrochement de talus et pose de gros blocs de roches massives à la pelle mécanique',
                 'terrassement pour piscine': 'terrassement et creusement précis de terrain pour piscine enterrée avec mini-pelle',
-
-                // Gouttières & Chéneaux
                 'nettoyage & curage de gouttières': 'nettoyage et curage de gouttières avec retrait des feuilles et rinçage',
                 'nettoyage et curage de gouttières': 'nettoyage et curage de gouttières avec retrait des feuilles et rinçage',
                 'nettoyage gouttières': 'nettoyage et curage de gouttières avec retrait manuel des feuilles',
@@ -1091,28 +1205,7 @@ async function main() {
                 'gouttières cuivre': 'pose haut de gamme de gouttières en cuivre avec soudures soignées',
                 'gouttieres cuivre': 'pose haut de gamme de gouttières en cuivre avec soudures soignées',
                 'pose de descentes d\'eaux pluviales': 'pose de tuyaux de descentes d\'eaux pluviales avec colliers muraux et dauphin fonte',
-                'pose de descentes': 'pose de descentes d\'eaux pluviales le long de la façade',
-
-                // Étanchéité
-                'étanchéité de toit-terrasse & toit plat': 'étanchéité de toit-terrasse et toit plat avec membrane EPDM ou bitumineuse sur toit plat',
-                'étanchéité de toit-terrasse et toit plat': 'étanchéité de toit-terrasse et toit plat avec membrane EPDM ou bitumineuse sur toit plat',
-                'étanchéité de toit-terrasse': 'étanchéité de toit-terrasse et toit plat avec membrane synthétique EPDM',
-                'étanchéité de toit terrasse': 'étanchéité de toit-terrasse et toit plat avec membrane synthétique EPDM',
-                'étanchéité toit plat': 'étanchéité de toit plat et toiture-terrasse',
-                'etancheite toit terrasse': 'étanchéité de toiture-terrasse et toit plat',
-                'recherche de fuite & réparation d\'infiltration': 'recherche de fuite et réparation d\'infiltration d\'eau sur toiture-terrasse',
-                'recherche de fuite et réparation d\'infiltration': 'recherche de fuite et réparation d\'infiltration d\'eau sur toiture-terrasse',
-                'recherche de fuite': 'recherche de fuite et localisation d\'infiltration sur toiture-terrasse',
-                'réparation d\'infiltration': 'réparation d\'infiltration d\'eau et patch d\'étanchéité sur toiture-terrasse',
-                'reparation d\'infiltration': 'réparation d\'infiltration d\'eau et patch d\'étanchéité sur toiture-terrasse',
-                'étanchéité & isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane',
-                'étanchéité et isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane',
-                'étanchéité & isolation': 'étanchéité et isolation thermique de toiture-terrasse',
-                'etancheite & isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse',
-                'étanchéité sous carrelage & terrasse carrelée': 'étanchéité sous carrelage et terrasse carrelée avec résine liquide SEL et bandes d\'angle',
-                'étanchéité sous carrelage et terrasse carrelée': 'étanchéité sous carrelage et terrasse carrelée avec résine liquide SEL et bandes d\'angle',
-                'étanchéité sous carrelage': 'étanchéité sous carrelage avec résine d\'étanchéité liquide SEL',
-                'etancheite sous carrelage': 'étanchéité sous carrelage avec résine d\'étanchéité liquide SEL'
+                'pose de descentes': 'pose de descentes d\'eaux pluviales le long de la façade'
             };
 
             const tNorm = (task.travaux || '').toLowerCase().trim();
@@ -1131,10 +1224,9 @@ async function main() {
             }
 
             // Règle du nombre d'ouvriers :
-            // Nettoyage terrasse : artisan solo (1 ouvrier)
-            // Nettoyage façade : 1 à 2 ouvriers (50% solo / 50% duo)
-            // Nettoyage toiture / démoussage : 1 à 2 ouvriers (50% solo / 50% duo)
-            // Extérieurs lourds à risque (élagage, abattage, charpente, maçonnerie, terrassement) : 70% 2 ouvriers / 30% 3 ouvriers.
+            // Nettoyage terrasse / vitrerie simple : 1 artisan solo (ou 2 pour double vitrage/vitrine)
+            // Nettoyage façade / toiture : 1 à 2 ouvriers (50% solo / 50% duo)
+            // Extérieurs lourds à risque (couverture, charpente, élagage, abattage, maçonnerie, terrassement) : 70% 2 ouvriers / 30% 3 ouvriers.
             // Chantiers d'intérieur : 60% 1 artisan solo / 40% 2 artisans.
             const metierText = ((task.metier || '') + ' ' + (task.travaux || '') + ' ' + (task.fiche_nom || '') + ' ' + travauxLabel).toLowerCase();
             const randWorker = Math.random();
@@ -1142,13 +1234,15 @@ async function main() {
 
             if (metierText.includes('haie') || metierText.includes('taille de haie')) {
                 nbOuvriers = 'exactement 2 ouvriers en duo';
+            } else if (metierText.includes('double vitrage') || metierText.includes('vitrine')) {
+                nbOuvriers = '2 artisans vitriers';
             } else if (metierText.includes('terrasse') || metierText.includes('patio')) {
                 nbOuvriers = randWorker < 0.85 ? '1 artisan solo' : '2 artisans';
             } else if (metierText.includes('facade') || metierText.includes('façade') || metierText.includes('ravalement')) {
                 nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
             } else if (metierText.includes('demoussage') || metierText.includes('démoussage') || (metierText.includes('nettoyage') && metierText.includes('toiture'))) {
                 nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
-            } else if (['elagage', 'élagage', 'abattage', 'charpente', 'maconnerie', 'maçonnerie', 'terrassement'].some(k => metierText.includes(k))) {
+            } else if (['couvreur', 'couverture', 'elagage', 'élagage', 'abattage', 'charpente', 'maconnerie', 'maçonnerie', 'terrassement'].some(k => metierText.includes(k))) {
                 nbOuvriers = randWorker < 0.70 ? '2 ouvriers' : '3 ouvriers';
             } else {
                 nbOuvriers = randWorker < 0.60 ? '1 artisan solo' : '2 artisans';
@@ -1225,27 +1319,27 @@ async function main() {
             
             // Header de reset de contexte ultra-strict — force DALL-E 3 à ignorer les images précédentes du fil unique
             let contextReset = "🔴 NOUVELLE DEMANDE INDÉPENDANTE — IGNORE TOTALEMENT TOUTES LES IMAGES PRÉCÉDENTES DE CE FIL DE DISCUSSION.\nTHIS IS A COMPLETELY NEW AND INDEPENDENT PHOTO. DO NOT REUSE ANY PREVIOUS SCENE OR TRADE.\n\n";
-            if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage toiture') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture'))) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOF CLEANING & MOSS REMOVAL (NETTOYAGE HAUTE PRESSION DE TOITURE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre coupé, AUCUN élagage, AUCUN sécateur, AUCUN jardinier, AUCUNE dépanneuse. UNIQUEMENT nettoyage haute pression ou démoussage de tuiles sur toiture.";
+            if (lowerLabel.includes('vitrier') || lowerLabel.includes('vitrerie') || lowerLabel.includes('vitre') || lowerLabel.includes('vitrage') || lowerLabel.includes('fenêtre') || lowerLabel.includes('fenetre') || lowerLabel.includes('miroir') || lowerLabel.includes('miroiterie')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: GLAZIER & GLASS WORK (VITRERIE, REMPLACEMENT DE VITRAGE, DOUBLE VITRAGE, RÉPARATION DE FENÊTRE, VITRINE DE SÉCURITÉ OU MIROITERIE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
+            } else if (lowerLabel.includes('charpente') || lowerLabel.includes('fermette') || lowerLabel.includes('comble') || lowerLabel.includes('surélévation') || lowerLabel.includes('surelevation') || lowerLabel.includes('ossature bois') || lowerLabel.includes('solivage') || lowerLabel.includes('mezzanine') || lowerLabel.includes('bardage') || lowerLabel.includes('pergola') || lowerLabel.includes('carport') || lowerLabel.includes('lucarne')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: CARPENTRY & TIMBER STRUCTURE (CHARPENTE BOIS, OSSATURE BOIS, FERMETTE, COMBLES, SURÉLÉVATION, BARDAGE, MEZZANINE, TERRASSE BOIS OU CARPORT).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN jardinier, AUCUN sécateur, AUCUN taille-haie, AUCUNE dépanneuse. UNIQUEMENT des travaux de charpente, menuiserie et structures bois par des charpentiers qualifiés avec harnais et échafaudages sécurisés.";
+            } else if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage toiture') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture')) || lowerLabel.includes('panneau') || lowerLabel.includes('solaire') || lowerLabel.includes('allée') || lowerLabel.includes('allee') || lowerLabel.includes('dallage')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EXTERIOR CLEANING (NETTOYAGE TOITURE, FAÇADE, TERRASSE, PANNEAUX SOLAIRES OU GOUTTIÈRES).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre coupé, AUCUN élagage, AUCUN marteau-piqueur, AUCUNE démolition. Nettoyage basse/haute pression, perche télescopique au sol ou cloche de lavage de sol.";
+            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('infiltration') || lowerLabel.includes('fuite') || lowerLabel.includes('sel') || lowerLabel.includes('carrelée') || lowerLabel.includes('carrelee') || lowerLabel.includes('réfection') || lowerLabel.includes('refection')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING, LEAK REPAIR OR UNDER-TILE SEALING (ÉTANCHÉITÉ TOIT PLAT / TOITURE-TERRASSE, ISOLATION THERMIQUE, RECHERCHE DE FUITE OU RÉSINE SOUS CARRELAGE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS de toit incliné avec tuiles traditionnelles ! AUCUN couvreur posant des tuiles en terre cuite, AUCUN nettoyeur haute pression sur tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse extérieure).";
+            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUNE grande échelle instable posée sur la pente du toit. Artisans couvreurs sur échafaudage de sécurité ou au sol.";
             } else if (lowerLabel.includes('élagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TREE TRIMMING & HEDGE CUTTING IN GARDEN (ÉLAGAGE D'ARBRE OU TAILLE DE HAIE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN nettoyeur haute pression sur tuiles. UNIQUEMENT des jardiniers taillant des végétaux ou arbres dans un jardin au sol.";
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN & TOW TRUCK (DÉPANNAGE ET REMORQUAGE AUTO).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN jardinier. UNIQUEMENT assistance dépannage ou remorquage automobile avec dépanneuse.";
-            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('infiltration') || lowerLabel.includes('fuite') || lowerLabel.includes('sel') || lowerLabel.includes('carrelée')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING, LEAK REPAIR OR UNDER-TILE SEALING (ÉTANCHÉITÉ TOIT PLAT / TOITURE-TERRASSE, ISOLATION THERMIQUE, RECHERCHE DE FUITE OU RÉSINE SOUS CARRELAGE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS de toit incliné avec tuiles traditionnelles ! AUCUN couvreur posant des tuiles en terre cuite, AUCUN nettoyeur haute pression sur tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse extérieure).";
-            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('charpente') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUN nettoyeur de terrasse. UNIQUEMENT réfection ou pose de tuiles de toiture par un artisan couvreur.";
-            } else if (lowerLabel.includes('peinture')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: INDOOR WALL PAINTING (PEINTURE INTÉRIEURE AU ROULEAU).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN véhicule. UNIQUEMENT peinture intérieure de pièce.";
-            } else if (lowerLabel.includes('carrelage') || lowerLabel.includes('faïence') || lowerLabel.includes('faience')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: INDOOR TILER (POSE DE CARRELAGE OU FAÏENCE INTÉRIEURE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre. UNIQUEMENT pose de carrelage au sol ou faïence murale.";
             } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";
