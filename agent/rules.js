@@ -43,7 +43,7 @@ ABSOLUTE PROHIBITION & BAN:
 ❌ NEVER stand on the very edge of an unprotected parapet!
 ❌ NO blowtorch aimed towards another worker or flammable materials.`,
   ravalement: `SAFETY RULES — Facade rendering: Scaffold above 2m: mandatory guardrail on void side. NEVER: worker leaning beyond guardrail.`,
-  maconnerie: `SAFETY RULES — Masonry: NEVER: worker above unfinished wall at more than 1.5m without scaffold. All workers ground level beside wall (max 1.0-1.2m during block construction).`,
+  maconnerie: `SAFETY RULES — Masonry, Structural Works & Demolition: MANDATORY SAFETY GLASSES / PROTECTIVE GOGGLES on all workers' faces (eye protection against mortar splashes, concrete dust and stone chips). Hard hats and steel-toe safety boots. For demolition: mandatory FFP2 dust mask and heavy work gloves. All blocklaying at ground level or on certified mason scaffold above 1m. NEVER: worker standing on unfinished wall without scaffold, rubble dropped freely from height, worker balancing on loose blocks. Minimum 2 workers for heavy structural elements.`,
   elagage: `SAFETY RULES — Tree Pruning & Trimming: MANDATORY PROPORTION & EQUIPMENT LOGIC BASED ON TREE HEIGHT:
 (A) FOR TALL HIGH-CANOPY TREES (Arbre haute tige / Grand arbre > 6-8m): Minimum 2 workers (1 climber high in upper crotch, 1 ground assistant holding rope). Climber: arborist helmet + climbing harness + ropes anchored high in main tree fork.
 (B) FOR SMALL/MEDIUM GARDEN TREES & FRUIT TREES (Petit/moyen arbre de jardin < 5m): NO HEAVY CLIMBING HARNESS! NO ROPES IN TREE! The gardener/pruner MUST use a double A-frame garden step-ladder (escabeau double de jardin) or stand at ground level using a pole pruner or hand saw/secateurs. MANDATORY SAFETY GLASSES / PROTECTIVE GOGGLES on all workers' faces.
@@ -184,6 +184,26 @@ const VISUAL_RULES_BY_SERVICE = {
   'Traitement facade & humidite': `VISUAL: Waterproofing & anti-humidity treatment. Applying clear hydrofuge repellent micro-emulsion on wall with low-pressure lance.`,
   'Traitement facade et humidite': `VISUAL: Waterproofing & anti-humidity treatment. Applying clear hydrofuge repellent micro-emulsion on wall with low-pressure lance.`,
   'Hydrofuge façade': `VISUAL: Clear waterproofing water-repellent spray applied on clean house facade.`,
+
+  // ── SITES MAÇONNERIE (4 services officiels) ──
+  'Démolition et reconstruction': `VISUAL: Controlled demolition and structural masonry rebuilding (Démolition et reconstruction). Masons with safety goggles, FFP2 dust masks and hard hats carefully dismantling a damaged brick or concrete block partition wall with hammer and chisel / breaker, rubble neatly gathered in masonry wheelbarrow, newly rebuilt straight masonry section with fresh cement mortar and plumb line.`,
+  'Demolition et reconstruction': `VISUAL: Controlled demolition and structural masonry rebuilding. Masons carefully dismantling damaged wall and rebuilding new straight masonry section with fresh mortar and plumb line.`,
+  'Démolition & reconstruction': `VISUAL: Controlled demolition and structural masonry rebuilding. Masons carefully dismantling damaged wall and rebuilding new straight masonry section with fresh mortar and plumb line.`,
+  'Demolition & reconstruction': `VISUAL: Controlled demolition and structural masonry rebuilding. Masons carefully dismantling damaged wall and rebuilding new straight masonry section with fresh mortar and plumb line.`,
+  'maçonnerie extérieur': `VISUAL: Exterior masonry works (Maçonnerie extérieur). Professional masons building an outdoor garden low wall, property boundary wall (muret de clôture) or terrace pillars using grey hollow concrete blocks (parpaings) or dressed natural stone, mortar trowel, string line (cordeau), spirit level, cement mixer nearby.`,
+  'maçonnerie extérieure': `VISUAL: Exterior masonry works. Professional masons building garden boundary wall with concrete blocks, trowel, spirit level and alignment string line.`,
+  'Maçonnerie extérieur': `VISUAL: Exterior masonry works. Professional masons building garden boundary wall with concrete blocks, trowel, spirit level and alignment string line.`,
+  'Maçonnerie extérieure': `VISUAL: Exterior masonry works. Professional masons building garden boundary wall with concrete blocks, trowel, spirit level and alignment string line.`,
+  'Maconnerie exterieur': `VISUAL: Exterior masonry works. Professional masons building garden boundary wall with concrete blocks, trowel, spirit level and alignment string line.`,
+  'Maconnerie exterieure': `VISUAL: Exterior masonry works. Professional masons building garden boundary wall with concrete blocks, trowel, spirit level and alignment string line.`,
+  'Rénovation second-oeuvre': `VISUAL: Interior structural and second-fix masonry renovation (Rénovation second-oeuvre). Craftsmen creating a wall opening with metal beam support (IPN steel beam), laying interior cellular concrete blocks (béton cellulaire / Siporex), leveling screed on subfloor or adjusting door frame openings.`,
+  'Renovation second-oeuvre': `VISUAL: Interior structural renovation. Craftsmen installing steel IPN lintel beam, laying cellular concrete partition blocks or leveling subfloor screed.`,
+  'Rénovation second-œuvre': `VISUAL: Interior structural renovation. Craftsmen installing steel IPN lintel beam, laying cellular concrete partition blocks or leveling subfloor screed.`,
+  'Renovation second oeuvre': `VISUAL: Interior structural renovation. Craftsmen installing steel IPN lintel beam, laying cellular concrete partition blocks or leveling subfloor screed.`,
+  'Rénovation second oeuvre': `VISUAL: Interior structural renovation. Craftsmen installing steel IPN lintel beam, laying cellular concrete partition blocks or leveling subfloor screed.`,
+  'Construction': `VISUAL: Structural building construction & heavy masonry (Construction). Masons assembling load-bearing exterior walls with grey concrete blocks, assembling wooden formwork (coffrage bois) and steel rebar cages (armatures ferraillage) for reinforced concrete ring beam (chaînage) or poured foundation slab with concrete mixer truck chute.`,
+  'Construction neuve': `VISUAL: Structural building construction. Masons assembling load-bearing concrete block walls with wooden formwork and rebar cages.`,
+  'Construction maçonnerie': `VISUAL: Structural building construction. Masons assembling load-bearing concrete block walls with wooden formwork and rebar cages.`,
 
   // Autres métiers
   'Reparation toiture': `VISUAL: Roof repair on house. Roofers working safely from scaffolding along roof edge OR at ground level handling terracotta tiles. ABSOLUTE PROHIBITION: NO worker climbing tall straight extension ladders leaning against roof slope!`,

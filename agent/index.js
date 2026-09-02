@@ -1042,12 +1042,13 @@ async function main() {
                     ];
                     return pick(debarrasChoices);
                 }
-                if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('pierre') || f.includes('masonry') || f.includes('mason') || f.includes('brickwork')) {
+                // ── 10. MAÇONNERIE (4 services officiels) ──
+                if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('maçon') || f.includes('macon') || f.includes('pierre') || f.includes('masonry') || f.includes('mason') || f.includes('brickwork') || f.includes('bâtiment') || f.includes('batiment')) {
                     const maconnerieChoices = [
-                        'travaux de maçonnerie générale, pose de parpaings et muret en béton avec mortier au sol',
-                        'maçonnerie et rejointoiement de mur en pierre naturelle de maison',
-                        'construction et coffrage d\'escalier intérieur ou extérieur en béton armé par un artisan maçon',
-                        'ouverture dans mur porteur et pose de linteau par un artisan maçon'
+                        'démolition et reconstruction de mur maçonné par des artisans maçons avec outils pneumatiques et nouveau mur monté au cordeau',
+                        'maçonnerie extérieur (construction de muret de clôture, piliers ou muret de terrasse en parpaings avec truelle et niveau à bulle)',
+                        'rénovation second-oeuvre (ouverture de mur porteur, pose de poutre IPN, cloisons en béton cellulaire et chape de sol)',
+                        'construction et maçonnerie de gros œuvre (élévation de murs porteurs en parpaings, coffrage bois et ferraillage de chaînage)'
                     ];
                     return pick(maconnerieChoices);
                 }
@@ -1227,7 +1228,25 @@ async function main() {
                 'refection complete d\'etancheite': 'réfection complète d\'étanchéité de toiture-terrasse avec complexe multicouche neuf et couvertines',
                 'étanchéité & isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane bicouche',
                 'étanchéité et isolation de toiture-terrasse': 'étanchéité et isolation thermique de toiture-terrasse avec panneaux isolants et membrane bicouche',
-                'étanchéité & isolation': 'étanchéité et isolation thermique de toiture-terrasse',
+                // ── SITES MAÇONNERIE (4 services officiels) ──
+                'démolition et reconstruction': 'démolition et reconstruction de mur maçonné avec marteau-piqueur/burineur et nouveau mur au mortier',
+                'demolition et reconstruction': 'démolition et reconstruction de mur maçonné avec marteau-piqueur/burineur et nouveau mur au mortier',
+                'démolition & reconstruction': 'démolition et reconstruction de mur maçonné avec marteau-piqueur/burineur et nouveau mur au mortier',
+                'demolition & reconstruction': 'démolition et reconstruction de mur maçonné avec marteau-piqueur/burineur et nouveau mur au mortier',
+                'maçonnerie extérieur': 'maçonnerie extérieure, pose de parpaings et construction de muret avec truelle et niveau',
+                'maçonnerie extérieure': 'maçonnerie extérieure, pose de parpaings et construction de muret avec truelle et niveau',
+                'maconnerie exterieur': 'maçonnerie extérieure, pose de parpaings et construction de muret avec truelle et niveau',
+                'maconnerie exterieure': 'maçonnerie extérieure, pose de parpaings et construction de muret avec truelle et niveau',
+                'maçonnerie': 'maçonnerie extérieure, pose de parpaings et construction de muret avec truelle et niveau',
+                'maconnerie': 'maçonnerie extérieure, pose de parpaings et construction de muret avec truelle et niveau',
+                'rénovation second-oeuvre': 'rénovation second-œuvre, ouverture de mur porteur, pose de poutre IPN et cloisons intérieures',
+                'renovation second-oeuvre': 'rénovation second-œuvre, ouverture de mur porteur, pose de poutre IPN et cloisons intérieures',
+                'rénovation second-œuvre': 'rénovation second-œuvre, ouverture de mur porteur, pose de poutre IPN et cloisons intérieures',
+                'renovation second oeuvre': 'rénovation second-œuvre, ouverture de mur porteur, pose de poutre IPN et cloisons intérieures',
+                'rénovation second oeuvre': 'rénovation second-œuvre, ouverture de mur porteur, pose de poutre IPN et cloisons intérieures',
+                'construction': 'travaux de construction et maçonnerie générale de gros œuvre avec coffrage et ferraillage',
+                'construction neuve': 'travaux de construction neuve et maçonnerie générale de gros œuvre',
+                'construction maçonnerie': 'travaux de construction et maçonnerie générale de gros œuvre',
 
                 // ── AUTRES MÉTIERS (Terrassement, Gouttières, etc.) ──
                 'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
@@ -1401,6 +1420,9 @@ async function main() {
             } else if (lowerLabel.includes('élagage') || lowerLabel.includes('elagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin') || lowerLabel.includes('paysag') || lowerLabel.includes('dessouch') || lowerLabel.includes('débroussaill') || lowerLabel.includes('debroussaill')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TREE PRUNING, FELLING, HEDGE TRIMMING, BRUSH CLEARING OR LANDSCAPING IN GARDEN (ÉLAGAGE D'ARBRE, ABATTAGE D'ARBRE, TAILLE D'HAIES, DESSOUCHAGE, DÉBROUSSAILLAGE OU PAYSAGISME).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN nettoyeur haute pression sur tuiles, AUCUNE dépanneuse. UNIQUEMENT des jardiniers/élagueurs travaillant au sol ou sur escabeau dans un jardin avec pelouse et végétation.";
+            } else if (lowerLabel.includes('maçonnerie') || lowerLabel.includes('maconnerie') || lowerLabel.includes('maçon') || lowerLabel.includes('macon') || lowerLabel.includes('démolition') || lowerLabel.includes('demolition') || lowerLabel.includes('parpaing') || lowerLabel.includes('second-oeuvre') || lowerLabel.includes('second oeuvre') || (lowerLabel.includes('construction') && !lowerLabel.includes('bois'))) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: MASONRY & BUILDING CONSTRUCTION (DÉMOLITION ET RECONSTRUCTION, MAÇONNERIE EXTÉRIEURE, RÉNOVATION SECOND-OEUVRE OU CONSTRUCTION GROS OEUVRE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. UNIQUEMENT des maçons professionnels travaillant avec parpaings, béton, mortier, truelles, niveau à bulle, échafaudage de maçonnerie sécurisé ou au sol.";
             } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN & TOW TRUCK (DÉPANNAGE ET REMORQUAGE AUTO).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN jardinier. UNIQUEMENT assistance dépannage ou remorquage automobile avec dépanneuse.";
