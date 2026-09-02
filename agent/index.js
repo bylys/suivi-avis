@@ -1007,12 +1007,13 @@ async function main() {
                     return pick(facadeChoices);
                 }
 
-                // 9. Dépannage & Remorquage Automobile (FR & EN)
-                if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown')) {
+                // ── 9. DÉPANNAGE & REMORQUAGE AUTOMOBILE (4 services officiels) ──
+                if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown') || f.includes('batterie') || f.includes('moto')) {
                     const towingChoices = [
-                        'dépannage automobile et chargement de voiture en panne sur camion dépanneuse plateau',
-                        'remorquage automobile sur le bord de la route avec véhicule d\'assistance routière et gyrophares',
-                        'dépannage auto sur place (changement de roue ou démarrage batterie avec booster)'
+                        'remorquage de voiture en panne sur camion dépanneuse plateau avec treuil et gyrophare orange',
+                        'remorquage de moto et fixation soignée avec sangles d\'arrimage et bloque-roue sur plateau',
+                        'dépannage auto sur le bord de la route avec véhicule d\'assistance routière et technicien en gilet jaune',
+                        'dépannage batterie avec booster de démarrage portable ou remplacement de batterie sous le capot ouvert'
                     ];
                     return pick(towingChoices);
                 }
@@ -1248,6 +1249,26 @@ async function main() {
                 'construction neuve': 'travaux de construction neuve et maçonnerie générale de gros œuvre',
                 'construction maçonnerie': 'travaux de construction et maçonnerie générale de gros œuvre',
 
+                // ── SITES DÉPANNAGE & REMORQUAGE AUTO (4 services officiels) ──
+                'remorquage de voiture': 'remorquage de voiture en panne et chargement sur dépanneuse plateau avec treuil',
+                'remorquage voiture': 'remorquage de voiture en panne et chargement sur dépanneuse plateau avec treuil',
+                'remorquage auto': 'remorquage automobile sur camion plateau avec gyrophare orange',
+                'remorquage': 'remorquage de véhicule sur camion dépanneuse plateau',
+                'remorquage de moto': 'remorquage de moto avec sangles d\'arrimage et bloque-roue sur plateau de dépanneuse',
+                'remorquage moto': 'remorquage de moto avec sangles d\'arrimage et bloque-roue sur plateau de dépanneuse',
+                'dépannage moto': 'dépannage et transport de moto sur camion d\'assistance',
+                'depannage moto': 'dépannage et transport de moto sur camion d\'assistance',
+                'transport moto': 'transport et remorquage de moto sur remorque plateau',
+                'dépannage auto': 'dépannage automobile sur le bord de la route avec véhicule d\'assistance et technicien en gilet jaune',
+                'depannage auto': 'dépannage automobile sur le bord de la route avec véhicule d\'assistance et technicien en gilet jaune',
+                'dépannage automobile': 'dépannage automobile sur le bord de la route avec véhicule d\'assistance et technicien en gilet jaune',
+                'assistance routière': 'assistance routière et dépannage auto sur le bord de la route',
+                'dépannage batterie': 'dépannage de batterie de voiture avec booster de démarrage portable ou remplacement sous le capot',
+                'depannage batterie': 'dépannage de batterie de voiture avec booster de démarrage portable ou remplacement sous le capot',
+                'démarrage batterie': 'démarrage de batterie avec câbles de démarrage ou booster portable',
+                'demarrage batterie': 'démarrage de batterie avec câbles de démarrage ou booster portable',
+                'changement de batterie': 'remplacement et installation de batterie neuve sous le capot de voiture',
+
                 // ── AUTRES MÉTIERS (Terrassement, Gouttières, etc.) ──
                 'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
                 'nivellement de terrain': 'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
@@ -1423,9 +1444,9 @@ async function main() {
             } else if (lowerLabel.includes('maçonnerie') || lowerLabel.includes('maconnerie') || lowerLabel.includes('maçon') || lowerLabel.includes('macon') || lowerLabel.includes('démolition') || lowerLabel.includes('demolition') || lowerLabel.includes('parpaing') || lowerLabel.includes('second-oeuvre') || lowerLabel.includes('second oeuvre') || (lowerLabel.includes('construction') && !lowerLabel.includes('bois'))) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: MASONRY & BUILDING CONSTRUCTION (DÉMOLITION ET RECONSTRUCTION, MAÇONNERIE EXTÉRIEURE, RÉNOVATION SECOND-OEUVRE OU CONSTRUCTION GROS OEUVRE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. UNIQUEMENT des maçons professionnels travaillant avec parpaings, béton, mortier, truelles, niveau à bulle, échafaudage de maçonnerie sécurisé ou au sol.";
-            } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN & TOW TRUCK (DÉPANNAGE ET REMORQUAGE AUTO).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN arbre, AUCUN jardinier. UNIQUEMENT assistance dépannage ou remorquage automobile avec dépanneuse.";
+            } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('depannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture') || lowerLabel.includes('moto') || lowerLabel.includes('batterie') || lowerLabel.includes('towing') || lowerLabel.includes('breakdown')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN ASSISTANCE & VEHICLE TOWING (REMORQUAGE DE VOITURE, REMORQUAGE DE MOTO, DÉPANNAGE AUTO SUR PLACE OU DÉPANNAGE BATTERIE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN couvreur, AUCUN maçon. UNIQUEMENT dépanneuse à plateau, technicien avec gilet haute visibilité jaune fluo, véhicule d'assistance routière ou dépannage de batterie sur bord de route sécurisé.";
             } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";

@@ -55,7 +55,7 @@ NEVER: Put heavy climbing harnesses, ropes or climbing spurs on a small garden t
   paysagiste: `SAFETY RULES — Landscaping, Woodwork & Hedge Trimming: MANDATORY SAFETY GLASSES / PROTECTIVE GOGGLES on all workers' faces (eye protection mandatory for cutting hedges and wood). NO HARD HAT / NO HELMET on head for ground hedge trimming (bare head or casual cap/ear defenders). Hedge trimmer or lawnmower in use. Work trousers and gloves. NEVER: lawnmower on steep unstable slope, chainsaw operated without leg protection.`,
   nettoyage: `SAFETY RULES — Exterior cleaning: Ground level work. NO HARD HAT on head. NEVER: high-pressure jet aimed at person, bare feet during cleaning.`,
   vitrier: `SAFETY RULES — Glazier: Cut-resistant safety gloves and protective safety glasses/goggles MANDATORY when handling glass panes. Glass suction cup lifters MUST be firmly attached to the flat central surface of the glass pane (held by glazier hands), NEVER floating mid-air or overlapping window frames. NO HARD HAT / NO HELMET on head (bare head or casual cap). Outdoor height intervention (scaffolding/basket): hard hat mandatory. NEVER: bare hands touching glass edge, glass pane resting unsupported on wall.`,
-  depannage_auto: `SAFETY RULES — Auto breakdown: Off-road mandatory, warning triangle visible. NEVER: person between vehicle and traffic, cables crossing road, vehicle raised without axle stands.`,
+  depannage_auto: `SAFETY RULES — Auto breakdown & Towing: MANDATORY HIGH-VISIBILITY FLUORESCENT YELLOW VEST (gilet de sécurité fluo avec bandes rétro-réfléchissantes) on all technicians. Emergency warning triangle positioned behind vehicle, recovery truck with amber warning beacons (gyrophares orange). All interventions safely off-traffic on road shoulder, parking or driveway. NEVER: technician standing in live traffic lane, person under vehicle without axle stands/security chocks, winch cable stepped over under tension.`,
   charpente: `SAFETY RULES — Carpentry & Woodwork: MANDATORY SAFETY GLASSES / PROTECTIVE GOGGLES on all workers' faces (eye protection against wood dust). Wooden roof trusses or rafters visible, minimum 2 carpenters working with circular saw or nail gun, safety harness connected, hard hats mandatory. NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
 };
 
@@ -204,6 +204,23 @@ const VISUAL_RULES_BY_SERVICE = {
   'Construction': `VISUAL: Structural building construction & heavy masonry (Construction). Masons assembling load-bearing exterior walls with grey concrete blocks, assembling wooden formwork (coffrage bois) and steel rebar cages (armatures ferraillage) for reinforced concrete ring beam (chaînage) or poured foundation slab with concrete mixer truck chute.`,
   'Construction neuve': `VISUAL: Structural building construction. Masons assembling load-bearing concrete block walls with wooden formwork and rebar cages.`,
   'Construction maçonnerie': `VISUAL: Structural building construction. Masons assembling load-bearing concrete block walls with wooden formwork and rebar cages.`,
+
+  // ── SITES DÉPANNAGE & REMORQUAGE AUTO (4 services officiels) ──
+  'Remorquage de voiture': `VISUAL: Car towing & flatbed truck recovery (Remorquage de voiture). Professional flatbed recovery truck (dépanneuse plateau) with amber beacon lights parked safely on roadside shoulder, steel winch cable pulling a passenger car or SUV up the tilted aluminum hydraulic sliding ramp, tow truck technician wearing high-visibility fluorescent yellow vest operating winch controls.`,
+  'Remorquage voiture': `VISUAL: Car towing & recovery on flatbed tow truck with winch cable and amber beacon lights.`,
+  'Remorquage auto': `VISUAL: Car towing & recovery on flatbed tow truck with winch cable and amber beacon lights.`,
+  'Remorquage': `VISUAL: Vehicle towing with flatbed recovery truck and high-visibility technician.`,
+  'Remorquage de moto': `VISUAL: Motorcycle towing & recovery (Remorquage de moto). Tow truck technician in high-vis vest securing a motorcycle / scooter on the flatbed of a recovery vehicle using heavy-duty ratchet tie-down straps (sangles d'arrimage) on handlebars and wheel chocks (bloque-roue moto), amber warning light bar visible.`,
+  'Remorquage moto': `VISUAL: Motorcycle towing on flatbed truck with ratchet straps and wheel chock.`,
+  'Dépannage moto': `VISUAL: Motorcycle towing on flatbed truck with ratchet straps and wheel chock.`,
+  'Transport moto': `VISUAL: Motorcycle towing on flatbed truck with ratchet straps and wheel chock.`,
+  'Dépannage auto': `VISUAL: Roadside car breakdown assistance (Dépannage auto). Breakdown technician wearing high-visibility yellow vest working beside a passenger car parked on roadside with emergency warning triangle and hazard lights, inspecting open engine bay with diagnostic scanner or changing a flat tire with hydraulic trolley jack and cross wrench.`,
+  'Depannage auto': `VISUAL: Roadside car breakdown assistance. Technician in high-vis vest beside car with open hood or changing tire with hydraulic jack.`,
+  'Dépannage automobile': `VISUAL: Roadside car breakdown assistance. Technician in high-vis vest with roadside recovery vehicle.`,
+  'Dépannage batterie': `VISUAL: Dead battery roadside jump start & replacement (Dépannage batterie). Technician in high-vis jacket connecting heavy-duty booster jumper cables or a professional portable lithium starter booster pack (booster de démarrage) to car battery terminals under open vehicle hood, multimeter voltage tester visible.`,
+  'Depannage batterie': `VISUAL: Battery jump start with portable booster pack or jumper cables on car battery under open hood.`,
+  'Démarrage batterie': `VISUAL: Battery jump start with portable booster pack or jumper cables on car battery under open hood.`,
+  'Changement de batterie': `VISUAL: Battery replacement with technician installing new car battery under open hood.`,
 
   // Autres métiers
   'Reparation toiture': `VISUAL: Roof repair on house. Roofers working safely from scaffolding along roof edge OR at ground level handling terracotta tiles. ABSOLUTE PROHIBITION: NO worker climbing tall straight extension ladders leaning against roof slope!`,
