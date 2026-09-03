@@ -58,6 +58,7 @@ NEVER: Put heavy climbing harnesses, ropes or climbing spurs on a small garden t
   depannage_auto: `SAFETY RULES — Auto breakdown & Towing: MANDATORY HIGH-VISIBILITY FLUORESCENT YELLOW VEST (gilet de sécurité fluo avec bandes rétro-réfléchissantes) on all technicians. Emergency warning triangle positioned behind vehicle, recovery truck with amber warning beacons (gyrophares orange). All interventions safely off-traffic on road shoulder, parking or driveway. NEVER: technician standing in live traffic lane, person under vehicle without axle stands/security chocks, winch cable stepped over under tension.`,
   debarras: `SAFETY RULES — Clearance & Waste Removal (Débarras & Encombrants): MANDATORY REINFORCED WORK GLOVES (gants anti-coupure et manutention) and steel-toe safety boots. For extreme clutter / Diogenes / hazardous materials: MANDATORY full white protective coverall suit + FFP3 respirator mask + nitrile gloves. Heavy items handled in pairs with wheeled dollies, pallet jack or hand trucks (diable de manutention). NEVER: lifting heavy bulky furniture solo without ergonomic posture, worker standing under items hoisted, blocking fire exits.`,
   carrelage: `SAFETY RULES — Tiling & Floor Coverings (Carrelage intérieur et extérieur): MANDATORY KNEE PADS (genouillères de carreleur renforcées) and safety glasses when cutting tiles with wet diamond saw or manual tile cutter (carrelette). NO HARD HAT / NO HELMET on head for indoor tiling (bare head or casual work cap). Cut-resistant gloves when handling sharp tile edges. NEVER: worker standing on freshly glued tiles without load-spreading boards, electrical tile saw operated near standing water pools.`,
+  peinture: `SAFETY RULES — Interior Painting & Decoration (Peinture intérieure & Décoration): NO HARD HAT / NO HELMET on head for indoor painting (bare head or casual painter's cap/beanie). Work in clean white cotton painter overalls (salopette ou pantalon de peintre). Protective drop cloths (bâches de protection) covering all floors and furniture. Stable double A-frame stepladder or low aluminum platform. NEVER: balancing on furniture or paint buckets to reach high walls/ceiling, spray painting without FFP2 mask in unventilated room.`,
   charpente: `SAFETY RULES — Carpentry & Woodwork: MANDATORY SAFETY GLASSES / PROTECTIVE GOGGLES on all workers' faces (eye protection against wood dust). Wooden roof trusses or rafters visible, minimum 2 carpenters working with circular saw or nail gun, safety harness connected, hard hats mandatory. NEVER: roof ladder as structural platform, worker balancing on rafters without platform, lone worker carrying heavy piece.`,
 };
 
@@ -284,6 +285,26 @@ const VISUAL_RULES_BY_SERVICE = {
   'Faience salle de bain': `VISUAL: Bathroom wall ceramic tiling with leveling spacers and grout float.`,
   'Douche à l\'italienne': `VISUAL: Walk-in Italian shower tiling with waterproof membrane and stone-effect wall tiles.`,
   'Douche a l\'italienne': `VISUAL: Walk-in Italian shower tiling with waterproof membrane and stone-effect wall tiles.`,
+
+  // ── SITES PEINTURE (5 services officiels) ──
+  'Peinture sols': `VISUAL: Floor painting & epoxy resin application (Peinture sols). House painter with protective shoe covers and paint roller on telescopic pole applying durable epoxy or polyurethane floor paint on concrete garage or utility room floor, paint bucket and masking tape around baseboards.`,
+  'Peinture sol': `VISUAL: Floor painting with paint roller and protective masking tape.`,
+  'Peinture de sols': `VISUAL: Floor painting with paint roller and protective masking tape.`,
+  'Peinture plafonds': `VISUAL: Ceiling painting & plaster finishing (Peinture plafonds). Professional house painter standing on an aluminum platform ladder or using an extension roller pole applying ultra-white matte ceiling paint on smooth ceiling, protective drop cloths covering room floor, masking tape along wall cornices.`,
+  'Peinture plafond': `VISUAL: Ceiling painting with extension roller pole, white matte paint and floor drop cloths.`,
+  'Peinture de plafonds': `VISUAL: Ceiling painting with extension roller pole, white matte paint and floor drop cloths.`,
+  'Peinture murale': `VISUAL: Interior wall painting (Peinture murale). Painter wearing white cotton overalls using a microfiber paint roller on a living room wall, crisp edges cut in with angled sash brush (pinceau à rechampir), paint tray with grid, drop cloths protecting floor.`,
+  'Peinture mur': `VISUAL: Interior wall painting with roller, cutting-in brush and floor protection.`,
+  'Peinture murs': `VISUAL: Interior wall painting with roller, cutting-in brush and floor protection.`,
+  'Peinture de murs': `VISUAL: Interior wall painting with roller, cutting-in brush and floor protection.`,
+  'Peinture de portes': `VISUAL: Interior door & woodwork painting (Peinture de portes). Artisan painter applying satin lacquer paint with fine foam mini-roller and precision brush on an interior wooden panel door, door handle masked with yellow tape, drop cloth beneath.`,
+  'Peinture portes': `VISUAL: Interior door painting with fine mini-roller and precision brush.`,
+  'Peinture porte': `VISUAL: Interior door painting with fine mini-roller and precision brush.`,
+  'Peinture boiseries': `VISUAL: Interior door and baseboard painting with fine trim brush.`,
+  'Peinture décorative': `VISUAL: Decorative interior painting & texture effects (Peinture décorative). Painter applying textured decorative coating (enduit stuc / chaux brossée / peinture sablée) on living room accent wall using stainless steel smoothing trowel (platoir) or wide spalter brush.`,
+  'Peinture decorative': `VISUAL: Decorative interior painting with mineral texture and smoothing trowel.`,
+  'Peinture décoration': `VISUAL: Decorative interior painting with textured lime wash effect.`,
+  'Peinture decoration': `VISUAL: Decorative interior painting with textured lime wash effect.`,
 
   // Autres métiers
   'Reparation toiture': `VISUAL: Roof repair on house. Roofers working safely from scaffolding along roof edge OR at ground level handling terracotta tiles. ABSOLUTE PROHIBITION: NO worker climbing tall straight extension ladders leaning against roof slope!`,

@@ -1028,10 +1028,14 @@ async function main() {
                     ];
                     return pick(tileChoices);
                 }
+                // ── 13. PEINTURE INTÉRIEURE & DÉCORATION (5 services officiels) ──
                 if (f.includes('peintre') || f.includes('peinture') || f.includes('décoration') || f.includes('decoration') || f.includes('paint') || f.includes('painter') || f.includes('painting')) {
                     const paintChoices = [
-                        'travaux de peinture intérieure et décoration (artisan peintre appliquant la peinture au rouleau sur mur intérieur de salon ou chambre)',
-                        'peinture murale intérieure et finitions de plafond dans une pièce à vivre'
+                        'peinture sols (application de peinture de sol époxy ou polyuréthane au rouleau avec perche télescopique)',
+                        'peinture plafonds (mise en peinture de plafond au rouleau avec perche, peinture blanche mate et bâches au sol)',
+                        'peinture murale (mise en peinture intérieure des murs au rouleau microfibres avec pinceau à rechampir et bac)',
+                        'peinture de portes (peinture laque satinée de portes intérieures en bois au mini-rouleau et pinceau fin)',
+                        'peinture décorative (application d\'enduit décoratif à la chaux ou stuc au platoir inox sur pan de mur)'
                     ];
                     return pick(paintChoices);
                 }
@@ -1375,6 +1379,30 @@ async function main() {
                 'douche à l\'italienne': 'pose de carrelage et étanchéité de douche à l\'italienne avec receveur carrelé',
                 'douche a l\'italienne': 'pose de carrelage et étanchéité de douche à l\'italienne avec receveur carrelé',
 
+                // ── SITES PEINTURE (5 services officiels) ──
+                'peinture sols': 'application de peinture de sol époxy ou polyuréthane au rouleau avec perche télescopique',
+                'peinture sol': 'application de peinture de sol époxy ou polyuréthane au rouleau avec perche télescopique',
+                'peinture de sols': 'application de peinture de sol résistante au rouleau',
+                'peinture de sol': 'application de peinture de sol résistante au rouleau',
+                'peinture plafonds': 'mise en peinture de plafond au rouleau avec perche, peinture blanche mate et bâches de protection',
+                'peinture plafond': 'mise en peinture de plafond au rouleau avec perche et peinture blanche mate',
+                'peinture de plafonds': 'mise en peinture de plafond au rouleau avec peinture blanche mate',
+                'peinture de plafond': 'mise en peinture de plafond au rouleau avec peinture blanche mate',
+                'peinture murale': 'mise en peinture intérieure des murs au rouleau microfibres avec pinceau à rechampir et bac à peinture',
+                'peinture mur': 'mise en peinture intérieure de mur avec rouleau et pinceau à rechampir',
+                'peinture murs': 'mise en peinture intérieure des murs au rouleau avec protections',
+                'peinture de murs': 'mise en peinture intérieure des murs au rouleau avec protections',
+                'peinture intérieure': 'mise en peinture intérieure des murs et plafonds avec finitions soignées',
+                'peinture interieure': 'mise en peinture intérieure des murs et plafonds avec finitions soignées',
+                'peinture de portes': 'peinture laque satinée de portes intérieures en bois au mini-rouleau et pinceau de précision',
+                'peinture portes': 'peinture laque satinée de portes intérieures au mini-rouleau',
+                'peinture porte': 'peinture laque satinée de porte intérieure au mini-rouleau',
+                'peinture boiseries': 'peinture soignée de portes et plinthes intérieures',
+                'peinture décorative': 'application d\'enduit décoratif stuc ou effet chaux au platoir inox sur pan de mur intérieur',
+                'peinture decorative': 'application d\'enduit décoratif stuc ou effet chaux au platoir inox sur pan de mur intérieur',
+                'peinture décoration': 'application de peinture décorative à effet de matière avec platoir ou spalter',
+                'peinture decoration': 'application de peinture décorative à effet de matière avec platoir ou spalter',
+
                 // ── AUTRES MÉTIERS (Terrassement, Gouttières, etc.) ──
                 'terrassement': 'travaux de terrassement général et excavation avec mini-pelle de chantier',
                 'nivellement de terrain': 'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
@@ -1559,6 +1587,9 @@ async function main() {
             } else if (lowerLabel.includes('carrelage') || lowerLabel.includes('carreleur') || lowerLabel.includes('faïence') || lowerLabel.includes('faience') || lowerLabel.includes('revêtement de sol') || lowerLabel.includes('revetement de sol') || lowerLabel.includes('crédence') || lowerLabel.includes('credence') || (lowerLabel.includes('douche') && lowerLabel.includes('italienne'))) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TILING & FLOOR/WALL COVERINGS (REVÊTEMENTS DE SOLS EXTÉRIEUR, REVÊTEMENTS DE SOLS INTÉRIEURS, CARRELAGE CUISINE OU SALLE DE BAIN).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN élagage d'arbre, AUCUNE dépanneuse, AUCUN casque de chantier lourd pour la pose intérieure. UNIQUEMENT artisan carreleur à genoux avec genouillères, mortier-colle, peigne cranté, croisillons autonivelants, carreaux céramiques/grès cérame posés au cordeau et niveau à bulle.";
+            } else if ((lowerLabel.includes('peintre') || lowerLabel.includes('peinture') || lowerLabel.includes('plafond') || lowerLabel.includes('porte') || lowerLabel.includes('décorative') || lowerLabel.includes('decorative')) && !lowerLabel.includes('façade') && !lowerLabel.includes('facade') && !lowerLabel.includes('extérieure') && !lowerLabel.includes('exterieure')) {
+                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: INTERIOR PAINTING & DECORATION (PEINTURE SOLS, PEINTURE PLAFONDS, PEINTURE MURALE, PEINTURE DE PORTES OU PEINTURE DÉCORATIVE).\n";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN élagage d'arbre, AUCUNE dépanneuse, AUCUN échafaudage extérieur lourd, AUCUN casque de chantier lourd pour les pièces intérieures. UNIQUEMENT artisan peintre en salopette blanche avec rouleau microfibres, pinceau à rechampir, bac à peinture et bâches de protection au sol.";
             } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";
