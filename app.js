@@ -4917,12 +4917,14 @@ async function renderGmails() {
   // Calcul des compteurs par statut
   let countFonctionnel = 0;
   let countChauffe     = 0;
+  let countTransfere   = 0;
   let countIndispo     = 0;
 
   gmails.forEach(g => {
     const emKey = (g.email || '').toLowerCase().trim();
     const st = statuses[emKey] || 'Fonctionnel';
     if (st === 'Chauffe en cours') countChauffe++;
+    else if (st === "Transféré pour les GMB's" || st === 'Transféré pour les GMB' || st === 'Transféré GMB') countTransfere++;
     else if (st === 'Indisponible') countIndispo++;
     else countFonctionnel++;
   });
@@ -4947,6 +4949,7 @@ async function renderGmails() {
       <span style="color:#94a3b8;font-size:0.82rem;font-weight:600;">${list.length} Gmail${list.length > 1 ? 's' : ''} affiché${list.length > 1 ? 's' : ''}</span>
       <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);">🟢 ${countFonctionnel} Fonctionnel${countFonctionnel > 1 ? 's' : ''}</span>
       <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">🔥 ${countChauffe} Chauffe en cours</span>
+      <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);">📤 ${countTransfere} Transféré${countTransfere > 1 ? 's' : ''} GMB</span>
       <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);">⛔ ${countIndispo} Indisponible${countIndispo > 1 ? 's' : ''}</span>
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
@@ -4962,7 +4965,8 @@ async function renderGmails() {
         ${list.map(g => {
           const emKey = (g.email || '').toLowerCase().trim();
           const st = statuses[emKey] || 'Fonctionnel';
-          const stClass = st === 'Chauffe en cours' ? 'status-chauffe' : (st === 'Indisponible' ? 'status-indisponible' : 'status-fonctionnel');
+          const isTransfere = st === "Transféré pour les GMB's" || st === 'Transféré pour les GMB' || st === 'Transféré GMB';
+          const stClass = st === 'Chauffe en cours' ? 'status-chauffe' : (isTransfere ? 'status-transfere' : (st === 'Indisponible' ? 'status-indisponible' : 'status-fonctionnel'));
 
           const lastUse = derniereUtilisation[g.email];
           const lastLabel = lastUse ? lastUse.split('-').reverse().join('/') : '–';
@@ -4992,6 +4996,7 @@ async function renderGmails() {
               <select class="gmail-status-select ${stClass}" onchange="updateGmailStatus('${(g.email || '').replace(/'/g, "\\'")}', this.value)">
                 <option value="Fonctionnel" ${st === 'Fonctionnel' ? 'selected' : ''}>🟢 Fonctionnel</option>
                 <option value="Chauffe en cours" ${st === 'Chauffe en cours' ? 'selected' : ''}>🔥 Chauffe en cours</option>
+                <option value="Transféré pour les GMB's" ${isTransfere ? 'selected' : ''}>📤 Transféré pour les GMB's</option>
                 <option value="Indisponible" ${st === 'Indisponible' ? 'selected' : ''}>⛔ Indisponible</option>
               </select>
             </td>

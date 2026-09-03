@@ -457,7 +457,7 @@ def main():
     fiches_dispo.sort(key=lambda fn: (today - last_fiche_date[fn]).days, reverse=True)
 
     # Gmails éligibles : statut 'Fonctionnel' + jamais utilisés OU cooldown passé
-    # (les comptes 'Chauffe en cours' et 'Indisponible' sont exclus)
+    # (les comptes 'Chauffe en cours', 'Transféré pour les GMB\'s' et 'Indisponible' sont exclus)
     gmails_dispo = {
         g for g in all_gmails
         if gmail_statuses.get(g, "Fonctionnel") == "Fonctionnel"

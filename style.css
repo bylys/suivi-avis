@@ -1789,6 +1789,11 @@ body.light-theme #notes-textarea {
   border-color: rgba(245, 158, 11, 0.45);
   color: #fbbf24;
 }
+.gmail-status-select.status-transfere {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #60a5fa;
+}
 .gmail-status-select.status-indisponible {
   background: rgba(239, 68, 68, 0.18);
   border-color: rgba(239, 68, 68, 0.4);
@@ -1804,6 +1809,11 @@ body.light-theme .gmail-status-select.status-chauffe {
   background: #fef3c7;
   border-color: #fde68a;
   color: #b45309;
+}
+body.light-theme .gmail-status-select.status-transfere {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
 }
 body.light-theme .gmail-status-select.status-indisponible {
   background: #fee2e2;
