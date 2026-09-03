@@ -899,8 +899,111 @@ async function main() {
                     return pick(vitrierChoices);
                 }
 
-                // ── 2. CHARPENTE & OSSATURE BOIS (14 services officiels) ──
-                // Détecter si la fiche est spécifiquement dédiée à la charpente / ossature bois
+                // ── 2. DÉPANNAGE & REMORQUAGE AUTOMOBILE (4 services officiels) ──
+                if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown') || f.includes('batterie') || (f.includes('moto') && !f.includes('motoculture'))) {
+                    const towingChoices = [
+                        'remorquage de voiture en panne sur camion dépanneuse plateau avec treuil et gyrophare orange',
+                        'remorquage de moto et fixation soignée avec sangles d\'arrimage et bloque-roue sur plateau',
+                        'dépannage auto sur le bord de la route avec véhicule d\'assistance routière et technicien en gilet jaune',
+                        'dépannage batterie avec booster de démarrage portable ou remplacement de batterie sous le capot ouvert'
+                    ];
+                    return pick(towingChoices);
+                }
+
+                // ── 3. DÉBARRAS & ENCOMBRANTS (Services officiels & Situations) ──
+                if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk') || f.includes('encombrant') || f.includes('vide maison') || f.includes('vide grenier') || f.includes('diogène') || f.includes('diogene')) {
+                    const debarrasChoices = [
+                        'débarras de bureaux (déménagement de mobilier de bureau, bureaux démontés et cartons d\'archives sur diable)',
+                        'débarras appartement et maison (tri et évacuation de meubles, cartons et objets encombrants avec diables de manutention)',
+                        'débarras syndrome de Diogène (techniciens d\'hygiène en combinaison blanche intégrale, masque FFP3 et sacs renforcés)',
+                        'débarras de garage ou box (tri d\'outils, étagères métalliques et cartons stockés avec porte de garage ouverte)',
+                        'débarras d\'entrepôt (évacuation de palettes bois et rayonnages métalliques avec transpalette manuel)',
+                        'débarras d\'archives (tri et manutention de cartons d\'archives professionnels numérotés)',
+                        'débarras de combles et grenier (évacuation de malles anciennes, objets stockés sous charpente bois)',
+                        'débarras de local commercial (démontage d\'étagères de magasin et mobilier de vente)'
+                    ];
+                    return pick(debarrasChoices);
+                }
+
+                // ── 4. CARRELAGE & REVÊTEMENTS DE SOL (4 services officiels) ──
+                if (f.includes('carrelage') || f.includes('carreleur') || f.includes('faïence') || f.includes('faience') || f.includes('tile') || f.includes('tiling') || f.includes('tiler') || f.includes('revêtement de sol') || f.includes('revetement de sol')) {
+                    const tileChoices = [
+                        'revêtements de sols extérieur (pose de dalles en grès cérame 20mm antidérapant sur terrasse avec peigne à colle et croisillons autonivelants)',
+                        'revêtements de sols intérieurs (pose de carrelage grand format au sol intérieur avec mortier-colle, peigne cranté et croisillons nivelants)',
+                        'cuisine (pose de carrelage au sol et crédence murale en faïence ou carrelage métro au-dessus du plan de travail)',
+                        'salle de bain (pose de carrelage mural, faïence et carrelage de douche à l\'italienne avec niveau laser)'
+                    ];
+                    return pick(tileChoices);
+                }
+
+                // ── 5. PEINTURE INTÉRIEURE & DÉCORATION (5 services officiels) ──
+                if ((f.includes('peintre') || f.includes('peinture') || f.includes('décoration') || f.includes('decoration') || f.includes('paint') || f.includes('painter') || f.includes('painting')) && !f.includes('façade') && !f.includes('facade') && !f.includes('ravalement') && !f.includes('extérieure') && !f.includes('exterieure')) {
+                    const paintChoices = [
+                        'peinture sols (application de peinture de sol époxy ou polyuréthane au rouleau avec perche télescopique)',
+                        'peinture plafonds (mise en peinture de plafond au rouleau avec perche, peinture blanche mate et bâches au sol)',
+                        'peinture murale (mise en peinture intérieure des murs au rouleau microfibres avec pinceau à rechampir et bac)',
+                        'peinture de portes (peinture laque satinée de portes intérieures en bois au mini-rouleau et pinceau fin)',
+                        'peinture décorative (application d\'enduit décoratif à la chaux ou stuc au platoir inox sur pan de mur)'
+                    ];
+                    return pick(paintChoices);
+                }
+
+                // ── 6. NETTOYAGE EXTÉRIEUR & DÉMOUSSAGE (7 services officiels) ──
+                const isExplicitNettoyage = f.includes('nettoyage') || f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || f.includes('lavage') || f.includes('pressure wash') || f.includes('soft wash') || f.includes('softwash') || f.includes('power wash');
+                if (isExplicitNettoyage && !f.includes('couvreur') && !f.includes('couverture') && !f.includes('ravalement')) {
+                    const nettoyageChoices = [
+                        'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
+                        'traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)',
+                        'nettoyage de façade (nettoyage moyenne pression ou softwash de façade de maison avec contraste propre)',
+                        'ravalement de façade (application d\'enduit neuf ou crépi taloché sur façade depuis un échafaudage)',
+                        'nettoyage panneaux solaires (nettoyage de panneaux solaires photovoltaïques avec perche télescopique à eau pure et brosse douce)',
+                        'nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)',
+                        'nettoyage gouttières & chéneaux (curage manuel et retrait des feuilles mortes dans gouttières en zinc ou PVC)'
+                    ];
+                    return pick(nettoyageChoices);
+                }
+
+                // ── 7. FAÇADE & RAVALEMENT (5 services officiels) ──
+                const isFacadeTrade = f.includes('façade') || f.includes('facade') || f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit') || f.includes('fissure') || f.includes('peintre en bâtiment') || f.includes('peinture extérieure');
+                if (isFacadeTrade && !f.includes('couvreur') && !f.includes('toiture')) {
+                    const facadeChoices = [
+                        'ravalement & nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
+                        'rénovation de façade & traitement des fissures avec pose de bande armée et mortier de réparation souple',
+                        'enduit de façade taloché ou monocouche à la chaux appliqué à la taloche sur mur extérieur',
+                        'peinture de façade extérieure au rouleau professionnel microporeux siloxane/pliolite avec échafaudage',
+                        'traitement façade & humidité avec pulvérisation de produit hydrofuge incolore et traitement anti-salpêtre'
+                    ];
+                    return pick(facadeChoices);
+                }
+
+                // ── 8. ÉTANCHÉITÉ (5 services officiels) ──
+                if (f.includes('etancheite') || f.includes('étanchéité') || (f.includes('toit plat') && !f.includes('couvreur')) || (f.includes('toiture terrasse') && (f.includes('etanch') || f.includes('étanch') || f.includes('fuite') || f.includes('plat'))) || f.includes('waterproof') || f.includes('waterproofing') || f.includes('infiltration') || f.includes('fuite')) {
+                    const etancheiteChoices = [
+                        'étanchéité de toit-terrasse & toit plat (pose de membrane EPDM, PVC ou bitumineuse au chalumeau sur toit plat avec acrotères)',
+                        'recherche de fuite & réparation d\'infiltration (détection de fuite au fumigène/caméra thermique et pose de patch d\'étanchéité)',
+                        'étanchéité sous carrelage & terrasse carrelée (application de résine d\'étanchéité liquide SEL et bandes d\'angle sur terrasse)',
+                        'réfection complète d\'étanchéité (remplacement complet du complexe d\'étanchéité bicouche et couvertines sur toiture-terrasse)',
+                        'étanchéité & isolation de toiture-terrasse (pose de panneaux isolants thermiques rigides et membrane d\'étanchéité bicouche)'
+                    ];
+                    return pick(etancheiteChoices);
+                }
+
+                // ── 9. GOUTTIÈRES SPÉCIFIQUES (8 services) ──
+                if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('chéneau') || f.includes('gutter')) {
+                    const gutterChoices = [
+                        'nettoyage et curage de gouttières (artisan retirant manuellement les feuilles et mousses de la gouttière et rinçage)',
+                        'débouchage de gouttières et descentes d\'eaux pluviales (furet de débouchage ou nettoyage de regard)',
+                        'nettoyage et curage complet de chéneaux encastrés sur toiture de maison ou immeuble',
+                        'réparation de gouttières et traitement des fuites de joints par un artisan',
+                        'pose de protège-gouttières, grilles et filets anti-feuilles avec crapaudines sur gouttières',
+                        'pose et remplacement de gouttières neuves en zinc ou PVC avec réglage des pentes',
+                        'pose haut de gamme de gouttières en cuivre avec soudures soignées sur maison de caractère',
+                        'pose de tuyaux de descentes d\'eaux pluviales et dauphins en fonte le long de la façade'
+                    ];
+                    return pick(gutterChoices);
+                }
+
+                // ── 10. CHARPENTE & OSSATURE BOIS (14 services officiels) ──
                 const isExplicitCharpente = f.includes('charpente') || f.includes('charpentier') || f.includes('fermette') || f.includes('ossature bois') || f.includes('solivage') || f.includes('combles') || f.includes('surélévation') || f.includes('surelevation') || f.includes('carpenter') || f.includes('framing');
                 if (isExplicitCharpente && !f.includes('couvreur') && !f.includes('toiture')) {
                     const charpenteChoices = [
@@ -922,49 +1025,7 @@ async function main() {
                     return pick(charpenteChoices);
                 }
 
-                // ── 3. ÉTANCHÉITÉ (5 services officiels) ──
-                if (f.includes('etancheite') || f.includes('étanchéité') || f.includes('toit plat') || f.includes('toiture terrasse') || f.includes('terrasse toit plat') || f.includes('waterproof') || f.includes('waterproofing') || f.includes('infiltration') || f.includes('fuite')) {
-                    const etancheiteChoices = [
-                        'étanchéité de toit-terrasse & toit plat (pose de membrane EPDM, PVC ou bitumineuse au chalumeau sur toit plat avec acrotères)',
-                        'recherche de fuite & réparation d\'infiltration (détection de fuite au fumigène/caméra thermique et pose de patch d\'étanchéité)',
-                        'étanchéité sous carrelage & terrasse carrelée (application de résine d\'étanchéité liquide SEL et bandes d\'angle sur terrasse)',
-                        'réfection complète d\'étanchéité (remplacement complet du complexe d\'étanchéité bicouche et couvertines sur toiture-terrasse)',
-                        'étanchéité & isolation de toiture-terrasse (pose de panneaux isolants thermiques rigides et membrane d\'étanchéité bicouche)'
-                    ];
-                    return pick(etancheiteChoices);
-                }
-
-                // ── 4. NETTOYAGE EXTÉRIEUR (7 services officiels) ──
-                const isExplicitNettoyage = f.includes('nettoyage') || f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || f.includes('lavage') || f.includes('pressure wash') || f.includes('soft wash') || f.includes('softwash') || f.includes('power wash');
-                if (isExplicitNettoyage && !f.includes('couvreur') && !f.includes('couverture')) {
-                    const nettoyageChoices = [
-                        'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
-                        'traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)',
-                        'nettoyage de façade (nettoyage moyenne pression ou softwash de façade de maison avec contraste propre)',
-                        'ravalement de façade (application d\'enduit neuf ou crépi taloché sur façade depuis un échafaudage)',
-                        'nettoyage panneaux solaires (nettoyage de panneaux solaires photovoltaïques avec perche télescopique à eau pure et brosse douce)',
-                        'nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)',
-                        'nettoyage gouttières & chéneaux (curage manuel et retrait des feuilles mortes dans gouttières en zinc ou PVC)'
-                    ];
-                    return pick(nettoyageChoices);
-                }
-
-                // ── 5. GOUTTIÈRES SPÉCIFIQUES ──
-                if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('chéneau') || f.includes('gutter')) {
-                    const gutterChoices = [
-                        'nettoyage et curage de gouttières (artisan retirant manuellement les feuilles et mousses de la gouttière et rinçage)',
-                        'débouchage de gouttières et descentes d\'eaux pluviales (furet de débouchage ou nettoyage de regard)',
-                        'nettoyage et curage complet de chéneaux encastrés sur toiture de maison ou immeuble',
-                        'réparation de gouttières et traitement des fuites de joints par un artisan',
-                        'pose de protège-gouttières, grilles et filets anti-feuilles avec crapaudines sur gouttières',
-                        'pose et remplacement de gouttières neuves en zinc ou PVC avec réglage des pentes',
-                        'pose haut de gamme de gouttières en cuivre avec soudures soignées sur maison de caractère',
-                        'pose de tuyaux de descentes d\'eaux pluviales et dauphins en fonte le long de la façade'
-                    ];
-                    return pick(gutterChoices);
-                }
-
-                // ── 6. COUVERTURE & TOITURE (8 services officiels) ──
+                // ── 11. COUVERTURE & TOITURE (8 services officiels) ──
                 if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('tuile') || f.includes('zinguerie') || f.includes('faîtage') || f.includes('faitage') || f.includes('rive') || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle')) {
                     const couvertureChoices = [
                         'couverture & pose de toiture (pose de tuiles en terre cuite neuves ou ardoises sur liteaux avec échafaudage de couvreur)',
@@ -979,9 +1040,8 @@ async function main() {
                     return pick(couvertureChoices);
                 }
 
-                // ── 7. ÉLAGAGE, ABATTAGE & PAYSAGISME (6 services officiels) ──
+                // ── 12. ÉLAGAGE, ABATTAGE & PAYSAGISME (6 services officiels) ──
                 const hasTreeOrGarden = f.includes('elagage') || f.includes('élagage') || f.includes('emondage') || f.includes('émondage') || f.includes('emondeur') || f.includes('émondeur') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge') || f.includes('debroussaillage') || f.includes('débroussaillage') || f.includes('paysagiste') || f.includes('paysagisme') || f.includes('landscaping') || f.includes('paysage');
-
                 if (hasTreeOrGarden) {
                     const elagageChoices = [
                         'élagage d\'arbre de jardin sur escabeau double ou au sol (taille douce de branches à la scie d\'élagage sans harnais, ou arboriste qualifié en hauteur pour grand arbre)',
@@ -994,69 +1054,7 @@ async function main() {
                     return pick(elagageChoices);
                 }
 
-                // ── 8. FAÇADE & RAVALEMENT (5 services officiels) ──
-                const isFacadeTrade = f.includes('façade') || f.includes('facade') || f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit') || f.includes('fissure') || f.includes('peintre en bâtiment') || f.includes('peinture extérieure') || f.includes('peintre');
-                if (isFacadeTrade && !f.includes('couvreur') && !f.includes('toiture')) {
-                    const facadeChoices = [
-                        'ravalement & nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
-                        'rénovation de façade & traitement des fissures avec pose de bande armée et mortier de réparation souple',
-                        'enduit de façade taloché ou monocouche à la chaux appliqué à la taloche sur mur extérieur',
-                        'peinture de façade extérieure au rouleau professionnel microporeux siloxane/pliolite avec échafaudage',
-                        'traitement façade & humidité avec pulvérisation de produit hydrofuge incolore et traitement anti-salpêtre'
-                    ];
-                    return pick(facadeChoices);
-                }
-
-                // ── 9. DÉPANNAGE & REMORQUAGE AUTOMOBILE (4 services officiels) ──
-                if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown') || f.includes('batterie') || f.includes('moto')) {
-                    const towingChoices = [
-                        'remorquage de voiture en panne sur camion dépanneuse plateau avec treuil et gyrophare orange',
-                        'remorquage de moto et fixation soignée avec sangles d\'arrimage et bloque-roue sur plateau',
-                        'dépannage auto sur le bord de la route avec véhicule d\'assistance routière et technicien en gilet jaune',
-                        'dépannage batterie avec booster de démarrage portable ou remplacement de batterie sous le capot ouvert'
-                    ];
-                    return pick(towingChoices);
-                }
-
-                // ── 12. CARRELAGE & REVÊTEMENTS DE SOL (4 services officiels) ──
-                if (f.includes('carrelage') || f.includes('carreleur') || f.includes('faïence') || f.includes('faience') || f.includes('tile') || f.includes('tiling') || f.includes('tiler') || f.includes('revêtement de sol') || f.includes('revetement de sol')) {
-                    const tileChoices = [
-                        'revêtements de sols extérieur (pose de dalles en grès cérame 20mm antidérapant sur terrasse avec peigne à colle et croisillons autonivelants)',
-                        'revêtements de sols intérieurs (pose de carrelage grand format au sol intérieur avec mortier-colle, peigne cranté et croisillons nivelants)',
-                        'cuisine (pose de carrelage au sol et crédence murale en faïence ou carrelage métro au-dessus du plan de travail)',
-                        'salle de bain (pose de carrelage mural, faïence et carrelage de douche à l\'italienne avec niveau laser)'
-                    ];
-                    return pick(tileChoices);
-                }
-                // ── 13. PEINTURE INTÉRIEURE & DÉCORATION (5 services officiels) ──
-                if (f.includes('peintre') || f.includes('peinture') || f.includes('décoration') || f.includes('decoration') || f.includes('paint') || f.includes('painter') || f.includes('painting')) {
-                    const paintChoices = [
-                        'peinture sols (application de peinture de sol époxy ou polyuréthane au rouleau avec perche télescopique)',
-                        'peinture plafonds (mise en peinture de plafond au rouleau avec perche, peinture blanche mate et bâches au sol)',
-                        'peinture murale (mise en peinture intérieure des murs au rouleau microfibres avec pinceau à rechampir et bac)',
-                        'peinture de portes (peinture laque satinée de portes intérieures en bois au mini-rouleau et pinceau fin)',
-                        'peinture décorative (application d\'enduit décoratif à la chaux ou stuc au platoir inox sur pan de mur)'
-                    ];
-                    return pick(paintChoices);
-                }
-                if (f.includes('plombier') || f.includes('plomberie') || f.includes('plumber') || f.includes('plumbing')) {
-                    return 'travaux de plomberie';
-                }
-                // ── 11. DÉBARRAS & ENCOMBRANTS (Services officiels & Situations) ──
-                if (f.includes('débarras') || f.includes('debarras') || f.includes('clearance') || f.includes('junk') || f.includes('encombrant') || f.includes('vide maison') || f.includes('vide grenier') || f.includes('diogène') || f.includes('diogene')) {
-                    const debarrasChoices = [
-                        'débarras de bureaux (déménagement de mobilier de bureau, bureaux démontés et cartons d\'archives sur diable)',
-                        'débarras appartement et maison (tri et évacuation de meubles, cartons et objets encombrants avec diables de manutention)',
-                        'débarras syndrome de Diogène (techniciens d\'hygiène en combinaison blanche intégrale, masque FFP3 et sacs renforcés)',
-                        'débarras de garage ou box (tri d\'outils, étagères métalliques et cartons stockés avec porte de garage ouverte)',
-                        'débarras d\'entrepôt (évacuation de palettes bois et rayonnages métalliques avec transpalette manuel)',
-                        'débarras d\'archives (tri et manutention de cartons d\'archives professionnels numérotés)',
-                        'débarras de combles et grenier (évacuation de malles anciennes, objets stockés sous charpente bois)',
-                        'débarras de local commercial (démontage d\'étagères de magasin et mobilier de vente)'
-                    ];
-                    return pick(debarrasChoices);
-                }
-                // ── 10. MAÇONNERIE (4 services officiels) ──
+                // ── 13. MAÇONNERIE (4 services officiels) ──
                 if (f.includes('maçonnerie') || f.includes('maconnerie') || f.includes('maçon') || f.includes('macon') || f.includes('pierre') || f.includes('masonry') || f.includes('mason') || f.includes('brickwork') || f.includes('bâtiment') || f.includes('batiment')) {
                     const maconnerieChoices = [
                         'démolition et reconstruction de mur maçonné par des artisans maçons avec outils pneumatiques et nouveau mur monté au cordeau',
@@ -1066,6 +1064,8 @@ async function main() {
                     ];
                     return pick(maconnerieChoices);
                 }
+
+                // ── 14. TERRASSEMENT & VRD (12 services) ──
                 if (f.includes('terrassement') || f.includes('terrassier') || f.includes('excavation') || f.includes('dallage') || f.includes('vrd') || f.includes('assainissement') || f.includes('enrochement') || f.includes('nivellement') || f.includes('viabilisation') || f.includes('drainage') || f.includes('soutènement') || f.includes('soutenement') || f.includes('piscine') || f.includes('paving') || f.includes('driveway') || f.includes('concrete') || f.includes('cement')) {
                     const terrassementChoices = [
                         'travaux de terrassement général et excavation avec mini-pelle de chantier et ouvrier au sol',
@@ -1619,12 +1619,16 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        const targetUrlToUse = plan.url || 'https://chatgpt.com/';
+                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url || 'https://chatgpt.com/';
                         const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
+                            if (res.finalUrl && res.finalUrl.includes('/c/')) {
+                                activePlanUrls[plan.key] = res.finalUrl;
+                                console.log(`📌 Fil de conversation unique conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
+                            }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
                         }
