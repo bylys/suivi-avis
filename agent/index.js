@@ -1565,10 +1565,10 @@ async function main() {
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre coupé, AUCUN élagage, AUCUN marteau-piqueur, AUCUNE démolition. Nettoyage basse/haute pression, perche télescopique au sol ou cloche de lavage de sol.";
             } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('infiltration') || lowerLabel.includes('fuite') || lowerLabel.includes('sel') || lowerLabel.includes('carrelée') || lowerLabel.includes('carrelee') || lowerLabel.includes('réfection') || lowerLabel.includes('refection')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING, LEAK REPAIR OR UNDER-TILE SEALING (ÉTANCHÉITÉ TOIT PLAT / TOITURE-TERRASSE, ISOLATION THERMIQUE, RECHERCHE DE FUITE OU RÉSINE SOUS CARRELAGE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS de toit incliné avec tuiles traditionnelles ! AUCUN couvreur posant des tuiles en terre cuite, AUCUN nettoyeur haute pression sur tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse extérieure).";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS d'arbre, AUCUN jardinier, AUCUN sécateur, AUCUN escabeau dans le jardin, AUCUNE débroussailleuse, AUCUN toit en pente avec tuiles, AUCUNE dépanneuse ! Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse avec membrane bitumineuse noire/grise soudée au chalumeau, EPDM, PVC ou résine liquide).";
             } else if (lowerLabel.includes('façade') || lowerLabel.includes('facade') || lowerLabel.includes('ravalement') || lowerLabel.includes('crépi') || lowerLabel.includes('crepi') || lowerLabel.includes('enduit') || lowerLabel.includes('fissure') || (lowerLabel.includes('peinture') && lowerLabel.includes('extérieure')) || (lowerLabel.includes('traitement') && lowerLabel.includes('humidité'))) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FACADE RENOVATION, CRACK REPAIR, RENDERING, EXTERIOR PAINTING OR ANTI-HUMIDITY TREATMENT (RAVALEMENT, RÉNOVATION DE FAÇADE, TRAITEMENT DES FISSURES, ENDUIT DE FAÇADE, PEINTURE DE FAÇADE OU TRAITEMENT HUMIDITÉ).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs de la maison avec échafaudage sécurisé ou au sol.";
+                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN jardinier, AUCUNE débroussailleuse, AUCUNE tondeuse, AUCUN élagage d'arbre, AUCUN sécateur, AUCUN toit en tuiles, AUCUNE dépanneuse. UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs de la maison avec échafaudage sécurisé, taloche, rouleau de peinture ou nettoyeur façade au sol.";
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUNE grande échelle instable posée sur la pente du toit. Artisans couvreurs sur échafaudage de sécurité ou au sol.";
@@ -1619,16 +1619,12 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url;
+                        const targetUrlToUse = plan.url || 'https://chatgpt.com/';
                         const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
-                            if (res.finalUrl && res.finalUrl.includes('/c/')) {
-                                activePlanUrls[plan.key] = res.finalUrl;
-                                console.log(`📌 Fil de conversation unique conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
-                            }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
                         }
@@ -1664,9 +1660,9 @@ async function main() {
                 const reviewTextContent = (task.commentaire || '') + ' ' + (task.travaux || '');
                 const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France', task.date, reviewTextContent);
                 
-                // Formatage exact demandé : [NOM OPERATEUR]_21-08-26_[GMB NAME]
-                const safeOpName = (task.operateur || 'OPERATEUR').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-                const safeGmbName = (task.fiche_nom || 'GMB').replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+                // Formatage exact demandé : [NOM OPERATEUR]_21-08-26_[GMB NAME] avec normalisation des accents français
+                const safeOpName = (task.operateur || 'OPERATEUR').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, '');
+                const safeGmbName = (task.fiche_nom || 'GMB').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
                 const taskDate = task.date || dateStr;
                 const dateParts = taskDate.split('-');
                 const dateFormatShort = dateParts.length === 3 
