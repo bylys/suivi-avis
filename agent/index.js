@@ -900,7 +900,9 @@ async function main() {
                 }
 
                 // ── 2. DÉPANNAGE & REMORQUAGE AUTOMOBILE (4 services officiels) ──
-                if (f.includes('dépannage') || f.includes('depannage') || f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown') || f.includes('batterie') || (f.includes('moto') && !f.includes('motoculture'))) {
+                const isAutoTowing = f.includes('remorquage') || f.includes('towing') || f.includes('tow truck') || f.includes('breakdown') || f.includes('épaviste') || f.includes('epaviste') || 
+                    ((f.includes('dépannage') || f.includes('depannage')) && (f.includes('auto') || f.includes('voiture') || f.includes('moto') || f.includes('véhicule') || f.includes('vehicule') || f.includes('batterie') || f.includes('pneu') || (!f.includes('couvr') && !f.includes('toit') && !f.includes('plomb') && !f.includes('vitr') && !f.includes('serrur') && !f.includes('volet') && !f.includes('facad') && !f.includes('façad') && !f.includes('charp') && !f.includes('peint') && !f.includes('renov') && !f.includes('rénov'))));
+                if (isAutoTowing) {
                     const towingChoices = [
                         'remorquage de voiture en panne sur camion dépanneuse plateau avec treuil et gyrophare orange',
                         'remorquage de moto et fixation soignée avec sangles d\'arrimage et bloque-roue sur plateau',
@@ -991,22 +993,34 @@ async function main() {
                 // ── 8. NETTOYAGE EXTÉRIEUR & DÉMOUSSAGE (Ciblage strict selon le nom de fiche) ──
                 const isExplicitNettoyage = f.includes('nettoyage') || f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || f.includes('lavage') || f.includes('pressure wash') || f.includes('soft wash') || f.includes('softwash') || f.includes('power wash');
                 if (isExplicitNettoyage && !f.includes('couvreur') && !f.includes('couverture')) {
-                    if (f.includes('toiture') || f.includes('toit')) {
-                        return pick([
-                            'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
-                            'traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)',
-                            'nettoyage et curage de gouttières et chéneaux depuis le sol'
-                        ]);
+                    const hasToiture = f.includes('toiture') || f.includes('toit');
+                    const hasFacade = f.includes('façade') || f.includes('facade');
+                    const hasTerrasse = f.includes('terrasse') || f.includes('dallage') || f.includes('allée') || f.includes('allee');
+                    const hasPanneau = f.includes('panneau') || f.includes('solaire');
+                    const hasGouttiere = f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('chéneau');
+
+                    const availableCleanings = [];
+                    if (hasToiture) {
+                        availableCleanings.push('nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)');
+                        availableCleanings.push('traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)');
                     }
-                    if (f.includes('façade') || f.includes('facade')) {
-                        return 'nettoyage de façade (nettoyage moyenne pression ou softwash de façade de maison avec contraste propre)';
+                    if (hasFacade) {
+                        availableCleanings.push('nettoyage de façade (nettoyage moyenne pression ou softwash de façade de maison avec contraste propre)');
                     }
-                    if (f.includes('panneau') || f.includes('solaire')) {
-                        return 'nettoyage panneaux solaires (nettoyage de panneaux solaires photovoltaïques avec perche télescopique à eau pure et brosse douce)';
+                    if (hasTerrasse) {
+                        availableCleanings.push('nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)');
                     }
-                    if (f.includes('terrasse') || f.includes('dallage') || f.includes('allée') || f.includes('allee')) {
-                        return 'nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)';
+                    if (hasPanneau) {
+                        availableCleanings.push('nettoyage panneaux solaires (nettoyage de panneaux solaires photovoltaïques avec perche télescopique à eau pure et brosse douce)');
                     }
+                    if (hasGouttiere) {
+                        availableCleanings.push('nettoyage et curage de gouttières et chéneaux depuis le sol');
+                    }
+
+                    if (availableCleanings.length > 0) {
+                        return pick(availableCleanings);
+                    }
+
                     return pick([
                         'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
                         'traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)',
