@@ -936,7 +936,47 @@ async function main() {
                     return pick(tileChoices);
                 }
 
-                // ── 5. PEINTURE INTÉRIEURE & DÉCORATION (5 services officiels) ──
+                // ── 5. ÉLAGAGE, ABATTAGE & PAYSAGISME (Priorité sur les mots clés verts et arbres) ──
+                const hasTreeOrGarden = f.includes('elagage') || f.includes('élagage') || f.includes('emondage') || f.includes('émondage') || f.includes('emondeur') || f.includes('émondeur') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge') || f.includes('debroussaillage') || f.includes('débroussaillage') || f.includes('paysagiste') || f.includes('paysagisme') || f.includes('landscaping') || f.includes('paysage');
+                if (hasTreeOrGarden) {
+                    if (f.includes('haie')) {
+                        return 'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin avec ramassage des végétaux';
+                    }
+                    if (f.includes('abattage')) {
+                        return 'abattage d\'arbre au sol avec tronçonneuse professionnelle, équipement de sécurité forestier et billes de bois débitées';
+                    }
+                    if (f.includes('dessouchage') || f.includes('stump')) {
+                        return 'dessouchage et rognage de souche d\'arbre au sol avec rogneuse de souche et projection de copeaux de bois';
+                    }
+                    if (f.includes('debroussaill') || f.includes('débroussaill')) {
+                        return 'débroussaillage de terrain et fauchage de broussailles denses à la débroussailleuse thermique avec visière intégrale';
+                    }
+                    if (f.includes('paysag')) {
+                        return 'paysagisme et création de massifs paysagers avec plantations d\'arbustes, paillage végétal et allée en dalles';
+                    }
+                    return pick([
+                        'élagage d\'arbre de jardin sur escabeau double ou au sol (taille douce de branches à la scie d\'élagage sans harnais, ou arboriste qualifié en hauteur pour grand arbre)',
+                        'abattage d\'arbre au sol avec tronçonneuse professionnelle, équipement de sécurité forestier et billes de bois débitées',
+                        'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin avec ramassage des végétaux',
+                        'dessouchage et rognage de souche d\'arbre au sol avec rogneuse de souche et projection de copeaux de bois',
+                        'débroussaillage de terrain et fauchage de broussailles denses à la débroussailleuse thermique avec visière intégrale',
+                        'paysagisme et création de massifs paysagers avec plantations d\'arbustes, paillage végétal et allée en dalles'
+                    ]);
+                }
+
+                // ── 6. FAÇADE & RAVALEMENT (y compris fiches mixtes ravalement/peintre/nettoyage façade) ──
+                const isFacadeTrade = f.includes('façade') || f.includes('facade') || f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit') || f.includes('fissure') || f.includes('peintre en bâtiment') || f.includes('peinture extérieure');
+                if (isFacadeTrade && !f.includes('couvreur')) {
+                    return pick([
+                        'ravalement & nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
+                        'rénovation de façade & traitement des fissures avec pose de bande armée et mortier de réparation souple',
+                        'enduit de façade taloché ou monocouche à la chaux appliqué à la taloche sur mur extérieur',
+                        'peinture de façade extérieure au rouleau professionnel microporeux siloxane/pliolite avec échafaudage',
+                        'traitement façade & humidité avec pulvérisation de produit hydrofuge incolore et traitement anti-salpêtre'
+                    ]);
+                }
+
+                // ── 7. PEINTURE INTÉRIEURE & DÉCORATION (5 services officiels) ──
                 if ((f.includes('peintre') || f.includes('peinture') || f.includes('décoration') || f.includes('decoration') || f.includes('paint') || f.includes('painter') || f.includes('painting')) && !f.includes('façade') && !f.includes('facade') && !f.includes('ravalement') && !f.includes('extérieure') && !f.includes('exterieure')) {
                     const paintChoices = [
                         'peinture sols (application de peinture de sol époxy ou polyuréthane au rouleau avec perche télescopique)',
@@ -948,35 +988,34 @@ async function main() {
                     return pick(paintChoices);
                 }
 
-                // ── 6. NETTOYAGE EXTÉRIEUR & DÉMOUSSAGE (7 services officiels) ──
+                // ── 8. NETTOYAGE EXTÉRIEUR & DÉMOUSSAGE (Ciblage strict selon le nom de fiche) ──
                 const isExplicitNettoyage = f.includes('nettoyage') || f.includes('demoussage') || f.includes('démoussage') || f.includes('hydrofuge') || f.includes('lavage') || f.includes('pressure wash') || f.includes('soft wash') || f.includes('softwash') || f.includes('power wash');
-                if (isExplicitNettoyage && !f.includes('couvreur') && !f.includes('couverture') && !f.includes('ravalement')) {
-                    const nettoyageChoices = [
+                if (isExplicitNettoyage && !f.includes('couvreur') && !f.includes('couverture')) {
+                    if (f.includes('toiture') || f.includes('toit')) {
+                        return pick([
+                            'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
+                            'traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)',
+                            'nettoyage et curage de gouttières et chéneaux depuis le sol'
+                        ]);
+                    }
+                    if (f.includes('façade') || f.includes('facade')) {
+                        return 'nettoyage de façade (nettoyage moyenne pression ou softwash de façade de maison avec contraste propre)';
+                    }
+                    if (f.includes('panneau') || f.includes('solaire')) {
+                        return 'nettoyage panneaux solaires (nettoyage de panneaux solaires photovoltaïques avec perche télescopique à eau pure et brosse douce)';
+                    }
+                    if (f.includes('terrasse') || f.includes('dallage') || f.includes('allée') || f.includes('allee')) {
+                        return 'nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)';
+                    }
+                    return pick([
                         'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
                         'traitement hydrofuge toiture (pulvérisation au sol de produit hydrofuge protecteur sur tuiles)',
                         'nettoyage de façade (nettoyage moyenne pression ou softwash de façade de maison avec contraste propre)',
-                        'ravalement de façade (application d\'enduit neuf ou crépi taloché sur façade depuis un échafaudage)',
-                        'nettoyage panneaux solaires (nettoyage de panneaux solaires photovoltaïques avec perche télescopique à eau pure et brosse douce)',
-                        'nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)',
-                        'nettoyage gouttières & chéneaux (curage manuel et retrait des feuilles mortes dans gouttières en zinc ou PVC)'
-                    ];
-                    return pick(nettoyageChoices);
+                        'nettoyage terrasses, allées & dallages (nettoyage haute pression avec cloche de lavage de sol ou rotabuse sur dalles et pavés)'
+                    ]);
                 }
 
-                // ── 7. FAÇADE & RAVALEMENT (5 services officiels) ──
-                const isFacadeTrade = f.includes('façade') || f.includes('facade') || f.includes('ravalement') || f.includes('crépi') || f.includes('crepi') || f.includes('enduit') || f.includes('fissure') || f.includes('peintre en bâtiment') || f.includes('peinture extérieure');
-                if (isFacadeTrade && !f.includes('couvreur') && !f.includes('toiture')) {
-                    const facadeChoices = [
-                        'ravalement & nettoyage de façade de maison au jet moyenne pression ou softwash depuis un échafaudage',
-                        'rénovation de façade & traitement des fissures avec pose de bande armée et mortier de réparation souple',
-                        'enduit de façade taloché ou monocouche à la chaux appliqué à la taloche sur mur extérieur',
-                        'peinture de façade extérieure au rouleau professionnel microporeux siloxane/pliolite avec échafaudage',
-                        'traitement façade & humidité avec pulvérisation de produit hydrofuge incolore et traitement anti-salpêtre'
-                    ];
-                    return pick(facadeChoices);
-                }
-
-                // ── 8. ÉTANCHÉITÉ (5 services officiels) ──
+                // ── 9. ÉTANCHÉITÉ (5 services officiels) ──
                 if (f.includes('etancheite') || f.includes('étanchéité') || (f.includes('toit plat') && !f.includes('couvreur')) || (f.includes('toiture terrasse') && (f.includes('etanch') || f.includes('étanch') || f.includes('fuite') || f.includes('plat'))) || f.includes('waterproof') || f.includes('waterproofing') || f.includes('infiltration') || f.includes('fuite')) {
                     const etancheiteChoices = [
                         'étanchéité de toit-terrasse & toit plat (pose de membrane EPDM, PVC ou bitumineuse au chalumeau sur toit plat avec acrotères)',
@@ -988,7 +1027,7 @@ async function main() {
                     return pick(etancheiteChoices);
                 }
 
-                // ── 9. GOUTTIÈRES SPÉCIFIQUES (8 services) ──
+                // ── 10. GOUTTIÈRES SPÉCIFIQUES (8 services) ──
                 if (f.includes('gouttière') || f.includes('gouttiere') || f.includes('cheneau') || f.includes('chéneau') || f.includes('gutter')) {
                     const gutterChoices = [
                         'nettoyage et curage de gouttières (artisan retirant manuellement les feuilles et mousses de la gouttière et rinçage)',
@@ -1003,7 +1042,7 @@ async function main() {
                     return pick(gutterChoices);
                 }
 
-                // ── 10. CHARPENTE & OSSATURE BOIS (14 services officiels) ──
+                // ── 11. CHARPENTE & OSSATURE BOIS (14 services officiels) ──
                 const isExplicitCharpente = f.includes('charpente') || f.includes('charpentier') || f.includes('fermette') || f.includes('ossature bois') || f.includes('solivage') || f.includes('combles') || f.includes('surélévation') || f.includes('surelevation') || f.includes('carpenter') || f.includes('framing');
                 if (isExplicitCharpente && !f.includes('couvreur') && !f.includes('toiture')) {
                     const charpenteChoices = [
@@ -1025,33 +1064,18 @@ async function main() {
                     return pick(charpenteChoices);
                 }
 
-                // ── 11. COUVERTURE & TOITURE (8 services officiels) ──
-                if (f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('tuile') || f.includes('zinguerie') || f.includes('faîtage') || f.includes('faitage') || f.includes('rive') || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle')) {
+                // ── 12. COUVERTURE & TOITURE (sans match de faux-positif 'rive' dans Brive) ──
+                const isCouvreur = f.includes('couvreur') || f.includes('toiture') || f.includes('couverture') || f.includes('tuile') || f.includes('zinguerie') || f.includes('faîtage') || f.includes('faitage') || /\brive\b|\brives\b/i.test(f) || f.includes('roof') || f.includes('roofer') || f.includes('roofing') || f.includes('shingle');
+                if (isCouvreur) {
                     const couvertureChoices = [
                         'couverture & pose de toiture (pose de tuiles en terre cuite neuves ou ardoises sur liteaux avec échafaudage de couvreur)',
                         'remplacement & réparation de tuiles cassées ou déplacées sur toiture de maison avec échafaudage de sécurité',
-                        'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
                         'traitement hydrofuge & imperméabilisant de toiture (pulvérisation de produit hydrofuge incolore sur tuiles propres)',
-                        'étanchéité toiture-terrasse (pose de membrane d\'étanchéité EPDM ou bitume sur toit 100% plat avec acrotères)',
                         'zinguerie & gouttières (pose de gouttières en zinc et solins de rives d\'étanchéité)',
                         'faîtage & rive (scellement ou pose à sec de faîtières ventilées et rives de toiture avec harnais)',
                         'charpente & ossature bois (assemblage de fermettes ou chevrons de toiture par des charpentiers)'
                     ];
                     return pick(couvertureChoices);
-                }
-
-                // ── 12. ÉLAGAGE, ABATTAGE & PAYSAGISME (6 services officiels) ──
-                const hasTreeOrGarden = f.includes('elagage') || f.includes('élagage') || f.includes('emondage') || f.includes('émondage') || f.includes('emondeur') || f.includes('émondeur') || f.includes('abattage') || f.includes('haie') || f.includes('jardinage') || f.includes('elagueur') || f.includes('élagueur') || f.includes('tree') || f.includes('trees') || f.includes('arborist') || f.includes('pruning') || f.includes('gardener') || f.includes('gardening') || f.includes('dessouchage') || f.includes('stump') || f.includes('hedge') || f.includes('debroussaillage') || f.includes('débroussaillage') || f.includes('paysagiste') || f.includes('paysagisme') || f.includes('landscaping') || f.includes('paysage');
-                if (hasTreeOrGarden) {
-                    const elagageChoices = [
-                        'élagage d\'arbre de jardin sur escabeau double ou au sol (taille douce de branches à la scie d\'élagage sans harnais, ou arboriste qualifié en hauteur pour grand arbre)',
-                        'abattage d\'arbre au sol avec tronçonneuse professionnelle, équipement de sécurité forestier et billes de bois débitées',
-                        'taille d\'haies soignée en duo au taille-haie sur escabeau double de jardin avec ramassage des végétaux',
-                        'dessouchage et rognage de souche d\'arbre au sol avec rogneuse de souche et projection de copeaux de bois',
-                        'débroussaillage de terrain et fauchage de broussailles denses à la débroussailleuse thermique avec visière intégrale',
-                        'paysagisme et création de massifs paysagers avec plantations d\'arbustes, paillage végétal et allée en dalles'
-                    ];
-                    return pick(elagageChoices);
                 }
 
                 // ── 13. MAÇONNERIE (4 services officiels) ──
@@ -1069,7 +1093,7 @@ async function main() {
                 if (f.includes('terrassement') || f.includes('terrassier') || f.includes('excavation') || f.includes('dallage') || f.includes('vrd') || f.includes('assainissement') || f.includes('enrochement') || f.includes('nivellement') || f.includes('viabilisation') || f.includes('drainage') || f.includes('soutènement') || f.includes('soutenement') || f.includes('piscine') || f.includes('paving') || f.includes('driveway') || f.includes('concrete') || f.includes('cement')) {
                     const terrassementChoices = [
                         'travaux de terrassement général et excavation avec mini-pelle de chantier et ouvrier au sol',
-                        'nivellement de terrain et régalage de terre avec godet de nivellement sur mini-pelle',
+                        'nivellement de terrain et régalage de terre avec godet de niveau sur mini-pelle',
                         'travaux de VRD (Voirie et Réseaux Divers) et pose de gaines techniques dans tranchée ouverte',
                         'viabilisation de terrain avec tranchée technique pour réseaux eau, électricité et tout-à-l\'égout',
                         'assainissement individuel et installation de fosse septique ou micro-station dans excavation',
@@ -1569,7 +1593,7 @@ async function main() {
             } else if (lowerLabel.includes('façade') || lowerLabel.includes('facade') || lowerLabel.includes('ravalement') || lowerLabel.includes('crépi') || lowerLabel.includes('crepi') || lowerLabel.includes('enduit') || lowerLabel.includes('fissure') || (lowerLabel.includes('peinture') && lowerLabel.includes('extérieure')) || (lowerLabel.includes('traitement') && lowerLabel.includes('humidité'))) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FACADE RENOVATION, CRACK REPAIR, RENDERING, EXTERIOR PAINTING OR ANTI-HUMIDITY TREATMENT (RAVALEMENT, RÉNOVATION DE FAÇADE, TRAITEMENT DES FISSURES, ENDUIT DE FAÇADE, PEINTURE DE FAÇADE OU TRAITEMENT HUMIDITÉ).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN jardinier, AUCUNE débroussailleuse, AUCUNE tondeuse, AUCUN élagage d'arbre, AUCUN sécateur, AUCUN toit en tuiles, AUCUNE dépanneuse. UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs de la maison avec échafaudage sécurisé, taloche, rouleau de peinture ou nettoyeur façade au sol.";
-            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('rive') || lowerLabel.includes('zinguerie')) {
+            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('zinguerie') || lowerLabel.includes('closoir') || lowerLabel.includes('rives de toiture')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUNE grande échelle instable posée sur la pente du toit. Artisans couvreurs sur échafaudage de sécurité ou au sol.";
             } else if (lowerLabel.includes('élagage') || lowerLabel.includes('elagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin') || lowerLabel.includes('paysag') || lowerLabel.includes('dessouch') || lowerLabel.includes('débroussaill') || lowerLabel.includes('debroussaill')) {
