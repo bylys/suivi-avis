@@ -1070,7 +1070,9 @@ async function main() {
                     const couvertureChoices = [
                         'couverture & pose de toiture (pose de tuiles en terre cuite neuves ou ardoises sur liteaux avec échafaudage de couvreur)',
                         'remplacement & réparation de tuiles cassées ou déplacées sur toiture de maison avec échafaudage de sécurité',
+                        'nettoyage & démoussage de toiture (artisan au sol avec perche télescopique de pulvérisation appliquant un traitement anti-mousse)',
                         'traitement hydrofuge & imperméabilisant de toiture (pulvérisation de produit hydrofuge incolore sur tuiles propres)',
+                        'étanchéité toiture-terrasse (pose de membrane d\'étanchéité EPDM ou bitume sur toit 100% plat avec acrotères)',
                         'zinguerie & gouttières (pose de gouttières en zinc et solins de rives d\'étanchéité)',
                         'faîtage & rive (scellement ou pose à sec de faîtières ventilées et rives de toiture avec harnais)',
                         'charpente & ossature bois (assemblage de fermettes ou chevrons de toiture par des charpentiers)'
