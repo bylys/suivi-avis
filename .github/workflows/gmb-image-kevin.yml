@@ -1,0 +1,51 @@
+name: GMB Image Generator - Kevin
+
+on:
+  schedule:
+    # Exécution automatique du lundi au vendredi à 01h00 du matin heure de Thaïlande (UTC+7 -> 18h00 UTC du dimanche au jeudi)
+    # 0 = Dimanche UTC (Lundi 01:00 THA), 4 = Jeudi UTC (Vendredi 01:00 THA)
+    - cron: '0 18 * * 0-4'
+  workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
+
+jobs:
+  generate-images-kevin:
+    name: Agent Image - Kevin
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Install dependencies & Chromium
+        working-directory: ./agent
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+        
+      - name: Run Image Generator Agent for Kevin
+        working-directory: ./agent
+        env:
+          OPERATOR_NAME: Kevin
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
+          CHATGPT_COOKIES: ${{ secrets.CHATGPT_WORK_COOKIES_KEVIN || secrets.CHATGPT_PERSO_COOKIES_KEVIN || secrets.CHATGPT_COOKIES_KEVIN || secrets.CHATGPT_COOKIES }}
+          CHATGPT_COOKIES_KEVIN: ${{ secrets.CHATGPT_WORK_COOKIES_KEVIN || secrets.CHATGPT_PERSO_COOKIES_KEVIN || secrets.CHATGPT_COOKIES_KEVIN || secrets.CHATGPT_COOKIES }}
+          CHATGPT_WORK_COOKIES_KEVIN: ${{ secrets.CHATGPT_WORK_COOKIES_KEVIN }}
+          CHATGPT_PERSO_COOKIES_KEVIN: ${{ secrets.CHATGPT_PERSO_COOKIES_KEVIN }}
+          CHATGPT_CONVERSATION_URL: ${{ secrets.CHATGPT_WORK_CONVERSATION_URL_KEVIN || secrets.CHATGPT_CONVERSATION_URL_KEVIN || secrets.CHATGPT_CONVERSATION_URL }}
+          CHATGPT_CONVERSATION_URL_KEVIN: ${{ secrets.CHATGPT_WORK_CONVERSATION_URL_KEVIN || secrets.CHATGPT_CONVERSATION_URL_KEVIN || secrets.CHATGPT_CONVERSATION_URL }}
+          CHATGPT_WORK_CONVERSATION_URL_KEVIN: ${{ secrets.CHATGPT_WORK_CONVERSATION_URL_KEVIN }}
+          CHATGPT_PERSO_CONVERSATION_URL_KEVIN: ${{ secrets.CHATGPT_PERSO_CONVERSATION_URL_KEVIN }}
+          CHATGPT_IMAGE_PROMPT: ${{ secrets.CHATGPT_IMAGE_PROMPT }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node index.js
