@@ -285,6 +285,25 @@ function getConversationUrlForOperator(operatorName) {
 async function dismissModalsAndBanners(page) {
     try {
         await page.evaluate(() => {
+            // 1. Fermeture et suppression directe de modal-no-auth-login et ses backdrops
+            const noAuthModals = document.querySelectorAll('#modal-no-auth-login, [data-testid="modal-no-auth-login"], [id*="no-auth"]');
+            noAuthModals.forEach(el => {
+                const btn = el.querySelector('button[aria-label="Close"], button[aria-label="Fermer"], .btn-secondary, button');
+                if (btn) {
+                    try { btn.click(); } catch(e) {}
+                }
+                el.remove();
+            });
+
+            // 2. Suppression de tous les overlays/backdrops bloquants
+            document.querySelectorAll('[data-state="open"], .fixed.inset-0, .absolute.inset-0').forEach(el => {
+                const txt = (el.innerText || '').toLowerCase();
+                if (txt.includes('log in') || txt.includes('connexion') || txt.includes('stay logged out') || txt.includes('rester déconnecté') || txt.includes('sign up') || txt.includes("s'inscrire")) {
+                    el.remove();
+                }
+            });
+
+            // 3. Clic sur les boutons de validation / consentement / fermer
             const buttons = Array.from(document.querySelectorAll('button, [role="button"], a'));
             for (const b of buttons) {
                 const txt = (b.innerText || b.textContent || '').trim().toLowerCase();
@@ -299,7 +318,7 @@ async function dismissModalsAndBanners(page) {
                     txt === 'accept all' ||
                     txt === 'tout accepter' ||
                     txt === 'stay logged out' ||
-                    txt === 'rester déconnecté' ||
+                    txt.includes('rester déconnecté') ||
                     txt === 'fermer' ||
                     txt === 'close' ||
                     txt === 'dismiss'
@@ -315,8 +334,18 @@ async function typeAndSendPrompt(page, text) {
     await dismissModalsAndBanners(page);
     console.log("Saisie du prompt dans le champ de texte...");
     const promptInput = page.locator('#prompt-textarea');
-    await promptInput.waitFor({ state: 'visible', timeout: 30000 });
-    await promptInput.click();
+    await promptInput.waitFor({ state: 'attached', timeout: 30000 });
+    
+    // Nettoyage de sécurité du DOM pour éliminer tout overlay no-auth
+    await page.evaluate(() => {
+        document.querySelectorAll('#modal-no-auth-login, [data-testid="modal-no-auth-login"]').forEach(el => el.remove());
+    });
+
+    try {
+        await promptInput.click({ force: true, timeout: 5000 });
+    } catch (e) {
+        await promptInput.focus();
+    }
     await page.waitForTimeout(300);
 
     // 1. Insertion sécurisée par simulation clavier Playwright + fallback DOM
@@ -411,7 +440,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
     }
     
     const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         viewport: { width: 1280, height: 800 },
         locale: 'fr-FR',
         timezoneId: 'Europe/Paris'
@@ -429,20 +458,43 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         
         const page = await context.newPage();
         console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
-        await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+        try {
+            await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+        } catch (navErr) {
+            console.log(`Note chargement URL initiale (${navErr.message}). Bascule sur https://chatgpt.com/ ...`);
+            await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
+        }
         
-        let title = await page.title();
-        console.log("URL de la page :", page.url());
+        await page.waitForTimeout(3000); // Stabilisation des redirections éventuelles
+        
+        let currentUrl = page.url();
+        console.log("URL de la page :", currentUrl);
+        let title = '';
+        try { title = await page.title(); } catch (e) {}
         console.log("Titre de la page :", title);
+
+        // Si l'URL spécifique a redirigé vers le login, tenter d'abord https://chatgpt.com/
+        if (currentUrl.includes('/auth/login') || currentUrl.includes('/login')) {
+            console.log("⚠️ Redirection login sur l'URL spécifique. Tentative de secours sur l'accueil https://chatgpt.com/ ...");
+            await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
+            await page.waitForTimeout(3000);
+            currentUrl = page.url();
+            console.log("URL de la page après repli :", currentUrl);
+            try { title = await page.title(); } catch (e) {}
+            console.log("Titre de la page après repli :", title);
+
+            if (currentUrl.includes('/auth/login') || currentUrl.includes('/login')) {
+                throw new Error("COOKIES_EXPIRES: Redirection vers la page de login ChatGPT. Les cookies de ce compte sont expirés ou invalides.");
+            }
+        }
         
         // Gestion du challenge Cloudflare Turnstile ("Just a moment..." / "Un instant...")
         if (!title || title.trim() === '' || title.includes('Just a moment') || title.includes('Un instant') || title.includes('Checking') || title.includes('Attention')) {
             console.log(`⚠️ Challenge Cloudflare Turnstile ("${title || 'Chargement...'}") détecté ! Tentative de contournement...`);
             await page.waitForTimeout(6000);
-            title = await page.title();
+            try { title = await page.title(); } catch (e) {}
             
             try {
-                // Tenter de cliquer sur la case Turnstile si elle est dans un iframe
                 const turnstileFrame = page.frames().find(f => f.url().includes('challenges.cloudflare.com') || f.url().includes('turnstile'));
                 if (turnstileFrame) {
                     console.log("Iframe Turnstile trouvé. Clic sur la vérification Cloudflare...");
@@ -456,7 +508,6 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 console.log("Attente de la résolution Cloudflare...");
             }
             
-            // Attente que Cloudflare laisse passer (titre passe à ChatGPT)
             try {
                 await page.waitForFunction(() => !document.title.includes('Just a moment') && !document.title.includes('Un instant'), { timeout: 25000 });
                 console.log("✅ Cloudflare dépassé ! Titre actuel :", await page.title());
@@ -469,13 +520,17 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         // Fermeture automatique des bannières / dialogues de bienvenue ou cookies
         await dismissModalsAndBanners(page);
 
-        // Vérification si l'URL de conversation est en 404 ou introuvable
-        const notFoundDetected = await page.evaluate(() => {
-            const body = document.body.innerText || '';
-            return body.includes('Cette discussion est introuvable') || 
-                   body.includes('Conversation not found') || 
-                   body.includes('Unable to load conversation');
-        });
+        // Vérification si l'URL de conversation est en 404 ou introuvable (sécurisée contre les destructions de contexte)
+        let notFoundDetected = false;
+        try {
+            notFoundDetected = await page.evaluate(() => {
+                const body = document.body.innerText || '';
+                return body.includes('Cette discussion est introuvable') || 
+                       body.includes('Conversation not found') || 
+                       body.includes('Unable to load conversation');
+            });
+        } catch (e) {}
+
         if (notFoundDetected) {
             console.log("⚠️ Fil de conversation introuvable (404/supprimé). Bascule automatique sur https://chatgpt.com/ ...");
             await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
@@ -1072,26 +1127,48 @@ async function main() {
 
         function sanitizeCookiesList(raw) {
             const parsed = parseCookiesHelper(raw);
-            return parsed.map(c => {
+            const result = [];
+            for (const c of parsed) {
+                if (!c.name || c.value === undefined) continue;
                 let dom = c.domain || '.chatgpt.com';
-                if (dom.includes('openai.com')) dom = '.chatgpt.com';
+                
+                let sameSite = undefined;
+                if (c.sameSite && typeof c.sameSite === 'string') {
+                    const s = c.sameSite.toLowerCase();
+                    if (s === 'strict') sameSite = 'Strict';
+                    else if (s === 'lax') sameSite = 'Lax';
+                    else if (s === 'none' || s === 'no_restriction') sameSite = 'None';
+                }
+
+                let exp = undefined;
+                if (typeof c.expirationDate === 'number') {
+                    exp = Math.floor(c.expirationDate);
+                } else if (typeof c.expires === 'number') {
+                    exp = Math.floor(c.expires);
+                }
+
                 const clean = {
                     name: c.name,
-                    value: c.value,
-                    domain: dom,
+                    value: String(c.value),
+                    domain: dom.startsWith('.') || dom.includes('chatgpt.com') || dom.includes('openai.com') ? dom : `.${dom}`,
                     path: c.path || '/',
                     secure: c.secure !== undefined ? Boolean(c.secure) : true,
                     httpOnly: Boolean(c.httpOnly),
                 };
-                if (typeof c.expires === 'number') clean.expires = c.expires;
-                if (c.sameSite && typeof c.sameSite === 'string') {
-                    const s = c.sameSite.toLowerCase();
-                    if (s === 'strict') clean.sameSite = 'Strict';
-                    else if (s === 'lax') clean.sameSite = 'Lax';
-                    else if (s === 'none' || s === 'no_restriction') clean.sameSite = 'None';
+                if (exp && exp > Date.now() / 1000) clean.expires = exp;
+                if (sameSite) clean.sameSite = sameSite;
+
+                result.push(clean);
+
+                // Si le cookie est sur openai.com, créer aussi une copie sur .chatgpt.com pour assurer l'interopérabilité
+                if (clean.domain.includes('openai.com') && !clean.domain.includes('chatgpt.com')) {
+                    result.push({
+                        ...clean,
+                        domain: '.chatgpt.com'
+                    });
                 }
-                return clean;
-            });
+            }
+            return result;
         }
 
         console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
