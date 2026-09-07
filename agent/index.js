@@ -346,15 +346,64 @@ async function typeAndSendPrompt(page, text) {
         await page.screenshot({ path: `debug-step-before-typing-${Date.now()}.png`, fullPage: false });
     } catch(e) {}
 
-    // Clic / focus sur le champ de texte
+    // Stratégie de clic en cascade (4 méthodes)
+    let focusOk = false;
+
+    // Méthode 1 : Scroll dans le viewport puis clic Playwright
     try {
+        await page.evaluate(() => {
+            const el = document.querySelector('#prompt-textarea');
+            if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+        });
+        await page.waitForTimeout(300);
         await promptInput.click({ force: true, timeout: 5000 });
-        console.log("🖱️ Clic sur le champ texte réussi.");
+        console.log("🖱️ Méthode 1 : Clic Playwright réussi.");
+        focusOk = true;
     } catch (e) {
-        console.log("⚠️ Clic direct échoué, tentative de focus DOM...");
-        try { await promptInput.focus({ timeout: 2000 }); } catch (err) {}
+        console.log(`⚠️ Méthode 1 échouée (${e.message.split('\n')[0]}), passage à la méthode 2...`);
     }
+
+    // Méthode 2 : Clic via coordonnées exactes (bounding box)
+    if (!focusOk) {
+        try {
+            const box = await promptInput.boundingBox({ timeout: 3000 });
+            if (box) {
+                await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+                console.log("🖱️ Méthode 2 : Clic via coordonnées réussi.");
+                focusOk = true;
+            }
+        } catch (e) {
+            console.log(`⚠️ Méthode 2 échouée (${e.message.split('\n')[0]}), passage à la méthode 3...`);
+        }
+    }
+
+    // Méthode 3 : Click JavaScript natif via page.evaluate
+    if (!focusOk) {
+        try {
+            await page.evaluate(() => {
+                const el = document.querySelector('#prompt-textarea');
+                if (el) { el.focus(); el.click(); }
+            });
+            console.log("🖱️ Méthode 3 : Click JS natif appliqué.");
+            focusOk = true;
+        } catch (e) {
+            console.log(`⚠️ Méthode 3 échouée (${e.message.split('\n')[0]}), passage à la méthode 4...`);
+        }
+    }
+
+    // Méthode 4 : Focus Playwright avec timeout réduit (dernière chance)
+    if (!focusOk) {
+        try {
+            await promptInput.focus({ timeout: 3000 });
+            console.log("🖱️ Méthode 4 : Focus Playwright appliqué.");
+            focusOk = true;
+        } catch (e) {
+            console.log(`⚠️ Méthode 4 échouée (${e.message.split('\n')[0]}). Tentative de frappe directe quand même...`);
+        }
+    }
+
     await page.waitForTimeout(500);
+
 
     // Vider le champ avant d'écrire (sécurité)
     try {
