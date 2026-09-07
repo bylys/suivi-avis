@@ -850,7 +850,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     console.log("⚠️ ChatGPT demande une image cible/référence au lieu de créer l'image !");
                     console.log("🔄 Envoi automatique de la consigne corrective de création autonome from scratch...");
                     referenceImagePromptSent = true;
-                    await typeAndSendPrompt(page, "Génère directement une TOUTE NOUVELLE photo originale complète à partir de zéro avec DALL-E selon les instructions précédentes. N'utilise aucune image de référence et ne modifie aucune image existante.");
+                    await typeAndSendPrompt(page, "Crée immédiatement cette photo de la scène avec DALL-E selon les instructions ci-dessus.");
                     await page.waitForTimeout(5000);
                     continue;
                 }
@@ -2183,8 +2183,8 @@ async function main() {
             let negativeConstraint = "";
             const lowerLabel = travauxLabel.toLowerCase();
             
-            // Header de création autonome from scratch — force DALL-E 3 en mode création pure sans chercher d'image de référence
-            let contextReset = "🔴 CRÉATION D'UNE TOUTE NOUVELLE IMAGE AUTONOME À PARTIR DE ZÉRO (FROM SCRATCH).\nCONSIGNE STRICTE DALL-E : Génère une NOUVELLE photo originale complète. Ne fais AUCUNE retouche, modification ou référence à une image existante. Aucune image de référence ni image cible n'est nécessaire.\n[TASK: GENERATE A BRAND NEW STANDALONE IMAGE FROM SCRATCH. DO NOT EDIT, MODIFY, OR BASE ON ANY PREVIOUS IMAGE. NO REFERENCE IMAGE NEEDED.]\n\n";
+            // Header de création d'image : description positive directe sans mention d'édition ni d'image de référence
+            let contextReset = "Génère une photo de chantier professionnel ultra-réaliste.\n";
             if (lowerLabel.includes('vitrier') || lowerLabel.includes('vitrerie') || lowerLabel.includes('vitre') || lowerLabel.includes('vitrage') || lowerLabel.includes('fenêtre') || lowerLabel.includes('fenetre') || lowerLabel.includes('miroir') || lowerLabel.includes('miroiterie')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: GLAZIER & GLASS WORK (VITRERIE, REMPLACEMENT DE VITRAGE, DOUBLE VITRAGE, RÉPARATION DE FENÊTRE, VITRINE DE SÉCURITÉ OU MIROITERIE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
