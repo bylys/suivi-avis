@@ -391,7 +391,7 @@ async function typeAndSendPrompt(page, text) {
             if (btn) {
                 const disabled = await btn.evaluate(b => b.disabled || b.getAttribute('aria-disabled') === 'true');
                 if (!disabled) {
-                    await btn.click();
+                    await btn.click({ force: true, timeout: 5000 });
                     console.log(`✅ Bouton d'envoi cliqué avec succès (${sel}) !`);
                     clicked = true;
                     break;
@@ -402,9 +402,11 @@ async function typeAndSendPrompt(page, text) {
 
     if (!clicked) {
         console.log("Bouton d'envoi non cliquable, envoi via touche Entrée...");
-        try { await promptInput.focus({ timeout: 2000 }); } catch (e) {}
-        await page.keyboard.press('Enter');
     }
+    
+    // Sécurité supplémentaire : toujours faire un "Entrée" au cas où le clic du bouton serait ignoré par React
+    try { await promptInput.focus({ timeout: 2000 }); } catch (e) {}
+    await page.keyboard.press('Enter');
 }
 
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null) {
