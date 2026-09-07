@@ -798,8 +798,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
 
         console.log("⏳ Attente active de la création DALL-E 3 (jusqu'à 100s)...");
         let foundUrl = null;
+        let samePromptRetryCount = 0;
         let referenceImagePromptSent = false;
-        const scanStart = Date.now();
+        let scanStart = Date.now();
         const MAX_SCAN_MS = 100000;
 
         while (Date.now() - scanStart < MAX_SCAN_MS) {
@@ -829,7 +830,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             }
 
             // Détection si ChatGPT demande une image de référence ou refuse (consignes négatives / filtre OpenAI)
-            if (!referenceImagePromptSent && (Date.now() - scanStart > 5000)) {
+            if (Date.now() - scanStart > 5000) {
                 const blockStatus = await page.evaluate(() => {
                     const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], .agent-turn, article'));
                     const lastTurn = assistantTurns.length > 0 ? assistantTurns[assistantTurns.length - 1] : null;
@@ -872,13 +873,25 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
 
                 if (blockStatus && (blockStatus.isRefusal || blockStatus.isPolicyBlock)) {
                     const motif = blockStatus.isPolicyBlock ? "Filtre de contenu OpenAI" : "Demande d'image de référence / Consignes négatives";
-                    console.log(`⚠️ Blocage détecté sur ChatGPT (${motif}) !`);
-                    console.log("🔄 BASCULE IMMÉDIATE SUR LA STRUCTURE RICHE ET SÉCURISÉE...");
-                    referenceImagePromptSent = true;
-                    const promptToSend = fallbackPrompt || "Génère une photo professionnelle et ultra-réaliste de ce chantier artisanal en France sans aucun texte.";
-                    await typeAndSendPrompt(page, promptToSend);
-                    await page.waitForTimeout(5000);
-                    continue;
+                    
+                    if (samePromptRetryCount === 0) {
+                        console.log(`⚠️ Blocage détecté sur ChatGPT (${motif}) !`);
+                        console.log("🔄 Tentative 1/2 : Ré-envoi du MÊME prompt d'origine pour vérifier si c'est un blocage temporaire...");
+                        samePromptRetryCount = 1;
+                        scanStart = Date.now();
+                        await typeAndSendPrompt(page, prompt);
+                        await page.waitForTimeout(5000);
+                        continue;
+                    } else if (!referenceImagePromptSent) {
+                        console.log(`⚠️ Deuxième blocage confirmé sur ChatGPT (${motif}) après ré-essai !`);
+                        console.log("🔄 Tentative 2/2 : BASCULE SUR LA STRUCTURE RICHE ET SÉCURISÉE...");
+                        referenceImagePromptSent = true;
+                        scanStart = Date.now();
+                        const promptToSend = fallbackPrompt || "Génère une photo professionnelle et ultra-réaliste de ce chantier artisanal en France sans aucun texte.";
+                        await typeAndSendPrompt(page, promptToSend);
+                        await page.waitForTimeout(5000);
+                        continue;
+                    }
                 }
             }
 
