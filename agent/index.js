@@ -2193,7 +2193,6 @@ async function main() {
             
             // Header de création d'image : description positive directe sans mention d'édition ni d'image de référence
             let contextReset = "Génère une photo de chantier professionnel ultra-réaliste.\n";
-            let negativeConstraint = "";
 
             const coreTradeBlock = `\n🎯 OBJET UNIQUE DU CHANTIER :\n- Métier & Travaux : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;
 
