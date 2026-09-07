@@ -713,6 +713,15 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     console.log(`💬 Dernier texte reçu de ChatGPT : "${debugInfo.lastReply}"`);
                 }
             } catch (dErr) {}
+            
+            try {
+                const ts = Date.now();
+                const screenshotPath = `debug-error-${ts}.png`;
+                await page.screenshot({ path: screenshotPath, fullPage: true });
+                console.log(`📸 Capture d'écran enregistrée pour debug (${screenshotPath})`);
+            } catch (e) {
+                console.log("Erreur lors de la capture d'écran :", e.message);
+            }
         }
 
         await page.waitForTimeout(2000); // Stabilisation du rendu visuel
