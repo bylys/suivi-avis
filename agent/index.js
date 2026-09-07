@@ -501,10 +501,12 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         
         const page = await context.newPage();
         console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
+        console.log(`🔗 URL cible résolue : ${targetUrl}`);
         try {
             await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+            console.log(`✅ Navigation vers l'URL cible réussie.`);
         } catch (navErr) {
-            console.log(`Note chargement URL initiale (${navErr.message}). Bascule sur https://chatgpt.com/ ...`);
+            console.log(`⚠️ Échec navigation vers "${targetUrl}" (${navErr.message}). Bascule sur https://chatgpt.com/ ...`);
             await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
         }
         
@@ -512,6 +514,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         
         let currentUrl = page.url();
         console.log("URL de la page :", currentUrl);
+
         let title = '';
         try { title = await page.title(); } catch (e) {}
         console.log("Titre de la page :", title);
