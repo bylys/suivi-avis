@@ -876,10 +876,41 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     
                     if (samePromptRetryCount === 0) {
                         console.log(`⚠️ Blocage détecté sur ChatGPT (${motif}) !`);
-                        console.log("🔄 Tentative 1/2 : Ré-envoi du MÊME prompt d'origine pour vérifier si c'est un blocage temporaire...");
                         samePromptRetryCount = 1;
+
+                        // 1. Récupération / copie du prompt exact soumis avant l'erreur
+                        let promptToResubmit = prompt;
+                        try {
+                            const lastUserTurnText = await page.evaluate(() => {
+                                const turns = Array.from(document.querySelectorAll('[data-message-author-role="user"]'));
+                                if (turns.length > 0) {
+                                    return (turns[turns.length - 1].innerText || '').trim();
+                                }
+                                return '';
+                            });
+                            if (lastUserTurnText && lastUserTurnText.length > 20) {
+                                promptToResubmit = lastUserTurnText;
+                                console.log(`📋 Prompt exact copié depuis la conversation (${promptToResubmit.substring(0, 70)}...)`);
+                            }
+                        } catch (copyErr) {}
+
+                        // 2. Rechargement de la page pour réinitialiser la conversation et effacer l'état d'erreur
+                        console.log("🔄 Rechargement de la page (page.reload()) pour réinitialiser l'état ChatGPT...");
+                        try {
+                            await page.reload({ waitUntil: 'domcontentloaded' });
+                            await page.waitForTimeout(4000);
+                            await dismissModalsAndBanners(page);
+                            console.log("⏳ Attente que la barre de saisie (#prompt-textarea) soit prête après rechargement...");
+                            await page.waitForSelector('#prompt-textarea', { state: 'visible', timeout: 25000 });
+                            await page.waitForTimeout(1500);
+                        } catch (reloadErr) {
+                            console.warn(`Note rechargement : ${reloadErr.message}`);
+                        }
+
+                        // 3. Collage et re-soumission exacte dans la barre de saisie
+                        console.log("📝 Collage du prompt dans la barre et re-soumission immédiate...");
                         scanStart = Date.now();
-                        await typeAndSendPrompt(page, prompt);
+                        await typeAndSendPrompt(page, promptToResubmit);
                         await page.waitForTimeout(5000);
                         continue;
                     } else if (!referenceImagePromptSent) {
