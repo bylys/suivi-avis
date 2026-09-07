@@ -3199,6 +3199,109 @@ function changerCleGemini() {
 const ASSETS_URL        = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=0';
 const ASSETS_DATES_URL  = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=583203849';
 const ASSETS_CITIES_URL = 'https://docs.google.com/spreadsheets/d/18I09oFGfd8-WUXfDS0XVzIDTUL6TZ0HOc6nXIU1U3UI/export?format=csv&gid=987118741';
+
+const STATIC_EXTRA_ASSETS = [
+  { domain: '', gmail: 'jamespettisd982@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'donaldbarnhillb218@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'robertwilliszir597@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jamesmolacekxe692@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'miltonpernal385@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'helennelsona760@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'elenorheronnbq962@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'teresawilsonqwa448@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jonellesmithc700@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'martharubottompnv578@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'robertwatsono201@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'amylynchcm894@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jaimegrovesse334@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'dorisandinoch981@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'brucesilvaaci635@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'willieconantfo724@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'veraduckworthz363@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'carmengrindlebw706@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'ednagrahamwio984@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jesuscarsontod174@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jamescofieldesl217@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'ronaldclaytona519@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'maryrosedardyk754@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'larrywardqzr920@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'marissamerinoxe653@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'charlesschoonovermd987@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'henryowensu853@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'thelmabrasfields519@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'anthonybellinghausena449@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'leocorbettng149@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'harrysmithtsi308@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'dorothyrusselll542@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'mauricehunterhk619@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'robertmccullocha895@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'georgeharrisfm603@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'ethelparkerzv981@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jacquelinegrilloy628@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'danielkimzsk480@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'zellaguthriesnv989@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'kermitdaviswny189@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'maryriverse424@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'hollyshupewc810@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'josephsmithxeh874@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'domenicawelshuw643@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'glengardneralr611@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jackleggettumn610@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'williammarrowtn917@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jasonmartinei527@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'franciswhites749@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'tarajonesp987@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'ethelstanleyot394@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'billymcilvainqr504@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'ryanbarbeeyl976@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jeffreyguerrahi976@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'elizabethochoaxf302@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'robertmendezdip778@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'deniseparadavc857@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'marymercadoiaz548@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'dannymcphersonb322@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'dorothywashingtonf791@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'pamelawebbc477@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'curtismceuenks244@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'janetwilliamseqt887@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'gregplattld567@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'shaneadamsecm250@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'patrickclewellv322@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'margarethaleahs155@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'josephcheesmanur219@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'melinaemeryug177@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'maxinestoglinf436@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'antoinettejamisonb575@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'melindawashingtonumy986@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'thomasbowenvr761@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'elizabethscottshv978@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'jasonnordbergbi809@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'williamvalentinec756@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'rooseveltgonzalezl385@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'mollymckennong308@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'lauramitchellm137@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'joycegirouxy990@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'anthonyadamstx791@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'danieltreadwayv758@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'maryrodriguezbbu653@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'davidvarnere780@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'dorothyrobertss253@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'juangierischlr365@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'alicequickzay708@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'seanshapiroijg877@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'leoweatherlya237@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'emilyjohnsondqs159@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'solmasseybea943@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'donnapelkeyl686@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'richardayersgdu862@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'marybrowne303@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'dannyburgerfwi343@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'amymcdonaldix914@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'williamdaderq958@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'wildafranklinst772@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'elainewaldreniat961@gmail.com', statut: 'Enable', city: '' },
+  { domain: '', gmail: 'lynnvernonwe384@gmail.com', statut: 'Enable', city: '' },
+];
 let _assetsCache = null;
 let _datesCache  = null;
 let _citiesCache = null;
@@ -3241,9 +3344,18 @@ async function getAssets() {
       }).filter(Boolean);
     } catch(e) {}
 
-    // Fusion — les gmails du tab 3 déjà présents dans tab 1 ne sont pas doublonnés
+    // Fusion — les gmails du tab 3 et static_extra déjà présents dans tab 1 ne sont pas doublonnés
     const existingGmails = new Set(rows.map(r => r.gmail.toLowerCase()));
-    const merged = [...rows, ...extra.filter(r => !existingGmails.has(r.gmail.toLowerCase()))];
+    const allExtras = [...extra, ...STATIC_EXTRA_ASSETS];
+    const newExtras = [];
+    for (const item of allExtras) {
+      const g = item.gmail.toLowerCase();
+      if (!existingGmails.has(g)) {
+        existingGmails.add(g);
+        newExtras.push(item);
+      }
+    }
+    const merged = [...rows, ...newExtras];
     _assetsCache = merged;
     return merged;
   } catch(e) { return []; }
