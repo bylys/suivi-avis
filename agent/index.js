@@ -259,13 +259,27 @@ const TARGET_OPERATOR = process.env.OPERATOR_NAME ? process.env.OPERATOR_NAME.tr
 function getConversationUrlForOperator(operatorName) {
     const aliases = getOperatorAliases(operatorName || TARGET_OPERATOR);
     for (const alias of aliases) {
-        const workVar = `CHATGPT_WORK_CONVERSATION_URL_${alias}`;
-        const persoVar = `CHATGPT_PERSO_CONVERSATION_URL_${alias}`;
-        const stdVar = `CHATGPT_CONVERSATION_URL_${alias}`;
-        const match = process.env[workVar] || process.env[persoVar] || process.env[stdVar];
-        if (match) return match;
+        const candidates = [
+            `CHATGPT_PRO_CONVERSATION_URL_${alias}`,
+            `CHATGPT_WORK_CONVERSATION_URL_${alias}`,
+            `CHATGPT_URL_PRO_${alias}`,
+            `CHATGPT_URL_WORK_${alias}`,
+            `CHATGPT_CONVERSATION_URL_PRO_${alias}`,
+            `CHATGPT_CONVERSATION_URL_WORK_${alias}`,
+            `CHATGPT_CONVERSATION_URL_${alias}_PRO`,
+            `CHATGPT_CONVERSATION_URL_${alias}_WORK`,
+            `CHATGPT_PERSO_CONVERSATION_URL_${alias}`,
+            `CHATGPT_URL_PERSO_${alias}`,
+            `CHATGPT_CONVERSATION_URL_PERSO_${alias}`,
+            `CHATGPT_CONVERSATION_URL_${alias}_PERSO`,
+            `CHATGPT_CONVERSATION_URL_${alias}`,
+            `CHATGPT_URL_${alias}`
+        ];
+        for (const c of candidates) {
+            if (process.env[c] && process.env[c].trim().length > 5) return process.env[c].trim();
+        }
     }
-    return process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
+    return process.env.CHATGPT_PRO_CONVERSATION_URL || process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
 async function dismissModalsAndBanners(page) {
@@ -302,33 +316,64 @@ async function typeAndSendPrompt(page, text) {
     console.log("Saisie du prompt dans le champ de texte...");
     const promptInput = page.locator('#prompt-textarea');
     await promptInput.waitFor({ state: 'visible', timeout: 30000 });
-    await promptInput.focus();
+    await promptInput.click();
+    await page.waitForTimeout(300);
 
-    await page.evaluate((val) => {
-        const el = document.querySelector('#prompt-textarea');
-        if (!el) return;
-        el.focus();
-        if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
-            document.execCommand('selectAll', false, null);
-            document.execCommand('insertText', false, val);
-            el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: val }));
-        } else {
-            el.value = val;
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-    }, text);
-
-    await page.waitForTimeout(500);
-    await promptInput.pressSequentially(' ');
-    await page.waitForTimeout(1000);
-
+    // 1. Insertion sécurisée par simulation clavier Playwright + fallback DOM
+    let inputSuccess = false;
     try {
-        const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
-        await sendBtn.click();
-        console.log("✅ Bouton d'envoi cliqué avec succès !");
-    } catch(e) {
-        console.log("Bouton d'envoi non actif, tentative avec la touche Entrée...");
+        await page.keyboard.insertText(text);
+        inputSuccess = true;
+    } catch (e) {}
+
+    if (!inputSuccess) {
+        await page.evaluate((val) => {
+            const el = document.querySelector('#prompt-textarea');
+            if (!el) return;
+            el.focus();
+            if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
+                document.execCommand('selectAll', false, null);
+                document.execCommand('insertText', false, val);
+                el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: val }));
+            } else {
+                el.value = val;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }, text);
+    }
+
+    await page.waitForTimeout(800);
+
+    // 2. Détection et clic sur le bouton d'envoi actif
+    let clicked = false;
+    const sendButtonSelectors = [
+        'button[data-testid="send-button"]:not([disabled])',
+        'button[data-testid="fruitjuice-send-button"]:not([disabled])',
+        'button[aria-label="Send prompt"]:not([disabled])',
+        'button[aria-label="Envoyer le message"]:not([disabled])',
+        'button[aria-label="Envoyer la requête"]:not([disabled])',
+        'form button[type="submit"]:not([disabled])'
+    ];
+
+    for (const sel of sendButtonSelectors) {
+        try {
+            const btn = await page.$(sel);
+            if (btn) {
+                const disabled = await btn.evaluate(b => b.disabled || b.getAttribute('aria-disabled') === 'true');
+                if (!disabled) {
+                    await btn.click();
+                    console.log(`✅ Bouton d'envoi cliqué avec succès (${sel}) !`);
+                    clicked = true;
+                    break;
+                }
+            }
+        } catch (e) {}
+    }
+
+    if (!clicked) {
+        console.log("Bouton d'envoi non cliquable, envoi via touche Entrée...");
+        await promptInput.focus();
         await page.keyboard.press('Enter');
     }
 }
@@ -491,7 +536,8 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     const src = img.src || '';
                     if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
                     if (knownSet.has(src)) continue; // INTERDICTION STRICTE : ne jamais prendre une image déjà connue
-                    if (img.complete && (img.naturalWidth >= 400 || img.width >= 400)) {
+                    // Détection universelle DALL-E 3 : CDN OpenAI (oaiusercontent), blob, ou dimensions visuelles suffisantes
+                    if (src.includes('oaiusercontent') || src.includes('blob:') || (img.complete && (img.naturalWidth >= 300 || img.width >= 300 || img.naturalWidth >= 400 || img.width >= 400))) {
                         return src;
                     }
                 }
@@ -506,6 +552,11 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         const MAX_SCAN_MS = 100000;
 
         while (Date.now() - scanStart < MAX_SCAN_MS) {
+            // Défilement automatique vers le bas pour forcer le rendu Chromium des images lazy-loaded
+            try {
+                await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+            } catch (e) {}
+
             foundUrl = await checkNewImage();
             if (foundUrl) break;
 
@@ -567,6 +618,10 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 console.log(`✅ Page ChatGPT actualisée ! Attente de ${Math.round(reloadWait/1000)}s (entre 15 et 20s) pour le chargement du fil...`);
                 await page.waitForTimeout(reloadWait);
                 
+                try {
+                    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+                } catch (e) {}
+
                 const startTimeReload = Date.now();
                 while (Date.now() - startTimeReload < 25000) {
                     foundUrl = await checkNewImage();
@@ -585,7 +640,22 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
 
         if (!foundUrl) {
-            console.log("⚠️ Aucune image de taille > 400px trouvée après scan complet.");
+            console.log("⚠️ Aucune nouvelle photo trouvée après scan complet.");
+            try {
+                const debugInfo = await page.evaluate(() => {
+                    const turns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], .agent-turn, article'));
+                    const lastText = turns.length > 0 ? (turns[turns.length - 1].innerText || '') : '';
+                    return {
+                        title: document.title,
+                        url: window.location.href,
+                        lastReply: lastText.substring(0, 300).replace(/\n+/g, ' ')
+                    };
+                });
+                console.log(`ℹ️ Contexte page : Titre="${debugInfo.title}", URL="${debugInfo.url}"`);
+                if (debugInfo.lastReply) {
+                    console.log(`💬 Dernier texte reçu de ChatGPT : "${debugInfo.lastReply}"`);
+                }
+            } catch (dErr) {}
         }
 
         await page.waitForTimeout(2000); // Stabilisation du rendu visuel
@@ -629,7 +699,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
 
         // Fallback: Fetch direct si Canvas échoue
-        if (!imageBuffer || imageBuffer.length < 5000) {
+        if ((!imageBuffer || imageBuffer.length < 5000) && foundUrl) {
             console.log("Fallback : Récupération in-page via fetch direct...");
             try {
                 const base64Data = await page.evaluate(async (url) => {
@@ -652,6 +722,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
 
         const finalUrl = page ? page.url() : null;
+        if (!imageBuffer || imageBuffer.length < 5000) {
+            throw new Error("ÉCHEC_EXTRACTION_IMAGE: Aucune photo DALL-E exploitable n'a été récupérée sur cette session ChatGPT.");
+        }
         return { imageBuffer, finalUrl };
     } finally {
         if (browser) {
@@ -780,8 +853,12 @@ async function main() {
 
         // 1. Collecte depuis process.env (GitHub Secrets)
         for (const [envKey, envVal] of Object.entries(process.env)) {
-            if (envVal && envVal.trim().length > 20 && envKey.toUpperCase().includes('COOKIE')) {
-                availableCookiesMap[envKey.toUpperCase()] = envVal.trim();
+            const k = envKey.toUpperCase();
+            const v = (envVal || '').trim();
+            if (v.length > 5) {
+                if (k.includes('COOKIE') || k.includes('URL') || k.includes('CONVERSATION')) {
+                    availableCookiesMap[k] = v;
+                }
             }
         }
 
@@ -805,7 +882,7 @@ async function main() {
                 for (const item of settingData) {
                     const k = (item.key || '').toUpperCase();
                     const v = (item.value || '').trim();
-                    if (v.length > 5 && (k.includes('COOKIE') || k.includes('URL'))) {
+                    if (v.length > 5 && (k.includes('COOKIE') || k.includes('URL') || k.includes('CONVERSATION'))) {
                         if (!availableCookiesMap[k]) availableCookiesMap[k] = v;
                     }
                 }
@@ -815,33 +892,91 @@ async function main() {
         function resolveCookieSetsForOp(opName) {
             const aliases = getOperatorAliases(opName);
             
+            // 1. Recherche de l'URL de conversation PRO / WORK
             let workUrl = null;
-            let persoUrl = null;
-            let fallbackUrl = null;
-            for (const alias of aliases) {
-                if (!workUrl) workUrl = availableCookiesMap[`CHATGPT_WORK_CONVERSATION_URL_${alias}`] || process.env[`CHATGPT_WORK_CONVERSATION_URL_${alias}`];
-                if (!persoUrl) persoUrl = availableCookiesMap[`CHATGPT_PERSO_CONVERSATION_URL_${alias}`] || process.env[`CHATGPT_PERSO_CONVERSATION_URL_${alias}`];
-                if (!fallbackUrl) fallbackUrl = availableCookiesMap[`CHATGPT_CONVERSATION_URL_${alias}`] || process.env[`CHATGPT_CONVERSATION_URL_${alias}`];
+            const workUrlKeys = [];
+            for (const a of aliases) {
+                workUrlKeys.push(
+                    `CHATGPT_PRO_CONVERSATION_URL_${a}`,
+                    `CHATGPT_WORK_CONVERSATION_URL_${a}`,
+                    `CHATGPT_URL_PRO_${a}`,
+                    `CHATGPT_URL_WORK_${a}`,
+                    `CHATGPT_CONVERSATION_URL_PRO_${a}`,
+                    `CHATGPT_CONVERSATION_URL_WORK_${a}`,
+                    `CHATGPT_CONVERSATION_URL_${a}_PRO`,
+                    `CHATGPT_CONVERSATION_URL_${a}_WORK`,
+                    `URL_PRO_${a}`,
+                    `URL_WORK_${a}`
+                );
             }
-            workUrl = workUrl || process.env.CHATGPT_WORK_CONVERSATION_URL;
-            persoUrl = persoUrl || process.env.CHATGPT_PERSO_CONVERSATION_URL;
+            workUrlKeys.push('CHATGPT_PRO_CONVERSATION_URL', 'CHATGPT_WORK_CONVERSATION_URL', 'CHATGPT_URL_PRO', 'CHATGPT_URL_WORK');
+            for (const k of workUrlKeys) {
+                if (!workUrl && (availableCookiesMap[k] || process.env[k])) {
+                    workUrl = (availableCookiesMap[k] || process.env[k]).trim();
+                }
+            }
+
+            // 2. Recherche de l'URL de conversation PERSO / SECOURS
+            let persoUrl = null;
+            const persoUrlKeys = [];
+            for (const a of aliases) {
+                persoUrlKeys.push(
+                    `CHATGPT_PERSO_CONVERSATION_URL_${a}`,
+                    `CHATGPT_URL_PERSO_${a}`,
+                    `CHATGPT_CONVERSATION_URL_PERSO_${a}`,
+                    `CHATGPT_CONVERSATION_URL_${a}_PERSO`,
+                    `URL_PERSO_${a}`
+                );
+            }
+            persoUrlKeys.push('CHATGPT_PERSO_CONVERSATION_URL', 'CHATGPT_URL_PERSO');
+            for (const k of persoUrlKeys) {
+                if (!persoUrl && (availableCookiesMap[k] || process.env[k])) {
+                    persoUrl = (availableCookiesMap[k] || process.env[k]).trim();
+                }
+            }
+
+            // 3. URL Fallback
+            let fallbackUrl = null;
+            for (const a of aliases) {
+                const k = `CHATGPT_CONVERSATION_URL_${a}`;
+                if (!fallbackUrl && (availableCookiesMap[k] || process.env[k])) {
+                    fallbackUrl = (availableCookiesMap[k] || process.env[k]).trim();
+                }
+            }
             fallbackUrl = fallbackUrl || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 
+            // 4. Clés candidates Cookies PRO / WORK
             const workKeyCandidates = [];
-            for (const alias of aliases) {
-                workKeyCandidates.push(`CHATGPT_WORK_COOKIES_${alias}`);
-                workKeyCandidates.push(`CHATGPT_WORK_COOKIE_${alias}`);
+            for (const a of aliases) {
+                workKeyCandidates.push(
+                    `CHATGPT_PRO_COOKIES_${a}`,
+                    `CHATGPT_WORK_COOKIES_${a}`,
+                    `CHATGPT_COOKIES_PRO_${a}`,
+                    `CHATGPT_COOKIES_WORK_${a}`,
+                    `CHATGPT_COOKIES_${a}_PRO`,
+                    `CHATGPT_COOKIES_${a}_WORK`,
+                    `COOKIES_PRO_${a}`,
+                    `COOKIES_WORK_${a}`,
+                    `CHATGPT_PRO_COOKIE_${a}`,
+                    `CHATGPT_WORK_COOKIE_${a}`
+                );
             }
-            workKeyCandidates.push('CHATGPT_WORK_COOKIES', 'CHATGPT_WORK_COOKIE');
+            workKeyCandidates.push('CHATGPT_PRO_COOKIES', 'CHATGPT_WORK_COOKIES', 'CHATGPT_PRO_COOKIE', 'CHATGPT_WORK_COOKIE');
 
+            // 5. Clés candidates Cookies PERSO / SECOURS
             const persoKeyCandidates = [];
-            for (const alias of aliases) {
-                persoKeyCandidates.push(`CHATGPT_PERSO_COOKIES_${alias}`);
-                persoKeyCandidates.push(`CHATGPT_COOKIES_${alias}`);
-                persoKeyCandidates.push(`CHATGPT_PERSO_COOKIE_${alias}`);
-                persoKeyCandidates.push(`CHATGPT_COOKIE_${alias}`);
+            for (const a of aliases) {
+                persoKeyCandidates.push(
+                    `CHATGPT_PERSO_COOKIES_${a}`,
+                    `CHATGPT_COOKIES_PERSO_${a}`,
+                    `CHATGPT_COOKIES_${a}_PERSO`,
+                    `COOKIES_PERSO_${a}`,
+                    `CHATGPT_PERSO_COOKIE_${a}`,
+                    `CHATGPT_COOKIES_${a}`,
+                    `CHATGPT_COOKIE_${a}`
+                );
             }
-            persoKeyCandidates.push('CHATGPT_PERSO_COOKIES', 'CHATGPT_COOKIES');
+            persoKeyCandidates.push('CHATGPT_PERSO_COOKIES', 'CHATGPT_PERSO_COOKIE', 'CHATGPT_COOKIES');
 
             let workEntry = null;
             for (const k of workKeyCandidates) {
@@ -865,21 +1000,33 @@ async function main() {
 
             if (sets.length === 0) {
                 for (const [k, v] of Object.entries(availableCookiesMap)) {
-                    if (opUpper && k.includes(opUpper)) {
+                    if (opUpper && k.includes(opUpper) && (k.includes('COOKIE') || !k.includes('URL'))) {
                         sets.push({ name: 'Plan ChatGPT', key: k, raw: v, url: fallbackUrl });
                         break;
                     }
                 }
             }
             if (sets.length === 0 && Object.keys(availableCookiesMap).length > 0) {
-                const k = Object.keys(availableCookiesMap)[0];
-                sets.push({ name: 'Plan ChatGPT (Fallback)', key: k, raw: availableCookiesMap[k], url: fallbackUrl });
+                for (const [k, v] of Object.entries(availableCookiesMap)) {
+                    if (k.includes('COOKIE')) {
+                        sets.push({ name: 'Plan ChatGPT (Fallback)', key: k, raw: v, url: fallbackUrl });
+                        break;
+                    }
+                }
             }
             return sets;
         }
 
         const initialOpSets = resolveCookieSetsForOp(rawOp);
-        console.log(`🔑 Jeux de cookies ChatGPT prêts pour l'opérateur principal (${initialOpSets.length} plan(s)) : ${initialOpSets.map(s => s.name + ' [' + s.key + ']').join(', ')}`);
+        console.log(`\n================== DIAGNOSTIC IDENTIFIANTS CHATGPT ==================`);
+        console.log(`👤 Opérateur cible : "${rawOp}" (Recherche DB: "${targetOp}")`);
+        for (const s of initialOpSets) {
+            console.log(`   👉 ${s.name} : Secret "${s.key}" trouvé (${s.raw ? s.raw.length : 0} car.) | URL: ${s.url}`);
+        }
+        if (initialOpSets.length === 0) {
+            console.log(`   ❌ ATTENTION : Aucun cookie trouvé pour ${rawOp} dans les secrets !`);
+        }
+        console.log(`=====================================================================\n`);
 
         function parseCookiesHelper(raw) {
             if (!raw) return [];
