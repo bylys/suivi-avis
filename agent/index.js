@@ -588,6 +588,14 @@ async function main() {
         // Recherche de la date (TARGET_DATE ou date du jour en heure locale Asia/Bangkok par défaut)
         const dateStr = process.env.TARGET_DATE || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
         
+        // Vérification du week-end (Samedi et Dimanche en heure locale Asie/Bangkok)
+        const checkDateObj = new Date(dateStr + 'T12:00:00Z');
+        const dayOfWeek = checkDateObj.getUTCDay(); // 0 = Dimanche, 6 = Samedi
+        if ((dayOfWeek === 0 || dayOfWeek === 6) && process.env.FORCE_EXECUTION !== 'true') {
+            console.log(`⏸️ Pas de génération d'images le week-end (${dateStr} est un ${dayOfWeek === 6 ? 'Samedi' : 'Dimanche'}). Fin de l'agent.`);
+            return;
+        }
+
         const rawOp = (TARGET_OPERATOR || '').trim();
         const opUpper = rawOp ? rawOp.toUpperCase() : '';
         let targetOp = rawOp;
@@ -612,9 +620,13 @@ async function main() {
         
         let isTestFallback = false;
         
-        // Mode test sécurisé : si aucun avis pour la date, chaque opérateur teste un métier spécifique
+        // Si aucun avis pour la date : on s'arrête proprement (le mode test n'est activé que si explicitement demandé)
         if (tasks.length === 0) {
-            console.log(`Aucun avis planifié pour le ${dateStr}. Mode test : création d'un scénario de test pour ${rawOp || 'Global'}...`);
+            if (process.env.FORCE_TEST_MODE !== 'true') {
+                console.log(`ℹ️ Aucun avis planifié pour le ${dateStr} pour ${rawOp ? 'l\'opérateur ' + rawOp : 'tous les opérateurs'}. Fin de l'exécution.`);
+                return;
+            }
+            console.log(`Mode test forcé (FORCE_TEST_MODE=true) pour ${rawOp || 'Global'}...`);
             
             const operatorScenarios = {
                 'KEVIN': [

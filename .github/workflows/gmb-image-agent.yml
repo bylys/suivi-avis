@@ -2,8 +2,9 @@ name: GMB Image Generator Agent (Séquentiel)
 
 on:
   schedule:
-    # Exécution automatique chaque jour à 01h00 du matin heure de Thaïlande (UTC+7 -> 18h00 UTC la veille)
-    - cron: '0 18 * * *'
+    # Exécution automatique du lundi au vendredi à 01h00 du matin heure de Thaïlande (UTC+7 -> 18h00 UTC du dimanche au jeudi)
+    # 0 = Dimanche UTC (Lundi 01:00 THA), 4 = Jeudi UTC (Vendredi 01:00 THA)
+    - cron: '0 18 * * 0-4'
   workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
 
 jobs:
