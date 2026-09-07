@@ -436,19 +436,42 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
 
-        // Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
+        // Scanneur d'image ultra-sécurisé : inspection STRICTEMENT restreinte au DERNIER message de réponse
+        // → Rend 100% impossible la capture accidentelle d'une photo d'un avis précédent dans le même fil
         const checkNewImage = async () => {
             return await page.evaluate((knownUrls) => {
                 const knownSet = new Set(knownUrls);
-                const imgs = Array.from(document.querySelectorAll('img')).reverse();
-                for (const img of imgs) {
-                    const src = img.src || '';
-                    if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
-                    if (knownSet.has(src)) continue; // INTERDICTION STRICTE : ne jamais prendre une image déjà connue
-                    if (img.complete && (img.naturalWidth >= 400 || img.width >= 400)) {
-                        return src;
+                
+                // 1. Priorité 1 : chercher UNIQUEMENT dans le dernier message de réponse de l'assistant
+                const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], .agent-turn, article'));
+                if (assistantTurns.length > 0) {
+                    const lastTurn = assistantTurns[assistantTurns.length - 1];
+                    const imgs = Array.from(lastTurn.querySelectorAll('img'));
+                    for (const img of imgs) {
+                        const src = img.src || '';
+                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                        if (knownSet.has(src)) continue; // Jamais une image déjà connue
+                        if (img.complete && (img.naturalWidth >= 300 || img.width >= 300)) {
+                            return src;
+                        }
                     }
                 }
+
+                // 2. Priorité 2 : chercher dans le dernier conteneur conversation-turn
+                const turns = Array.from(document.querySelectorAll('div[data-testid^="conversation-turn-"]'));
+                if (turns.length > 0) {
+                    const lastTurn = turns[turns.length - 1];
+                    const imgs = Array.from(lastTurn.querySelectorAll('img'));
+                    for (const img of imgs) {
+                        const src = img.src || '';
+                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                        if (knownSet.has(src)) continue;
+                        if (img.complete && (img.naturalWidth >= 300 || img.width >= 300)) {
+                            return src;
+                        }
+                    }
+                }
+
                 return null;
             }, existingImageUrls);
         };
@@ -480,20 +503,21 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 throw new Error("LIMITE_QUOTA_ATTEINTE: La limite de génération d'images a été atteinte sur ce compte ChatGPT.");
             }
 
-            // Détection si ChatGPT demande une image de référence ou image cible au lieu de créer
+            // Détection si ChatGPT demande une image de référence ou image cible dans le dernier message
             if (!referenceImagePromptSent && (Date.now() - scanStart > 8000)) {
                 const needsReferenceImage = await page.evaluate(() => {
-                    const bodyText = document.body.innerText || '';
-                    const lower = bodyText.toLowerCase();
+                    const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], .agent-turn, article'));
+                    const lastTurn = assistantTurns.length > 0 ? assistantTurns[assistantTurns.length - 1] : null;
+                    const text = lastTurn ? (lastTurn.innerText || '').toLowerCase() : (document.body.innerText || '').toLowerCase();
                     return (
-                        lower.includes("image cible") ||
-                        lower.includes("téléverse une image") ||
-                        lower.includes("televerse une image") ||
-                        lower.includes("image de référence") ||
-                        lower.includes("image de reference") ||
-                        lower.includes("déjà présente dans ce fil") ||
-                        lower.includes("deja presente dans ce fil") ||
-                        lower.includes("utiliser comme base")
+                        text.includes("image cible") ||
+                        text.includes("téléverse une image") ||
+                        text.includes("televerse une image") ||
+                        text.includes("image de référence") ||
+                        text.includes("image de reference") ||
+                        text.includes("déjà présente dans ce fil") ||
+                        text.includes("deja presente dans ce fil") ||
+                        text.includes("utiliser comme base")
                     );
                 });
 
@@ -538,7 +562,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
 
         if (!foundUrl) {
-            console.log("⚠️ Aucune image de taille > 400px trouvée après scan complet.");
+            console.log("⚠️ Aucune image de taille > 300px trouvée après scan complet.");
         }
 
         await page.waitForTimeout(2000); // Stabilisation du rendu visuel
