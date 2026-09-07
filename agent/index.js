@@ -334,16 +334,29 @@ async function typeAndSendPrompt(page, text) {
     try { await dismissModalsAndBanners(page); } catch(e) {}
     console.log("Saisie du prompt dans le champ de texte...");
 
-    // NB : la page est déjà stabilisée avant l'appel - pas de waitForLoadState redondant
-    const promptInput = page.locator('#prompt-textarea');
-    
-    // Timeout réduit : le textarea était visible juste avant cet appel
-    try {
-        await promptInput.waitFor({ state: 'visible', timeout: 10000 });
-    } catch(e) {
-        // Dernière chance : peut-être attached mais pas visible
-        await promptInput.waitFor({ state: 'attached', timeout: 10000 });
+    // 1. Délai intérieur généreux pour laisser React Router terminer toute transition
+    await page.waitForTimeout(2500);
+
+    // 2. Détection robuste du champ de saisie par sélecteurs directs (sans locator strict)
+    const candidateSelectors = [
+        '#prompt-textarea',
+        'div[id="prompt-textarea"]',
+        'div[contenteditable="true"]',
+        'textarea[data-id="root"]',
+        'textarea'
+    ];
+
+    let activeSelector = null;
+    for (const sel of candidateSelectors) {
+        try {
+            const el = await page.waitForSelector(sel, { state: 'attached', timeout: 7000 });
+            if (el) {
+                activeSelector = sel;
+                break;
+            }
+        } catch (e) {}
     }
+    activeSelector = activeSelector || '#prompt-textarea';
 
     // Nettoyage de sécurité du DOM pour éliminer tout overlay no-auth (protégé)
     try {
@@ -352,74 +365,46 @@ async function typeAndSendPrompt(page, text) {
         });
     } catch(e) {}
 
-
-
     // Screenshot AVANT pour voir l'état initial
     try {
         await page.screenshot({ path: `debug-step-before-typing-${Date.now()}.png`, fullPage: false });
     } catch(e) {}
 
-    // Stratégie de clic en cascade (4 méthodes)
+    // 3. Clic / focus robuste sur le champ
     let focusOk = false;
-
-    // Méthode 1 : Scroll dans le viewport puis clic Playwright
     try {
-        try {
-            await page.evaluate(() => {
-                const el = document.querySelector('#prompt-textarea');
-                if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' });
-            });
-        } catch (scrollErr) {
-            // Si le contexte est détruit (re-navigation React), on attend et on continue
-            console.log(`⚠️ ScrollIntoView : contexte détruit (${scrollErr.message.split('\n')[0]}). Attente stabilisation...`);
-            await page.waitForTimeout(2000);
+        const el = await page.$(activeSelector);
+        if (el) {
+            await el.scrollIntoViewIfNeeded().catch(() => {});
+            await page.waitForTimeout(300);
+            await el.click({ force: true, timeout: 5000 });
+            console.log(`🖱️ Clic direct sur "${activeSelector}" réussi.`);
+            focusOk = true;
         }
-        await page.waitForTimeout(300);
-        await promptInput.click({ force: true, timeout: 5000 });
-        console.log("🖱️ Méthode 1 : Clic Playwright réussi.");
-
-        focusOk = true;
     } catch (e) {
-        console.log(`⚠️ Méthode 1 échouée (${e.message.split('\n')[0]}), passage à la méthode 2...`);
+        console.log(`⚠️ Clic direct échoué, essai focus direct...`);
     }
 
-    // Méthode 2 : Clic via coordonnées exactes (bounding box)
     if (!focusOk) {
         try {
-            const box = await promptInput.boundingBox({ timeout: 3000 });
-            if (box) {
-                await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-                console.log("🖱️ Méthode 2 : Clic via coordonnées réussi.");
-                focusOk = true;
-            }
-        } catch (e) {
-            console.log(`⚠️ Méthode 2 échouée (${e.message.split('\n')[0]}), passage à la méthode 3...`);
-        }
-    }
-
-    // Méthode 3 : Click JavaScript natif via page.evaluate
-    if (!focusOk) {
-        try {
-            await page.evaluate(() => {
-                const el = document.querySelector('#prompt-textarea');
-                if (el) { el.focus(); el.click(); }
-            });
-            console.log("🖱️ Méthode 3 : Click JS natif appliqué.");
+            await page.focus(activeSelector, { timeout: 4000 });
+            console.log(`🖱️ page.focus("${activeSelector}") réussi.`);
             focusOk = true;
-        } catch (e) {
-            console.log(`⚠️ Méthode 3 échouée (${e.message.split('\n')[0]}), passage à la méthode 4...`);
-        }
+        } catch (e) {}
     }
 
-    // Méthode 4 : Focus Playwright avec timeout réduit (dernière chance)
     if (!focusOk) {
         try {
-            await promptInput.focus({ timeout: 3000 });
-            console.log("🖱️ Méthode 4 : Focus Playwright appliqué.");
+            await page.evaluate((sel) => {
+                const el = document.querySelector(sel);
+                if (el) {
+                    el.focus();
+                    if (el.click) el.click();
+                }
+            }, activeSelector);
+            console.log(`🖱️ Focus JS sur "${activeSelector}" appliqué.`);
             focusOk = true;
-        } catch (e) {
-            console.log(`⚠️ Méthode 4 échouée (${e.message.split('\n')[0]}). Tentative de frappe directe quand même...`);
-        }
+        } catch (e) {}
     }
 
     await page.waitForTimeout(500);
@@ -508,7 +493,7 @@ async function typeAndSendPrompt(page, text) {
 
     if (!clicked) {
         console.log("Bouton d'envoi non cliquable, envoi via touche Entrée...");
-        try { await promptInput.focus({ timeout: 2000 }); } catch (e) {}
+        try { await page.focus(activeSelector, { timeout: 2000 }); } catch (e) {}
         await page.keyboard.press('Enter');
     }
 
@@ -587,6 +572,21 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         let title = '';
         try { title = await page.title(); } catch (e) {}
         console.log("Titre de la page :", title);
+
+        // Si l'URL demandée est une conversation spécifique (/c/... ou /g/...) mais que le navigateur a atterri sur l'accueil
+        if (targetUrl && (targetUrl.includes('/c/') || targetUrl.includes('/g/')) && !currentUrl.includes('/c/') && !currentUrl.includes('/g/') && !currentUrl.includes('/auth/login')) {
+            console.log(`🔄 Session initialisée. Navigation directe vers la conversation spécifique demandée : ${targetUrl}...`);
+            await page.waitForTimeout(1500);
+            try {
+                await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 35000 });
+                await page.waitForTimeout(2500);
+                currentUrl = page.url();
+                console.log("URL après navigation conversation :", currentUrl);
+                try { title = await page.title(); } catch (e) {}
+            } catch (convNavErr) {
+                console.log("Note navigation conversation :", convNavErr.message);
+            }
+        }
 
         // Si l'URL spécifique a redirigé vers le login, tenter d'abord https://chatgpt.com/
         if (currentUrl.includes('/auth/login') || currentUrl.includes('/login')) {
