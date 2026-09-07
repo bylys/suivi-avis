@@ -482,53 +482,19 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
 
-        // Scanneur d'image ultra-sécurisé : inspection STRICTEMENT restreinte au DERNIER message de réponse
-        // → Rend 100% impossible la capture accidentelle d'une photo d'un avis précédent dans le même fil
+        // Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
         const checkNewImage = async () => {
             return await page.evaluate((knownUrls) => {
                 const knownSet = new Set(knownUrls);
-                
-                // 1. Priorité 1 : chercher UNIQUEMENT dans le dernier message de réponse de l'assistant
-                const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], .agent-turn, article'));
-                if (assistantTurns.length > 0) {
-                    const lastTurn = assistantTurns[assistantTurns.length - 1];
-                    const imgs = Array.from(lastTurn.querySelectorAll('img'));
-                    for (const img of imgs) {
-                        const src = img.src || '';
-                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
-                        if (knownSet.has(src)) continue; // Jamais une image déjà connue
-                        if (img.complete && (img.naturalWidth >= 100 || img.width >= 100 || img.height >= 100 || src.includes('oaiusercontent') || src.includes('blob:'))) {
-                            return src;
-                        }
-                    }
-                }
-
-                // 2. Priorité 2 : chercher dans le dernier conteneur conversation-turn
-                const turns = Array.from(document.querySelectorAll('div[data-testid^="conversation-turn-"]'));
-                if (turns.length > 0) {
-                    const lastTurn = turns[turns.length - 1];
-                    const imgs = Array.from(lastTurn.querySelectorAll('img'));
-                    for (const img of imgs) {
-                        const src = img.src || '';
-                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
-                        if (knownSet.has(src)) continue;
-                        if (img.complete && (img.naturalWidth >= 100 || img.width >= 100 || img.height >= 100 || src.includes('oaiusercontent') || src.includes('blob:'))) {
-                            return src;
-                        }
-                    }
-                }
-
-                // 3. Priorité 3 (Fallback sécurisé) : toute nouvelle image apparue sur la page qui n'était pas présente avant le prompt
-                const allImgs = Array.from(document.querySelectorAll('img')).reverse();
-                for (const img of allImgs) {
+                const imgs = Array.from(document.querySelectorAll('img')).reverse();
+                for (const img of imgs) {
                     const src = img.src || '';
                     if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
-                    if (knownSet.has(src)) continue;
-                    if (img.naturalWidth >= 100 || img.width >= 100 || img.height >= 100 || src.includes('oaiusercontent') || src.includes('blob:')) {
+                    if (knownSet.has(src)) continue; // INTERDICTION STRICTE : ne jamais prendre une image déjà connue
+                    if (img.complete && (img.naturalWidth >= 400 || img.width >= 400)) {
                         return src;
                     }
                 }
-
                 return null;
             }, existingImageUrls);
         };
@@ -619,7 +585,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
 
         if (!foundUrl) {
-            console.log("⚠️ Aucune image de taille > 300px trouvée après scan complet.");
+            console.log("⚠️ Aucune image de taille > 400px trouvée après scan complet.");
         }
 
         await page.waitForTimeout(2000); // Stabilisation du rendu visuel
