@@ -344,7 +344,7 @@ async function typeAndSendPrompt(page, text) {
     try {
         await promptInput.click({ force: true, timeout: 5000 });
     } catch (e) {
-        await promptInput.focus();
+        try { await promptInput.focus({ timeout: 2000 }); } catch (err) {}
     }
     await page.waitForTimeout(300);
 
@@ -402,7 +402,7 @@ async function typeAndSendPrompt(page, text) {
 
     if (!clicked) {
         console.log("Bouton d'envoi non cliquable, envoi via touche Entrée...");
-        await promptInput.focus();
+        try { await promptInput.focus({ timeout: 2000 }); } catch (e) {}
         await page.keyboard.press('Enter');
     }
 }
