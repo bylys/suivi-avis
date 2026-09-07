@@ -341,21 +341,42 @@ async function typeAndSendPrompt(page, text) {
         document.querySelectorAll('#modal-no-auth-login, [data-testid="modal-no-auth-login"]').forEach(el => el.remove());
     });
 
+    // Screenshot AVANT pour voir l'état initial
+    try {
+        await page.screenshot({ path: `debug-step-before-typing-${Date.now()}.png`, fullPage: false });
+    } catch(e) {}
+
+    // Clic / focus sur le champ de texte
     try {
         await promptInput.click({ force: true, timeout: 5000 });
+        console.log("🖱️ Clic sur le champ texte réussi.");
     } catch (e) {
+        console.log("⚠️ Clic direct échoué, tentative de focus DOM...");
         try { await promptInput.focus({ timeout: 2000 }); } catch (err) {}
     }
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
 
-    // 1. Insertion sécurisée par simulation clavier Playwright + fallback DOM
+    // Vider le champ avant d'écrire (sécurité)
+    try {
+        await page.keyboard.press('Control+A');
+        await page.keyboard.press('Delete');
+        await page.waitForTimeout(200);
+    } catch(e) {}
+
+    // 1. Écriture par simulation clavier (page.keyboard.type = frappe caractère par caractère, plus fiable pour React)
     let inputSuccess = false;
     try {
-        await page.keyboard.insertText(text);
+        // Type avec un délai de 5ms entre caractères pour que React suive
+        await page.keyboard.type(text, { delay: 5 });
         inputSuccess = true;
-    } catch (e) {}
+        console.log("⌨️ Texte saisi via keyboard.type.");
+    } catch (e) {
+        console.log("⚠️ keyboard.type échoué :", e.message);
+    }
 
+    // Fallback : injection DOM directe si keyboard.type a planté
     if (!inputSuccess) {
+        console.log("🔄 Fallback injection DOM directe...");
         await page.evaluate((val) => {
             const el = document.querySelector('#prompt-textarea');
             if (!el) return;
@@ -372,7 +393,23 @@ async function typeAndSendPrompt(page, text) {
         }, text);
     }
 
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1000);
+
+    // Vérification que le texte est bien présent dans le champ
+    const textareaContent = await page.evaluate(() => {
+        const el = document.querySelector('#prompt-textarea');
+        return el ? (el.value || el.innerText || el.textContent || '') : '';
+    });
+    console.log(`📝 Contenu du champ textarea (${textareaContent.length} car.) : "${textareaContent.substring(0, 80)}..."`);
+
+    // Screenshot APRÈS écriture pour voir si le texte est dans le champ
+    try {
+        await page.screenshot({ path: `debug-step-after-typing-${Date.now()}.png`, fullPage: false });
+    } catch(e) {}
+
+    if (textareaContent.trim().length < 10) {
+        console.log("⚠️ ALERTE : Le champ textarea semble vide ! Le texte n'a peut-être pas été saisi correctement.");
+    }
 
     // 2. Détection et clic sur le bouton d'envoi actif
     let clicked = false;
@@ -402,11 +439,15 @@ async function typeAndSendPrompt(page, text) {
 
     if (!clicked) {
         console.log("Bouton d'envoi non cliquable, envoi via touche Entrée...");
+        try { await promptInput.focus({ timeout: 2000 }); } catch (e) {}
+        await page.keyboard.press('Enter');
     }
-    
-    // Sécurité supplémentaire : toujours faire un "Entrée" au cas où le clic du bouton serait ignoré par React
-    try { await promptInput.focus({ timeout: 2000 }); } catch (e) {}
-    await page.keyboard.press('Enter');
+
+    // Screenshot APRÈS envoi pour confirmer que la génération a démarré
+    await page.waitForTimeout(2000);
+    try {
+        await page.screenshot({ path: `debug-step-after-send-${Date.now()}.png`, fullPage: false });
+    } catch(e) {}
 }
 
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null) {
@@ -489,6 +530,16 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 throw new Error("COOKIES_EXPIRES: Redirection vers la page de login ChatGPT. Les cookies de ce compte sont expirés ou invalides.");
             }
         }
+
+        // ✅ DÉTECTION RAPIDE : Redirection vers Google Sign-in = cookies expirés à 100%
+        if (currentUrl.includes('accounts.google.com') || currentUrl.includes('google.com/signin') || currentUrl.includes('google.com/v3/signin')) {
+            const cookieExpiredMsg = `🚨 <b>COOKIES EXPIRÉS (Google Auth détecté)</b> 🚨\n\nL'agent a été redirigé vers la page de connexion Google pour l'opérateur <b>${operatorName || TARGET_OPERATOR || 'Global'}</b>.\n\n👉 <b>Action requise :</b> Re-connectez-vous à ChatGPT dans votre navigateur, ré-exportez vos cookies JSON et mettez à jour le secret <code>CHATGPT_PERSO_COOKIES</code> / <code>CHATGPT_WORK_COOKIES</code> sur GitHub Secrets !`;
+            console.error("❌ COOKIES EXPIRÉS : Redirection vers accounts.google.com détectée !");
+            console.error("💡 ACTION REQUISE : Re-connectez-vous à ChatGPT et ré-exportez vos cookies.");
+            await sendTelegramNotification(cookieExpiredMsg);
+            throw new Error("COOKIES_EXPIRES_GOOGLE: Session ChatGPT expirée - redirection vers accounts.google.com. Veuillez renouveler vos cookies.");
+        }
+
         
         // Gestion du challenge Cloudflare Turnstile ("Just a moment..." / "Un instant...")
         if (!title || title.trim() === '' || title.includes('Just a moment') || title.includes('Un instant') || title.includes('Checking') || title.includes('Attention')) {
