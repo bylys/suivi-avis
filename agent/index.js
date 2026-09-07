@@ -705,26 +705,42 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         });
         console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) sur la page avant l'envoi du prompt.`);
 
-        // ⏳ Attente que la page soit entièrement stable avant d'interagir
-        // ChatGPT fait des re-navigations React APRÈS networkidle — on attend l'app React elle-même
-        console.log("⏳ Attente du chargement complet de l'application ChatGPT...");
+        // ⏳ Attente que l'URL soit stable (ChatGPT / React Router re-navigue après chargement)
+        console.log("⏳ Attente de la stabilisation de l'URL (React Router)...");
         try {
             await page.waitForLoadState('networkidle', { timeout: 10000 });
         } catch(e) {}
-        // Attente que le textarea soit VISIBLE (pas juste attached) = React app montée
+        
+        // Polling : on attend que l'URL ne change plus pendant 2 secondes consécutives
+        let lastUrl = page.url();
+        let stableCount = 0;
+        for (let i = 0; i < 15; i++) {
+            await page.waitForTimeout(500);
+            const currentUrl = page.url();
+            if (currentUrl === lastUrl) {
+                stableCount++;
+                if (stableCount >= 4) break; // URL stable pendant 2s (4 × 500ms)
+            } else {
+                console.log(`🔄 URL en train de changer : ${currentUrl.substring(0, 80)}`);
+                stableCount = 0;
+                lastUrl = currentUrl;
+            }
+        }
+        const stableUrl = page.url();
+        console.log(`✅ URL stabilisée : ${stableUrl}`);
+
+        // Attendre que le textarea soit visible (React app montée)
         try {
             await page.waitForSelector('#prompt-textarea', { state: 'visible', timeout: 15000 });
-            console.log("✅ Champ textarea visible — React app prête.");
+            console.log("✅ Champ textarea visible — prêt à saisir.");
         } catch(e) {
-            console.log("⚠️ Textarea pas encore visible après 15s, on tente quand même...");
+            console.log("⚠️ Textarea pas encore visible, tentative quand même...");
         }
-        // Extra 1.5s après visible pour que React finisse ses renders internes
-        await page.waitForTimeout(1500);
-        const stableUrl = page.url();
-        console.log(`✅ Page stable. URL finale : ${stableUrl}`);
+        await page.waitForTimeout(1000);
 
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
+
 
 
         // Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
