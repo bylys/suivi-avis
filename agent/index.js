@@ -268,7 +268,37 @@ function getConversationUrlForOperator(operatorName) {
     return process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
+async function dismissModalsAndBanners(page) {
+    try {
+        await page.evaluate(() => {
+            const buttons = Array.from(document.querySelectorAll('button, [role="button"], a'));
+            for (const b of buttons) {
+                const txt = (b.innerText || b.textContent || '').trim().toLowerCase();
+                if (
+                    txt === "okay, let's go" ||
+                    txt === "ok, c'est parti" ||
+                    txt === 'got it' ||
+                    txt === "j'ai compris" ||
+                    txt === 'continuer' ||
+                    txt === 'continue' ||
+                    txt === 'accepter' ||
+                    txt === 'accept all' ||
+                    txt === 'tout accepter' ||
+                    txt === 'stay logged out' ||
+                    txt === 'rester déconnecté' ||
+                    txt === 'fermer' ||
+                    txt === 'close' ||
+                    txt === 'dismiss'
+                ) {
+                    try { b.click(); } catch(e) {}
+                }
+            }
+        });
+    } catch (e) {}
+}
+
 async function typeAndSendPrompt(page, text) {
+    await dismissModalsAndBanners(page);
     console.log("Saisie du prompt dans le champ de texte...");
     const promptInput = page.locator('#prompt-textarea');
     await promptInput.waitFor({ state: 'visible', timeout: 30000 });
@@ -390,6 +420,22 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 console.log("💡 CONSEIL : Mettez à jour les cookies CHATGPT_COOKIES (cf_clearance) dans GitHub Secrets.");
             }
         }
+
+        // Fermeture automatique des bannières / dialogues de bienvenue ou cookies
+        await dismissModalsAndBanners(page);
+
+        // Vérification si l'URL de conversation est en 404 ou introuvable
+        const notFoundDetected = await page.evaluate(() => {
+            const body = document.body.innerText || '';
+            return body.includes('Cette discussion est introuvable') || 
+                   body.includes('Conversation not found') || 
+                   body.includes('Unable to load conversation');
+        });
+        if (notFoundDetected) {
+            console.log("⚠️ Fil de conversation introuvable (404/supprimé). Bascule automatique sur https://chatgpt.com/ ...");
+            await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
+            await dismissModalsAndBanners(page);
+        }
         
         // Wait for the chat input box
         console.log("Recherche du champ de texte...");
@@ -449,9 +495,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     const imgs = Array.from(lastTurn.querySelectorAll('img'));
                     for (const img of imgs) {
                         const src = img.src || '';
-                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
                         if (knownSet.has(src)) continue; // Jamais une image déjà connue
-                        if (img.complete && (img.naturalWidth >= 300 || img.width >= 300)) {
+                        if (img.complete && (img.naturalWidth >= 100 || img.width >= 100 || img.height >= 100 || src.includes('oaiusercontent') || src.includes('blob:'))) {
                             return src;
                         }
                     }
@@ -464,11 +510,22 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     const imgs = Array.from(lastTurn.querySelectorAll('img'));
                     for (const img of imgs) {
                         const src = img.src || '';
-                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg')) continue;
+                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
                         if (knownSet.has(src)) continue;
-                        if (img.complete && (img.naturalWidth >= 300 || img.width >= 300)) {
+                        if (img.complete && (img.naturalWidth >= 100 || img.width >= 100 || img.height >= 100 || src.includes('oaiusercontent') || src.includes('blob:'))) {
                             return src;
                         }
+                    }
+                }
+
+                // 3. Priorité 3 (Fallback sécurisé) : toute nouvelle image apparue sur la page qui n'était pas présente avant le prompt
+                const allImgs = Array.from(document.querySelectorAll('img')).reverse();
+                for (const img of allImgs) {
+                    const src = img.src || '';
+                    if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
+                    if (knownSet.has(src)) continue;
+                    if (img.naturalWidth >= 100 || img.width >= 100 || img.height >= 100 || src.includes('oaiusercontent') || src.includes('blob:')) {
+                        return src;
                     }
                 }
 
@@ -665,7 +722,12 @@ async function main() {
         
         let query = supabase.from('planning').select('*').eq('date', dateStr);
         if (rawOp) {
-            query = query.or(`operateur.ilike.${targetOp},operateur.ilike.${rawOp},operateur.ilike.%${rawOp}%`);
+            const isFifa = rawOp.toLowerCase().includes('fif');
+            if (isFifa) {
+                query = query.or('operateur.ilike.Fifaliana,operateur.ilike.FIFA,operateur.ilike.fifa,operateur.ilike.Fif,operateur.ilike.%FIF%');
+            } else {
+                query = query.or(`operateur.ilike.${targetOp},operateur.ilike.${rawOp},operateur.ilike.%${rawOp}%`);
+            }
         }
         
         let { data: tasks, error } = await query.order('id', { ascending: true });
