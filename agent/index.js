@@ -555,7 +555,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         
         const page = await context.newPage();
         console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
-        console.log(`🔗 URL cible résolue : ${targetUrl}`);
+        console.log(`🔗 URL cible résolue : ${targetUrl} | Type: ${targetUrl.includes('/c/') ? 'Conversation /c/' : (targetUrl.includes('/g/') ? 'Projet /g/' : 'Accueil')}`);
         try {
             await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
             console.log(`✅ Navigation vers l'URL cible réussie.`);
@@ -575,16 +575,20 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
 
         // Si l'URL demandée est une conversation spécifique (/c/... ou /g/...) mais que le navigateur a atterri sur l'accueil
         if (targetUrl && (targetUrl.includes('/c/') || targetUrl.includes('/g/')) && !currentUrl.includes('/c/') && !currentUrl.includes('/g/') && !currentUrl.includes('/auth/login')) {
-            console.log(`🔄 Session initialisée. Navigation directe vers la conversation spécifique demandée : ${targetUrl}...`);
-            await page.waitForTimeout(1500);
+            console.log(`🔄 Session initialisée. Forçage de navigation directe vers l'URL du secret : ${targetUrl}...`);
+            await page.waitForTimeout(2000);
             try {
-                await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 35000 });
-                await page.waitForTimeout(2500);
+                await page.evaluate((dest) => { window.location.href = dest; }, targetUrl);
+                await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 35000 }).catch(() => {});
+                await page.waitForTimeout(3000);
                 currentUrl = page.url();
-                console.log("URL après navigation conversation :", currentUrl);
+                console.log("URL après navigation forcée :", currentUrl);
                 try { title = await page.title(); } catch (e) {}
             } catch (convNavErr) {
                 console.log("Note navigation conversation :", convNavErr.message);
+                try {
+                    await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 35000 });
+                } catch (e) {}
             }
         }
 
@@ -1086,14 +1090,14 @@ async function main() {
             }
         }
 
-        // 2. Collecte depuis Supabase (tables fiches et app_settings)
+        // 2. Collecte depuis Supabase (tables fiches et app_settings) - SANS JAMAIS ÉCRASER process.env (GitHub Secrets)
         try {
             const { data: fichesData } = await supabase.from('fiches').select('nom, lien').or('nom.ilike.%COOKIE%,nom.ilike.%URL%,nom.ilike.%CONVERSATION%');
             if (fichesData && fichesData.length > 0) {
                 for (const item of fichesData) {
                     const k = (item.nom || '').toUpperCase();
                     const v = (item.lien || '').trim();
-                    if (v.length > 5) {
+                    if (v.length > 5 && !availableCookiesMap[k]) {
                         availableCookiesMap[k] = v;
                     }
                 }
@@ -1116,8 +1120,9 @@ async function main() {
         function resolveCookieSetsForOp(opName) {
             const aliases = getOperatorAliases(opName);
             
-            // 1. Recherche de l'URL de conversation PRO / WORK
+            // 1. Recherche PRIORITAIRE de l'URL de conversation PRO / WORK dans process.env (GitHub Secrets)
             let workUrl = null;
+            let workUrlKeyFound = null;
             const workUrlKeys = [];
             for (const a of aliases) {
                 workUrlKeys.push(
@@ -1134,14 +1139,34 @@ async function main() {
                 );
             }
             workUrlKeys.push('CHATGPT_PRO_CONVERSATION_URL', 'CHATGPT_WORK_CONVERSATION_URL', 'CHATGPT_URL_PRO', 'CHATGPT_URL_WORK');
+            
+            // PRIORITÉ 1 ABSOLUE : process.env (Secret GitHub)
             for (const k of workUrlKeys) {
-                if (!workUrl && (availableCookiesMap[k] || process.env[k])) {
-                    workUrl = (availableCookiesMap[k] || process.env[k]).trim();
+                const val = (process.env[k] || '').trim();
+                if (val && val.length > 5 && val.startsWith('http')) {
+                    workUrl = val;
+                    workUrlKeyFound = `Secret GitHub [process.env.${k}]`;
+                    break;
                 }
             }
+            // PRIORITÉ 2 : availableCookiesMap (Supabase) si absent du Secret GitHub
+            if (!workUrl) {
+                for (const k of workUrlKeys) {
+                    const val = (availableCookiesMap[k] || '').trim();
+                    if (val && val.length > 5 && val.startsWith('http')) {
+                        workUrl = val;
+                        workUrlKeyFound = `Supabase [availableCookiesMap.${k}]`;
+                        break;
+                    }
+                }
+            }
+            if (workUrl) {
+                console.log(`🎯 URL PRO/WORK trouvée (${workUrlKeyFound}) : ${workUrl.substring(0, 35)}... (est /c/: ${workUrl.includes('/c/')})`);
+            }
 
-            // 2. Recherche de l'URL de conversation PERSO / SECOURS
+            // 2. Recherche PRIORITAIRE de l'URL de conversation PERSO / SECOURS
             let persoUrl = null;
+            let persoUrlKeyFound = null;
             const persoUrlKeys = [];
             for (const a of aliases) {
                 persoUrlKeys.push(
@@ -1153,18 +1178,39 @@ async function main() {
                 );
             }
             persoUrlKeys.push('CHATGPT_PERSO_CONVERSATION_URL', 'CHATGPT_URL_PERSO');
+
+            // PRIORITÉ 1 ABSOLUE : process.env (Secret GitHub)
             for (const k of persoUrlKeys) {
-                if (!persoUrl && (availableCookiesMap[k] || process.env[k])) {
-                    persoUrl = (availableCookiesMap[k] || process.env[k]).trim();
+                const val = (process.env[k] || '').trim();
+                if (val && val.length > 5 && val.startsWith('http')) {
+                    persoUrl = val;
+                    persoUrlKeyFound = `Secret GitHub [process.env.${k}]`;
+                    break;
                 }
+            }
+            // PRIORITÉ 2 : availableCookiesMap (Supabase)
+            if (!persoUrl) {
+                for (const k of persoUrlKeys) {
+                    const val = (availableCookiesMap[k] || '').trim();
+                    if (val && val.length > 5 && val.startsWith('http')) {
+                        persoUrl = val;
+                        persoUrlKeyFound = `Supabase [availableCookiesMap.${k}]`;
+                        break;
+                    }
+                }
+            }
+            if (persoUrl) {
+                console.log(`🎯 URL PERSO trouvée (${persoUrlKeyFound}) : ${persoUrl.substring(0, 35)}... (est /c/: ${persoUrl.includes('/c/')})`);
             }
 
             // 3. URL Fallback
             let fallbackUrl = null;
             for (const a of aliases) {
                 const k = `CHATGPT_CONVERSATION_URL_${a}`;
-                if (!fallbackUrl && (availableCookiesMap[k] || process.env[k])) {
-                    fallbackUrl = (availableCookiesMap[k] || process.env[k]).trim();
+                const val = (process.env[k] || availableCookiesMap[k] || '').trim();
+                if (val && val.startsWith('http')) {
+                    fallbackUrl = val;
+                    break;
                 }
             }
             fallbackUrl = fallbackUrl || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
