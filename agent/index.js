@@ -351,13 +351,20 @@ async function typeAndSendPrompt(page, text) {
 
     // Méthode 1 : Scroll dans le viewport puis clic Playwright
     try {
-        await page.evaluate(() => {
-            const el = document.querySelector('#prompt-textarea');
-            if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' });
-        });
+        try {
+            await page.evaluate(() => {
+                const el = document.querySelector('#prompt-textarea');
+                if (el) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+            });
+        } catch (scrollErr) {
+            // Si le contexte est détruit (re-navigation React), on attend et on continue
+            console.log(`⚠️ ScrollIntoView : contexte détruit (${scrollErr.message.split('\n')[0]}). Attente stabilisation...`);
+            await page.waitForTimeout(2000);
+        }
         await page.waitForTimeout(300);
         await promptInput.click({ force: true, timeout: 5000 });
         console.log("🖱️ Méthode 1 : Clic Playwright réussi.");
+
         focusOk = true;
     } catch (e) {
         console.log(`⚠️ Méthode 1 échouée (${e.message.split('\n')[0]}), passage à la méthode 2...`);
@@ -683,6 +690,17 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             return Array.from(urls);
         });
         console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) sur la page avant l'envoi du prompt.`);
+
+        // ⏳ Attente que la page soit entièrement stable avant d'interagir
+        // (ChatGPT fait des re-navigations React qui détruisent le contexte JS si on agit trop tôt)
+        console.log("⏳ Stabilisation de la page avant saisie...");
+        try {
+            await page.waitForLoadState('networkidle', { timeout: 8000 });
+        } catch (e) { /* timeout acceptable */ }
+        await page.waitForTimeout(1500);
+        // Vérifier que l'URL n'a pas changé (re-navigation React)
+        const stableUrl = page.url();
+        console.log(`✅ Page stable. URL finale : ${stableUrl}`);
 
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
