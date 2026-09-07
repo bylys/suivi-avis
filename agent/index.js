@@ -410,50 +410,60 @@ async function typeAndSendPrompt(page, text) {
     await page.waitForTimeout(500);
 
 
-    // Vider le champ avant d'écrire (sécurité)
+    // 1. Insertion du prompt dans le champ (fill direct Playwright)
+    let insertOk = false;
     try {
-        await page.keyboard.press('Control+A');
-        await page.keyboard.press('Delete');
-        await page.waitForTimeout(200);
-    } catch(e) {}
-
-    // 1. Écriture par simulation clavier (page.keyboard.type = frappe caractère par caractère, plus fiable pour React)
-    let inputSuccess = false;
-    try {
-        // Type avec un délai de 5ms entre caractères pour que React suive
-        await page.keyboard.type(text, { delay: 5 });
-        inputSuccess = true;
-        console.log("⌨️ Texte saisi via keyboard.type.");
-    } catch (e) {
-        console.log("⚠️ keyboard.type échoué :", e.message);
+        await page.locator(activeSelector).fill(text, { timeout: 6000 });
+        insertOk = true;
+        console.log("📝 Texte inséré via locator.fill().");
+    } catch (fillErr) {
+        console.log("Note fill direct :", fillErr.message);
     }
 
-    // Fallback : injection DOM directe si keyboard.type a planté
-    if (!inputSuccess) {
-        console.log("🔄 Fallback injection DOM directe...");
-        await page.evaluate((val) => {
-            const el = document.querySelector('#prompt-textarea');
+    // 2. Si fill direct n'a pas fonctionné (ex: contenteditable strict), injection DOM + InputEvent
+    const currentLen = await page.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        return el ? (el.value || el.innerText || el.textContent || '').trim().length : 0;
+    }, activeSelector);
+
+    if (currentLen < 10) {
+        console.log("🔄 Injection DOM + InputEvent pour forcer la prise en compte par React...");
+        await page.evaluate(({ sel, val }) => {
+            const el = document.querySelector(sel);
             if (!el) return;
             el.focus();
             if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
                 document.execCommand('selectAll', false, null);
                 document.execCommand('insertText', false, val);
-                el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: val }));
+                el.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertText', data: val }));
             } else {
-                el.value = val;
+                const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
+                if (nativeSetter) {
+                    nativeSetter.call(el, val);
+                } else {
+                    el.value = val;
+                }
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             }
-        }, text);
+        }, { sel: activeSelector, val: text });
     }
 
-    await page.waitForTimeout(1000);
+    // 3. Forcer React à ré-évaluer l'état du champ pour activer le bouton d'envoi
+    try {
+        await page.focus(activeSelector);
+        await page.keyboard.press('End');
+        await page.keyboard.press('Space');
+        await page.keyboard.press('Backspace');
+    } catch (e) {}
 
-    // Vérification que le texte est bien présent dans le champ
-    const textareaContent = await page.evaluate(() => {
-        const el = document.querySelector('#prompt-textarea');
-        return el ? (el.value || el.innerText || el.textContent || '') : '';
-    });
+    await page.waitForTimeout(800);
+
+    // Vérification du contenu présent
+    const textareaContent = await page.evaluate((sel) => {
+        const el = document.querySelector(sel);
+        return el ? (el.value || el.innerText || el.textContent || '').trim() : '';
+    }, activeSelector);
     console.log(`📝 Contenu du champ textarea (${textareaContent.length} car.) : "${textareaContent.substring(0, 80)}..."`);
 
     // Screenshot APRÈS écriture pour voir si le texte est dans le champ
@@ -461,19 +471,14 @@ async function typeAndSendPrompt(page, text) {
         await page.screenshot({ path: `debug-step-after-typing-${Date.now()}.png`, fullPage: false });
     } catch(e) {}
 
-    if (textareaContent.trim().length < 10) {
-        console.log("⚠️ ALERTE : Le champ textarea semble vide ! Le texte n'a peut-être pas été saisi correctement.");
-    }
-
-    // 2. Détection et clic sur le bouton d'envoi actif
-    let clicked = false;
+    // 4. Déclenchement de l'envoi (Bouton ou Entrée)
+    let sendTriggered = false;
     const sendButtonSelectors = [
-        'button[data-testid="send-button"]:not([disabled])',
-        'button[data-testid="fruitjuice-send-button"]:not([disabled])',
-        'button[aria-label="Send prompt"]:not([disabled])',
-        'button[aria-label="Envoyer le message"]:not([disabled])',
-        'button[aria-label="Envoyer la requête"]:not([disabled])',
-        'form button[type="submit"]:not([disabled])'
+        'button[data-testid="send-button"]',
+        'button[data-testid="fruitjuice-send-button"]',
+        'button[aria-label*="Send"]',
+        'button[aria-label*="Envoyer"]',
+        'form button[type="submit"]'
     ];
 
     for (const sel of sendButtonSelectors) {
@@ -482,23 +487,50 @@ async function typeAndSendPrompt(page, text) {
             if (btn) {
                 const disabled = await btn.evaluate(b => b.disabled || b.getAttribute('aria-disabled') === 'true');
                 if (!disabled) {
-                    await btn.click({ force: true, timeout: 5000 });
+                    await btn.click({ force: true, timeout: 4000 });
                     console.log(`✅ Bouton d'envoi cliqué avec succès (${sel}) !`);
-                    clicked = true;
+                    sendTriggered = true;
                     break;
                 }
             }
         } catch (e) {}
     }
 
-    if (!clicked) {
-        console.log("Bouton d'envoi non cliquable, envoi via touche Entrée...");
-        try { await page.focus(activeSelector, { timeout: 2000 }); } catch (e) {}
+    // Touche Entrée systématique en complément pour garantir la soumission
+    try {
+        await page.focus(activeSelector);
         await page.keyboard.press('Enter');
+        console.log("⌨️ Touche Entrée pressée sur le champ.");
+    } catch (e) {}
+
+    // 5. VÉRIFICATION STRICTE QUE LE MESSAGE EST BIEN PARTI DANS CHATGPT
+    console.log("⏳ Vérification que le message a bien été envoyé dans ChatGPT...");
+    let sentConfirmed = false;
+    for (let checkAttempt = 1; checkAttempt <= 10; checkAttempt++) {
+        await page.waitForTimeout(1000);
+        const sendStatus = await page.evaluate(() => {
+            const el = document.querySelector('#prompt-textarea, div[contenteditable="true"], textarea');
+            const remaining = el ? (el.value || el.innerText || el.textContent || '').trim() : '';
+            const stopBtn = document.querySelector('button[data-testid="stop-button"], button[aria-label*="Stop"], button[aria-label*="Arrêter"]');
+            return { remainingLen: remaining.length, isGenerating: !!stopBtn };
+        });
+
+        if (sendStatus.isGenerating || sendStatus.remainingLen === 0) {
+            console.log(`🚀 Message confirmé envoyé ! (Génération en cours: ${sendStatus.isGenerating}, Champ vidé: ${sendStatus.remainingLen === 0})`);
+            sentConfirmed = true;
+            break;
+        }
+
+        console.log(`⚠️ Tentative ${checkAttempt}/10 : Le texte est encore présent dans le champ (${sendStatus.remainingLen} car.). Relance d'envoi...`);
+        try {
+            const btn = await page.$('button[data-testid="send-button"], button[aria-label*="Send"], button[aria-label*="Envoyer"]');
+            if (btn) await btn.click({ force: true }).catch(() => {});
+            await page.focus(activeSelector);
+            await page.keyboard.press('Enter').catch(() => {});
+        } catch (e) {}
     }
 
-    // Screenshot APRÈS envoi pour confirmer que la génération a démarré
-    await page.waitForTimeout(2000);
+    // Screenshot APRÈS envoi pour confirmer
     try {
         await page.screenshot({ path: `debug-step-after-send-${Date.now()}.png`, fullPage: false });
     } catch(e) {}
