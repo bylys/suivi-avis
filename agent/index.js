@@ -331,15 +331,29 @@ async function dismissModalsAndBanners(page) {
 }
 
 async function typeAndSendPrompt(page, text) {
-    await dismissModalsAndBanners(page);
+    try { await dismissModalsAndBanners(page); } catch(e) {}
     console.log("Saisie du prompt dans le champ de texte...");
+
+    // Attente interne : ChatGPT peut re-naviguer juste après le chargement initial
+    // On attend que la page soit VRAIMENT stable avant toute interaction
+    try {
+        await page.waitForLoadState('networkidle', { timeout: 6000 });
+    } catch(e) {}
+    await page.waitForTimeout(1000);
+
     const promptInput = page.locator('#prompt-textarea');
     await promptInput.waitFor({ state: 'attached', timeout: 30000 });
     
-    // Nettoyage de sécurité du DOM pour éliminer tout overlay no-auth
-    await page.evaluate(() => {
-        document.querySelectorAll('#modal-no-auth-login, [data-testid="modal-no-auth-login"]').forEach(el => el.remove());
-    });
+    // Attente supplémentaire post-attached : l'élément existe mais React peut encore naviguer
+    await page.waitForTimeout(800);
+
+    // Nettoyage de sécurité du DOM pour éliminer tout overlay no-auth (protégé)
+    try {
+        await page.evaluate(() => {
+            document.querySelectorAll('#modal-no-auth-login, [data-testid="modal-no-auth-login"]').forEach(el => el.remove());
+        });
+    } catch(e) { /* contexte potentiellement détruit, on continue */ }
+
 
     // Screenshot AVANT pour voir l'état initial
     try {
@@ -692,18 +706,26 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) sur la page avant l'envoi du prompt.`);
 
         // ⏳ Attente que la page soit entièrement stable avant d'interagir
-        // (ChatGPT fait des re-navigations React qui détruisent le contexte JS si on agit trop tôt)
-        console.log("⏳ Stabilisation de la page avant saisie...");
+        // ChatGPT fait des re-navigations React APRÈS networkidle — on attend l'app React elle-même
+        console.log("⏳ Attente du chargement complet de l'application ChatGPT...");
         try {
-            await page.waitForLoadState('networkidle', { timeout: 8000 });
-        } catch (e) { /* timeout acceptable */ }
+            await page.waitForLoadState('networkidle', { timeout: 10000 });
+        } catch(e) {}
+        // Attente que le textarea soit VISIBLE (pas juste attached) = React app montée
+        try {
+            await page.waitForSelector('#prompt-textarea', { state: 'visible', timeout: 15000 });
+            console.log("✅ Champ textarea visible — React app prête.");
+        } catch(e) {
+            console.log("⚠️ Textarea pas encore visible après 15s, on tente quand même...");
+        }
+        // Extra 1.5s après visible pour que React finisse ses renders internes
         await page.waitForTimeout(1500);
-        // Vérifier que l'URL n'a pas changé (re-navigation React)
         const stableUrl = page.url();
         console.log(`✅ Page stable. URL finale : ${stableUrl}`);
 
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
+
 
         // Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
         const checkNewImage = async () => {
