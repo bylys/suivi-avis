@@ -536,8 +536,8 @@ async function typeAndSendPrompt(page, text) {
     } catch(e) {}
 }
 
-async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null) {
-    const targetUrl = customUrl || getConversationUrlForOperator(operatorName);
+async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null, shortPrompt = null) {
+    const targetUrl = (customUrl || getConversationUrlForOperator(operatorName) || '').trim();
     
     let browser;
     if (BROWSERLESS_TOKEN) {
@@ -828,7 +828,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 throw new Error("LIMITE_QUOTA_ATTEINTE: La limite de génération d'images a été atteinte sur ce compte ChatGPT.");
             }
 
-            // Détection si ChatGPT demande une image de référence ou image cible dans le dernier message
+            // Détection si ChatGPT demande une image de référence ou refuse à cause de consignes négatives
             if (!referenceImagePromptSent && (Date.now() - scanStart > 8000)) {
                 const needsReferenceImage = await page.evaluate(() => {
                     const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], .agent-turn, article'));
@@ -842,15 +842,23 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                         text.includes("image de reference") ||
                         text.includes("déjà présente dans ce fil") ||
                         text.includes("deja presente dans ce fil") ||
-                        text.includes("utiliser comme base")
+                        text.includes("utiliser comme base") ||
+                        text.includes("modification d'image") ||
+                        text.includes("modification d’image") ||
+                        text.includes("outil refuse") ||
+                        text.includes("considérant à tort") ||
+                        text.includes("envoie-moi simplement") ||
+                        text.includes("envoie-moi seulement") ||
+                        text.includes("sans les mentions")
                     );
                 });
 
                 if (needsReferenceImage) {
-                    console.log("⚠️ ChatGPT demande une image cible/référence au lieu de créer l'image !");
-                    console.log("🔄 Envoi automatique de la consigne corrective de création autonome from scratch...");
+                    console.log("⚠️ ChatGPT demande une formulation directe sans consignes négatives !");
+                    console.log("🔄 Envoi de la description directe de la scène demandée...");
                     referenceImagePromptSent = true;
-                    await typeAndSendPrompt(page, "Crée immédiatement cette photo de la scène avec DALL-E selon les instructions ci-dessus.");
+                    const fallbackPrompt = shortPrompt || "Génère directement une photo de ce chantier artisanal en France.";
+                    await typeAndSendPrompt(page, fallbackPrompt);
                     await page.waitForTimeout(5000);
                     continue;
                 }
@@ -2185,55 +2193,14 @@ async function main() {
             
             // Header de création d'image : description positive directe sans mention d'édition ni d'image de référence
             let contextReset = "Génère une photo de chantier professionnel ultra-réaliste.\n";
-            if (lowerLabel.includes('vitrier') || lowerLabel.includes('vitrerie') || lowerLabel.includes('vitre') || lowerLabel.includes('vitrage') || lowerLabel.includes('fenêtre') || lowerLabel.includes('fenetre') || lowerLabel.includes('miroir') || lowerLabel.includes('miroiterie')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: GLAZIER & GLASS WORK (VITRERIE, REMPLACEMENT DE VITRAGE, DOUBLE VITRAGE, RÉPARATION DE FENÊTRE, VITRINE DE SÉCURITÉ OU MIROITERIE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
-            } else if (lowerLabel.includes('charpente') || lowerLabel.includes('fermette') || lowerLabel.includes('comble') || lowerLabel.includes('surélévation') || lowerLabel.includes('surelevation') || lowerLabel.includes('ossature bois') || lowerLabel.includes('solivage') || lowerLabel.includes('mezzanine') || lowerLabel.includes('bardage') || lowerLabel.includes('pergola') || lowerLabel.includes('carport') || lowerLabel.includes('lucarne')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: CARPENTRY & TIMBER STRUCTURE (CHARPENTE BOIS, OSSATURE BOIS, FERMETTE, COMBLES, SURÉLÉVATION, BARDAGE, MEZZANINE, TERRASSE BOIS OU CARPORT).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN jardinier, AUCUN sécateur, AUCUN taille-haie, AUCUNE dépanneuse. UNIQUEMENT des travaux de charpente, menuiserie et structures bois par des charpentiers qualifiés avec harnais et échafaudages sécurisés.";
-            } else if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage toiture') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture')) || lowerLabel.includes('panneau') || lowerLabel.includes('solaire') || lowerLabel.includes('allée') || lowerLabel.includes('allee') || lowerLabel.includes('dallage')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EXTERIOR CLEANING (NETTOYAGE TOITURE, FAÇADE, TERRASSE, PANNEAUX SOLAIRES OU GOUTTIÈRES).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre coupé, AUCUN élagage, AUCUN marteau-piqueur, AUCUNE démolition. Nettoyage basse/haute pression, perche télescopique au sol ou cloche de lavage de sol.";
-            } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('infiltration') || lowerLabel.includes('fuite') || lowerLabel.includes('sel') || lowerLabel.includes('carrelée') || lowerLabel.includes('carrelee') || lowerLabel.includes('réfection') || lowerLabel.includes('refection')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING, LEAK REPAIR OR UNDER-TILE SEALING (ÉTANCHÉITÉ TOIT PLAT / TOITURE-TERRASSE, ISOLATION THERMIQUE, RECHERCHE DE FUITE OU RÉSINE SOUS CARRELAGE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : PAS d'arbre, AUCUN jardinier, AUCUN sécateur, AUCUN escabeau dans le jardin, AUCUNE débroussailleuse, AUCUN toit en pente avec tuiles, AUCUNE dépanneuse ! Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse avec membrane bitumineuse noire/grise soudée au chalumeau, EPDM, PVC ou résine liquide).";
-            } else if (lowerLabel.includes('façade') || lowerLabel.includes('facade') || lowerLabel.includes('ravalement') || lowerLabel.includes('crépi') || lowerLabel.includes('crepi') || lowerLabel.includes('enduit') || lowerLabel.includes('fissure') || (lowerLabel.includes('peinture') && lowerLabel.includes('extérieure')) || (lowerLabel.includes('traitement') && lowerLabel.includes('humidité'))) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FACADE RENOVATION, CRACK REPAIR, RENDERING, EXTERIOR PAINTING OR ANTI-HUMIDITY TREATMENT (RAVALEMENT, RÉNOVATION DE FAÇADE, TRAITEMENT DES FISSURES, ENDUIT DE FAÇADE, PEINTURE DE FAÇADE OU TRAITEMENT HUMIDITÉ).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN jardinier, AUCUNE débroussailleuse, AUCUNE tondeuse, AUCUN élagage d'arbre, AUCUN sécateur, AUCUN toit en tuiles, AUCUNE dépanneuse. UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs de la maison avec échafaudage sécurisé, taloche, rouleau de peinture ou nettoyeur façade au sol.";
-            } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('zinguerie') || lowerLabel.includes('closoir') || lowerLabel.includes('rives de toiture')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage, AUCUNE grande échelle instable posée sur la pente du toit. Artisans couvreurs sur échafaudage de sécurité ou au sol.";
-            } else if (lowerLabel.includes('élagage') || lowerLabel.includes('elagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin') || lowerLabel.includes('paysag') || lowerLabel.includes('dessouch') || lowerLabel.includes('débroussaill') || lowerLabel.includes('debroussaill')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TREE PRUNING, FELLING, HEDGE TRIMMING, BRUSH CLEARING OR LANDSCAPING IN GARDEN (ÉLAGAGE D'ARBRE, ABATTAGE D'ARBRE, TAILLE D'HAIES, DESSOUCHAGE, DÉBROUSSAILLAGE OU PAYSAGISME).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN nettoyeur haute pression sur tuiles, AUCUNE dépanneuse. UNIQUEMENT des jardiniers/élagueurs travaillant au sol ou sur escabeau dans un jardin avec pelouse et végétation.";
-            } else if (lowerLabel.includes('maçonnerie') || lowerLabel.includes('maconnerie') || lowerLabel.includes('maçon') || lowerLabel.includes('macon') || lowerLabel.includes('démolition') || lowerLabel.includes('demolition') || lowerLabel.includes('parpaing') || lowerLabel.includes('second-oeuvre') || lowerLabel.includes('second oeuvre') || (lowerLabel.includes('construction') && !lowerLabel.includes('bois'))) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: MASONRY & BUILDING CONSTRUCTION (DÉMOLITION ET RECONSTRUCTION, MAÇONNERIE EXTÉRIEURE, RÉNOVATION SECOND-OEUVRE OU CONSTRUCTION GROS OEUVRE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUNE dépanneuse. UNIQUEMENT des maçons professionnels travaillant avec parpaings, béton, mortier, truelles, niveau à bulle, échafaudage de maçonnerie sécurisé ou au sol.";
-            } else if (lowerLabel.includes('dépannage') || lowerLabel.includes('depannage') || lowerLabel.includes('remorquage') || lowerLabel.includes('auto') || lowerLabel.includes('voiture') || lowerLabel.includes('moto') || lowerLabel.includes('batterie') || lowerLabel.includes('towing') || lowerLabel.includes('breakdown')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROADSIDE BREAKDOWN ASSISTANCE & VEHICLE TOWING (REMORQUAGE DE VOITURE, REMORQUAGE DE MOTO, DÉPANNAGE AUTO SUR PLACE OU DÉPANNAGE BATTERIE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN couvreur, AUCUN maçon. UNIQUEMENT dépanneuse à plateau, technicien avec gilet haute visibilité jaune fluo, véhicule d'assistance routière ou dépannage de batterie sur bord de route sécurisé.";
-            } else if (lowerLabel.includes('débarras') || lowerLabel.includes('debarras') || lowerLabel.includes('diogène') || lowerLabel.includes('diogene') || lowerLabel.includes('encombrant') || lowerLabel.includes('vide maison') || lowerLabel.includes('vide grenier') || lowerLabel.includes('clearance')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: PROPERTY & WASTE CLEARANCE / DECLUTTERING (DÉBARRAS BUREAUX, APPARTEMENT, MAISON, GARAGE, ENTREPÔT, ARCHIVES, COMBLES, OU SYNDROME DE DIOGÈNE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre, AUCUN engin de terrassement lourd. UNIQUEMENT des professionnels du débarras/déménagement avec diables de manutention, cartons empilés, meubles protégés ou techniciens en tenue de protection blanche pour le syndrome de Diogène.";
-            } else if (lowerLabel.includes('carrelage') || lowerLabel.includes('carreleur') || lowerLabel.includes('faïence') || lowerLabel.includes('faience') || lowerLabel.includes('revêtement de sol') || lowerLabel.includes('revetement de sol') || lowerLabel.includes('crédence') || lowerLabel.includes('credence') || (lowerLabel.includes('douche') && lowerLabel.includes('italienne'))) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TILING & FLOOR/WALL COVERINGS (REVÊTEMENTS DE SOLS EXTÉRIEUR, REVÊTEMENTS DE SOLS INTÉRIEURS, CARRELAGE CUISINE OU SALLE DE BAIN).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN élagage d'arbre, AUCUNE dépanneuse, AUCUN casque de chantier lourd pour la pose intérieure. UNIQUEMENT artisan carreleur à genoux avec genouillères, mortier-colle, peigne cranté, croisillons autonivelants, carreaux céramiques/grès cérame posés au cordeau et niveau à bulle.";
-            } else if ((lowerLabel.includes('peintre') || lowerLabel.includes('peinture') || lowerLabel.includes('plafond') || lowerLabel.includes('porte') || lowerLabel.includes('décorative') || lowerLabel.includes('decorative')) && !lowerLabel.includes('façade') && !lowerLabel.includes('facade') && !lowerLabel.includes('extérieure') && !lowerLabel.includes('exterieure')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: INTERIOR PAINTING & DECORATION (PEINTURE SOLS, PEINTURE PLAFONDS, PEINTURE MURALE, PEINTURE DE PORTES OU PEINTURE DÉCORATIVE).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN élagage d'arbre, AUCUNE dépanneuse, AUCUN échafaudage extérieur lourd, AUCUN casque de chantier lourd pour les pièces intérieures. UNIQUEMENT artisan peintre en salopette blanche avec rouleau microfibres, pinceau à rechampir, bac à peinture et bâches de protection au sol.";
-            } else if (lowerLabel.includes('terrassement') || lowerLabel.includes('nivellement') || lowerLabel.includes('vrd') || lowerLabel.includes('viabilisation') || lowerLabel.includes('assainissement') || lowerLabel.includes('raccordement') || lowerLabel.includes('fondation') || lowerLabel.includes('drainage') || lowerLabel.includes('accès') || lowerLabel.includes('acces') || lowerLabel.includes('soutènement') || lowerLabel.includes('soutenement') || lowerLabel.includes('enrochement') || lowerLabel.includes('piscine') || lowerLabel.includes('excavation')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EARTHWORKS & EXCAVATION (TERRASSEMENT, ENGINS DE CHANTIER, MINI-PELLE, TRANCHÉES VRD, ENROCHEMENT OU AMÉNAGEMENT DU SOL).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, nivellement, tranchées VRD, assainissement, enrochement ou terrassement piscine.";
-            } else if (lowerLabel.includes('gouttière') || lowerLabel.includes('gouttiere') || lowerLabel.includes('chéneau') || lowerLabel.includes('cheneau') || lowerLabel.includes('descente')) {
-                contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: GUTTER WORK & MAINTENANCE (NETTOYAGE, CURAGE, DÉBOUCHAGE, RÉPARATION OU POSE DE GOUTTIÈRES ET CHÉNEAUX).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN élagage d'arbre, AUCUN abattage, AUCUNE dépanneuse, AUCUN terrassement lourd, AUCUN travailleur debout sans protection sur tuiles glissantes. UNIQUEMENT intervention ciblée sur gouttière de rive, chéneau encastré ou tuyau de descente pluviale.";
-            }
+            let negativeConstraint = "";
 
-            const coreTradeBlock = `\n🎯 OBJET UNIQUE ET OBLIGATOIRE DU CHANTIER :\n- Métier & Travaux réels : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;
+            const coreTradeBlock = `\n🎯 OBJET UNIQUE DU CHANTIER :\n- Métier & Travaux : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;
 
-            // Injection des règles de sécurité et visuelles selon le métier et le service
+            // Injection des règles de sécurité et visuelles positives
             const rulesBlock = buildRulesBlock(task.metier || travauxLabel, task.travaux || travauxLabel, etatChantier);
-            const finalPrompt = contextReset + coreTradeBlock + "\n" + prompt + "\n" + rulesBlock + "\n" + negativeConstraint;
+            const finalPrompt = contextReset + coreTradeBlock + "\n" + prompt + "\n" + rulesBlock;
+            const shortPrompt = `Génère une photo de ${travauxLabel} à ${villeLabel || 'France'} avec ${nbOuvriers}, format ${orientation}.`;
             
             console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 150)}...`);
             
@@ -2251,7 +2218,7 @@ async function main() {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
                         const targetUrlToUse = activePlanUrls[plan.key] || plan.url || 'https://chatgpt.com/';
-                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse);
+                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse, shortPrompt);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
