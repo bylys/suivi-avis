@@ -268,6 +268,41 @@ function getConversationUrlForOperator(operatorName) {
     return process.env.CHATGPT_WORK_CONVERSATION_URL || process.env.CHATGPT_PERSO_CONVERSATION_URL || process.env.CHATGPT_CONVERSATION_URL || 'https://chatgpt.com/';
 }
 
+async function typeAndSendPrompt(page, text) {
+    console.log("Saisie du prompt dans le champ de texte...");
+    const promptInput = page.locator('#prompt-textarea');
+    await promptInput.waitFor({ state: 'visible', timeout: 30000 });
+    await promptInput.focus();
+
+    await page.evaluate((val) => {
+        const el = document.querySelector('#prompt-textarea');
+        if (!el) return;
+        el.focus();
+        if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
+            document.execCommand('selectAll', false, null);
+            document.execCommand('insertText', false, val);
+            el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: val }));
+        } else {
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }, text);
+
+    await page.waitForTimeout(500);
+    await promptInput.pressSequentially(' ');
+    await page.waitForTimeout(1000);
+
+    try {
+        const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
+        await sendBtn.click();
+        console.log("✅ Bouton d'envoi cliqué avec succès !");
+    } catch(e) {
+        console.log("Bouton d'envoi non actif, tentative avec la touche Entrée...");
+        await page.keyboard.press('Enter');
+    }
+}
+
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null) {
     const targetUrl = customUrl || getConversationUrlForOperator(operatorName);
     
@@ -382,31 +417,6 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
 
             throw e;
         }
-        // 1. Saisie robuste du texte (support contenteditable / Lexical & textarea)
-        console.log("Saisie du prompt dans le champ de texte...");
-        const promptInput = page.locator('#prompt-textarea');
-        await promptInput.focus();
-
-        await page.evaluate((text) => {
-            const el = document.querySelector('#prompt-textarea');
-            if (!el) return;
-            el.focus();
-            // ChatGPT utilise un div/p contenteditable
-            if (el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
-                document.execCommand('selectAll', false, null);
-                document.execCommand('insertText', false, text);
-                el.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
-            } else {
-                el.value = text;
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        }, prompt);
-
-        await page.waitForTimeout(500);
-        // Simulation d'une touche pour forcer l'activation du bouton d'envoi React
-        await promptInput.pressSequentially(' ');
-        await page.waitForTimeout(1000);
 
         // Capture de TOUTES les URLs de photos déjà présentes avant d'envoyer le prompt (sans filtre de taille)
         // → Garantit à 100% qu'aucune image existante ne pourra être capturée par erreur
@@ -423,37 +433,10 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         });
         console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) sur la page avant l'envoi du prompt.`);
 
-        // 2. Clic sur le bouton d'envoi
-        try {
-            const sendBtn = await page.waitForSelector('button[data-testid="send-button"]:not([disabled])', { timeout: 5000 });
-            await sendBtn.click();
-            console.log("✅ Bouton d'envoi cliqué avec succès !");
-        } catch(e) {
-            console.log("Bouton d'envoi non actif, tentative avec la touche Entrée...");
-            await page.keyboard.press('Enter');
-        }
-        
-        // Détection immédiate de message de limite/quota de génération d'images DALL-E 3 (ex: "You've hit the Business plan limit...")
-        const limitDetected = await page.evaluate(() => {
-            const bodyText = document.body.innerText || '';
-            const lower = bodyText.toLowerCase();
-            if (lower.includes("hit the") && lower.includes("limit")) return bodyText;
-            if (lower.includes("reached your limit") || lower.includes("reached the limit")) return bodyText;
-            if (lower.includes("limite de génération") || lower.includes("quota de génération") || lower.includes("business plan limit")) return bodyText;
-            if (lower.includes("too many requests") || lower.includes("try again after") || lower.includes("resets in")) return bodyText;
-            if (lower.includes("upgrade to plus") || lower.includes("free tier limit")) return bodyText;
-            return null;
-        });
+        // Saisie et envoi du prompt initial
+        await typeAndSendPrompt(page, prompt);
 
-        if (limitDetected) {
-            console.error("❌ QUOTA CHATGPT ATTEINT SUR CE COMPTE :");
-            throw new Error("LIMITE_QUOTA_ATTEINTE: La limite de génération d'images a été atteinte sur ce compte ChatGPT.");
-        }
-
-        console.log("⏳ Attente obligatoire de 90 secondes pour la création de la photo DALL-E 3...");
-        await page.waitForTimeout(90000);
-        
-        // 3. Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
+        // Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
         const checkNewImage = async () => {
             return await page.evaluate((knownUrls) => {
                 const knownSet = new Set(knownUrls);
@@ -470,18 +453,67 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             }, existingImageUrls);
         };
 
+        console.log("⏳ Attente active de la création DALL-E 3 (jusqu'à 100s)...");
         let foundUrl = null;
+        let referenceImagePromptSent = false;
         const scanStart = Date.now();
-        while (Date.now() - scanStart < 35000) {
+        const MAX_SCAN_MS = 100000;
+
+        while (Date.now() - scanStart < MAX_SCAN_MS) {
             foundUrl = await checkNewImage();
             if (foundUrl) break;
+
+            // Détection immédiate de message de limite/quota de génération d'images DALL-E 3
+            const limitDetected = await page.evaluate(() => {
+                const bodyText = document.body.innerText || '';
+                const lower = bodyText.toLowerCase();
+                if (lower.includes("hit the") && lower.includes("limit")) return bodyText;
+                if (lower.includes("reached your limit") || lower.includes("reached the limit")) return bodyText;
+                if (lower.includes("limite de génération") || lower.includes("quota de génération") || lower.includes("business plan limit")) return bodyText;
+                if (lower.includes("too many requests") || lower.includes("try again after") || lower.includes("resets in")) return bodyText;
+                if (lower.includes("upgrade to plus") || lower.includes("free tier limit")) return bodyText;
+                return null;
+            });
+
+            if (limitDetected) {
+                console.error("❌ QUOTA CHATGPT ATTEINT SUR CE COMPTE :");
+                throw new Error("LIMITE_QUOTA_ATTEINTE: La limite de génération d'images a été atteinte sur ce compte ChatGPT.");
+            }
+
+            // Détection si ChatGPT demande une image de référence ou image cible au lieu de créer
+            if (!referenceImagePromptSent && (Date.now() - scanStart > 8000)) {
+                const needsReferenceImage = await page.evaluate(() => {
+                    const bodyText = document.body.innerText || '';
+                    const lower = bodyText.toLowerCase();
+                    return (
+                        lower.includes("image cible") ||
+                        lower.includes("téléverse une image") ||
+                        lower.includes("televerse une image") ||
+                        lower.includes("image de référence") ||
+                        lower.includes("image de reference") ||
+                        lower.includes("déjà présente dans ce fil") ||
+                        lower.includes("deja presente dans ce fil") ||
+                        lower.includes("utiliser comme base")
+                    );
+                });
+
+                if (needsReferenceImage) {
+                    console.log("⚠️ ChatGPT demande une image cible/référence au lieu de créer l'image !");
+                    console.log("🔄 Envoi automatique de la consigne corrective de création autonome from scratch...");
+                    referenceImagePromptSent = true;
+                    await typeAndSendPrompt(page, "Génère directement une TOUTE NOUVELLE photo originale complète à partir de zéro avec DALL-E selon les instructions précédentes. N'utilise aucune image de référence et ne modifie aucune image existante.");
+                    await page.waitForTimeout(5000);
+                    continue;
+                }
+            }
+
             await page.waitForTimeout(3000);
         }
 
         if (foundUrl) {
             console.log("📸 NOUVELLE photo HD unique validée à l'écran ! URL :", foundUrl.substring(0, 100));
         } else {
-            console.log("🔄 Aucune nouvelle photo aperçue au bout de 75s. Actualisation de la page ChatGPT (page.reload())...");
+            console.log("🔄 Aucune nouvelle photo aperçue au bout de 100s. Actualisation de la page ChatGPT (page.reload())...");
             try {
                 await page.reload({ waitUntil: 'domcontentloaded' });
                 const reloadWait = Math.floor(Math.random() * (20000 - 15000 + 1)) + 15000;
@@ -489,7 +521,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 await page.waitForTimeout(reloadWait);
                 
                 const startTimeReload = Date.now();
-                while (Date.now() - startTimeReload < 20000) {
+                while (Date.now() - startTimeReload < 25000) {
                     foundUrl = await checkNewImage();
                     if (foundUrl) break;
                     await page.waitForTimeout(3000);
@@ -506,7 +538,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
 
         if (!foundUrl) {
-            console.log("⚠️ Aucune image de taille > 600px trouvée après 120s de scan.");
+            console.log("⚠️ Aucune image de taille > 400px trouvée après scan complet.");
         }
 
         await page.waitForTimeout(2000); // Stabilisation du rendu visuel
@@ -1604,8 +1636,8 @@ async function main() {
             let negativeConstraint = "";
             const lowerLabel = travauxLabel.toLowerCase();
             
-            // Header de reset de contexte ultra-strict — force DALL-E 3 à ignorer les images précédentes du fil unique
-            let contextReset = "🔴 NOUVELLE DEMANDE INDÉPENDANTE — IGNORE TOTALEMENT TOUTES LES IMAGES PRÉCÉDENTES DE CE FIL DE DISCUSSION.\nTHIS IS A COMPLETELY NEW AND INDEPENDENT PHOTO. DO NOT REUSE ANY PREVIOUS SCENE OR TRADE.\n\n";
+            // Header de création autonome from scratch — force DALL-E 3 en mode création pure sans chercher d'image de référence
+            let contextReset = "🔴 CRÉATION D'UNE TOUTE NOUVELLE IMAGE AUTONOME À PARTIR DE ZÉRO (FROM SCRATCH).\nCONSIGNE STRICTE DALL-E : Génère une NOUVELLE photo originale complète. Ne fais AUCUNE retouche, modification ou référence à une image existante. Aucune image de référence ni image cible n'est nécessaire.\n[TASK: GENERATE A BRAND NEW STANDALONE IMAGE FROM SCRATCH. DO NOT EDIT, MODIFY, OR BASE ON ANY PREVIOUS IMAGE. NO REFERENCE IMAGE NEEDED.]\n\n";
             if (lowerLabel.includes('vitrier') || lowerLabel.includes('vitrerie') || lowerLabel.includes('vitre') || lowerLabel.includes('vitrage') || lowerLabel.includes('fenêtre') || lowerLabel.includes('fenetre') || lowerLabel.includes('miroir') || lowerLabel.includes('miroiterie')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: GLAZIER & GLASS WORK (VITRERIE, REMPLACEMENT DE VITRAGE, DOUBLE VITRAGE, RÉPARATION DE FENÊTRE, VITRINE DE SÉCURITÉ OU MIROITERIE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION ABSOLUE : AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
