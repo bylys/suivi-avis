@@ -1281,18 +1281,42 @@ async function main() {
             persoKeyCandidates.push('CHATGPT_PERSO_COOKIES', 'CHATGPT_PERSO_COOKIE', 'CHATGPT_COOKIES');
 
             let workEntry = null;
+            // ÉTAPE 1 : Recherche PRIORITAIRE dans process.env (GitHub Secrets)
             for (const k of workKeyCandidates) {
-                if (availableCookiesMap[k]) {
-                    workEntry = { name: 'Plan PRO / Work', key: k, raw: availableCookiesMap[k], url: workUrl || fallbackUrl };
+                const val = (process.env[k] || '').trim();
+                if (val && val.length > 20) {
+                    workEntry = { name: 'Plan PRO / Work', key: k, raw: val, url: workUrl || fallbackUrl, source: 'GitHub Secret' };
                     break;
+                }
+            }
+            // ÉTAPE 2 : Recherche de repli dans availableCookiesMap (Supabase) UNIQUEMENT si non trouvé dans GitHub Secrets
+            if (!workEntry) {
+                for (const k of workKeyCandidates) {
+                    const val = (availableCookiesMap[k] || '').trim();
+                    if (val && val.length > 20) {
+                        workEntry = { name: 'Plan PRO / Work', key: k, raw: val, url: workUrl || fallbackUrl, source: 'Supabase' };
+                        break;
+                    }
                 }
             }
 
             let persoEntry = null;
+            // ÉTAPE 1 : Recherche PRIORITAIRE dans process.env (GitHub Secrets)
             for (const k of persoKeyCandidates) {
-                if (availableCookiesMap[k] && (!workEntry || availableCookiesMap[k] !== workEntry.raw)) {
-                    persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: availableCookiesMap[k], url: persoUrl || fallbackUrl };
+                const val = (process.env[k] || '').trim();
+                if (val && val.length > 20 && (!workEntry || val !== workEntry.raw)) {
+                    persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: val, url: persoUrl || fallbackUrl, source: 'GitHub Secret' };
                     break;
+                }
+            }
+            // ÉTAPE 2 : Recherche de repli dans availableCookiesMap (Supabase)
+            if (!persoEntry) {
+                for (const k of persoKeyCandidates) {
+                    const val = (availableCookiesMap[k] || '').trim();
+                    if (val && val.length > 20 && (!workEntry || val !== workEntry.raw)) {
+                        persoEntry = { name: 'Plan PERSO / Secours', key: k, raw: val, url: persoUrl || fallbackUrl, source: 'Supabase' };
+                        break;
+                    }
                 }
             }
 
