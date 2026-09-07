@@ -334,25 +334,24 @@ async function typeAndSendPrompt(page, text) {
     try { await dismissModalsAndBanners(page); } catch(e) {}
     console.log("Saisie du prompt dans le champ de texte...");
 
-    // Attente interne : ChatGPT peut re-naviguer juste après le chargement initial
-    // On attend que la page soit VRAIMENT stable avant toute interaction
-    try {
-        await page.waitForLoadState('networkidle', { timeout: 6000 });
-    } catch(e) {}
-    await page.waitForTimeout(1000);
-
+    // NB : la page est déjà stabilisée avant l'appel - pas de waitForLoadState redondant
     const promptInput = page.locator('#prompt-textarea');
-    await promptInput.waitFor({ state: 'attached', timeout: 30000 });
     
-    // Attente supplémentaire post-attached : l'élément existe mais React peut encore naviguer
-    await page.waitForTimeout(800);
+    // Timeout réduit : le textarea était visible juste avant cet appel
+    try {
+        await promptInput.waitFor({ state: 'visible', timeout: 10000 });
+    } catch(e) {
+        // Dernière chance : peut-être attached mais pas visible
+        await promptInput.waitFor({ state: 'attached', timeout: 10000 });
+    }
 
     // Nettoyage de sécurité du DOM pour éliminer tout overlay no-auth (protégé)
     try {
         await page.evaluate(() => {
             document.querySelectorAll('#modal-no-auth-login, [data-testid="modal-no-auth-login"]').forEach(el => el.remove());
         });
-    } catch(e) { /* contexte potentiellement détruit, on continue */ }
+    } catch(e) {}
+
 
 
     // Screenshot AVANT pour voir l'état initial
