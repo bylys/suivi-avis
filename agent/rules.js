@@ -26,12 +26,14 @@ Worker MUST be standing safely on the GROUND with a telescopic lance OR inside a
   nettoyage_facade: `SAFETY RULES — Facade cleaning: High-pressure washer or softwash lance aimed at exterior wall. Scaffold or ground level. Hard hat MANDATORY if under scaffold. Safety goggles/visor + work boots.`,
   nettoyage_gouttieres: `SAFETY RULES — Gutter Cleaning & Gutter Installation (Nettoyage et Travaux de Gouttières):
 MANDATORY SAFETY PROTOCOL IN FRANCE:
-OPTION 1 (GROUND LEVEL): Cleaner operating from the ground using a long telescopic curved lance or inspecting drain collector at ground level.
-OPTION 2 (SECURED STEPLADDER): Worker on a stable stepladder with wall standoff bracket, wearing sturdy work gloves and protective glasses.
-OPTION 3 (SCAFFOLDING / MEWP): For high gutters or chéneaux on buildings, intervention from certified rolling scaffold or cherry picker basket.
+STRICT PROHIBITION ON LADDERS & STEPLADDERS: Under French labor safety law R.4323-63, ladders and stepladders are strictly forbidden as workstations!
+OPTION 1 (SCAFFOLDING PLATFORM): Artisans working strictly from a certified rolling scaffold with guardrails (échafaudage roulant de chantier avec garde-corps de sécurité) along the eaves.
+OPTION 2 (GROUND LEVEL PREPARATION): Artisans working safely at GROUND LEVEL in driveway or courtyard, cutting and assembling zinc or PVC gutter sections, brackets and downpipes on a portable workbench.
+OPTION 3 (GROUND LEVEL TELESCOPIC LANCE): Cleaner operating safely from the ground using a long telescopic curved lance or vacuum pole.
 ABSOLUTE PROHIBITION & BAN:
+❌ STRICTLY FORBIDDEN: NO ladders, NO extension ladders, NO stepladders against the wall or gutter!
+❌ NEVER stand on a ladder or stepladder to fix, assemble, clean or drill gutters!
 ❌ NEVER stand directly inside the gutter channel or walk unsupported on wet roof slope!
-❌ NO dangerous leaning sideways off a ladder!
 ❌ NO bare hands when handling sharp zinc, aluminium or copper gutter profiles.`,
   etancheite: `SAFETY RULES — Waterproofing & Leak Detection (Étanchéité toiture-terrasse, toit plat & recherche de fuite):
 MANDATORY SAFETY & PROFESSIONAL PROTOCOL IN FRANCE:
@@ -74,8 +76,16 @@ const VISUAL_RULES_BY_SERVICE = {
   'Traitement hydrofuge et imperméabilisant': `VISUAL: Water-repellent hydrofuge treatment for roof. Specialist spraying hydrofuge sealant across roof tiles with telescopic lance.`,
   'Étanchéité toiture-terrasse': `VISUAL: Flat roof waterproofing (Étanchéité toiture-terrasse). Waterproofing artisan unrolling dark bitumen membrane or grey EPDM synthetic sheet on 100% FLAT rooftop with low parapet wall (acrotère), welding seams with propane blowtorch or hot-air welder.`,
   'Etancheite toiture terrasse': `VISUAL: Flat roof waterproofing. EPDM membrane or torch-on bitumen on 100% flat rooftop with low parapet.`,
-  'Zinguerie & Gouttières': `VISUAL: Zinc work & gutters (Zinguerie & Gouttières). Roofer/zinc craftsman fitting half-round zinc gutter sections or custom zinc roof valleys/flashings (solins et noues en zinc) along roof eaves from scaffold.`,
-  'Zinguerie et Gouttières': `VISUAL: Zinc work & gutters. Fitting zinc gutter sections and roof flashings along eaves from scaffold.`,
+  'Zinguerie & Gouttières': `VISUAL: Zinc work & gutters (Zinguerie & Gouttières). NO LADDERS! NO STEPLADDERS! Artisans work strictly from a certified rolling scaffold with guardrails along eaves, OR at ground level assembling zinc downpipes and soldering flashings on a workbench. Minimum 2 artisans.`,
+  'Zinguerie et Gouttières': `VISUAL: Zinc work & gutters. NO LADDERS! Artisans work strictly from scaffolding with guardrails or at ground level on workbench. Minimum 2 artisans.`,
+  'Pose & Remplacement de Gouttières': `VISUAL: Gutter installation & replacement (Pose & remplacement de gouttières). NO LADDERS! NO STEPLADDERS! Exactly 2 artisans working together: one on certified rolling scaffold with safety guardrails adjusting zinc/PVC gutter slope along eaves, second artisan at ground level preparing gutter sections and downpipes on workbench.`,
+  'Pose et Remplacement de Gouttières': `VISUAL: Gutter installation & replacement. NO LADDERS! Scaffolding with guardrails along eaves and ground workbench. Exactly 2 artisans.`,
+  'Pose de Gouttières': `VISUAL: Gutter installation. NO LADDERS! Scaffolding with guardrails along eaves and ground workbench. Exactly 2 artisans.`,
+  'Pose de gouttières': `VISUAL: Gutter installation. NO LADDERS! Scaffolding with guardrails along eaves and ground workbench. Exactly 2 artisans.`,
+  'Pose et remplacement de gouttières': `VISUAL: Gutter installation. NO LADDERS! Scaffolding with guardrails along eaves and ground workbench. Exactly 2 artisans.`,
+  'Pose & remplacement de gouttières': `VISUAL: Gutter installation. NO LADDERS! Scaffolding with guardrails along eaves and ground workbench. Exactly 2 artisans.`,
+  'Débouchage de gouttières': `VISUAL: Gutter unclogging & downpipe clearing. NO LADDERS! Certified scaffolding platform with guardrails or ground level inspection. Exactly 2 artisans.`,
+  'Pose de descentes d\'eaux pluviales': `VISUAL: Downpipe installation along wall. NO LADDERS! Artisans working at ground level fitting zinc/cast iron downpipes with wall brackets. Exactly 2 artisans.`,
   'Faîtage & Rive': `VISUAL: Ridge capping & verge tiles (Faîtage & Rive). Roofers bedding ridge tiles (faîtières) with mortar or installing dry-fix ventilated ridge roll system (closoir ventilé) and zinc verge edging from scaffolding with safety harness.`,
   'Faitage & Rive': `VISUAL: Ridge capping & verge tiles. Roofers working on ridge capping or verge edging from scaffolding with safety harness.`,
   'Faitage et Rive': `VISUAL: Ridge capping & verge tiles. Roofers working on ridge capping or verge edging from scaffolding with safety harness.`,
@@ -93,8 +103,8 @@ const VISUAL_RULES_BY_SERVICE = {
   'Nettoyage Panneaux Solaires': `VISUAL: Solar panel cleaning (Nettoyage panneaux solaires). Cleaner at ground level or scaffold using a long telescopic pole with soft water-fed cleaning brush (brosse rotative télescopique à eau pure déminéralisée) gently washing rooftop photovoltaic solar panels without high pressure.`,
   'Nettoyage Terrasses, Allées & Dallages': `VISUAL: Patio, driveway & paving cleaning (Nettoyage terrasses, allées & dallages). Cleaner operating a high-pressure rotary surface cleaner (cloche de lavage de sol) or turbo nozzle lance over patio paving stones, interlocking pavers or concrete driveway.`,
   'Nettoyage Terrasses, Allées et Dallages': `VISUAL: Patio, driveway & paving cleaning. Cleaner operating a rotary surface cleaner over patio pavers and driveway.`,
-  'Nettoyage Gouttières & Chéneaux': `VISUAL: Gutter & parapet cleaning (Nettoyage gouttières & chéneaux). Artisan wearing work gloves removing wet leaves and silt from zinc/PVC gutters into a bucket, checking downpipe water evacuation.`,
-  'Nettoyage Gouttières et Chéneaux': `VISUAL: Gutter & parapet cleaning. Removing wet leaves and debris from gutter channel into bucket.`,
+  'Nettoyage Gouttières & Chéneaux': `VISUAL: Gutter & parapet cleaning (Nettoyage gouttières & chéneaux). NO LADDERS! NO STEPLADDERS! Exactly 2 artisans working from certified rolling scaffold with guardrails or safely at ground level with telescopic lance, removing wet leaves and silt from zinc/PVC gutters into a bucket.`,
+  'Nettoyage Gouttières et Chéneaux': `VISUAL: Gutter & parapet cleaning. NO LADDERS! Certified rolling scaffold with guardrails or ground level. Exactly 2 artisans.`,
 
   // ── SITES VITRIER (6 services officiels) ──
   'Dépannage vitrerie d\'urgence': `VISUAL: Emergency glazier callout (Dépannage vitrerie d'urgence). Glazier in cut-resistant gloves and safety glasses securing a cracked window, installing temporary security boarding or replacing shattered pane using suction lifters held firmly in hands. NO hard hat indoors.`,
@@ -425,7 +435,7 @@ function buildRulesBlock(metier, travaux, etatChantier) {
   lines.push(compositionRule);
 
   // Distinguer métiers extérieurs dangereux (2+ ouvriers) vs travaux intérieurs (1 ouvrier solo)
-  const DANGEROUS_OUTDOOR_TRADES = ['toiture', 'nettoyage_toiture', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'charpente'];
+  const DANGEROUS_OUTDOOR_TRADES = ['toiture', 'nettoyage_toiture', 'gouttiere', 'gouttieres', 'cheneau', 'zinguerie', 'elagage', 'abattage', 'ravalement', 'maconnerie', 'terrassement', 'charpente'];
   const isOutdoorDangerous = DANGEROUS_OUTDOOR_TRADES.some(t => metierNorm.includes(t) || travauxNorm.includes(t));
 
   const INDOOR_TRADES = ['plomberie', 'electricite', 'peinture', 'carrelage', 'placo', 'parquet', 'serrurerie', 'menuiserie', 'salle de bain', 'cuisine', 'debarras', 'encombrants', 'demenagement', 'vitrier'];
