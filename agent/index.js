@@ -536,7 +536,7 @@ async function typeAndSendPrompt(page, text) {
     } catch(e) {}
 }
 
-async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null, fallbackPrompt = null) {
+async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null, fallbackPrompt = null, convIdsToDelete = []) {
     const targetUrl = (customUrl || getConversationUrlForOperator(operatorName) || '').trim();
     
     let browser;
@@ -597,6 +597,45 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
         
         await page.waitForTimeout(3000); // Stabilisation des redirections éventuelles
+        
+        // Suppression automatique des anciennes conversations ChatGPT créées par l'agent (veille ou purge hebdomadaire)
+        if (convIdsToDelete && convIdsToDelete.length > 0) {
+            try {
+                console.log(`🧹 Nettoyage automatique de ${convIdsToDelete.length} ancienne(s) conversation(s) ChatGPT...`);
+                const deletedList = await page.evaluate(async (ids) => {
+                    const deleted = [];
+                    try {
+                        const sessionRes = await fetch('/api/auth/session');
+                        const session = await sessionRes.json();
+                        const token = session && session.accessToken;
+                        if (!token) return deleted;
+
+                        for (const id of ids) {
+                            if (!id || id.length < 5) continue;
+                            try {
+                                const res = await fetch(`/backend-api/conversation/${id}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ is_visible: false }),
+                                    credentials: 'include'
+                                });
+                                if (res.ok) deleted.push(id);
+                            } catch (e) {}
+                        }
+                    } catch (e) {}
+                    return deleted;
+                }, convIdsToDelete);
+
+                if (deletedList.length > 0) {
+                    console.log(`✅ ${deletedList.length} ancienne(s) conversation(s) supprimée(s) avec succès de ChatGPT !`);
+                }
+            } catch (delErr) {
+                console.log("Note nettoyage conversation :", delErr.message);
+            }
+        }
         
         let currentUrl = page.url();
         console.log("URL de la page :", currentUrl);
@@ -1499,6 +1538,33 @@ async function main() {
         console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
         const activePlanUrls = {};
 
+        // Récupération des réglages et historiques de conversations depuis Supabase app_settings
+        const appSettingsMap = {};
+        try {
+            const { data: settingData } = await supabase.from('app_settings').select('key, value');
+            if (settingData) {
+                for (const item of settingData) {
+                    if (item && item.key) {
+                        appSettingsMap[item.key.toUpperCase()] = (item.value || '').trim();
+                    }
+                }
+            }
+        } catch (e) {}
+
+        async function saveAppSetting(k, v) {
+            try {
+                const keyUpper = (k || '').toUpperCase();
+                appSettingsMap[keyUpper] = String(v);
+                const { error } = await supabase.from('app_settings').upsert({ key: k, value: String(v) }, { onConflict: 'key' });
+                if (error) {
+                    await supabase.from('app_settings').delete().eq('key', k);
+                    await supabase.from('app_settings').insert([{ key: k, value: String(v) }]);
+                }
+            } catch (err) {
+                console.log(`Note sauvegarde app_setting (${k}) :`, err.message);
+            }
+        }
+
         // Formatage de la date courte pour le nom du fichier et du dossier Drive (ex: 27-08-26)
         const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
         const dayStr = targetDateObj.getUTCDate().toString().padStart(2, '0');
@@ -2329,13 +2395,39 @@ async function main() {
                         // Dès que la 1ère image est créée, activePlanUrls[plan.key] conserve ce fil unique pour TOUTES les autres images de la journée !
                         const initialDayBaseUrl = (plan.url && !plan.url.includes('/c/')) ? plan.url : 'https://chatgpt.com/';
                         const targetUrlToUse = activePlanUrls[plan.key] || initialDayBaseUrl;
-                        if (activePlanUrls[plan.key]) {
-                            console.log(`📌 [${plan.name}] Suite dans le fil unique de la journée : ${activePlanUrls[plan.key]}`);
-                        } else {
+
+                        let convIdsToDelete = [];
+                        if (!activePlanUrls[plan.key]) {
                             console.log(`🆕 [${plan.name}] 1ère tâche du jour : ouverture d'une nouvelle conversation dédiée pour la journée...`);
+                            
+                            // Nettoyage automatique : récupération des anciennes conversations créées par l'agent
+                            const lastConvId = (appSettingsMap[`CHATGPT_LAST_CONV_${plan.key}`.toUpperCase()] || '').trim();
+                            let weeklyConvs = [];
+                            try {
+                                const rawWeekly = appSettingsMap[`CHATGPT_WEEKLY_CONVS_${plan.key}`.toUpperCase()];
+                                if (rawWeekly) weeklyConvs = JSON.parse(rawWeekly);
+                            } catch (e) {}
+                            if (!Array.isArray(weeklyConvs)) weeklyConvs = [];
+
+                            const isSunday = (new Date()).getDay() === 0;
+                            if (isSunday) {
+                                // Dimanche : grand nettoyage hebdomadaire
+                                convIdsToDelete = Array.from(new Set([...weeklyConvs, lastConvId])).filter(id => id && id.length > 5);
+                                if (convIdsToDelete.length > 0) {
+                                    console.log(`🗓️ Dimanche détecté : purge hebdomadaire de ${convIdsToDelete.length} conversation(s) pour ${plan.name}...`);
+                                }
+                            } else {
+                                // En semaine : suppression de la conversation de la veille
+                                convIdsToDelete = (lastConvId && lastConvId.length > 5) ? [lastConvId] : [];
+                                if (convIdsToDelete.length > 0) {
+                                    console.log(`🧹 Nettoyage quotidien : suppression de la conversation précédente (${lastConvId}) pour ${plan.name}...`);
+                                }
+                            }
+                        } else {
+                            console.log(`📌 [${plan.name}] Suite dans le fil unique de la journée : ${activePlanUrls[plan.key]}`);
                         }
 
-                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse, secureRichPrompt);
+                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse, secureRichPrompt, convIdsToDelete);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
@@ -2343,6 +2435,27 @@ async function main() {
                             if (res.finalUrl && res.finalUrl.includes('/c/')) {
                                 activePlanUrls[plan.key] = res.finalUrl;
                                 console.log(`📌 Fil unique du jour validé et conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
+
+                                const match = res.finalUrl.match(/\/c\/([a-zA-Z0-9-]+)/);
+                                const currentConvId = match ? match[1] : null;
+                                if (currentConvId && !activePlanUrls[`RECORDED_${plan.key}`]) {
+                                    activePlanUrls[`RECORDED_${plan.key}`] = true;
+                                    // Sauvegarde de l'ID du jour pour suppression au prochain run
+                                    await saveAppSetting(`CHATGPT_LAST_CONV_${plan.key}`, currentConvId);
+
+                                    // Mise à jour de l'historique hebdomadaire
+                                    let weeklyConvs = [];
+                                    try {
+                                        const rawWeekly = appSettingsMap[`CHATGPT_WEEKLY_CONVS_${plan.key}`.toUpperCase()];
+                                        if (rawWeekly) weeklyConvs = JSON.parse(rawWeekly);
+                                    } catch (e) {}
+                                    if (!Array.isArray(weeklyConvs)) weeklyConvs = [];
+
+                                    const isSunday = (new Date()).getDay() === 0;
+                                    const updatedWeekly = isSunday ? [currentConvId] : Array.from(new Set([...weeklyConvs, currentConvId]));
+                                    await saveAppSetting(`CHATGPT_WEEKLY_CONVS_${plan.key}`, JSON.stringify(updatedWeekly));
+                                    console.log(`💾 Conversation du jour enregistrée (${currentConvId}) pour ${plan.name} dans Supabase app_settings.`);
+                                }
                             }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
