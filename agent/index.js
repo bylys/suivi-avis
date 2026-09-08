@@ -725,9 +725,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             throw e;
         }
 
-        // Capture de TOUTES les URLs de photos déjà présentes avant d'envoyer le prompt (sans filtre de taille)
-        // → Garantit à 100% qu'aucune image existante ne pourra être capturée par erreur
-        const existingImageUrls = await page.evaluate(() => {
+        // Capture de TOUTES les URLs de photos et du nombre de tours déjà présents avant d'envoyer le prompt
+        // → Permet d'isoler à 100% la réponse du prompt actuel dans un fil de discussion partagé
+        const { existingImageUrls, initialAssistantTurnCount } = await page.evaluate(() => {
             const imgs = Array.from(document.querySelectorAll('img'));
             const urls = new Set();
             for (const img of imgs) {
@@ -736,9 +736,13 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     urls.add(src);
                 }
             }
-            return Array.from(urls);
+            const turns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], article:has([data-message-author-role="assistant"]), article'));
+            return {
+                existingImageUrls: Array.from(urls),
+                initialAssistantTurnCount: turns.length
+            };
         });
-        console.log(`📋 ${existingImageUrls.length} image(s) déjà présente(s) sur la page avant l'envoi du prompt.`);
+        console.log(`📋 ${existingImageUrls.length} image(s) et ${initialAssistantTurnCount} tour(s) déjà présent(s) dans le fil avant l'envoi du prompt.`);
 
         // ⏳ Attente que l'URL soit stable (ChatGPT / React Router re-navigue après chargement)
         console.log("⏳ Attente de la stabilisation de l'URL (React Router)...");
@@ -776,24 +780,33 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
 
-
-
-        // Scanneur d'image dynamique : interdiction stricte de retourner une URL présente dans knownSet
+        // Scanneur d'image dynamique sécurisé : regarde UNIQUEMENT dans le nouveau tour de réponse du prompt actuel
         const checkNewImage = async () => {
-            return await page.evaluate((knownUrls) => {
+            return await page.evaluate(({ knownUrls, initialTurns }) => {
                 const knownSet = new Set(knownUrls);
-                const imgs = Array.from(document.querySelectorAll('img')).reverse();
-                for (const img of imgs) {
-                    const src = img.src || '';
-                    if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
-                    if (knownSet.has(src)) continue; // INTERDICTION STRICTE : ne jamais prendre une image déjà connue
-                    // Détection universelle DALL-E 3 : CDN OpenAI (oaiusercontent), blob, ou dimensions visuelles suffisantes
-                    if (src.includes('oaiusercontent') || src.includes('blob:') || (img.complete && (img.naturalWidth >= 300 || img.width >= 300 || img.naturalWidth >= 400 || img.width >= 400))) {
-                        return src;
+                const allTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], article:has([data-message-author-role="assistant"]), article'));
+                if (allTurns.length === 0) return null;
+
+                // Si de nouveaux tours sont apparus depuis l'envoi du prompt, inspecter les nouveaux tours en partant du plus récent
+                const candidateTurns = allTurns.length > initialTurns 
+                    ? allTurns.slice(initialTurns) 
+                    : [allTurns[allTurns.length - 1]];
+
+                for (let t = candidateTurns.length - 1; t >= 0; t--) {
+                    const turn = candidateTurns[t];
+                    const imgs = Array.from(turn.querySelectorAll('img'));
+                    for (const img of imgs) {
+                        const src = img.src || '';
+                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
+                        if (knownSet.has(src)) continue; // INTERDICTION : ne jamais reprendre une image connue avant ce tour
+                        // Détection universelle DALL-E 3 : CDN OpenAI (oaiusercontent), blob, ou dimensions visuelles suffisantes
+                        if (src.includes('oaiusercontent') || src.includes('blob:') || (img.complete && (img.naturalWidth >= 300 || img.width >= 300 || img.naturalWidth >= 400 || img.width >= 400))) {
+                            return src;
+                        }
                     }
                 }
                 return null;
-            }, existingImageUrls);
+            }, { knownUrls: existingImageUrls, initialTurns: initialAssistantTurnCount });
         };
 
         console.log("⏳ Attente active de la création DALL-E 3 (jusqu'à 100s)...");
@@ -1484,6 +1497,7 @@ async function main() {
         }
 
         console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
+        const activePlanUrls = {};
 
         // Formatage de la date courte pour le nom du fichier et du dossier Drive (ex: 27-08-26)
         const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
@@ -2223,8 +2237,8 @@ async function main() {
             let negativeConstraint = "";
             const lowerLabel = travauxLabel.toLowerCase();
             
-            // Header de création d'image : création from scratch sans mention d'édition ni d'image existante/référence
-            let contextReset = "🔴 CRÉATION D'UNE TOUTE NOUVELLE IMAGE AUTONOME.\nCONSIGNE STRICTE DALL-E : Génère une photo originale complète from scratch pour illustrer ce chantier artisanal.\n[TASK: GENERATE A BRAND NEW STANDALONE PHOTO FROM SCRATCH OF THIS PROFESSIONAL WORKPLACE.]\n\n";
+            // Header de création d'image : isolation totale pour les fils de discussion partagés (sans mention d'édition)
+            let contextReset = "🔴 NOUVEAU CHANTIER TOTALEMENT INDÉPENDANT. OUBLIE LES IMAGES ET CONVERSATIONS PRÉCÉDENTES DE CE FIL.\nCONSIGNE STRICTE DALL-E : Génère une photo originale complète from scratch pour ce nouveau client.\n[TASK: GENERATE A BRAND NEW STANDALONE PHOTO FROM SCRATCH FOR A COMPLETELY NEW AND DIFFERENT PROJECT. IGNORE ALL PREVIOUS IMAGES IN THIS CHAT.]\n\n";
             if (lowerLabel.includes('vitrier') || lowerLabel.includes('vitrerie') || lowerLabel.includes('vitre') || lowerLabel.includes('vitrage') || lowerLabel.includes('fenêtre') || lowerLabel.includes('fenetre') || lowerLabel.includes('miroir') || lowerLabel.includes('miroiterie')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: GLAZIER & GLASS WORK (VITRERIE, REMPLACEMENT DE VITRAGE, DOUBLE VITRAGE, RÉPARATION DE FENÊTRE, VITRINE DE SÉCURITÉ OU MIROITERIE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION : AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
@@ -2310,13 +2324,17 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        // Toujours démarrer sur une conversation VIERGE pour garantir une isolation totale par tâche et éviter tout mélange de métiers ou faux mode édition OpenAI
-                        const targetUrlToUse = (plan.url && !plan.url.includes('/c/')) ? plan.url : 'https://chatgpt.com/';
+                        // Réutilisation du même fil de discussion pour l'opérateur (évite le spamming de conversations)
+                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url || 'https://chatgpt.com/';
                         const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse, secureRichPrompt);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
+                            if (res.finalUrl && res.finalUrl.includes('/c/')) {
+                                activePlanUrls[plan.key] = res.finalUrl;
+                                console.log(`📌 Fil de conversation unique conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
+                            }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
                         }
