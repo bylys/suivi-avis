@@ -3954,6 +3954,7 @@ async function renderPlanning() {
   if (stVal) query += `&statut=eq.${stVal}`;
 
   const rows = await sbGet('planning', query);
+  window._currentPlanningRows = rows || [];
 
   // Stats
   const total   = rows.length;
@@ -3992,13 +3993,45 @@ async function renderPlanning() {
     pending: 'En attente', generated: 'Généré', done: 'Terminé', skip: 'Ignoré'
   };
 
-  list.innerHTML = Object.entries(byOp).map(([op, taches]) => `
+  list.innerHTML = Object.entries(byOp).map(([op, taches]) => {
+    // Trier par ID croissant pour reproduire rigoureusement l'ordre de passage de l'agent IA nocturne
+    taches.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+
+    // Décompte de la règle des 50% de photos (index pairs: 0, 2, 4...)
+    const tachesAvecPhoto = taches.filter((_, idx) => idx % 2 === 0);
+    const photosPretes = tachesAvecPhoto.filter(r => r.url_image || r.image_url || r.drive_url).length;
+    const photosManquantes = tachesAvecPhoto.length - photosPretes;
+    const isKevin = op.toLowerCase().includes('kevin');
+
+    return `
     <div style="margin-bottom:24px">
-      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px;display:flex;align-items:center;justify-space-between">
-        <span>👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span></span>
-        <button onclick="openOperatorDriveFolder('${op}')" style="padding:4px 10px;border-radius:6px;background:#1e293b;color:#38bdf8;border:1px solid #334155;cursor:pointer;font-size:12px">
-          📁 Dossier Drive ${op}
-        </button>
+      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span>👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span></span>
+          <span style="background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
+            📸 Photos requises (50%) : ${photosPretes}/${tachesAvecPhoto.length}
+          </span>
+          ${photosManquantes > 0 ? `
+            <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
+              ⚠️ ${photosManquantes} image(s) manquante(s)
+            </span>
+          ` : `
+            <span style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
+              ✅ Toutes prêtes
+            </span>
+          `}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="openOperatorDriveFolder('${op}')" style="padding:4px 10px;border-radius:6px;background:#1e293b;color:#38bdf8;border:1px solid #334155;cursor:pointer;font-size:12px">
+            📁 Dossier Drive ${op}
+          </button>
+          ${photosManquantes > 0 ? `
+            <a href="https://github.com/bylys/suivi-avis/actions/workflows/gmb-image-${isKevin ? 'kevin' : 'fifa'}.yml" target="_blank"
+              style="padding:4px 10px;border-radius:6px;background:#6366f1;color:#fff;text-decoration:none;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px">
+              ⚡ Relancer Agent IA (${op})
+            </a>
+          ` : ''}
+        </div>
       </h3>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead>
@@ -4006,24 +4039,43 @@ async function renderPlanning() {
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Ville</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Gmail</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Fiche</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Photo</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Photo (Règle 50%)</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Statut</th>
             <th style="padding:6px 10px;border-bottom:1px solid #334155">Action</th>
           </tr>
         </thead>
         <tbody>
-          ${taches.map(r => `
+          ${taches.map((r, idx) => {
+            const isPhotoRequired = (idx % 2 === 0);
+            const photoUrl = r.url_image || r.image_url || r.drive_url;
+            return `
             <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}">
               <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
               <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#a5b4fc">${r.gmail}</td>
               <td style="padding:7px 10px;color:#e2e8f0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fiche_nom}">${r.fiche_nom}</td>
               <td style="padding:7px 10px;white-space:nowrap">
-                ${(r.url_image || r.image_url || r.drive_url) ? `
-                  <a href="${r.url_image || r.image_url || r.drive_url}" target="_blank" rel="noopener"
-                    style="padding:3px 8px;border-radius:5px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px">
-                    📸 Voir Photo
-                  </a>
-                ` : '<span style="color:#64748b;font-size:12px">—</span>'}
+                ${photoUrl ? `
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <a href="${photoUrl}" target="_blank" rel="noopener"
+                      style="padding:3px 8px;border-radius:5px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;font-weight:600">
+                      📸 Voir Photo
+                    </a>
+                    <span style="font-size:10px;color:#34d399;font-weight:600" title="Photo requise (règle 50%) — prête">✓ (50%)</span>
+                  </div>
+                ` : isPhotoRequired ? `
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
+                    <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap" title="Avis éligible photo (règle 50%) — non générée lors du passage nocturne">
+                      ⚠️ 50% Requis
+                    </span>
+                    <button onclick="ouvrirGenerateurImagePlanning('${r.id}')"
+                      style="padding:3px 8px;border-radius:5px;background:linear-gradient(135deg, #6366f1, #8b5cf6);color:#fff;border:none;cursor:pointer;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(99,102,241,0.3)"
+                      title="Générer la photo manquante pour cet avis éligible">
+                      🎨 Générer l'image
+                    </button>
+                  </div>
+                ` : `
+                  <span style="color:#64748b;font-size:11px;font-style:italic" title="Avis textuel simple sans photo (règle des 50% alternée)">— Sans photo</span>
+                `}
               </td>
               <td style="padding:7px 10px">
                 <span style="background:${(STATUT_COLORS[r.statut]||'#64748b')}22;color:${STATUT_COLORS[r.statut]||'#64748b'};padding:2px 8px;border-radius:99px;font-size:11px">
@@ -4042,10 +4094,12 @@ async function renderPlanning() {
                   </button>
                 ` : r.statut === 'done' ? `<span style="color:#22c55e;font-size:12px">✅ Fait</span>` : ''}
               </td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── Toast éphémère ────────────────────────────────────────────────────────────
@@ -4930,6 +4984,263 @@ async function planningGenerer(id, ficheNom, gmail) {
 async function planningSkip(id) {
   await sbUpdate('planning', id, { statut: 'skip' });
   renderPlanning();
+}
+
+// ── GÉNÉRATION & GESTION D'IMAGES DU PLANNING (RÈGLE 50%) ──
+
+function construirePromptImagePlanning(task) {
+  if (!task) return '';
+  const ficheNom = task.fiche_nom || '';
+  const ville = task.ville || 'Paris';
+  const pays = task.pays || 'France';
+  const locationStr = `${ville} (${pays})`;
+
+  // Détection des travaux
+  const nomL = ficheNom.toLowerCase();
+  let travauxLabel = task.travaux || '';
+
+  if (!travauxLabel) {
+    if (nomL.includes('vitr') || nomL.includes('fenêtre') || nomL.includes('miroir')) {
+      travauxLabel = 'remplacement de vitrage et vitrerie sur mesure';
+    } else if (nomL.includes('charpente') || nomL.includes('comble') || nomL.includes('ossature')) {
+      travauxLabel = 'travaux de charpente traditionnelle en bois';
+    } else if (nomL.includes('demoussage') || nomL.includes('nettoyage toiture') || nomL.includes('gouttiere')) {
+      travauxLabel = 'nettoyage et démoussage de toiture';
+    } else if (nomL.includes('etancheite') || nomL.includes('toit plat') || nomL.includes('terrasse')) {
+      travauxLabel = 'étanchéité de toiture terrasse plate';
+    } else if (nomL.includes('facade') || nomL.includes('ravalement') || nomL.includes('crepi')) {
+      travauxLabel = 'ravalement et rénovation d\'enduit de façade';
+    } else if (nomL.includes('couvr') || nomL.includes('toiture') || nomL.includes('tuile')) {
+      travauxLabel = 'travaux de couverture et réfection de toiture en tuiles';
+    } else if (nomL.includes('elag') || nomL.includes('abattage') || nomL.includes('arbre') || nomL.includes('paysag')) {
+      travauxLabel = 'élagage d\'arbre et entretien paysager d\'un jardin';
+    } else if (nomL.includes('macon') || nomL.includes('beton') || nomL.includes('dalle')) {
+      travauxLabel = 'travaux de maçonnerie extérieure';
+    } else if (nomL.includes('auto') || nomL.includes('depann') || nomL.includes('remorqu')) {
+      travauxLabel = 'dépannage et remorquage automobile sur route';
+    } else if (nomL.includes('debarras') || nomL.includes('encombrant')) {
+      travauxLabel = 'débarras et désencombrement de maison';
+    } else if (nomL.includes('carrel')) {
+      travauxLabel = 'pose de carrelage au sol en intérieur';
+    } else if (nomL.includes('peint')) {
+      travauxLabel = 'travaux de peinture sur façade extérieure';
+    } else if (nomL.includes('plomb')) {
+      travauxLabel = 'travaux de plomberie sanitaire';
+    } else {
+      travauxLabel = 'travaux de rénovation artisanale';
+    }
+  }
+
+  // Header anti-inversion et consigne from scratch
+  let prompt = `🔴 NOUVEAU CHANTIER TOTALEMENT INDÉPENDANT. CONSIGNE STRICTE DALL-E : Génère une photo originale complète from scratch pour ce nouveau client.\n`;
+  prompt += `Photo ultra-réaliste prise sur le vif au smartphone (iPhone / Samsung Galaxy) sans retouche ni effet 3D, illustrant un chantier réel en France à ${locationStr}.\n`;
+  prompt += `Sujet : ${travauxLabel} pour l'artisan / entreprise "${ficheNom}".\n`;
+  prompt += `Un artisan français qualifié en tenue de travail propre avec EPI (de dos ou de trois-quarts pour préserver l'anonymat), concentré sur son geste technique.\n`;
+  prompt += `Environnement résidentiel typiquement français, architecture locale en briques ou enduit, lumière naturelle du jour.\n`;
+
+  // Interdictions de sécurité strictes selon le métier
+  const lower = travauxLabel.toLowerCase() + ' ' + nomL;
+  if (lower.includes('vitr')) {
+    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN couvreur, AUCUN jardinier. Vitrier professionnel manipulant le vitrage avec ventouses adaptées.`;
+  } else if (lower.includes('charpente')) {
+    prompt += `\n❌ INTERDICTION : AUCUN jardinier, AUCUNE dépanneuse. Charpentiers sur ossature bois avec échafaudage sécurisé et harnais.`;
+  } else if (lower.includes('demoussage') || lower.includes('nettoyage toiture') || lower.includes('nettoyage')) {
+    prompt += `\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau appuyé contre le toit ou la façade (travail sur échelle formellement interdit), AUCUN travailleur marchant ou debout directement sur les tuiles ou sur le faîtage du toit. Nettoyage basse/haute pression au sol avec perche télescopique ou depuis nacelle sécurisée.`;
+  } else if (lower.includes('etancheite') || lower.includes('toit plat')) {
+    prompt += `\n❌ INTERDICTION : Toiture 100% PLATE (membrane bitumineuse / EPDM / PVC). AUCUN toit en pente à tuiles, AUCUN arbre coupé.`;
+  } else if (lower.includes('facade') || lower.includes('ravalement')) {
+    prompt += `\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau en façade (travail sur échelle strictement interdit). UNIQUEMENT artisans façadiers sur échafaudage réglementaire avec garde-corps ou travaillant au sol.`;
+  } else if (lower.includes('couvr') || lower.includes('toiture')) {
+    prompt += `\n❌ INTERDICTION FORMELLE : AUCUNE échelle posée contre le toit ou le mur, AUCUN ouvrier debout ou marchant directement sur les tuiles en pente du toit sans protection. Couvreurs UNIQUEMENT sur échafaudage de sécurité avec garde-corps le long de la rive ou au sol.`;
+  } else if (lower.includes('elag') || lower.includes('abattage') || lower.includes('jardin')) {
+    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT jardiniers / élagueurs au sol dans un jardin avec pelouse et végétation.`;
+  } else if (lower.includes('depann') || lower.includes('auto') || lower.includes('remorqu')) {
+    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN échafaudage. UNIQUEMENT dépanneuse avec treuil ou technicien en gilet haute visibilité jaune fluo sur le véhicule.`;
+  } else if (lower.includes('debarras')) {
+    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN engin de chantier lourd. Professionnels avec cartons, diables et véhicule utilitaire de déménagement.`;
+  } else if (lower.includes('carrel')) {
+    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN casque de chantier lourd pour intérieur. Carreleur au sol avec genouillères, peigne cranté et croisillons autonivelants.`;
+  }
+
+  prompt += `\n\nStyle : Prise de vue authentique amateur, aucun texte, aucun logo artificiel. Format paysage 3:2.`;
+  return prompt;
+}
+
+async function ouvrirGenerateurImagePlanning(id) {
+  const modal = document.getElementById('planning-img-modal');
+  const overlay = document.getElementById('planning-img-overlay');
+  if (!modal || !overlay) return;
+
+  let task = (window._currentPlanningRows || []).find(r => String(r.id) === String(id));
+  if (!task) {
+    const fetched = await sbGet('planning', `id=eq.${id}`);
+    task = (fetched && fetched[0]) ? fetched[0] : null;
+  }
+  if (!task) {
+    alert("Impossible de charger les détails de cette tâche.");
+    return;
+  }
+
+  modal.dataset.taskId = id;
+
+  const op = task.operateur || 'Kevin';
+  const isKevin = op.toLowerCase().includes('kevin');
+
+  document.getElementById('pimg-modal-title').textContent = `🎨 Photo Requise (50%) • ${task.fiche_nom}`;
+  document.getElementById('pimg-modal-subtitle').textContent = `Avis #${task.id} — Tâche éligible photo (génération manuelle ou relance robot)`;
+
+  document.getElementById('pimg-info-box').innerHTML = `
+    <div><span style="color:#64748b">Fiche :</span> <strong style="color:#f1f5f9">${task.fiche_nom}</strong></div>
+    <div><span style="color:#64748b">Ville :</span> <strong style="color:#38bdf8">${task.ville || '—'} (${task.pays || 'FR'})</strong></div>
+    <div><span style="color:#64748b">Opérateur :</span> <strong style="color:#a855f7">${op}</strong></div>
+    <div><span style="color:#64748b">Règle :</span> <strong style="color:#f59e0b">⚠️ 50% Photo requise</strong></div>
+  `;
+
+  // Construire le prompt optimisé
+  const promptText = construirePromptImagePlanning(task);
+  const promptTextarea = document.getElementById('pimg-prompt-text');
+  if (promptTextarea) promptTextarea.value = promptText;
+
+  // Résoudre l'URL de conversation ChatGPT
+  let gptUrl = 'https://chatgpt.com/';
+  if (window._fichesCache && Array.isArray(window._fichesCache)) {
+    const fMap = {};
+    for (const f of window._fichesCache) { if (f && f.nom) fMap[f.nom.toUpperCase()] = f.lien; }
+    if (isKevin) {
+      gptUrl = fMap['CHATGPT_WORK_CONVERSATION_URL_KEVIN'] || fMap['CHATGPT_CONVERSATION_URL_KEVIN'] || fMap['CHATGPT_PRO_CONVERSATION_URL_KEVIN'] || 'https://chatgpt.com/';
+    } else {
+      gptUrl = fMap['CHATGPT_WORK_CONVERSATION_URL_FIF'] || fMap['CHATGPT_CONVERSATION_URL_FIF'] || fMap['CHATGPT_PRO_CONVERSATION_URL_FIF'] || 'https://chatgpt.com/';
+    }
+  }
+  const chatGptLink = document.getElementById('pimg-chatgpt-link');
+  if (chatGptLink) {
+    chatGptLink.href = gptUrl;
+    chatGptLink.textContent = `💬 Ouvrir ChatGPT (${op})`;
+  }
+
+  // Lien Drive
+  const driveLink = document.getElementById('pimg-drive-link');
+  if (driveLink) {
+    driveLink.onclick = (e) => {
+      e.preventDefault();
+      openOperatorDriveFolder(op);
+    };
+    driveLink.textContent = `📁 Ouvrir Drive ${op}`;
+  }
+
+  // Lien GitHub Actions
+  const ghLink = document.getElementById('pimg-github-agent-link');
+  if (ghLink) {
+    ghLink.href = `https://github.com/bylys/suivi-avis/actions/workflows/gmb-image-${isKevin ? 'kevin' : 'fifa'}.yml`;
+    ghLink.textContent = `⚡ Relancer l'Agent IA (${op}) sur GitHub Actions`;
+  }
+
+  // Réinitialiser les champs
+  const urlInput = document.getElementById('pimg-url-input');
+  if (urlInput) urlInput.value = '';
+  const fileInput = document.getElementById('pimg-file-input');
+  if (fileInput) fileInput.value = '';
+
+  overlay.style.display = 'block';
+  modal.style.display = 'block';
+}
+
+function fermerModalImagePlanning() {
+  const modal = document.getElementById('planning-img-modal');
+  const overlay = document.getElementById('planning-img-overlay');
+  if (modal) modal.style.display = 'none';
+  if (overlay) overlay.style.display = 'none';
+}
+
+function copierPromptPlanning() {
+  const promptTextarea = document.getElementById('pimg-prompt-text');
+  const btn = document.getElementById('btn-copy-prompt');
+  if (!promptTextarea) return;
+  navigator.clipboard.writeText(promptTextarea.value).then(() => {
+    if (btn) {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '✅ Copié dans le presse-papier !';
+      btn.style.background = '#059669';
+      btn.style.borderColor = '#10b981';
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.style.background = '#334155';
+        btn.style.borderColor = '#475569';
+      }, 2500);
+    }
+    showToast('📋 Prompt copié ! Collez-le dans ChatGPT.', 'success', 3000);
+  }).catch(() => {
+    promptTextarea.select();
+    document.execCommand('copy');
+    showToast('📋 Prompt copié !', 'success', 3000);
+  });
+}
+
+async function sauvegarderPhotoPlanning() {
+  const modal = document.getElementById('planning-img-modal');
+  const taskId = modal?.dataset?.taskId;
+  if (!taskId) return;
+
+  const urlInput = document.getElementById('pimg-url-input');
+  const fileInput = document.getElementById('pimg-file-input');
+  const btn = document.getElementById('btn-save-photo');
+
+  let finalUrl = (urlInput?.value || '').trim();
+
+  // Si un fichier local a été sélectionné, on l'uploade vers Supabase Storage
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    const file = fileInput.files[0];
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Upload de la photo en cours...';
+
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const fileName = `manual_${taskId}_${Date.now()}.${ext}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${fileName}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': file.type || 'image/jpeg',
+          'x-upsert': 'true'
+        },
+        body: file
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      finalUrl = `${SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
+    } catch (upErr) {
+      alert("Erreur lors de l'upload de l'image : " + upErr.message);
+      btn.disabled = false;
+      btn.innerHTML = '✅ Enregistrer et valider la photo';
+      return;
+    }
+  }
+
+  if (!finalUrl || finalUrl.length < 5) {
+    alert("Veuillez renseigner une URL d'image (Google Drive / web) ou sélectionner un fichier image sur votre ordinateur.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '💾 Enregistrement...';
+
+  try {
+    const ok = await sbUpdate('planning', taskId, { url_image: finalUrl });
+    if (ok) {
+      showToast("✅ Photo enregistrée et associée avec succès à l'avis !", "success");
+      fermerModalImagePlanning();
+      await renderPlanning();
+    } else {
+      alert("Impossible de mettre à jour la tâche dans Supabase.");
+    }
+  } catch (err) {
+    alert("Erreur lors de la sauvegarde : " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✅ Enregistrer et valider la photo';
+  }
 }
 
 // ── GMAILS ──

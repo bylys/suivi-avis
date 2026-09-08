@@ -1193,8 +1193,10 @@ async function main() {
         }
         
         // En mode test fallback : on génère TOUTES les images de test (3 images). En prod : 1 sur 2 (50%).
-        const tasksToGenerate = isTestFallback ? tasks : tasks.filter((_, index) => index % 2 === 0);
-        console.log(`${tasksToGenerate.length} avis sélectionné(s) pour la génération d'image.`);
+        // Ne cibler que les tâches qui n'ont pas encore d'image générée (évite de régénérer si relancé en cours de journée)
+        const eligible50PercentTasks = isTestFallback ? tasks : tasks.filter((_, index) => index % 2 === 0);
+        const tasksToGenerate = eligible50PercentTasks.filter(t => !t.url_image || t.url_image.trim().length === 0);
+        console.log(`${tasksToGenerate.length} avis sélectionné(s) pour la génération d'image (${eligible50PercentTasks.length - tasksToGenerate.length} déjà prête(s) sur ${eligible50PercentTasks.length} tâches éligibles à 50%).`);
         
         if (tasksToGenerate.length === 0) {
             console.log("Aucune tâche trouvée dans la base de données.");
