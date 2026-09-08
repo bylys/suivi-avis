@@ -2224,7 +2224,7 @@ async function main() {
                 nbOuvriers = '2 ouvriers (1 opérateur et 1 assistant au sol)';
             } else if (metierText.includes('double vitrage') || metierText.includes('vitrine')) {
                 nbOuvriers = '2 artisans vitriers';
-            } else if (metierText.includes('terrasse') || metierText.includes('patio')) {
+            } else if ((metierText.includes('terrasse') && !metierText.includes('terrassement')) || metierText.includes('patio')) {
                 nbOuvriers = randWorker < 0.85 ? '1 artisan solo' : '2 artisans';
             } else if (metierText.includes('facade') || metierText.includes('façade') || metierText.includes('ravalement')) {
                 nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';

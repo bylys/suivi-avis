@@ -5046,13 +5046,27 @@ function construirePromptImagePlanning(task) {
     ? 'depuis le trottoir en angle oblique'
     : 'depuis la rue en face, angle oblique';
 
-  // Nombre d'ouvriers
-  const lowerTrade = (travauxLabel + ' ' + ficheNom).toLowerCase();
-  let nbOuvriers = '1 artisan solo';
-  if (lowerTrade.includes('haie') || lowerTrade.includes('taille')) {
+  // Nombre d'ouvriers selon les règles officielles par métier
+  const metierText = (lowerTrade + ' ' + nomL + ' ' + (task.metier || '')).toLowerCase();
+  const randWorker = Math.random();
+  let nbOuvriers = '1 ou 2 artisans';
+
+  if (metierText.includes('haie') || metierText.includes('taille')) {
     nbOuvriers = 'exactement 2 ouvriers en duo';
-  } else if (['couvreur', 'couverture', 'gouttiere', 'gouttière', 'charpente', 'maconnerie', 'maçonnerie', 'terrassement', 'elagage', 'élagage'].some(k => lowerTrade.includes(k))) {
-    nbOuvriers = '2 ouvriers';
+  } else if (metierText.includes('debroussaillage') || metierText.includes('débroussaillage') || metierText.includes('dessouchage')) {
+    nbOuvriers = '2 ouvriers (1 opérateur et 1 assistant au sol)';
+  } else if (metierText.includes('double vitrage') || metierText.includes('vitrine')) {
+    nbOuvriers = '2 artisans vitriers';
+  } else if ((metierText.includes('terrasse') && !metierText.includes('terrassement')) || metierText.includes('patio')) {
+    nbOuvriers = randWorker < 0.85 ? '1 artisan solo' : '2 artisans';
+  } else if (metierText.includes('facade') || metierText.includes('façade') || metierText.includes('ravalement')) {
+    nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
+  } else if (metierText.includes('demoussage') || metierText.includes('démoussage') || (metierText.includes('nettoyage') && metierText.includes('toiture'))) {
+    nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
+  } else if (['couvreur', 'couverture', 'gouttiere', 'gouttière', 'cheneau', 'chéneau', 'zinguerie', 'elagage', 'élagage', 'abattage', 'charpente', 'maconnerie', 'maçonnerie', 'terrassement'].some(k => metierText.includes(k))) {
+    nbOuvriers = randWorker < 0.70 ? '2 ouvriers' : '3 ouvriers';
+  } else {
+    nbOuvriers = randWorker < 0.60 ? '1 artisan solo' : '2 artisans';
   }
 
   const lumiere = 'lumière naturelle du jour, ciel légèrement voilé';
