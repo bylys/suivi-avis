@@ -5245,10 +5245,162 @@ function copierPromptPlanning() {
   });
 }
 
+// ── INJECTION EXIF & GPS CLIENT POUR LE PLANNING (Canvas -> JPEG Pur -> EXIF Smartphone) ──
+
+const KNOWN_CITIES_CLIENT = {
+  'nantes': { lat: 47.218371, lng: -1.553621 },
+  'quimper': { lat: 48.000000, lng: -4.100000 },
+  'valence': { lat: 44.933333, lng: 4.891667 },
+  'lyon': { lat: 45.764043, lng: 4.835659 },
+  'bordeaux': { lat: 44.837789, lng: -0.579180 },
+  'mérignac': { lat: 44.838500, lng: -0.644100 },
+  'merignac': { lat: 44.838500, lng: -0.644100 },
+  'pessac': { lat: 44.806700, lng: -0.631100 },
+  'talence': { lat: 44.807800, lng: -0.590800 },
+  'bègles': { lat: 44.808600, lng: -0.548900 },
+  'begles': { lat: 44.808600, lng: -0.548900 },
+  'lille': { lat: 50.629250, lng: 3.057256 },
+  'paris': { lat: 48.856614, lng: 2.352222 },
+  'marseille': { lat: 43.296482, lng: 5.369780 },
+  'toulouse': { lat: 43.604652, lng: 1.444209 },
+  'nice': { lat: 43.710173, lng: 7.261953 },
+  'strasbourg': { lat: 48.573405, lng: 7.752111 },
+  'montpellier': { lat: 43.610769, lng: 3.876716 },
+  'rennes': { lat: 48.117266, lng: -1.677793 },
+  'grenoble': { lat: 45.188529, lng: 5.724524 },
+  'rouen': { lat: 49.443232, lng: 1.099971 },
+  'toulon': { lat: 43.124228, lng: 5.928000 },
+  'angers': { lat: 47.478419, lng: -0.563166 },
+  'dijon': { lat: 47.322047, lng: 5.041480 },
+  'brest': { lat: 48.390394, lng: -4.486076 },
+  'tours': { lat: 47.394144, lng: 0.684840 },
+  'clermont-ferrand': { lat: 45.777222, lng: 3.087025 },
+  'agen': { lat: 44.203142, lng: 0.616363 },
+  'bruxelles': { lat: 50.850346, lng: 4.351721 },
+  'liege': { lat: 50.632557, lng: 5.579666 },
+  'geneve': { lat: 46.204391, lng: 6.143158 },
+  'lausanne': { lat: 46.519653, lng: 6.632273 },
+  'montreal': { lat: 45.501689, lng: -73.567256 },
+  'quebec': { lat: 46.813878, lng: -71.207981 }
+};
+
+function degToDmsRationalClient(degFloat) {
+  const absolute = Math.abs(degFloat);
+  const degrees = Math.floor(absolute);
+  const minutesNotTruncated = (absolute - degrees) * 60;
+  const minutes = Math.floor(minutesNotTruncated);
+  const seconds = Math.floor((minutesNotTruncated - minutes) * 60 * 100);
+  return [
+    [degrees, 1],
+    [minutes, 1],
+    [seconds, 100],
+  ];
+}
+
+async function injecterExifEtGpsFichierClient(file, task) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const img = new Image();
+        img.onload = async () => {
+          // 1. Dessiner sur Canvas pour convertir en JPEG pur (suppression définitive des filigranes numériques C2PA d'OpenAI)
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+          if (typeof piexif === 'undefined') {
+            const blob = await (await fetch(jpegDataUrl)).blob();
+            return resolve(blob);
+          }
+
+          // 2. Coordonnées GPS
+          const cityName = (task?.ville || 'Paris').toLowerCase().trim()
+            .replace(/[éèê]/g, 'e').replace(/[àâ]/g, 'a').replace(/[îï]/g, 'i').replace(/[ôö]/g, 'o');
+          let coords = KNOWN_CITIES_CLIENT[cityName] || { lat: 48.856614, lng: 2.352222 };
+          const jitterLat = (Math.random() - 0.5) * 0.005;
+          const jitterLng = (Math.random() - 0.5) * 0.005;
+          const lat = coords.lat + jitterLat;
+          const lng = coords.lng + jitterLng;
+
+          // 3. Modèle Smartphone
+          const phones = [
+            { make: 'Apple', model: 'iPhone 15 Pro', software: '17.5', focalLength: [68, 10] },
+            { make: 'Apple', model: 'iPhone 14', software: '16.6', focalLength: [57, 10] },
+            { make: 'Samsung', model: 'Galaxy S24', software: 'S921BXXU1AXB5', focalLength: [54, 10] },
+            { make: 'Samsung', model: 'Galaxy A55 5G', software: 'A556BXXU1AXB8', focalLength: [52, 10] },
+            { make: 'Xiaomi', model: 'Redmi Note 13 Pro', software: 'HyperOS 1.0.2', focalLength: [54, 10] },
+            { make: 'Google', model: 'Pixel 8', software: 'UD1A.230803.041', focalLength: [68, 10] }
+          ];
+          const phone = phones[Math.floor(Math.random() * phones.length)];
+
+          // 4. Date de prise de vue naturelle
+          let baseDate = new Date();
+          if (task?.date && /^\d{4}-\d{2}-\d{2}$/.test(task.date)) {
+            const [y, m, d] = task.date.split('-').map(Number);
+            baseDate = new Date(y, m - 1, d);
+          }
+          const daysBefore = Math.floor(Math.random() * (21 - 3 + 1)) + 3;
+          const photoDate = new Date(baseDate.getTime() - daysBefore * 24 * 60 * 60 * 1000);
+          photoDate.setHours(Math.floor(Math.random() * (18 - 8 + 1)) + 8, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60));
+          const pad = (n) => String(n).padStart(2, '0');
+          const dateStr = `${photoDate.getFullYear()}:${pad(photoDate.getMonth() + 1)}:${pad(photoDate.getDate())} ${pad(photoDate.getHours())}:${pad(photoDate.getMinutes())}:${pad(photoDate.getSeconds())}`;
+
+          // 5. Blocs EXIF
+          const gpsIfd = {};
+          gpsIfd[piexif.GPSIFD.GPSLatitudeRef] = lat >= 0 ? 'N' : 'S';
+          gpsIfd[piexif.GPSIFD.GPSLatitude] = degToDmsRationalClient(lat);
+          gpsIfd[piexif.GPSIFD.GPSLongitudeRef] = lng >= 0 ? 'E' : 'W';
+          gpsIfd[piexif.GPSIFD.GPSLongitude] = degToDmsRationalClient(lng);
+          gpsIfd[piexif.GPSIFD.GPSDateStamp] = `${photoDate.getFullYear()}:${pad(photoDate.getMonth() + 1)}:${pad(photoDate.getDate())}`;
+
+          const zerothIfd = {};
+          zerothIfd[piexif.ImageIFD.Make] = phone.make;
+          zerothIfd[piexif.ImageIFD.Model] = phone.model;
+          zerothIfd[piexif.ImageIFD.Software] = phone.software;
+          zerothIfd[piexif.ImageIFD.DateTime] = dateStr;
+
+          const exifIfd = {};
+          exifIfd[piexif.ExifIFD.DateTimeOriginal] = dateStr;
+          exifIfd[piexif.ExifIFD.DateTimeDigitized] = dateStr;
+          exifIfd[piexif.ExifIFD.FocalLength] = phone.focalLength;
+          exifIfd[piexif.ExifIFD.FNumber] = [18, 10];
+          exifIfd[piexif.ExifIFD.ISOSpeedRatings] = [100, 125, 160, 200, 250, 320][Math.floor(Math.random() * 6)];
+
+          const exifObj = { '0th': zerothIfd, 'Exif': exifIfd, 'GPS': gpsIfd };
+          const exifBytes = piexif.dump(exifObj);
+          const finalDataUrl = piexif.insert(exifBytes, jpegDataUrl);
+
+          const res = await fetch(finalDataUrl);
+          const finalBlob = await res.blob();
+          console.log(`📍 [Planning] EXIF & GPS injectés avec succès (${phone.make} ${phone.model}, ${task?.ville || 'Paris'})`);
+          resolve(finalBlob);
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target.result;
+      } catch (err) {
+        console.warn("Note injection EXIF client :", err);
+        resolve(file);
+      }
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
 async function sauvegarderPhotoPlanning() {
   const modal = document.getElementById('planning-img-modal');
   const taskId = modal?.dataset?.taskId;
   if (!taskId) return;
+
+  let task = (window._currentPlanningRows || []).find(r => String(r.id) === String(taskId));
+  if (!task) {
+    const fetched = await sbGet('planning', `id=eq.${taskId}`);
+    task = (fetched && fetched[0]) ? fetched[0] : null;
+  }
 
   const urlInput = document.getElementById('pimg-url-input');
   const fileInput = document.getElementById('pimg-file-input');
@@ -5256,24 +5408,32 @@ async function sauvegarderPhotoPlanning() {
 
   let finalUrl = (urlInput?.value || '').trim();
 
-  // Si un fichier local a été sélectionné, on l'uploade vers Supabase Storage
+  // Si un fichier local a été sélectionné, on nettoie le C2PA, injecte les métadonnées EXIF & GPS, puis on l'uploade
   if (fileInput && fileInput.files && fileInput.files[0]) {
-    const file = fileInput.files[0];
+    const rawFile = fileInput.files[0];
     btn.disabled = true;
-    btn.innerHTML = '⏳ Upload de la photo en cours...';
+    btn.innerHTML = '⚙️ Traitement EXIF & GPS smartphone...';
+
+    let fileToUpload = rawFile;
+    try {
+      fileToUpload = await injecterExifEtGpsFichierClient(rawFile, task);
+    } catch (exErr) {
+      console.warn("Note injection EXIF :", exErr);
+    }
+
+    btn.innerHTML = '⏳ Upload de la photo sécurisée en cours...';
 
     try {
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const fileName = `manual_${taskId}_${Date.now()}.${ext}`;
+      const fileName = `manual_${taskId}_${Date.now()}.jpg`;
       const res = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${fileName}`, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': file.type || 'image/jpeg',
+          'Content-Type': 'image/jpeg',
           'x-upsert': 'true'
         },
-        body: file
+        body: fileToUpload
       });
       if (!res.ok) {
         throw new Error(await res.text());
