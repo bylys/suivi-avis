@@ -4049,7 +4049,7 @@ async function renderPlanning() {
             const isPhotoRequired = (idx % 2 === 0);
             const photoUrl = r.url_image || r.image_url || r.drive_url;
             return `
-            <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}">
+            <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}" data-operateur="${op}" data-ville="${r.ville || ''}">
               <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
               <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#a5b4fc">${r.gmail}</td>
               <td style="padding:7px 10px;color:#e2e8f0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fiche_nom}">${r.fiche_nom}</td>
@@ -4084,7 +4084,7 @@ async function renderPlanning() {
               </td>
               <td style="padding:7px 10px;white-space:nowrap">
                 ${r.statut === 'pending' || r.statut === 'generated' ? `
-                  <button onclick="planningGenerer('${r.id}','${r.fiche_nom.replace(/'/g,"\\'")}','${r.gmail}')"
+                  <button onclick="planningGenerer('${r.id}','${r.fiche_nom.replace(/'/g,"\\'")}','${r.gmail}','${op}')"
                     style="padding:3px 10px;border-radius:5px;background:#6366f1;color:#fff;border:none;cursor:pointer;font-size:12px;margin-right:4px">
                     ✍️ Générer
                   </button>
@@ -4383,7 +4383,7 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
 
   const opClean = operateurRaw.toLowerCase().includes('fif') ? 'Fifiana'
     : operateurRaw.toLowerCase().includes('kevin') ? 'Kevin'
-    : operateurRaw ? (operateurRaw.trim().charAt(0).toUpperCase() + operateurRaw.trim().slice(1))
+    : (operateurRaw && /^[a-zA-ZÀ-ÿ\s-]{2,20}$/.test(operateurRaw.trim())) ? (operateurRaw.trim().charAt(0).toUpperCase() + operateurRaw.trim().slice(1))
     : (localStorage.getItem('gmb_operateur') || 'Kevin');
 
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
@@ -4638,7 +4638,7 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRa
 
   const opClean = operateurRaw.toLowerCase().includes('fif') ? 'Fifiana'
     : operateurRaw.toLowerCase().includes('kevin') ? 'Kevin'
-    : operateurRaw ? (operateurRaw.trim().charAt(0).toUpperCase() + operateurRaw.trim().slice(1))
+    : (operateurRaw && /^[a-zA-ZÀ-ÿ\s-]{2,20}$/.test(operateurRaw.trim())) ? (operateurRaw.trim().charAt(0).toUpperCase() + operateurRaw.trim().slice(1))
     : (localStorage.getItem('gmb_operateur') || 'Kevin');
 
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
@@ -4882,13 +4882,13 @@ async function donutRafraichirProxy() {
   );
 }
 
-async function planningGenerer(id, ficheNom, gmail) {
+async function planningGenerer(id, ficheNom, gmail, operateur = '') {
   await sbUpdate('planning', id, { statut: 'generated' });
 
   // Extraire la ville principale depuis la fiche GMB (priorité absolue)
   // Fallback sur la ville de la ligne du planning si non trouvée
   const row = document.getElementById(`planning-row-${id}`);
-  const rowVille = row ? row.querySelector('td')?.textContent?.trim() : '';
+  const rowVille = row?.dataset?.ville || (row ? row.querySelector('td')?.textContent?.trim() : '');
   const villeExtraite = extraireVilleFiche(ficheNom);
   const ville = (villeExtraite && villeExtraite !== ficheNom)
     ? villeExtraite
@@ -4934,10 +4934,10 @@ async function planningGenerer(id, ficheNom, gmail) {
   if (ville && ville !== '—') {
     const engine = localStorage.getItem('antidetect_engine') || 'gologin';
     if (engine !== 'none') {
-      const rowOp   = (row ? (row.querySelector('td:nth-child(4)')?.textContent || row.dataset?.operateur || '') : '').toLowerCase();
-      const opSaved = (localStorage.getItem('gmb_operateur') || '').toLowerCase();
-      const opVal   = (document.getElementById('planning-operateur')?.value || '').toLowerCase();
-      const rawOpStr = rowOp || opSaved || opVal || '';
+      const opFromRow = row?.dataset?.operateur || '';
+      const opSaved   = localStorage.getItem('gmb_operateur') || '';
+      const opVal     = document.getElementById('planning-operateur')?.value || '';
+      const rawOpStr  = (operateur || opFromRow || opSaved || opVal || 'Kevin').trim();
 
       try {
         const ficheObj = (window._fichesCache || []).find(f => f.nom === ficheNom || f.nom_clean === ficheNom);
