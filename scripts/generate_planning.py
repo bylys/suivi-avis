@@ -8,7 +8,7 @@ Génère le planning quotidien des avis GMB.
 - Envoie le planning sur Slack par opérateur
 """
 
-import os, sys, json, urllib.request, urllib.error, urllib.parse
+import os, sys, json, re, urllib.request, urllib.error, urllib.parse
 from datetime import date, datetime
 from collections import defaultdict, Counter
 import random
@@ -278,14 +278,26 @@ def extract_metier(fiche_nom):
         return 'electricien'
     return 'autre'
 
-def create_gologin_profile(gmail, ville, fiche_nom=''):
+def shorten_gmb_name(name, city=''):
+    if not name:
+        return 'GMB'
+    s = re.split(r'\s*[-–—|:]\s*', name)[0].strip()
+    s = re.sub(r'\s+\d{2,5}$', '', s).strip()
+    if city:
+        s = re.sub(r'(\s+|-|_)' + re.escape(city.strip()) + r'$', '', s, flags=re.IGNORECASE).strip()
+    if len(s) > 30:
+        s = s[:30].strip()
+    return s or 'GMB'
+
+def create_gologin_profile(gmail, ville, fiche_nom='', operateur=''):
     if not GOLOGIN_TOKEN:
         return None
     folder_id = get_gologin_folder_id()
 
-    metier = extract_metier(fiche_nom)
-    ville_slug = normalize_city_for_proxy(ville)
-    profile_name = f"GMB_{metier}_{ville_slug}"
+    ville_clean = ville.strip().capitalize() if ville else 'France'
+    op_clean = 'Fifiana' if 'fif' in (operateur or '').lower() else ('Kevin' if 'kevin' in (operateur or '').lower() else ((operateur or '').strip().capitalize() if operateur else 'Kevin'))
+    gmb_court = shorten_gmb_name(fiche_nom, ville_clean)
+    profile_name = f"{gmb_court}_{ville_clean}_{op_clean}"
 
     proxy_config = {"mode": "none"}
     if DECODO_USER and DECODO_PASS:

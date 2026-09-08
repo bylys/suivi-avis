@@ -4350,6 +4350,23 @@ function getCountryConfig(paysRaw = 'FR') {
   }
 }
 
+function raccourcirNomGmb(nom, ville = '') {
+  if (!nom || typeof nom !== 'string') return 'GMB';
+  let s = nom.split(/\s*[-–—|:]\s*/)[0].trim();
+  s = s.replace(/\s+\d{2,5}$/, '').trim();
+  if (ville) {
+    const vClean = ville.trim();
+    if (vClean) {
+      const reEnd = new RegExp('(\\s+|-|_)' + vClean.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i');
+      s = s.replace(reEnd, '').trim();
+    }
+  }
+  if (s.length > 30) {
+    s = s.slice(0, 30).trim();
+  }
+  return s || 'GMB';
+}
+
 async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '') {
   const countryCfg  = getCountryConfig(pays);
   const rawCitySlug = normalizeCityForProxy(ville);
@@ -4367,10 +4384,11 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
   const opClean = operateurRaw.toLowerCase().includes('fif') ? 'Fifiana'
     : operateurRaw.toLowerCase().includes('kevin') ? 'Kevin'
     : operateurRaw ? (operateurRaw.trim().charAt(0).toUpperCase() + operateurRaw.trim().slice(1))
-    : 'Kevin';
+    : (localStorage.getItem('gmb_operateur') || 'Kevin');
 
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
-  const profileName = `${opClean}_GMB_${villeClean}`;
+  const gmbCourt = raccourcirNomGmb(ficheNom, villeClean);
+  const profileName = `${gmbCourt}_${villeClean}_${opClean}`;
 
   const isHostWindows = typeof navigator !== 'undefined' && /Windows|Win32/i.test(navigator.userAgent || navigator.platform || '');
   const desktopOs = isHostWindows ? 'win' : 'mac';
@@ -4590,7 +4608,7 @@ async function testDonutConnection() {
   }
 }
 
-async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
+async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '') {
   const token = getDonutToken();
   if (!token) {
     alert('Configure ton token DonutBrowser dans ⚙️ Config DonutBrowser (section Planning).');
@@ -4618,14 +4636,14 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR') {
   const usernameCityPrimary   = `${baseUser}-country-${countryCfg.pays.toLowerCase()}-city-${citySlug}${sessionSuffix}`;
   const usernameCitySecondary = `${baseUser}-country-${countryCfg.pays.toLowerCase()}-city-${backupSlug}${sessionSuffix}`;
 
-  const metier = ficheNom.toLowerCase().includes('couvreur') ? 'couvreur'
-    : ficheNom.toLowerCase().includes('paysagiste') ? 'paysagiste'
-    : ficheNom.toLowerCase().includes('peintre') ? 'peintre'
-    : ficheNom.toLowerCase().includes('plombier') ? 'plombier'
-    : ficheNom.toLowerCase().includes('electricien') ? 'electricien'
-    : ficheNom.toLowerCase().includes('elagage') ? 'elagage'
-    : 'gmb';
-  const profileName = isMobile ? `GMB_${metier}_${citySlug}_Mob` : `GMB_${metier}_${citySlug}`;
+  const opClean = operateurRaw.toLowerCase().includes('fif') ? 'Fifiana'
+    : operateurRaw.toLowerCase().includes('kevin') ? 'Kevin'
+    : operateurRaw ? (operateurRaw.trim().charAt(0).toUpperCase() + operateurRaw.trim().slice(1))
+    : (localStorage.getItem('gmb_operateur') || 'Kevin');
+
+  const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
+  const gmbCourt   = raccourcirNomGmb(ficheNom, villeClean);
+  const profileName = `${gmbCourt}_${villeClean}_${opClean}`;
 
   const _fetchTimeout = (url, opts, ms = 8000) => {
     const ctrl = new AbortController();
@@ -4929,7 +4947,7 @@ async function planningGenerer(id, ficheNom, gmail) {
           await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
         } else if (engine === 'donut') {
           if (getDonutToken()) {
-            await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+            await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
           } else {
             showToast('⚠️ Token DonutBrowser manquant dans ⚙️ Config Anti-Detect.', 'warn', 6000);
           }
@@ -4938,10 +4956,10 @@ async function planningGenerer(id, ficheNom, gmail) {
           if (isKevinOrFif) {
             const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
             if (!glRes && getDonutToken()) {
-              await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+              await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
             }
           } else if (getDonutToken()) {
-            await donutCreerProfil(ville, gmail, ficheNom, rowPays);
+            await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
           }
         }
       } catch (e) {
