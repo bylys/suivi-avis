@@ -5057,6 +5057,8 @@ function construirePromptImagePlanning(task) {
     nbOuvriers = '2 ouvriers (1 opérateur et 1 assistant au sol)';
   } else if (metierText.includes('double vitrage') || metierText.includes('vitrine')) {
     nbOuvriers = '2 artisans vitriers';
+  } else if (metierText.includes('vitrier') || metierText.includes('vitrerie') || metierText.includes('vitre') || metierText.includes('fenêtre') || metierText.includes('fenetre') || metierText.includes('miroir')) {
+    nbOuvriers = randWorker < 0.40 ? '1 artisan vitrier' : '2 artisans vitriers';
   } else if ((metierText.includes('terrasse') && !metierText.includes('terrassement')) || metierText.includes('patio')) {
     nbOuvriers = randWorker < 0.85 ? '1 artisan solo' : '2 artisans';
   } else if (metierText.includes('facade') || metierText.includes('façade') || metierText.includes('ravalement')) {
@@ -5064,9 +5066,9 @@ function construirePromptImagePlanning(task) {
   } else if (metierText.includes('demoussage') || metierText.includes('démoussage') || (metierText.includes('nettoyage') && metierText.includes('toiture'))) {
     nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
   } else if (['couvreur', 'couverture', 'gouttiere', 'gouttière', 'cheneau', 'chéneau', 'zinguerie', 'elagage', 'élagage', 'abattage', 'charpente', 'maconnerie', 'maçonnerie', 'terrassement'].some(k => metierText.includes(k))) {
-    nbOuvriers = randWorker < 0.70 ? '2 ouvriers' : '3 ouvriers';
+    nbOuvriers = randWorker < 0.55 ? '2 ouvriers' : '3 ouvriers';
   } else {
-    nbOuvriers = randWorker < 0.60 ? '1 artisan solo' : '2 artisans';
+    nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
   }
 
   const lumiere = 'lumière naturelle du jour, ciel légèrement voilé';
