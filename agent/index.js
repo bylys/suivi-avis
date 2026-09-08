@@ -2324,8 +2324,17 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        // Réutilisation du même fil de discussion pour l'opérateur (évite le spamming de conversations)
-                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url || 'https://chatgpt.com/';
+                        // RÈGLE DU JOUR : 1 seule conversation par jour et par opérateur.
+                        // La 1ère tâche du jour démarre toujours sur une NOUVELLE conversation vierge (jamais d'ancien fil /c/ des jours précédents).
+                        // Dès que la 1ère image est créée, activePlanUrls[plan.key] conserve ce fil unique pour TOUTES les autres images de la journée !
+                        const initialDayBaseUrl = (plan.url && !plan.url.includes('/c/')) ? plan.url : 'https://chatgpt.com/';
+                        const targetUrlToUse = activePlanUrls[plan.key] || initialDayBaseUrl;
+                        if (activePlanUrls[plan.key]) {
+                            console.log(`📌 [${plan.name}] Suite dans le fil unique de la journée : ${activePlanUrls[plan.key]}`);
+                        } else {
+                            console.log(`🆕 [${plan.name}] 1ère tâche du jour : ouverture d'une nouvelle conversation dédiée pour la journée...`);
+                        }
+
                         const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse, secureRichPrompt);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
@@ -2333,7 +2342,7 @@ async function main() {
                             usedPlanName = plan.name;
                             if (res.finalUrl && res.finalUrl.includes('/c/')) {
                                 activePlanUrls[plan.key] = res.finalUrl;
-                                console.log(`📌 Fil de conversation unique conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
+                                console.log(`📌 Fil unique du jour validé et conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
                             }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
