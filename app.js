@@ -5031,39 +5031,48 @@ function construirePromptImagePlanning(task) {
     }
   }
 
-  // Header anti-inversion et consigne from scratch
-  let prompt = `🔴 NOUVEAU CHANTIER TOTALEMENT INDÉPENDANT. CONSIGNE STRICTE DALL-E : Génère une photo originale complète from scratch pour ce nouveau client.\n`;
-  prompt += `Photo ultra-réaliste prise sur le vif au smartphone (iPhone / Samsung Galaxy) sans retouche ni effet 3D, illustrant un chantier réel en France à ${locationStr}.\n`;
-  prompt += `Sujet : ${travauxLabel} pour l'artisan / entreprise "${ficheNom}".\n`;
-  prompt += `Un artisan français qualifié en tenue de travail propre avec EPI (de dos ou de trois-quarts pour préserver l'anonymat), concentré sur son geste technique.\n`;
-  prompt += `Environnement résidentiel typiquement français, architecture locale en briques ou enduit, lumière naturelle du jour.\n`;
-
-  // Interdictions de sécurité strictes selon le métier
-  const lower = travauxLabel.toLowerCase() + ' ' + nomL;
-  if (lower.includes('vitr')) {
-    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN couvreur, AUCUN jardinier. Vitrier professionnel manipulant le vitrage avec ventouses adaptées.`;
-  } else if (lower.includes('charpente')) {
-    prompt += `\n❌ INTERDICTION : AUCUN jardinier, AUCUNE dépanneuse. Charpentiers sur ossature bois avec échafaudage sécurisé et harnais.`;
-  } else if (lower.includes('demoussage') || lower.includes('nettoyage toiture') || lower.includes('nettoyage')) {
-    prompt += `\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau appuyé contre le toit ou la façade (travail sur échelle formellement interdit), AUCUN travailleur marchant ou debout directement sur les tuiles ou sur le faîtage du toit. Nettoyage basse/haute pression au sol avec perche télescopique ou depuis nacelle sécurisée.`;
-  } else if (lower.includes('etancheite') || lower.includes('toit plat')) {
-    prompt += `\n❌ INTERDICTION : Toiture 100% PLATE (membrane bitumineuse / EPDM / PVC). AUCUN toit en pente à tuiles, AUCUN arbre coupé.`;
-  } else if (lower.includes('facade') || lower.includes('ravalement')) {
-    prompt += `\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau en façade (travail sur échelle strictement interdit). UNIQUEMENT artisans façadiers sur échafaudage réglementaire avec garde-corps ou travaillant au sol.`;
-  } else if (lower.includes('couvr') || lower.includes('toiture')) {
-    prompt += `\n❌ INTERDICTION FORMELLE : AUCUNE échelle posée contre le toit ou le mur, AUCUN ouvrier debout ou marchant directement sur les tuiles en pente du toit sans protection. Couvreurs UNIQUEMENT sur échafaudage de sécurité avec garde-corps le long de la rive ou au sol.`;
-  } else if (lower.includes('elag') || lower.includes('abattage') || lower.includes('jardin')) {
-    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT jardiniers / élagueurs au sol dans un jardin avec pelouse et végétation.`;
-  } else if (lower.includes('depann') || lower.includes('auto') || lower.includes('remorqu')) {
-    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN échafaudage. UNIQUEMENT dépanneuse avec treuil ou technicien en gilet haute visibilité jaune fluo sur le véhicule.`;
-  } else if (lower.includes('debarras')) {
-    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN engin de chantier lourd. Professionnels avec cartons, diables et véhicule utilitaire de déménagement.`;
-  } else if (lower.includes('carrel')) {
-    prompt += `\n❌ INTERDICTION : AUCUN toit, AUCUN casque de chantier lourd pour intérieur. Carreleur au sol avec genouillères, peigne cranté et croisillons autonivelants.`;
+  // Construction des interdictions selon le métier
+  const lower = (travauxLabel || '').toLowerCase() + ' ' + nomL;
+  let interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse.";
+  if (lower.includes('elag') || lower.includes('abattage') || lower.includes('jardin') || lower.includes('arbre') || lower.includes('paysag')) {
+    interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT jardiniers / élagueurs au sol dans un jardin avec pelouse et végétation.";
+  } else if (lower.includes('vitr') || lower.includes('fenêtre')) {
+    interdiction = "AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
+  } else if (lower.includes('demoussage') || lower.includes('nettoyage toiture') || (lower.includes('nettoyage') && lower.includes('toiture'))) {
+    interdiction = "AUCUNE échelle, AUCUN escabeau appuyé contre la toiture ou la façade (travail sur échelle formellement interdit), AUCUN travailleur marchant ou debout sur les tuiles ou sur le faîtage du toit (interdiction absolue de marcher sur le toit en pente). Nettoyage basse/haute pression 100% au sol avec perche télescopique ou nacelle élévatrice sécurisée.";
+  } else if (lower.includes('gouttière') || lower.includes('gouttiere') || lower.includes('chéneau') || lower.includes('cheneau') || lower.includes('descente')) {
+    interdiction = "AUCUNE échelle, AUCUN escabeau en appui contre la façade ou la gouttière (le travail sur échelle est strictement interdit). UNIQUEMENT intervention sécurisée depuis un échafaudage réglementaire avec garde-corps le long de la rive ou techniciens travaillant au sol.";
+  } else if (lower.includes('couvr') || lower.includes('toiture') || lower.includes('tuile')) {
+    interdiction = "AUCUNE échelle, AUCUN escabeau posé contre le mur ou sur la toiture (travail sur échelle formellement interdit), AUCUN travailleur debout ou marchant directement sur les tuiles en pente du toit ou sur le faîtage sans protection ! Artisans couvreurs UNIQUEMENT sur échafaudage de sécurité avec garde-corps le long de la rive du toit ou travaillant au sol.";
+  } else if (lower.includes('facade') || lower.includes('ravalement') || lower.includes('crepi') || lower.includes('enduit')) {
+    interdiction = "AUCUNE échelle, AUCUN escabeau en extérieur contre la façade (travail sur échelle strictement interdit). UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs avec échafaudage sécurisé avec garde-corps ou au sol.";
+  } else if (lower.includes('etancheite') || lower.includes('toit plat') || lower.includes('terrasse')) {
+    interdiction = "PAS d'arbre, AUCUN jardinier, AUCUN toit en pente avec tuiles ! Le toit DOIT ÊTRE 100% PLAT (toiture terrasse avec membrane bitumineuse, EPDM ou résine liquide).";
+  } else if (lower.includes('charpente') || lower.includes('fermette') || lower.includes('ossature')) {
+    interdiction = "AUCUN jardinier, AUCUN sécateur, AUCUNE dépanneuse. UNIQUEMENT des travaux de charpente, menuiserie et structures bois par des charpentiers qualifiés avec harnais et échafaudages sécurisés.";
+  } else if (lower.includes('macon') || lower.includes('beton') || lower.includes('parpaing')) {
+    interdiction = "AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre. UNIQUEMENT des maçons professionnels travaillant avec parpaings, béton, mortier, truelles, échafaudage de maçonnerie sécurisé ou au sol.";
+  } else if (lower.includes('depann') || lower.includes('auto') || lower.includes('remorqu') || lower.includes('voiture')) {
+    interdiction = "AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre. UNIQUEMENT dépanneuse à plateau, technicien avec gilet haute visibilité jaune fluo intervenant sur un véhicule.";
+  } else if (lower.includes('debarras') || lower.includes('encombrant')) {
+    interdiction = "AUCUN toit, AUCUN engin de terrassement lourd. UNIQUEMENT des professionnels du débarras avec diables de manutention, cartons empilés et camionnette utilitaire.";
+  } else if (lower.includes('carrel') || lower.includes('faïence')) {
+    interdiction = "AUCUN toit, AUCUN couvreur, AUCUN casque de chantier lourd pour la pose intérieure. UNIQUEMENT artisan carreleur à genoux avec genouillères, mortier-colle, peigne cranté et croisillons autonivelants.";
+  } else if (lower.includes('peint')) {
+    interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT artisan peintre avec rouleau microfibres, bac à peinture et bâches de protection au sol.";
+  } else if (lower.includes('terrassement') || lower.includes('mini-pelle') || lower.includes('excavation')) {
+    interdiction = "AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre. UNIQUEMENT des travaux de terrassement au sol, excavation, mini-pelle ou nivellement.";
   }
 
-  prompt += `\n\nStyle : Prise de vue authentique amateur, aucun texte, aucun logo artificiel. Format paysage 3:2.`;
-  return prompt;
+  return `🔴 NOUVEAU CHANTIER TOTALEMENT INDÉPENDANT. CONSIGNE STRICTE DALL-E : Génère une photo originale complète from scratch pour ce nouveau client.
+Photo ultra-réaliste prise sur le vif au smartphone (iPhone / Samsung Galaxy) sans retouche ni effet 3D, illustrant un chantier réel en France à ${locationStr}.
+Sujet : ${travauxLabel} pour l'artisan / entreprise "${ficheNom}".
+Un artisan français qualifié en tenue de travail propre avec EPI (de dos ou de trois-quarts pour préserver l'anonymat), concentré sur son geste technique.
+Environnement résidentiel typiquement français, architecture locale en briques ou enduit, lumière naturelle du jour.
+
+❌ INTERDICTION : ${interdiction}
+
+Style : Prise de vue authentique amateur, aucun texte, aucun logo artificiel. Format paysage 3:2.`;
 }
 
 async function ouvrirGenerateurImagePlanning(id) {
