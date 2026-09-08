@@ -1484,7 +1484,6 @@ async function main() {
         }
 
         console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
-        const activePlanUrls = {};
 
         // Formatage de la date courte pour le nom du fichier et du dossier Drive (ex: 27-08-26)
         const targetDateObj = dateStr ? new Date(dateStr + 'T12:00:00Z') : new Date();
@@ -2234,7 +2233,7 @@ async function main() {
                 negativeConstraint = "\n\n❌ INTERDICTION : AUCUN jardinier, AUCUN sécateur, AUCUN taille-haie, AUCUNE dépanneuse. UNIQUEMENT des travaux de charpente, menuiserie et structures bois par des charpentiers qualifiés avec harnais et échafaudages sécurisés.";
             } else if (lowerLabel.includes('démoussage') || lowerLabel.includes('nettoyage toiture') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture')) || lowerLabel.includes('panneau') || lowerLabel.includes('solaire') || lowerLabel.includes('allée') || lowerLabel.includes('allee') || lowerLabel.includes('dallage')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: EXTERIOR CLEANING (NETTOYAGE TOITURE, FAÇADE, TERRASSE, PANNEAUX SOLAIRES OU GOUTTIÈRES).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau appuyé contre la toiture ou la façade (travail sur échelle formellement interdit), AUCUN travailleur marchant sur tuiles glissantes, AUCUN arbre coupé, AUCUN élagage, AUCUN marteau-piqueur, AUCUNE démolition. Nettoyage basse/haute pression au sol avec perche télescopique, cloche de lavage de sol ou nacelle élévatrice.";
+                negativeConstraint = "\n\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau appuyé contre la toiture ou la façade (travail sur échelle formellement interdit), AUCUN travailleur marchant ou debout sur les tuiles ou sur le faîtage du toit (interdiction absolue de marcher sur le toit en pente), AUCUN arbre coupé, AUCUN élagage, AUCUN marteau-piqueur, AUCUNE démolition. Nettoyage basse/haute pression 100% au sol avec perche télescopique, cloche de lavage de sol ou nacelle élévatrice sécurisée.";
             } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || lowerLabel.includes('toiture terrasse') || lowerLabel.includes('terrasse toit plat') || lowerLabel.includes('pvc') || lowerLabel.includes('infiltration') || lowerLabel.includes('fuite') || lowerLabel.includes('sel') || lowerLabel.includes('carrelée') || lowerLabel.includes('carrelee') || lowerLabel.includes('réfection') || lowerLabel.includes('refection')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: FLAT ROOF WATERPROOFING, LEAK REPAIR OR UNDER-TILE SEALING (ÉTANCHÉITÉ TOIT PLAT / TOITURE-TERRASSE, ISOLATION THERMIQUE, RECHERCHE DE FUITE OU RÉSINE SOUS CARRELAGE).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION : PAS d'arbre, AUCUN jardinier, AUCUN sécateur, AUCUN escabeau dans le jardin, AUCUNE débroussailleuse, AUCUN toit en pente avec tuiles, AUCUNE dépanneuse ! Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse avec membrane bitumineuse, EPDM, PVC ou résine liquide).";
@@ -2243,7 +2242,7 @@ async function main() {
                 negativeConstraint = "\n\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau en extérieur contre la façade (travail sur échelle strictement interdit), AUCUN jardinier, AUCUNE débroussailleuse, AUCUNE tondeuse, AUCUN élagage d'arbre, AUCUN sécateur, AUCUN toit en tuiles, AUCUNE dépanneuse. UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs de la maison avec échafaudage sécurisé avec garde-corps, taloche, rouleau de peinture ou au sol.";
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile') || lowerLabel.includes('faîtage') || lowerLabel.includes('faitage') || lowerLabel.includes('zinguerie') || lowerLabel.includes('closoir') || lowerLabel.includes('rives de toiture')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: ROOFER WORKING ON ROOF TILES (ARTISAN COUVREUR SUR TOITURE EN TUILES).\n";
-                negativeConstraint = "\n\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau posé contre le mur ou sur la toiture (travail sur échelle formellement interdit), AUCUN ouvrier seul en équilibre instable, AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage. Artisans couvreurs UNIQUEMENT sur échafaudage de sécurité avec garde-corps ou au sol.";
+                negativeConstraint = "\n\n❌ INTERDICTION FORMELLE : AUCUNE échelle, AUCUN escabeau posé contre le mur ou sur la toiture (travail sur échelle formellement interdit), AUCUN travailleur debout ou marchant directement sur les tuiles en pente du toit ou sur le faîtage sans protection ! AUCUN arbre, AUCUN sécateur, AUCUN jardinier, AUCUN élagage. Artisans couvreurs UNIQUEMENT sur échafaudage de sécurité avec garde-corps le long de la rive du toit ou travaillant au sol.";
             } else if (lowerLabel.includes('élagage') || lowerLabel.includes('elagage') || lowerLabel.includes('abattage') || lowerLabel.includes('émondage') || lowerLabel.includes('haie') || lowerLabel.includes('jardin') || lowerLabel.includes('paysag') || lowerLabel.includes('dessouch') || lowerLabel.includes('débroussaill') || lowerLabel.includes('debroussaill')) {
                 contextReset += "THIS IMAGE MUST SHOW EXCLUSIVELY: TREE PRUNING, FELLING, HEDGE TRIMMING, BRUSH CLEARING OR LANDSCAPING IN GARDEN (ÉLAGAGE D'ARBRE, ABATTAGE D'ARBRE, TAILLE D'HAIES, DESSOUCHAGE, DÉBROUSSAILLAGE OU PAYSAGISME).\n";
                 negativeConstraint = "\n\n❌ INTERDICTION : AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN nettoyeur haute pression sur tuiles, AUCUNE dépanneuse. UNIQUEMENT des jardiniers/élagueurs travaillant au sol ou sur escabeau dans un jardin avec pelouse et végétation.";
@@ -2272,11 +2271,11 @@ async function main() {
 
             const coreTradeBlock = `\n🎯 OBJET DU CHANTIER :\n- Métier & Travaux réels : ${travauxLabel.toUpperCase()}\n- Entreprise : ${task.fiche_nom || ''}\n- Bâtiment & Lieu : ${contexteLabel} (${locationStr})\n- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.\n`;
 
-            // Injection des règles de sécurité et visuelles nettoyées de tout mot négatif
+            // Injection des règles de sécurité et visuelles (filtrage uniquement des mots toxiques d'édition)
             const rulesBlock = buildRulesBlock(task.metier || travauxLabel, task.travaux || travauxLabel, etatChantier);
             const cleanRulesBlock = rulesBlock
                 ? rulesBlock.split('\n')
-                    .filter(line => !line.trim().startsWith('❌') && !line.includes('ABSOLUTE PROHIBITION') && !line.includes('NEVER:') && !line.includes('NO giant') && !line.includes('NO lone') && !line.includes('NO unsafe'))
+                    .filter(line => !line.includes('image existante') && !line.includes('image de référence') && !line.includes('retouche') && !line.includes('modification'))
                     .join('\n')
                 : '';
 
@@ -2311,16 +2310,13 @@ async function main() {
                         if (!parsedCookies || parsedCookies.length === 0) {
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
-                        const targetUrlToUse = activePlanUrls[plan.key] || plan.url || 'https://chatgpt.com/';
+                        // Toujours démarrer sur une conversation VIERGE pour garantir une isolation totale par tâche et éviter tout mélange de métiers ou faux mode édition OpenAI
+                        const targetUrlToUse = (plan.url && !plan.url.includes('/c/')) ? plan.url : 'https://chatgpt.com/';
                         const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse, secureRichPrompt);
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
-                            if (res.finalUrl && res.finalUrl.includes('/c/')) {
-                                activePlanUrls[plan.key] = res.finalUrl;
-                                console.log(`📌 Fil de conversation unique conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
-                            }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
                             break;
                         }
