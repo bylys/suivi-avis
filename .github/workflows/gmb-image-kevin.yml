@@ -32,6 +32,8 @@ jobs:
         working-directory: ./agent
         env:
           OPERATOR_NAME: Kevin
+          TARGET_DATE: '2026-09-09'
+          FORCE_EXECUTION: 'true'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}

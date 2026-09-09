@@ -766,8 +766,15 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
         if (matchedTask) {
             harvestedTaskIds.add(matchedTask.id);
             try {
-                await supabase.from('planning').update({ url_image: driveUrl }).eq('id', matchedTask.id);
-            } catch (e) {}
+                const { error: upErr } = await supabase.from('planning').update({ url_image: driveUrl }).eq('id', matchedTask.id);
+                if (upErr) {
+                    await supabase.from('planning').update({ metier: driveUrl }).eq('id', matchedTask.id);
+                } else {
+                    try { await supabase.from('planning').update({ metier: driveUrl }).eq('id', matchedTask.id); } catch(e) {}
+                }
+            } catch (e) {
+                try { await supabase.from('planning').update({ metier: driveUrl }).eq('id', matchedTask.id); } catch(e2) {}
+            }
         }
     }
 

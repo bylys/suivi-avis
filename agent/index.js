@@ -837,13 +837,13 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         // ⏳ Dès que le prompt est soumis, ChatGPT navigue vers https://chatgpt.com/c/<conversation-id>
         // On intercepte et verrouille IMMÉDIATEMENT ce fil unique pour toutes les tâches suivantes de la journée
         try {
-            await page.waitForFunction(() => window.location.href.includes('/c/'), { timeout: 15000 });
+            await page.waitForFunction(() => window.location.href.includes('/c/'), { timeout: 35000 });
         } catch (e) {}
         const detectedConvUrl = page.url();
         if (detectedConvUrl && detectedConvUrl.includes('/c/')) {
             console.log(`📌 Conversation unique du jour détectée et verrouillée : ${detectedConvUrl}`);
             if (typeof onConvUrlCreated === 'function') {
-                try { onConvUrlCreated(detectedConvUrl); } catch (cbErr) {}
+                try { await onConvUrlCreated(detectedConvUrl); } catch (cbErr) {}
             }
         }
 
@@ -1109,6 +1109,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
 
         const finalUrl = page ? page.url() : null;
+        if (finalUrl && finalUrl.includes('/c/') && typeof onConvUrlCreated === 'function') {
+            try { await onConvUrlCreated(finalUrl); } catch (cbErr) {}
+        }
         if (!imageBuffer || imageBuffer.length < 5000) {
             throw new Error("ÉCHEC_EXTRACTION_IMAGE: Aucune photo DALL-E exploitable n'a été récupérée sur cette session ChatGPT.");
         }
@@ -1232,7 +1235,7 @@ async function main() {
         // En mode test fallback : on génère TOUTES les images de test (3 images). En prod : 1 sur 2 (50%).
         // Ne cibler que les tâches qui n'ont pas encore d'image générée (évite de régénérer si relancé en cours de journée)
         const eligible50PercentTasks = isTestFallback ? tasks : tasks.filter((_, index) => index % 2 === 0);
-        const tasksToGenerate = eligible50PercentTasks.filter(t => !t.url_image || t.url_image.trim().length === 0);
+        const tasksToGenerate = eligible50PercentTasks.filter(t => (!t.url_image || t.url_image.trim().length === 0) && (!t.metier || !t.metier.startsWith('http')));
         console.log(`${tasksToGenerate.length} avis sélectionné(s) pour la génération d'image (${eligible50PercentTasks.length - tasksToGenerate.length} déjà prête(s) sur ${eligible50PercentTasks.length} tâches éligibles à 50%).`);
         
         if (tasksToGenerate.length === 0) {
@@ -2394,18 +2397,28 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                         }
                         // RÈGLE DU JOUR : 1 seule conversation par jour et par opérateur.
                         // Vérifier si une conversation pour aujourd'hui (dateStr) a déjà été initiée
+                        const opUpperClean = taskOpName.toUpperCase();
                         const todayConvKey = `CHATGPT_TODAY_CONV_${plan.key}_${dateStr}`.toUpperCase();
-                        if (!activePlanUrls[plan.key] && appSettingsMap[todayConvKey]) {
-                            activePlanUrls[plan.key] = appSettingsMap[todayConvKey];
-                            console.log(`📌 [${plan.name}] Conversation déjà existante trouvée pour aujourd'hui (${dateStr}) : ${activePlanUrls[plan.key]}`);
+                        const todayOpConvKey = `CHATGPT_TODAY_CONV_OPERATOR_${opUpperClean}_${dateStr}`.toUpperCase();
+
+                        if (!activePlanUrls[plan.key]) {
+                            activePlanUrls[plan.key] = activePlanUrls[taskOpName] 
+                                || activePlanUrls[opUpperClean] 
+                                || appSettingsMap[todayConvKey] 
+                                || appSettingsMap[todayOpConvKey];
+                            if (activePlanUrls[plan.key]) {
+                                activePlanUrls[taskOpName] = activePlanUrls[plan.key];
+                                activePlanUrls[opUpperClean] = activePlanUrls[plan.key];
+                                console.log(`📌 [${plan.name}] Conversation déjà existante trouvée pour ${taskOpName} aujourd'hui (${dateStr}) : ${activePlanUrls[plan.key]}`);
+                            }
                         }
 
                         const initialDayBaseUrl = (plan.url && !plan.url.includes('/c/')) ? plan.url : 'https://chatgpt.com/';
-                        const targetUrlToUse = activePlanUrls[plan.key] || initialDayBaseUrl;
+                        const targetUrlToUse = activePlanUrls[taskOpName] || activePlanUrls[plan.key] || initialDayBaseUrl;
 
                         let convIdsToDelete = [];
-                        if (!activePlanUrls[plan.key]) {
-                            console.log(`🆕 [${plan.name}] 1ère tâche du jour : ouverture d'une nouvelle conversation dédiée pour la journée...`);
+                        if (!activePlanUrls[plan.key] && !activePlanUrls[taskOpName]) {
+                            console.log(`🆕 [${plan.name}] 1ère tâche du jour pour ${taskOpName} : ouverture d'une nouvelle conversation dédiée pour la journée...`);
                             
                             // Nettoyage automatique : récupération des anciennes conversations créées par l'agent
                             const lastConvId = (appSettingsMap[`CHATGPT_LAST_CONV_${plan.key}`.toUpperCase()] || '').trim();
@@ -2431,7 +2444,7 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                                 }
                             }
                         } else {
-                            console.log(`📌 [${plan.name}] Suite dans le fil unique de la journée : ${activePlanUrls[plan.key]}`);
+                            console.log(`📌 [${plan.name}] Suite dans le fil unique de la journée pour ${taskOpName} : ${targetUrlToUse}`);
                         }
 
                         const res = await generateImageWithChatGPT(
@@ -2443,8 +2456,11 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             convIdsToDelete,
                             async (detectedConvUrl) => {
                                 activePlanUrls[plan.key] = detectedConvUrl;
-                                console.log(`📌 [${plan.name}] Fil unique du jour verrouillé pour toutes les tâches suivantes : ${detectedConvUrl}`);
+                                activePlanUrls[taskOpName] = detectedConvUrl;
+                                activePlanUrls[opUpperClean] = detectedConvUrl;
+                                console.log(`📌 [${plan.name}] Fil unique du jour verrouillé pour ${taskOpName} : ${detectedConvUrl}`);
                                 await saveAppSetting(todayConvKey, detectedConvUrl);
+                                await saveAppSetting(todayOpConvKey, detectedConvUrl);
                             }
                         );
                         rawImageBuffer = res ? res.imageBuffer : null;
@@ -2453,8 +2469,11 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             usedPlanName = plan.name;
                             if (res.finalUrl && res.finalUrl.includes('/c/')) {
                                 activePlanUrls[plan.key] = res.finalUrl;
+                                activePlanUrls[taskOpName] = res.finalUrl;
+                                activePlanUrls[opUpperClean] = res.finalUrl;
                                 await saveAppSetting(todayConvKey, res.finalUrl);
-                                console.log(`📌 Fil unique du jour validé et conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
+                                await saveAppSetting(todayOpConvKey, res.finalUrl);
+                                console.log(`📌 Fil unique du jour validé et conservé pour l'opérateur ${taskOpName} (${plan.name}) : ${res.finalUrl}`);
 
                                 const match = res.finalUrl.match(/\/c\/([a-zA-Z0-9-]+)/);
                                 const currentConvId = match ? match[1] : null;
@@ -2535,13 +2554,29 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                     console.log(`========================================================`);
                 } else {
                     try {
-                        await supabase
+                        const { error: upErr } = await supabase
                             .from('planning')
                             .update({
                                 url_image: uploadResult.url
                             })
                             .eq('id', task.id);
-                    } catch (sErr) {}
+                        if (upErr) {
+                            await supabase
+                                .from('planning')
+                                .update({
+                                    metier: uploadResult.url
+                                })
+                                .eq('id', task.id);
+                        } else {
+                            try {
+                                await supabase.from('planning').update({ metier: uploadResult.url }).eq('id', task.id);
+                            } catch (e) {}
+                        }
+                    } catch (sErr) {
+                        try {
+                            await supabase.from('planning').update({ metier: uploadResult.url }).eq('id', task.id);
+                        } catch (e) {}
+                    }
                     console.log(`Photo sauvegardée sur Google Drive (${uploadResult.provider}) pour l'avis ID ${task.id} sans modifier le statut du planning.`);
                 }
 

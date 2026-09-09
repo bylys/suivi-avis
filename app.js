@@ -3999,7 +3999,7 @@ async function renderPlanning() {
 
     // Décompte de la règle des 50% de photos (index pairs: 0, 2, 4...)
     const tachesAvecPhoto = taches.filter((_, idx) => idx % 2 === 0);
-    const photosPretes = tachesAvecPhoto.filter(r => r.url_image || r.image_url || r.drive_url).length;
+    const photosPretes = tachesAvecPhoto.filter(r => r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http'))).length;
     const photosManquantes = tachesAvecPhoto.length - photosPretes;
     const isKevin = op.toLowerCase().includes('kevin');
 
@@ -4047,7 +4047,7 @@ async function renderPlanning() {
         <tbody>
           ${taches.map((r, idx) => {
             const isPhotoRequired = (idx % 2 === 0);
-            const photoUrl = r.url_image || r.image_url || r.drive_url;
+            const photoUrl = r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http') ? r.metier : null);
             return `
             <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}" data-operateur="${op}" data-ville="${r.ville || ''}">
               <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
@@ -5474,7 +5474,10 @@ async function sauvegarderPhotoPlanning() {
   btn.innerHTML = '💾 Enregistrement...';
 
   try {
-    const ok = await sbUpdate('planning', taskId, { url_image: finalUrl });
+    let ok = await sbUpdate('planning', taskId, { url_image: finalUrl });
+    if (!ok) {
+      ok = await sbUpdate('planning', taskId, { metier: finalUrl });
+    }
     if (ok) {
       showToast("✅ Photo enregistrée et associée avec succès à l'avis !", "success");
       fermerModalImagePlanning();
