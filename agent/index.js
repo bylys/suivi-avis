@@ -588,12 +588,25 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         const page = await context.newPage();
         console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
         console.log(`🔗 URL cible résolue : ${targetUrl} | Type: ${targetUrl.includes('/c/') ? 'Conversation /c/' : (targetUrl.includes('/g/') ? 'Projet /g/' : 'Accueil')}`);
-        try {
-            await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
-            console.log(`✅ Navigation vers l'URL cible réussie.`);
-        } catch (navErr) {
-            console.log(`⚠️ Échec navigation vers "${targetUrl}" (${navErr.message}). Bascule sur https://chatgpt.com/ ...`);
-            await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
+        
+        let navSuccess = false;
+        for (let navAttempt = 1; navAttempt <= 3; navAttempt++) {
+            try {
+                await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+                console.log(`✅ Navigation vers l'URL cible réussie (tentative ${navAttempt}/3).`);
+                navSuccess = true;
+                break;
+            } catch (navErr) {
+                console.log(`⚠️ Tentative ${navAttempt}/3 navigation vers "${targetUrl}" : ${navErr.message}`);
+                if (navAttempt < 3) await page.waitForTimeout(3000);
+            }
+        }
+        if (!navSuccess) {
+            if (targetUrl.includes('/c/')) {
+                throw new Error(`IMPOSSIBLE_ACCEDER_FIL_UNIQUE: Échec d'accès au fil officiel de la journée (${targetUrl}). Interdiction d'ouvrir une nouvelle conversation.`);
+            } else {
+                await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' });
+            }
         }
         
         await page.waitForTimeout(3000); // Stabilisation des redirections éventuelles
@@ -2397,27 +2410,30 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                         }
                         // RÈGLE DU JOUR : 1 seule conversation par jour et par opérateur.
                         // Vérifier si une conversation pour aujourd'hui (dateStr) a déjà été initiée
-                        const opUpperClean = taskOpName.toUpperCase();
-                        const todayConvKey = `CHATGPT_TODAY_CONV_${plan.key}_${dateStr}`.toUpperCase();
-                        const todayOpConvKey = `CHATGPT_TODAY_CONV_OPERATOR_${opUpperClean}_${dateStr}`.toUpperCase();
+                        const opAliases = getOperatorAliases(taskOpName);
+                        if (!opAliases.includes(taskOpName.toUpperCase())) opAliases.push(taskOpName.toUpperCase());
 
-                        if (!activePlanUrls[plan.key]) {
-                            activePlanUrls[plan.key] = activePlanUrls[taskOpName] 
-                                || activePlanUrls[opUpperClean] 
-                                || appSettingsMap[todayConvKey] 
-                                || appSettingsMap[todayOpConvKey];
-                            if (activePlanUrls[plan.key]) {
-                                activePlanUrls[taskOpName] = activePlanUrls[plan.key];
-                                activePlanUrls[opUpperClean] = activePlanUrls[plan.key];
-                                console.log(`📌 [${plan.name}] Conversation déjà existante trouvée pour ${taskOpName} aujourd'hui (${dateStr}) : ${activePlanUrls[plan.key]}`);
-                            }
+                        let existingOpConvUrl = null;
+                        for (const al of opAliases) {
+                            if (activePlanUrls[al]) { existingOpConvUrl = activePlanUrls[al]; break; }
+                            const key = `CHATGPT_TODAY_CONV_OPERATOR_${al}_${dateStr}`.toUpperCase();
+                            if (appSettingsMap[key]) { existingOpConvUrl = appSettingsMap[key]; break; }
+                        }
+                        const todayConvKey = `CHATGPT_TODAY_CONV_${plan.key}_${dateStr}`.toUpperCase();
+                        if (!existingOpConvUrl && appSettingsMap[todayConvKey]) {
+                            existingOpConvUrl = appSettingsMap[todayConvKey];
+                        }
+                        if (existingOpConvUrl) {
+                            for (const al of opAliases) activePlanUrls[al] = existingOpConvUrl;
+                            activePlanUrls[plan.key] = existingOpConvUrl;
+                            console.log(`📌 [${plan.name}] Conversation existante trouvée pour ${taskOpName} (${opAliases.join('/')}) pour le ${dateStr} : ${existingOpConvUrl}`);
                         }
 
                         const initialDayBaseUrl = (plan.url && !plan.url.includes('/c/')) ? plan.url : 'https://chatgpt.com/';
-                        const targetUrlToUse = activePlanUrls[taskOpName] || activePlanUrls[plan.key] || initialDayBaseUrl;
+                        const targetUrlToUse = existingOpConvUrl || activePlanUrls[plan.key] || initialDayBaseUrl;
 
                         let convIdsToDelete = [];
-                        if (!activePlanUrls[plan.key] && !activePlanUrls[taskOpName]) {
+                        if (!existingOpConvUrl && !activePlanUrls[plan.key]) {
                             console.log(`🆕 [${plan.name}] 1ère tâche du jour pour ${taskOpName} : ouverture d'une nouvelle conversation dédiée pour la journée...`);
                             
                             // Nettoyage automatique : récupération des anciennes conversations créées par l'agent
@@ -2456,11 +2472,12 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             convIdsToDelete,
                             async (detectedConvUrl) => {
                                 activePlanUrls[plan.key] = detectedConvUrl;
-                                activePlanUrls[taskOpName] = detectedConvUrl;
-                                activePlanUrls[opUpperClean] = detectedConvUrl;
-                                console.log(`📌 [${plan.name}] Fil unique du jour verrouillé pour ${taskOpName} : ${detectedConvUrl}`);
+                                for (const al of opAliases) {
+                                    activePlanUrls[al] = detectedConvUrl;
+                                    await saveAppSetting(`CHATGPT_TODAY_CONV_OPERATOR_${al}_${dateStr}`.toUpperCase(), detectedConvUrl);
+                                }
+                                console.log(`📌 [${plan.name}] Fil unique du jour verrouillé pour ${taskOpName} (${opAliases.join('/')}) : ${detectedConvUrl}`);
                                 await saveAppSetting(todayConvKey, detectedConvUrl);
-                                await saveAppSetting(todayOpConvKey, detectedConvUrl);
                             }
                         );
                         rawImageBuffer = res ? res.imageBuffer : null;
@@ -2469,10 +2486,11 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             usedPlanName = plan.name;
                             if (res.finalUrl && res.finalUrl.includes('/c/')) {
                                 activePlanUrls[plan.key] = res.finalUrl;
-                                activePlanUrls[taskOpName] = res.finalUrl;
-                                activePlanUrls[opUpperClean] = res.finalUrl;
+                                for (const al of opAliases) {
+                                    activePlanUrls[al] = res.finalUrl;
+                                    await saveAppSetting(`CHATGPT_TODAY_CONV_OPERATOR_${al}_${dateStr}`.toUpperCase(), res.finalUrl);
+                                }
                                 await saveAppSetting(todayConvKey, res.finalUrl);
-                                await saveAppSetting(todayOpConvKey, res.finalUrl);
                                 console.log(`📌 Fil unique du jour validé et conservé pour l'opérateur ${taskOpName} (${plan.name}) : ${res.finalUrl}`);
 
                                 const match = res.finalUrl.match(/\/c\/([a-zA-Z0-9-]+)/);
