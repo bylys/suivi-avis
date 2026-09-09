@@ -351,185 +351,251 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
         console.log(`📸 Capture d'écran globale enregistrée (debug-fifa-conversation.png)`);
     } catch (e) {}
 
-    // Diagnostic détaillé du DOM : extraire chaque tour et toutes les images
-    const domInspection = await page.evaluate(() => {
-        const users = Array.from(document.querySelectorAll('[data-message-author-role="user"]'));
-        const assistants = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
-        
-        const allImgs = Array.from(document.querySelectorAll('img')).map(im => ({
-            src: im.src || '',
-            currentSrc: im.currentSrc || '',
-            width: im.naturalWidth || im.width || 0,
-            height: im.naturalHeight || im.height || 0,
-            alt: im.alt || '',
-            className: im.className || ''
-        }));
-
-        const turnPairs = [];
-        for (let i = 0; i < users.length; i++) {
-            const uText = (users[i].innerText || users[i].textContent || '').trim();
-            const asst = assistants[i] || null;
-            const asstText = asst ? (asst.innerText || asst.textContent || '').trim() : '';
-            
-            let foundImgSrc = null;
-            if (asst) {
-                const asstImgs = Array.from(asst.querySelectorAll('img'));
-                for (const im of asstImgs) {
-                    const src = im.currentSrc || im.src || '';
-                    if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg')) {
-                        foundImgSrc = src;
-                        break;
-                    }
-                }
-            }
-
-            turnPairs.push({
-                index: i + 1,
-                userPrompt: uText,
-                assistantReply: asstText,
-                imgSrc: foundImgSrc
-            });
-        }
-
-        return {
-            userCount: users.length,
-            assistantCount: assistants.length,
-            turnPairs,
-            allImgs
-        };
-    });
-
-    console.log(`\n================== DIAGNOSTIC DE LA CONVERSATION ==================`);
-    console.log(`👤 Messages utilisateurs : ${domInspection.userCount}`);
-    console.log(`🤖 Messages assistants : ${domInspection.assistantCount}`);
-    console.log(`🖼️ Images totales dans le DOM : ${domInspection.allImgs.length}`);
-    for (const im of domInspection.allImgs) {
-        if (!im.src.includes('avatar') && !im.src.includes('profile') && !im.src.includes('svg')) {
-            console.log(`   👉 Image DOM : ${im.src.substring(0, 90)} (dim: ${im.width}x${im.height}, alt: "${im.alt}")`);
-        }
-    }
-
-    for (const pair of domInspection.turnPairs) {
-        console.log(`\n[Tour #${pair.index}]`);
-        console.log(`   👤 Prompt : "${pair.userPrompt.substring(0, 100).replace(/\n+/g, ' ')}..."`);
-        console.log(`   🤖 Réponse : "${pair.assistantReply.substring(0, 150).replace(/\n+/g, ' ')}..."`);
-        console.log(`   📸 Image liée : ${pair.imgSrc || 'AUCUNE DÉTECTÉE'}`);
-    }
-    console.log(`===================================================================\n`);
-
-    // Sauvegarde du diagnostic en fichier JSON
+    // Sauvegarde du diagnostic brut
     try {
-        fs.writeFileSync('debug-fifa-turns.json', JSON.stringify(domInspection, null, 2));
+        if (conversationJsonResponse) {
+            fs.writeFileSync('debug-fifa-conversation.json', JSON.stringify(conversationJsonResponse, null, 2));
+            console.log(`💾 JSON complet de la conversation sauvegardé (debug-fifa-conversation.json)`);
+        }
     } catch (e) {}
 
-    // Tentative de récupération des images depuis l'arbre JSON (si présent)
+    // 1. EXTRACTION PUISSANTE DEPUIS L'ARBRE JSON OPENAI
     const jsonImages = [];
     if (conversationJsonResponse && conversationJsonResponse.mapping) {
-        const nodes = Object.values(conversationJsonResponse.mapping);
-        // Trier les nœuds par date de création si possible
-        nodes.sort((a, b) => (a.message?.create_time || 0) - (b.message?.create_time || 0));
+        const mapping = conversationJsonResponse.mapping;
+        const nodes = Object.values(mapping);
+        console.log(`📡 Analyse de l'arbre JSON OpenAI : ${nodes.length} nœuds...`);
 
-        let currentUserPrompt = '';
+        const nodeById = new Map();
+        for (const n of nodes) nodeById.set(n.id, n);
+
+        function findUserPromptForNode(n) {
+            let curr = n;
+            while (curr && curr.parent) {
+                const p = nodeById.get(curr.parent);
+                if (!p) break;
+                if (p.message && p.message.author && p.message.author.role === 'user') {
+                    const parts = p.message.content?.parts || [];
+                    return parts.map(pt => (typeof pt === 'string' ? pt : JSON.stringify(pt))).join('\n');
+                }
+                curr = p;
+            }
+            return '';
+        }
+
         for (const n of nodes) {
             const msg = n.message;
-            if (!msg) continue;
-            if (msg.author?.role === 'user') {
-                currentUserPrompt = (msg.content?.parts || []).join('\n');
-            }
-            if (msg.author?.role === 'assistant') {
-                const parts = msg.content?.parts || [];
-                for (const p of parts) {
-                    if (typeof p === 'object' && p.asset_pointer) {
+            if (!msg || msg.author?.role !== 'assistant') continue;
+
+            const userPrompt = findUserPromptForNode(n);
+            const parts = msg.content?.parts || [];
+
+            for (const p of parts) {
+                if (typeof p === 'object' && p !== null) {
+                    if (p.asset_pointer) {
                         const fileId = p.asset_pointer.replace('file-service://', '');
                         jsonImages.push({
                             fileId,
-                            promptText: currentUserPrompt,
+                            promptText: userPrompt,
                             width: p.width,
                             height: p.height
                         });
                     }
+                } else if (typeof p === 'string') {
+                    const mdMatch = p.match(/!\[.*?\]\((https:\/\/files\.oaiusercontent\.com\/[^\)]+)\)/);
+                    if (mdMatch) {
+                        jsonImages.push({
+                            directUrl: mdMatch[1],
+                            promptText: userPrompt
+                        });
+                    }
+                }
+            }
+
+            // Recherche des file-id dans les métadonnées de DALL-E
+            if (msg.metadata) {
+                const metaStr = JSON.stringify(msg.metadata);
+                const fileMatches = metaStr.match(/file-[a-zA-Z0-9_-]+/g);
+                if (fileMatches) {
+                    for (const fId of fileMatches) {
+                        if (!jsonImages.some(im => im.fileId === fId)) {
+                            jsonImages.push({
+                                fileId: fId,
+                                promptText: userPrompt
+                            });
+                        }
+                    }
                 }
             }
         }
-        if (jsonImages.length > 0) {
-            console.log(`🎯 ${jsonImages.length} image(s) DALL-E trouvée(s) directement dans l'arbre JSON !`);
-        }
+
+        console.log(`🎯 ${jsonImages.length} image(s) DALL-E identifiée(s) dans l'arbre JSON complet !`);
     }
 
-    // Récupérer les paires exploitables
+    // 2. DÉFILEMENT INCRÉMENTAL DU DOM POUR CAPTURER LES MESSAGES VIRTUELS REACT
+    console.log(`📜 Défilement incrémental du haut vers le bas pour capturer tous les messages virtuels...`);
+    const allSeenPairs = new Map();
+    const allSeenImgs = new Set();
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(2000);
+
+    let scrollStep = 0;
+    let consecutiveNoScroll = 0;
+    let previousScrollY = -1;
+
+    while (scrollStep < 150) {
+        scrollStep++;
+        const visibleStepData = await page.evaluate(() => {
+            const pairs = [];
+            const users = Array.from(document.querySelectorAll('[data-message-author-role="user"]'));
+            const assistants = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+            
+            for (let i = 0; i < users.length; i++) {
+                const uText = (users[i].innerText || users[i].textContent || '').trim();
+                const asst = assistants[i] || null;
+                const asstText = asst ? (asst.innerText || asst.textContent || '').trim() : '';
+                
+                let foundImgSrc = null;
+                if (asst) {
+                    const imgs = Array.from(asst.querySelectorAll('img'));
+                    for (const im of imgs) {
+                        const src = im.currentSrc || im.src || '';
+                        if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg')) {
+                            foundImgSrc = src;
+                            break;
+                        }
+                    }
+                }
+
+                if (uText.length > 5) {
+                    pairs.push({
+                        prompt: uText,
+                        reply: asstText,
+                        imgSrc: foundImgSrc
+                    });
+                }
+            }
+            return pairs;
+        });
+
+        for (const item of visibleStepData) {
+            const pKey = normalizeStr(item.prompt).substring(0, 80);
+            if (!allSeenPairs.has(pKey) || (!allSeenPairs.get(pKey).imgSrc && item.imgSrc)) {
+                allSeenPairs.set(pKey, item);
+                if (item.imgSrc) allSeenImgs.add(item.imgSrc);
+            }
+        }
+
+        const scrollInfo = await page.evaluate(() => {
+            window.scrollBy(0, 700);
+            return {
+                scrollY: window.scrollY,
+                scrollHeight: document.body.scrollHeight,
+                innerHeight: window.innerHeight
+            };
+        });
+
+        if (scrollInfo.scrollY === previousScrollY) {
+            consecutiveNoScroll++;
+            if (consecutiveNoScroll >= 4) {
+                console.log(`🏁 Fin du fil de discussion atteinte au scroll #${scrollStep} !`);
+                break;
+            }
+        } else {
+            consecutiveNoScroll = 0;
+            previousScrollY = scrollInfo.scrollY;
+        }
+
+        await page.waitForTimeout(600);
+    }
+
+    console.log(`📋 Total cumulé dans le DOM après scan incrémental : ${allSeenPairs.size} prompt(s) et ${allSeenImgs.size} image(s) capturée(s) !`);
+
+    // Capture d'écran complète pour diagnostic visuel
+    try {
+        await page.screenshot({ path: 'debug-fifa-conversation.png', fullPage: true });
+        console.log(`📸 Capture d'écran globale enregistrée (debug-fifa-conversation.png)`);
+    } catch (e) {}
+
+    // Sauvegarde du rapport incrémental DOM
+    try {
+        fs.writeFileSync('debug-fifa-turns.json', JSON.stringify({
+            seenPromptsCount: allSeenPairs.size,
+            seenImagesCount: allSeenImgs.size,
+            pairs: Array.from(allSeenPairs.values())
+        }, null, 2));
+    } catch (e) {}
+
+    // 3. CONSTRUCTION DES PAIRES FINALES À TRAITER
     let pairsToProcess = [];
 
-    // Priorité 1 : JSON de l'API avec les file-service
+    // Priorité 1 : Fichiers images trouvés dans le JSON OpenAI
     if (jsonImages.length > 0) {
-        for (const jImg of jsonImages) {
-            // Obtenir le lien de téléchargement via /backend-api/files/<file_id>/download
-            console.log(`📡 Récupération URL de téléchargement pour file_id : ${jImg.fileId}...`);
-            const dlData = await page.evaluate(async (fId) => {
-                try {
-                    let token = null;
-                    try {
-                        const sResp = await fetch('/api/auth/session');
-                        if (sResp.ok) token = (await sResp.json()).accessToken;
-                    } catch (e) {}
-                    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-                    const res = await fetch(`/backend-api/files/${fId}/download`, { headers, credentials: 'include' });
-                    if (!res.ok) return null;
-                    return await res.json();
-                } catch (e) { return null; }
-            }, jImg.fileId);
-
-            if (dlData && dlData.download_url) {
-                console.log(`✅ URL de téléchargement obtenue : ${dlData.download_url.substring(0, 80)}...`);
+        console.log(`🚀 Extraction prioritaire depuis les ${jsonImages.length} image(s) du JSON OpenAI...`);
+        for (let j = 0; j < jsonImages.length; j++) {
+            const jImg = jsonImages[j];
+            if (jImg.directUrl) {
                 pairsToProcess.push({
                     promptText: jImg.promptText,
-                    imgUrl: dlData.download_url
+                    imgUrl: jImg.directUrl
                 });
+            } else if (jImg.fileId) {
+                console.log(`📡 [${j+1}/${jsonImages.length}] Récupération URL de téléchargement pour file_id : ${jImg.fileId}...`);
+                const dlData = await page.evaluate(async (fId) => {
+                    try {
+                        let token = null;
+                        try {
+                            const sResp = await fetch('/api/auth/session');
+                            if (sResp.ok) token = (await sResp.json()).accessToken;
+                        } catch (e) {}
+                        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                        const res = await fetch(`/backend-api/files/${fId}/download`, { headers, credentials: 'include' });
+                        if (!res.ok) return null;
+                        return await res.json();
+                    } catch (e) { return null; }
+                }, jImg.fileId);
+
+                if (dlData && dlData.download_url) {
+                    console.log(`   ✅ Lien de téléchargement haute résolution obtenu !`);
+                    pairsToProcess.push({
+                        promptText: jImg.promptText,
+                        imgUrl: dlData.download_url
+                    });
+                }
             }
         }
     }
 
-    // Priorité 2 : Paires issues du DOM
-    if (pairsToProcess.length === 0) {
-        for (const p of domInspection.turnPairs) {
+    // Priorité 2 : Paires issues du scan DOM incrémental
+    if (pairsToProcess.length === 0 && allSeenPairs.size > 0) {
+        console.log(`🔄 Utilisation des données du scan incrémental DOM...`);
+        for (const p of allSeenPairs.values()) {
             if (p.imgSrc) {
                 pairsToProcess.push({
-                    promptText: p.userPrompt,
+                    promptText: p.prompt,
                     imgUrl: p.imgSrc
                 });
             }
         }
     }
 
-    // Priorité 3 : Si aucune image n'est liée à un tour, mais que des images sont dans capturedImagesByUrl
+    // Priorité 3 : Paires avec les images réseau interceptées
     if (pairsToProcess.length === 0 && capturedImagesByUrl.size > 0) {
         console.log(`🔄 Utilisation des ${capturedImagesByUrl.size} image(s) interceptée(s) sur le réseau...`);
         const netUrls = Array.from(capturedImagesByUrl.keys());
-        for (let i = 0; i < domInspection.turnPairs.length && i < netUrls.length; i++) {
+        const domPrompts = Array.from(allSeenPairs.values()).map(p => p.prompt);
+        for (let i = 0; i < netUrls.length; i++) {
             pairsToProcess.push({
-                promptText: domInspection.turnPairs[i].userPrompt,
+                promptText: domPrompts[i] || `Chantier #${i + 1}`,
                 imgUrl: netUrls[i]
             });
         }
     }
 
-    // Priorité 4 : N'importe quelle image non-avatar trouvée dans allImgs
-    if (pairsToProcess.length === 0) {
-        const candidateImgs = domInspection.allImgs
-            .map(im => im.src || im.currentSrc)
-            .filter(src => src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg'));
-        
-        if (candidateImgs.length > 0) {
-            console.log(`🔄 Fallback : ${candidateImgs.length} image(s) candidates trouvée(s) dans le DOM.`);
-            for (let i = 0; i < domInspection.turnPairs.length && i < candidateImgs.length; i++) {
-                pairsToProcess.push({
-                    promptText: domInspection.turnPairs[i].userPrompt,
-                    imgUrl: candidateImgs[i]
-                });
-            }
-        }
-    }
-
-    console.log(`📸 Total final de photos prêtes pour traitement : ${pairsToProcess.length}`);
+    console.log(`\n=============================================================`);
+    console.log(`📸 TOTAL FINAL DE PHOTOS PRÊTES À MOISSONNER : ${pairsToProcess.length}`);
+    console.log(`=============================================================\n`);
 
     let processedCount = 0;
     const harvestedTaskIds = new Set();
