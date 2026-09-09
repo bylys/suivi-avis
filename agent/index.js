@@ -816,6 +816,21 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
         await page.waitForTimeout(1000);
 
+        // Écouteur réseau pour capturer directement les flux d'images DALL-E (oaiusercontent) sans dépendre du DOM
+        const networkCapturedBuffers = [];
+        const onNetworkResponse = async (resp) => {
+            const url = resp.url();
+            if ((url.includes('files.oaiusercontent.com') || url.includes('/backend-api/files/')) && resp.ok()) {
+                try {
+                    const buf = await resp.body();
+                    if (buf && buf.length > 20000) {
+                        networkCapturedBuffers.push(buf);
+                    }
+                } catch (e) {}
+            }
+        };
+        page.on('response', onNetworkResponse);
+
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
 
@@ -1087,12 +1102,21 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             }
         }
 
+        // Fallback ultime : Flux direct réseau capturé par Playwright
+        if ((!imageBuffer || imageBuffer.length < 5000) && networkCapturedBuffers.length > 0) {
+            console.log(`⚡ Fallback ultime : Récupération de l'image interceptée sur le flux réseau (${networkCapturedBuffers[networkCapturedBuffers.length - 1].length} octets) !`);
+            imageBuffer = networkCapturedBuffers[networkCapturedBuffers.length - 1];
+        }
+
         const finalUrl = page ? page.url() : null;
         if (!imageBuffer || imageBuffer.length < 5000) {
             throw new Error("ÉCHEC_EXTRACTION_IMAGE: Aucune photo DALL-E exploitable n'a été récupérée sur cette session ChatGPT.");
         }
         return { imageBuffer, finalUrl };
     } finally {
+        if (page) {
+            try { page.off('response', onNetworkResponse); } catch(e) {}
+        }
         if (browser) {
             await browser.close();
         }
