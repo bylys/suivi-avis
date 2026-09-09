@@ -7,6 +7,10 @@ on:
     - cron: '0 18 * * 0-4'
   workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
 
+concurrency:
+  group: browserless-chatgpt-runner
+  cancel-in-progress: false
+
 jobs:
   generate-images-kevin:
     name: Agent Image - Kevin

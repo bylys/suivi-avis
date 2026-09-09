@@ -56,7 +56,10 @@ async function getOrCreateDriveFolder(drive, parentFolderId, folderName) {
     }
 }
 
+let driveCleanedOnce = false;
 async function cleanOldPhotosFromDrive(drive, parentFolderId) {
+    if (driveCleanedOnce) return;
+    driveCleanedOnce = true;
     try {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
         console.log("🧹 Vérification et nettoyage automatique des anciennes photos sur Google Drive (> 7 jours)...");
@@ -539,7 +542,11 @@ async function typeAndSendPrompt(page, text) {
 async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null, fallbackPrompt = null, convIdsToDelete = [], onConvUrlCreated = null) {
     const targetUrl = (customUrl || getConversationUrlForOperator(operatorName) || '').trim();
     
-    let browser;
+    let browser = null;
+    let context = null;
+    let page = null;
+    let onNetworkResponse = null;
+
     if (BROWSERLESS_TOKEN) {
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
@@ -568,7 +575,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         isLocalBrowser = true;
     }
     
-    const context = await browser.newContext({
+    context = await browser.newContext({
         userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         viewport: { width: 1280, height: 800 },
         locale: 'fr-FR',
@@ -585,7 +592,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         // Inject saved cookies to bypass login
         await context.addCookies(cookies);
         
-        const page = await context.newPage();
+        page = await context.newPage();
         console.log(`Ouverture de la conversation ChatGPT pour l'opérateur (${operatorName || TARGET_OPERATOR || 'Global'})...`);
         console.log(`🔗 URL cible résolue : ${targetUrl} | Type: ${targetUrl.includes('/c/') ? 'Conversation /c/' : (targetUrl.includes('/g/') ? 'Projet /g/' : 'Accueil')}`);
         
@@ -831,7 +838,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
 
         // Écouteur réseau pour capturer directement les flux d'images DALL-E (oaiusercontent) sans dépendre du DOM
         const networkCapturedBuffers = [];
-        const onNetworkResponse = async (resp) => {
+        onNetworkResponse = async (resp) => {
             const url = resp.url();
             if ((url.includes('files.oaiusercontent.com') || url.includes('/backend-api/files/')) && resp.ok()) {
                 try {
@@ -1219,11 +1226,14 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         }
         return { imageBuffer, finalUrl };
     } finally {
-        if (page) {
+        if (page && onNetworkResponse) {
             try { page.off('response', onNetworkResponse); } catch(e) {}
         }
+        if (context) {
+            try { await context.close(); } catch(e) {}
+        }
         if (browser) {
-            await browser.close();
+            try { await browser.close(); } catch(e) {}
         }
     }
 }
