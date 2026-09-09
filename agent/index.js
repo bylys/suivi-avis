@@ -536,7 +536,7 @@ async function typeAndSendPrompt(page, text) {
     } catch(e) {}
 }
 
-async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null, fallbackPrompt = null, convIdsToDelete = []) {
+async function generateImageWithChatGPT(prompt, cookies, operatorName = null, customUrl = null, fallbackPrompt = null, convIdsToDelete = [], onConvUrlCreated = null) {
     const targetUrl = (customUrl || getConversationUrlForOperator(operatorName) || '').trim();
     
     let browser;
@@ -818,6 +818,19 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
 
         // Saisie et envoi du prompt initial
         await typeAndSendPrompt(page, prompt);
+
+        // ⏳ Dès que le prompt est soumis, ChatGPT navigue vers https://chatgpt.com/c/<conversation-id>
+        // On intercepte et verrouille IMMÉDIATEMENT ce fil unique pour toutes les tâches suivantes de la journée
+        try {
+            await page.waitForFunction(() => window.location.href.includes('/c/'), { timeout: 15000 });
+        } catch (e) {}
+        const detectedConvUrl = page.url();
+        if (detectedConvUrl && detectedConvUrl.includes('/c/')) {
+            console.log(`📌 Conversation unique du jour détectée et verrouillée : ${detectedConvUrl}`);
+            if (typeof onConvUrlCreated === 'function') {
+                try { onConvUrlCreated(detectedConvUrl); } catch (cbErr) {}
+            }
+        }
 
         // Scanneur d'image dynamique sécurisé : regarde UNIQUEMENT dans le nouveau tour de réponse du prompt actuel
         const checkNewImage = async () => {
@@ -1540,14 +1553,14 @@ async function main() {
         console.log(`✅ Session ChatGPT prête avec ${initialOpSets.length} plan(s) de cookies configuré(s) pour "${rawOp || 'Global'}".`);
         const activePlanUrls = {};
 
-        // Récupération des réglages et historiques de conversations depuis Supabase app_settings
+        // Récupération des réglages et historiques de conversations depuis Supabase fiches
         const appSettingsMap = {};
         try {
-            const { data: settingData } = await supabase.from('app_settings').select('key, value');
+            const { data: settingData } = await supabase.from('fiches').select('nom, lien').ilike('nom', 'CHATGPT_%');
             if (settingData) {
                 for (const item of settingData) {
-                    if (item && item.key) {
-                        appSettingsMap[item.key.toUpperCase()] = (item.value || '').trim();
+                    if (item && item.nom) {
+                        appSettingsMap[item.nom.toUpperCase()] = (item.lien || '').trim();
                     }
                 }
             }
@@ -1557,13 +1570,14 @@ async function main() {
             try {
                 const keyUpper = (k || '').toUpperCase();
                 appSettingsMap[keyUpper] = String(v);
-                const { error } = await supabase.from('app_settings').upsert({ key: k, value: String(v) }, { onConflict: 'key' });
-                if (error) {
-                    await supabase.from('app_settings').delete().eq('key', k);
-                    await supabase.from('app_settings').insert([{ key: k, value: String(v) }]);
+                const { data } = await supabase.from('fiches').select('id').eq('nom', k);
+                if (data && data.length > 0) {
+                    await supabase.from('fiches').update({ lien: String(v) }).eq('nom', k);
+                } else {
+                    await supabase.from('fiches').insert([{ nom: k, lien: String(v) }]);
                 }
             } catch (err) {
-                console.log(`Note sauvegarde app_setting (${k}) :`, err.message);
+                console.log(`Note sauvegarde config (${k}) :`, err.message);
             }
         }
 
@@ -2355,8 +2369,13 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             throw new Error(`Cookies vides pour le secret ${plan.key}`);
                         }
                         // RÈGLE DU JOUR : 1 seule conversation par jour et par opérateur.
-                        // La 1ère tâche du jour démarre toujours sur une NOUVELLE conversation vierge (jamais d'ancien fil /c/ des jours précédents).
-                        // Dès que la 1ère image est créée, activePlanUrls[plan.key] conserve ce fil unique pour TOUTES les autres images de la journée !
+                        // Vérifier si une conversation pour aujourd'hui (dateStr) a déjà été initiée
+                        const todayConvKey = `CHATGPT_TODAY_CONV_${plan.key}_${dateStr}`.toUpperCase();
+                        if (!activePlanUrls[plan.key] && appSettingsMap[todayConvKey]) {
+                            activePlanUrls[plan.key] = appSettingsMap[todayConvKey];
+                            console.log(`📌 [${plan.name}] Conversation déjà existante trouvée pour aujourd'hui (${dateStr}) : ${activePlanUrls[plan.key]}`);
+                        }
+
                         const initialDayBaseUrl = (plan.url && !plan.url.includes('/c/')) ? plan.url : 'https://chatgpt.com/';
                         const targetUrlToUse = activePlanUrls[plan.key] || initialDayBaseUrl;
 
@@ -2391,13 +2410,26 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             console.log(`📌 [${plan.name}] Suite dans le fil unique de la journée : ${activePlanUrls[plan.key]}`);
                         }
 
-                        const res = await generateImageWithChatGPT(finalPrompt, parsedCookies, task.operateur, targetUrlToUse, secureRichPrompt, convIdsToDelete);
+                        const res = await generateImageWithChatGPT(
+                            finalPrompt,
+                            parsedCookies,
+                            task.operateur,
+                            targetUrlToUse,
+                            secureRichPrompt,
+                            convIdsToDelete,
+                            async (detectedConvUrl) => {
+                                activePlanUrls[plan.key] = detectedConvUrl;
+                                console.log(`📌 [${plan.name}] Fil unique du jour verrouillé pour toutes les tâches suivantes : ${detectedConvUrl}`);
+                                await saveAppSetting(todayConvKey, detectedConvUrl);
+                            }
+                        );
                         rawImageBuffer = res ? res.imageBuffer : null;
 
                         if (rawImageBuffer) {
                             usedPlanName = plan.name;
                             if (res.finalUrl && res.finalUrl.includes('/c/')) {
                                 activePlanUrls[plan.key] = res.finalUrl;
+                                await saveAppSetting(todayConvKey, res.finalUrl);
                                 console.log(`📌 Fil unique du jour validé et conservé pour l'opérateur (${plan.name}) : ${res.finalUrl}`);
 
                                 const match = res.finalUrl.match(/\/c\/([a-zA-Z0-9-]+)/);
@@ -2418,7 +2450,7 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                                     const isSunday = (new Date()).getDay() === 0;
                                     const updatedWeekly = isSunday ? [currentConvId] : Array.from(new Set([...weeklyConvs, currentConvId]));
                                     await saveAppSetting(`CHATGPT_WEEKLY_CONVS_${plan.key}`, JSON.stringify(updatedWeekly));
-                                    console.log(`💾 Conversation du jour enregistrée (${currentConvId}) pour ${plan.name} dans Supabase app_settings.`);
+                                    console.log(`💾 Conversation du jour enregistrée (${currentConvId}) pour ${plan.name} dans Supabase fiches.`);
                                 }
                             }
                             console.log(`✅ Succès de la génération d'image avec le ${plan.name} !`);
