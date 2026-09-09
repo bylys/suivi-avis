@@ -1,0 +1,58 @@
+name: Moissonneur d'Images - Fifa
+
+on:
+  workflow_dispatch:
+    inputs:
+      conversation_url:
+        description: 'URL de la conversation ChatGPT de Fifa'
+        required: false
+        default: 'https://chatgpt.com/c/6a9eb07a-0aa4-83ea-811d-4fefbf3444c0'
+      target_date:
+        description: 'Date cible des tâches (YYYY-MM-DD)'
+        required: false
+        default: '2026-09-09'
+
+jobs:
+  harvest-images-fifa:
+    name: Moissonneur Photos - Fifa
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Install dependencies & Chromium
+        working-directory: ./agent
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+        
+      - name: Run Harvester for Fifa
+        working-directory: ./agent
+        env:
+          OPERATOR_NAME: Fifaliana
+          CONVERSATION_URL: ${{ github.event.inputs.conversation_url || 'https://chatgpt.com/c/6a9eb07a-0aa4-83ea-811d-4fefbf3444c0' }}
+          TARGET_DATE: ${{ github.event.inputs.target_date || '2026-09-09' }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          DRIVE_PARENT_FOLDER_ID: ${{ secrets.DRIVE_PARENT_FOLDER_ID }}
+          
+          # Cookies Fif / Fifa
+          CHATGPT_PRO_COOKIES_FIF: ${{ secrets.CHATGPT_WORK_COOKIES_FIF || secrets.CHATGPT_PRO_COOKIES_FIF || secrets.CHATGPT_WORK_COOKIES_FIFA || secrets.CHATGPT_PRO_COOKIES_FIFA }}
+          CHATGPT_WORK_COOKIES_FIF: ${{ secrets.CHATGPT_WORK_COOKIES_FIF || secrets.CHATGPT_PRO_COOKIES_FIF || secrets.CHATGPT_WORK_COOKIES_FIFA || secrets.CHATGPT_PRO_COOKIES_FIFA }}
+          CHATGPT_PRO_COOKIES_FIFALIANA: ${{ secrets.CHATGPT_WORK_COOKIES_FIF || secrets.CHATGPT_PRO_COOKIES_FIF || secrets.CHATGPT_WORK_COOKIES_FIFA || secrets.CHATGPT_PRO_COOKIES_FIFA }}
+          CHATGPT_WORK_COOKIES_FIFALIANA: ${{ secrets.CHATGPT_WORK_COOKIES_FIF || secrets.CHATGPT_PRO_COOKIES_FIF || secrets.CHATGPT_WORK_COOKIES_FIFA || secrets.CHATGPT_PRO_COOKIES_FIFA }}
+          CHATGPT_COOKIES_FIF: ${{ secrets.CHATGPT_WORK_COOKIES_FIF || secrets.CHATGPT_PERSO_COOKIES_FIF || secrets.CHATGPT_COOKIES_FIF || secrets.CHATGPT_COOKIES }}
+          CHATGPT_COOKIES: ${{ secrets.CHATGPT_WORK_COOKIES_FIF || secrets.CHATGPT_PERSO_COOKIES_FIF || secrets.CHATGPT_COOKIES }}
+          
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node harvest_conversations.js
