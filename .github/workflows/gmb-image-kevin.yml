@@ -2,9 +2,9 @@ name: GMB Image Generator - Kevin
 
 on:
   schedule:
-    # Exécution automatique du lundi au vendredi à 01h00 du matin heure de Thaïlande (UTC+7 -> 18h00 UTC du dimanche au jeudi)
-    # 0 = Dimanche UTC (Lundi 01:00 THA), 4 = Jeudi UTC (Vendredi 01:00 THA)
-    - cron: '0 18 * * 0-4'
+    # Exécution automatique du lundi au vendredi à 03h00 du matin heure de Thaïlande (UTC+7 -> 20h00 UTC du dimanche au jeudi)
+    # 0 = Dimanche UTC (Lundi 03:00 THA), 4 = Jeudi UTC (Vendredi 03:00 THA)
+    - cron: '0 20 * * 0-4'
   workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
 
 concurrency:
