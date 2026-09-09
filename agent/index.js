@@ -1323,7 +1323,7 @@ async function main() {
             // PRIORITÉ 1 ABSOLUE : process.env (Secret GitHub)
             for (const k of workUrlKeys) {
                 const val = (process.env[k] || '').trim();
-                if (val && val.length > 5 && val.startsWith('http')) {
+                if (val && val.length > 5 && val.startsWith('http') && !val.includes('/g/')) {
                     workUrl = val;
                     workUrlKeyFound = `Secret GitHub [process.env.${k}]`;
                     break;
@@ -1333,7 +1333,7 @@ async function main() {
             if (!workUrl) {
                 for (const k of workUrlKeys) {
                     const val = (availableCookiesMap[k] || '').trim();
-                    if (val && val.length > 5 && val.startsWith('http')) {
+                    if (val && val.length > 5 && val.startsWith('http') && !val.includes('/g/')) {
                         workUrl = val;
                         workUrlKeyFound = `Supabase [availableCookiesMap.${k}]`;
                         break;
@@ -1388,7 +1388,7 @@ async function main() {
             for (const a of aliases) {
                 const k = `CHATGPT_CONVERSATION_URL_${a}`;
                 const val = (process.env[k] || availableCookiesMap[k] || '').trim();
-                if (val && val.startsWith('http')) {
+                if (val && val.startsWith('http') && !val.includes('/g/')) {
                     fallbackUrl = val;
                     break;
                 }
@@ -1469,8 +1469,20 @@ async function main() {
             }
 
             const sets = [];
-            if (workEntry) sets.push(workEntry);
-            if (persoEntry) sets.push(persoEntry);
+            const forcePlanPro = process.env.FORCE_PLAN_PRO !== 'false';
+            if (workEntry) {
+                sets.push(workEntry);
+                if (forcePlanPro) {
+                    console.log(`🔒 Mode PRO forcé actif pour ${opName} : Utilisation exclusive du Plan PRO / Work (Plan PERSO désactivé).`);
+                }
+            }
+            if (!forcePlanPro && persoEntry) {
+                sets.push(persoEntry);
+            }
+            if (sets.length === 0 && persoEntry) {
+                console.log(`⚠️ Aucun identifiant PRO trouvé pour ${opName}, repli sur Perso.`);
+                sets.push(persoEntry);
+            }
 
             if (sets.length === 0) {
                 for (const [k, v] of Object.entries(availableCookiesMap)) {
@@ -2422,6 +2434,10 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                         const todayConvKey = `CHATGPT_TODAY_CONV_${plan.key}_${dateStr}`.toUpperCase();
                         if (!existingOpConvUrl && appSettingsMap[todayConvKey]) {
                             existingOpConvUrl = appSettingsMap[todayConvKey];
+                        }
+                        if (existingOpConvUrl && existingOpConvUrl.includes('/g/')) {
+                            console.log(`🚫 URL Custom GPT Perso ignorée (${existingOpConvUrl}) car le mode PRO est forcé.`);
+                            existingOpConvUrl = null;
                         }
                         if (existingOpConvUrl) {
                             for (const al of opAliases) activePlanUrls[al] = existingOpConvUrl;
