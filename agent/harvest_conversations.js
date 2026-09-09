@@ -593,18 +593,52 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
         }
     }
 
+    // Filtrage strict : Ne conserver que les prompts et images à partir du prompt de départ
+    const startKeyword = process.env.START_PROMPT_KEYWORD || 'Rueil-Malmaison';
+    console.log(`🎯 Filtrage du début de session : Recherche du prompt contenant "${startKeyword}"...`);
+    
+    const startIdx = pairsToProcess.findIndex(p => 
+        p.promptText && p.promptText.toLowerCase().includes(startKeyword.toLowerCase())
+    );
+
+    if (startIdx >= 0) {
+        console.log(`✅ Début exact identifié au prompt #${startIdx + 1} ("${startKeyword}").`);
+        console.log(`✂️ Exclusion des ${startIdx} anciennes photos antérieures à aujourd'hui.`);
+        pairsToProcess = pairsToProcess.slice(startIdx);
+    } else {
+        console.log(`ℹ️ Mot-clé de départ "${startKeyword}" non trouvé au mot près, traitement de toutes les photos.`);
+    }
+
     console.log(`\n=============================================================`);
-    console.log(`📸 TOTAL FINAL DE PHOTOS PRÊTES À MOISSONNER : ${pairsToProcess.length}`);
+    console.log(`📸 TOTAL FINAL DE PHOTOS DU JOUR À MOISSONNER : ${pairsToProcess.length}`);
     console.log(`=============================================================\n`);
 
     let processedCount = 0;
     const harvestedTaskIds = new Set();
     const uploadedLinks = [];
 
+    // Trouver l'index de départ dans planningTasks correspondant à Rueil-Malmaison
+    let planningStartIndex = 0;
+    if (planningTasks && planningTasks.length > 0) {
+        const foundPlanIdx = planningTasks.findIndex(t => 
+            (t.fiche_nom || '').toLowerCase().includes('rueil') || (t.ville || '').toLowerCase().includes('rueil')
+        );
+        if (foundPlanIdx >= 0) {
+            planningStartIndex = foundPlanIdx;
+            console.log(`🎯 Alignement séquentiel du planning calé sur l'index #${planningStartIndex} (${planningTasks[planningStartIndex].fiche_nom})`);
+        }
+    }
+
     for (let idx = 0; idx < pairsToProcess.length; idx++) {
         const item = pairsToProcess[idx];
         console.log(`\n-------------------------------------------------------------`);
         console.log(`🎨 Traitement Photo #${idx + 1} / ${pairsToProcess.length}...`);
+
+        // Extraction de la ville depuis le prompt (ex: "in a residential neighborhood of Rueil-Malmaison, Hauts-de-Seine")
+        const cityMatch = (item.promptText || '').match(/neighborhood of ([^,]+),/i) 
+            || (item.promptText || '').match(/in ([^,]+),/i)
+            || (item.promptText || '').match(/Lieu : ([^(\n]+)/i);
+        const extractedCity = cityMatch ? cityMatch[1].trim() : null;
 
         // Matching de la tâche correspondante dans le planning
         let matchedTask = null;
@@ -612,32 +646,50 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
 
         if (planningTasks && planningTasks.length > 0) {
             const cleanPrompt = normalizeStr(item.promptText);
+            
+            // 1. Matching par nom de fiche
             for (let tIdx = 0; tIdx < planningTasks.length; tIdx++) {
                 const t = planningTasks[tIdx];
                 if (harvestedTaskIds.has(t.id)) continue;
 
                 const safeFiche = normalizeStr(t.fiche_nom);
-                const safeVille = normalizeStr(t.ville);
-
                 if (safeFiche.length > 3 && cleanPrompt.includes(safeFiche)) {
-                    matchedTask = t;
-                    matchedTaskIndex = tIdx;
-                    break;
-                }
-                if (safeVille.length > 3 && cleanPrompt.includes(safeVille) && cleanPrompt.includes(normalizeStr((t.fiche_nom || '').split(' ')[0]))) {
                     matchedTask = t;
                     matchedTaskIndex = tIdx;
                     break;
                 }
             }
 
-            // Fallback séquentiel
-            if (!matchedTask) {
+            // 2. Matching par ville extraite
+            if (!matchedTask && extractedCity) {
+                const cleanExtracted = normalizeStr(extractedCity);
                 for (let tIdx = 0; tIdx < planningTasks.length; tIdx++) {
                     const t = planningTasks[tIdx];
-                    if (!harvestedTaskIds.has(t.id)) {
+                    if (harvestedTaskIds.has(t.id)) continue;
+
+                    const safeVille = normalizeStr(t.ville);
+                    const safeFiche = normalizeStr(t.fiche_nom);
+                    if (safeVille.length > 3 && cleanExtracted.includes(safeVille)) {
                         matchedTask = t;
                         matchedTaskIndex = tIdx;
+                        break;
+                    }
+                    if (safeFiche.length > 3 && safeFiche.includes(cleanExtracted)) {
+                        matchedTask = t;
+                        matchedTaskIndex = tIdx;
+                        break;
+                    }
+                }
+            }
+
+            // 3. Fallback séquentiel à partir de l'index de départ (planningStartIndex)
+            if (!matchedTask) {
+                for (let offset = 0; offset < planningTasks.length; offset++) {
+                    const targetIdx = (planningStartIndex + idx + offset) % planningTasks.length;
+                    const candidate = planningTasks[targetIdx];
+                    if (!harvestedTaskIds.has(candidate.id)) {
+                        matchedTask = candidate;
+                        matchedTaskIndex = targetIdx;
                         break;
                     }
                 }
@@ -683,10 +735,11 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
         }
 
         // Injection des métadonnées EXIF Smartphone & GPS
+        const effectiveCity = extractedCity || taskData.ville || 'Paris';
         const reviewTextContent = (taskData.commentaire || '') + ' ' + (taskData.travaux || '') + ' ' + item.promptText;
         const geoBuffer = await injectExifAndGps(
             rawBuffer,
-            taskData.ville || 'Paris',
+            effectiveCity,
             taskData.pays || 'France',
             taskData.date || TARGET_DATE,
             reviewTextContent
