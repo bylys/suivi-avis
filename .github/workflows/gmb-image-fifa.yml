@@ -38,7 +38,8 @@ jobs:
           OPERATOR_NAME: Fifaliana
           TARGET_DATE: '2026-09-09'
           FORCE_EXECUTION: 'true'
-          FORCE_PLAN_PRO: 'true'
+          FORCE_PLAN_PERSO: 'true'
+          FORCE_PLAN_PRO: 'false'
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}

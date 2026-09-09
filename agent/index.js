@@ -1594,18 +1594,30 @@ async function main() {
             }
 
             const sets = [];
-            const forcePlanPro = process.env.FORCE_PLAN_PRO !== 'false';
-            if (workEntry) {
-                sets.push(workEntry);
-                if (forcePlanPro) {
-                    console.log(`🔒 Mode PRO forcé actif pour ${opName} : Utilisation exclusive du Plan PRO / Work (Plan PERSO désactivé).`);
+            const forcePlanPerso = process.env.FORCE_PLAN_PERSO === 'true' || process.env.FORCE_PLAN_PRO === 'false';
+            const forcePlanPro = !forcePlanPerso && (process.env.FORCE_PLAN_PRO === 'true');
+
+            if (forcePlanPerso) {
+                if (persoEntry) {
+                    sets.push(persoEntry);
+                    console.log(`🔒 Mode PERSO forcé actif pour ${opName} : Utilisation exclusive du Plan PERSO / Secours (Plan PRO désactivé).`);
+                } else if (workEntry) {
+                    console.warn(`⚠️ Compte PERSO demandé pour ${opName} mais introuvable, utilisation du compte disponible.`);
+                    sets.push(workEntry);
                 }
-            }
-            if (!forcePlanPro && persoEntry) {
-                sets.push(persoEntry);
+            } else if (forcePlanPro) {
+                if (workEntry) {
+                    sets.push(workEntry);
+                    console.log(`🔒 Mode PRO forcé actif pour ${opName} : Utilisation exclusive du Plan PRO / Work (Plan PERSO désactivé).`);
+                } else if (persoEntry) {
+                    sets.push(persoEntry);
+                }
+            } else {
+                if (workEntry) sets.push(workEntry);
+                if (persoEntry) sets.push(persoEntry);
             }
             if (sets.length === 0 && persoEntry) {
-                console.log(`⚠️ Aucun identifiant PRO trouvé pour ${opName}, repli sur Perso.`);
+                console.log(`⚠️ Repli sur le compte Perso pour ${opName}.`);
                 sets.push(persoEntry);
             }
 
@@ -2561,8 +2573,11 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             existingOpConvUrl = appSettingsMap[todayConvKey];
                         }
                         if (existingOpConvUrl && existingOpConvUrl.includes('/g/')) {
-                            console.log(`🚫 URL Custom GPT Perso ignorée (${existingOpConvUrl}) car le mode PRO est forcé.`);
-                            existingOpConvUrl = null;
+                            const isProMode = process.env.FORCE_PLAN_PRO === 'true' && process.env.FORCE_PLAN_PERSO !== 'true';
+                            if (isProMode) {
+                                console.log(`🚫 URL Custom GPT Perso ignorée (${existingOpConvUrl}) car le mode PRO est forcé.`);
+                                existingOpConvUrl = null;
+                            }
                         }
                         if (existingOpConvUrl) {
                             for (const al of opAliases) activePlanUrls[al] = existingOpConvUrl;
