@@ -860,33 +860,37 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             }
         }
 
-        // Scanneur d'image dynamique sécurisé : regarde UNIQUEMENT dans le nouveau tour de réponse du prompt actuel
+        // Scanneur d'image dynamique universel : DOM complet + API OpenAI
         const checkNewImage = async () => {
-            return await page.evaluate(({ knownUrls, initialTurns }) => {
+            return await page.evaluate(({ knownUrls }) => {
                 const knownSet = new Set(knownUrls);
-                const allTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], article:has([data-message-author-role="assistant"]), article'));
-                if (allTurns.length === 0) return null;
 
-                // Si de nouveaux tours sont apparus depuis l'envoi du prompt, inspecter les nouveaux tours en partant du plus récent
-                const candidateTurns = allTurns.length > initialTurns 
-                    ? allTurns.slice(initialTurns) 
-                    : [allTurns[allTurns.length - 1]];
+                // 1. Scan de TOUTES les balises <img> de la page (en partant de la plus récente)
+                const imgs = Array.from(document.querySelectorAll('img'));
+                for (let i = imgs.length - 1; i >= 0; i--) {
+                    const img = imgs[i];
+                    const src = img.currentSrc || img.src || '';
+                    if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
+                    if (knownSet.has(src)) continue;
 
-                for (let t = candidateTurns.length - 1; t >= 0; t--) {
-                    const turn = candidateTurns[t];
-                    const imgs = Array.from(turn.querySelectorAll('img'));
-                    for (const img of imgs) {
-                        const src = img.src || '';
-                        if (!src || src.includes('avatar') || src.includes('profile') || src.includes('svg') || src.includes('icon')) continue;
-                        if (knownSet.has(src)) continue; // INTERDICTION : ne jamais reprendre une image connue avant ce tour
-                        // Détection universelle DALL-E 3 : CDN OpenAI (oaiusercontent), blob, ou dimensions visuelles suffisantes
-                        if (src.includes('oaiusercontent') || src.includes('blob:') || (img.complete && (img.naturalWidth >= 300 || img.width >= 300 || img.naturalWidth >= 400 || img.width >= 400))) {
-                            return src;
-                        }
+                    // Détection DALL-E : CDN OpenAI, endpoint backend ou blob
+                    if (src.includes('oaiusercontent') || src.includes('/backend-api/files/') || src.startsWith('blob:')) {
+                        return src;
+                    }
+                    if (img.complete && (img.naturalWidth >= 300 || img.width >= 300)) {
+                        return src;
                     }
                 }
+
+                // 2. Scan des liens de téléchargement ou balises <a> enveloppant les images
+                const links = Array.from(document.querySelectorAll('a[href*="oaiusercontent"], a[href*="/backend-api/files/"]'));
+                for (let i = links.length - 1; i >= 0; i--) {
+                    const href = links[i].href || '';
+                    if (href && !knownSet.has(href)) return href;
+                }
+
                 return null;
-            }, { knownUrls: existingImageUrls, initialTurns: initialAssistantTurnCount });
+            }, { knownUrls: existingImageUrls });
         };
 
         console.log("⏳ Attente active de la création DALL-E 3 (jusqu'à 100s)...");
@@ -897,13 +901,81 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         const MAX_SCAN_MS = 100000;
 
         while (Date.now() - scanStart < MAX_SCAN_MS) {
-            // Défilement automatique vers le bas pour forcer le rendu Chromium des images lazy-loaded
+            // Défilement forcé du vrai conteneur de discussion ChatGPT
             try {
-                await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+                await page.evaluate(() => {
+                    const scrollContainers = Array.from(document.querySelectorAll('*')).filter(el => {
+                        const s = window.getComputedStyle(el);
+                        return (s.overflowY === 'auto' || s.overflowY === 'scroll') && el.scrollHeight > el.clientHeight;
+                    });
+                    for (const sc of scrollContainers) {
+                        sc.scrollTop = sc.scrollHeight + 1000;
+                    }
+                    window.scrollTo(0, document.body.scrollHeight);
+
+                    const turns = document.querySelectorAll('[data-message-author-role="assistant"], [data-testid^="conversation-turn"], article');
+                    if (turns.length > 0) {
+                        turns[turns.length - 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+                });
             } catch (e) {}
 
             foundUrl = await checkNewImage();
             if (foundUrl) break;
+
+            // Fallback API direct après 20s d'attente (interception directe de l'arbre conversationnel OpenAI)
+            if (!foundUrl && (Date.now() - scanStart > 20000)) {
+                const convMatch = page.url().match(/\/c\/([a-zA-Z0-9-]+)/);
+                if (convMatch) {
+                    const apiFound = await page.evaluate(async ({ cId, knownUrls }) => {
+                        try {
+                            const knownSet = new Set(knownUrls);
+                            let token = null;
+                            try {
+                                const sResp = await fetch('/api/auth/session');
+                                if (sResp.ok) token = (await sResp.json()).accessToken;
+                            } catch (e) {}
+                            const headers = { 'accept': 'application/json' };
+                            if (token) headers['Authorization'] = `Bearer ${token}`;
+                            const res = await fetch(`/backend-api/conversation/${cId}`, { headers, credentials: 'include' });
+                            if (!res.ok) return null;
+                            const data = await res.json();
+                            if (!data || !data.mapping) return null;
+                            
+                            const nodes = Object.values(data.mapping);
+                            for (let idx = nodes.length - 1; idx >= 0; idx--) {
+                                const msg = nodes[idx].message;
+                                if (!msg || msg.author?.role !== 'assistant') continue;
+                                const parts = msg.content?.parts || [];
+                                for (const p of parts) {
+                                    if (typeof p === 'string') {
+                                        const m = p.match(/!\[.*?\]\((https:\/\/files\.oaiusercontent\.com\/[^\)]+)\)/);
+                                        if (m && !knownSet.has(m[1])) return m[1];
+                                    } else if (typeof p === 'object' && p !== null) {
+                                        if (p.asset_pointer) {
+                                            const fId = p.asset_pointer.replace('file-service://', '');
+                                            try {
+                                                const dlRes = await fetch(`/backend-api/files/${fId}/download`, { headers, credentials: 'include' });
+                                                if (dlRes.ok) {
+                                                    const dlData = await dlRes.json();
+                                                    if (dlData && dlData.download_url) return dlData.download_url;
+                                                }
+                                            } catch (err) {}
+                                        }
+                                    }
+                                }
+                            }
+                            return null;
+                        } catch(e) { return null; }
+                    }, { cId: convMatch[1], knownUrls: existingImageUrls });
+
+                    if (apiFound) {
+                        console.log(`🎯 Photo DALL-E détectée avec succès via l'API interne OpenAI !`);
+                        foundUrl = apiFound;
+                        break;
+                    }
+                }
+            }
 
             // Détection immédiate de message de limite/quota de génération d'images DALL-E 3
             const limitDetected = await page.evaluate(() => {
@@ -1112,6 +1184,23 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 }
             } catch (err) {
                 console.log("Erreur fallback fetch :", err.message);
+            }
+        }
+
+        // Fallback 2 : Téléchargement direct Node.js depuis Playwright page.request (bypasse tout blocage CORS/Canvas)
+        if ((!imageBuffer || imageBuffer.length < 5000) && foundUrl && foundUrl.startsWith('http')) {
+            console.log("Fallback 2 : Téléchargement direct Node.js depuis page.request...");
+            try {
+                const nodeResp = await page.request.get(foundUrl);
+                if (nodeResp.ok()) {
+                    const nodeBuf = await nodeResp.body();
+                    if (nodeBuf && nodeBuf.length > 5000) {
+                        imageBuffer = nodeBuf;
+                        console.log(`✅ Image récupérée avec succès via page.request (${imageBuffer.length} octets) !`);
+                    }
+                }
+            } catch (nrErr) {
+                console.log("Note téléchargement Node :", nrErr.message);
             }
         }
 
