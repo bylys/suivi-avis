@@ -9,7 +9,7 @@ const { injectExifAndGps } = require('./exif');
 const { sendTelegramNotification } = require('./telegram');
 
 // --- Configuration ---
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rrbvghxmnimusfyqixau.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 const BROWSERLESS_TOKEN = process.env.BROWSERLESS_TOKEN;
 const TARGET_OPERATOR = process.env.OPERATOR_NAME ? process.env.OPERATOR_NAME.trim() : 'Fifaliana';

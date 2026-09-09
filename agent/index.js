@@ -1624,27 +1624,34 @@ async function main() {
             }
 
             const sets = [];
-            const forcePlanPerso = process.env.FORCE_PLAN_PERSO === 'true' || process.env.FORCE_PLAN_PRO === 'false';
+            const forcePlanPerso = process.env.FORCE_PLAN_PERSO === 'true';
             const forcePlanPro = !forcePlanPerso && (process.env.FORCE_PLAN_PRO === 'true');
 
             if (forcePlanPerso) {
                 if (persoEntry) {
                     sets.push(persoEntry);
-                    console.log(`🔒 Mode PERSO forcé actif pour ${opName} : Utilisation exclusive du Plan PERSO / Secours (Plan PRO désactivé).`);
+                    console.log(`🔒 Mode PERSO forcé actif pour ${opName} : Utilisation exclusive du Plan PERSO / Secours.`);
                 } else if (workEntry) {
-                    console.warn(`⚠️ Compte PERSO demandé pour ${opName} mais introuvable, utilisation du compte disponible.`);
+                    console.warn(`⚠️ Compte PERSO demandé pour ${opName} mais introuvable, utilisation du compte PRO disponible.`);
                     sets.push(workEntry);
                 }
             } else if (forcePlanPro) {
                 if (workEntry) {
                     sets.push(workEntry);
-                    console.log(`🔒 Mode PRO forcé actif pour ${opName} : Utilisation exclusive du Plan PRO / Work (Plan PERSO désactivé).`);
+                    console.log(`🔒 Mode PRO forcé actif pour ${opName} : Utilisation exclusive du Plan PRO / Work.`);
                 } else if (persoEntry) {
                     sets.push(persoEntry);
                 }
             } else {
-                if (workEntry) sets.push(workEntry);
-                if (persoEntry) sets.push(persoEntry);
+                // Par défaut : PRO EN PRIORITÉ 1, PERSO EN SECONDAIRE / SECOURS
+                if (workEntry) {
+                    sets.push(workEntry);
+                    console.log(`⭐ Priorité 1 pour ${opName} : Plan PRO / Work`);
+                }
+                if (persoEntry) {
+                    sets.push(persoEntry);
+                    console.log(`🔄 Secours pour ${opName} : Plan PERSO / Secours (bascule automatique en cas de quota/erreur)`);
+                }
             }
             if (sets.length === 0 && persoEntry) {
                 console.log(`⚠️ Repli sur le compte Perso pour ${opName}.`);
@@ -2620,9 +2627,9 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             existingOpConvUrl = appSettingsMap[todayConvKey];
                         }
                         if (existingOpConvUrl && existingOpConvUrl.includes('/g/')) {
-                            const isProMode = process.env.FORCE_PLAN_PRO === 'true' && process.env.FORCE_PLAN_PERSO !== 'true';
-                            if (isProMode) {
-                                console.log(`🚫 URL Custom GPT Perso ignorée (${existingOpConvUrl}) car le mode PRO est forcé.`);
+                            const isProPlan = plan.name.includes('PRO') || plan.name.includes('Work');
+                            if (isProPlan) {
+                                console.log(`🚫 URL Custom GPT Perso ignorée (${existingOpConvUrl}) pour le compte PRO.`);
                                 existingOpConvUrl = null;
                             }
                         }
