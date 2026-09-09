@@ -6,24 +6,26 @@ const SAFETY_RULES = {
   toiture: `SAFETY RULES — Roofing & Roof Renovation (Couvreur / Rénovation de toiture):
 MANDATORY PROFESSIONAL PROTOCOL IN FRANCE:
 Minimum 2 workers visible.
-STRICT BAN ON LADDERS & WALKING ON ROOF: Under French labor safety regulations, ladders are forbidden as workstations, and standing unprotected on sloped tiles or ridge is strictly prohibited!
-POSITION A (SCAFFOLDING PLATFORM): Roofers working safely from a certified facade scaffolding platform (échafaudage de couvreur avec garde-corps) along the roof edge/eaves.
+STRICT BAN ON WALKING ON ROOF TILES: Under French labor safety regulations, ladders are forbidden as workstations, and standing unprotected on sloped tiles or ridge is strictly prohibited!
+POSITION A (SCAFFOLDING PLATFORM): Roofers working safely with BOTH FEET firmly on the floorboards of a certified facade scaffolding platform (échafaudage de couvreur avec garde-corps) along the roof edge/eaves. Workers are safely BEHIND the metal safety guardrail. NEVER stepping over the railing onto the sloped tiles!
 POSITION B (GROUND LEVEL): Both roofers working at GROUND LEVEL in the driveway or garden, preparing new terracotta tiles, cutting zinc flashing on a portable workbench, or inspecting the roof from below.
 ABSOLUTE PROHIBITION & BAN:
+❌ ABSOLUTELY FORBIDDEN: NO worker standing, walking, crouching or balancing on steep roof slope, sloped tiles or ridge!
+❌ NEVER allow a worker to step over or climb outside the scaffolding guardrail!
 ❌ NO ladders! NO tall extension ladders leaning against the house or roof!
-❌ NO worker standing, walking or balancing freely on steep roof slope, tiles or ridge!
-❌ ALL height work must be from scaffolding with guardrails or cherry picker basket!`,
+❌ ALL height work must have workers' feet 100% on the scaffolding floorboards behind guardrails!`,
 
   nettoyage_toiture: `SAFETY RULES — Roof Cleaning & Moss Removal (Nettoyage Toiture & Démoussage):
 MANDATORY PROFESSIONAL PROTOCOL IN FRANCE:
 NO LADDERS OR STEPLADDERS ON ROOF OR GUTTERS.
-ABSOLUTE BAN ON WALKING ON ROOF TILES: NO worker allowed standing on wet sloped roof tiles or ridge!
-OPTION 1 (GROUND LEVEL TELESCOPIC LANCE - STANDARD): The cleaner stands safely on the GROUND (in the courtyard, driveway, or garden) holding a long black TELESCOPIC CARBON SPRAY LANCE (perche télescopique de pulvérisation) spraying the roof tiles from below.
+ABSOLUTE BAN ON WALKING ON ROOF TILES: NO worker allowed standing on wet sloped roof tiles or ridge! Slippery wet tiles are an extreme fall hazard!
+OPTION 1 (GROUND LEVEL TELESCOPIC LANCE - STANDARD & PREFERRED): The technician stands safely on the GROUND (in the courtyard, driveway, lawn or patio) with BOTH FEET on solid ground, holding a long black TELESCOPIC CARBON SPRAY LANCE (perche télescopique de pulvérisation) spraying the roof tiles from below.
 OPTION 2 (AERIAL BASKET LIFT / NACELLE): Cleaner working safely inside an aerial cherry picker basket (nacelle élévatrice) parked beside the house.
+OPTION 3 (SCAFFOLDING PLATFORM): Cleaner stands on scaffolding platform behind guardrail. FEET ON PLATFORM FLOORBOARDS ONLY, NEVER STEPPING ONTO SLOPED TILES.
 ABSOLUTE PROHIBITION & BAN:
-❌ NEVER place a worker standing or walking on steep sloped roof tiles or ridge while spraying water!
-❌ NO single extension ladders leaning against the gutter or roof slope!
-❌ Worker MUST be standing safely on the GROUND with a telescopic lance OR inside an aerial basket lift.`,
+❌ NEVER place a worker standing, walking or balancing on steep sloped roof tiles or ridge while spraying water!
+❌ NO worker stepping over the scaffolding railing onto roof tiles!
+❌ Technician MUST be standing safely on the GROUND with a telescopic lance OR inside an aerial basket lift.`,
   nettoyage_terrasse: `SAFETY RULES — Terrace / Deck cleaning: Ground level work on outdoor patio/deck/driveway. NO HARD HAT / NO HELMET on head (bare head or casual cap). High-pressure washer or patio cleaner attachment in use. Waterproof boots, work trousers. NEVER: bare feet, jet aimed at people.`,
   nettoyage_facade: `SAFETY RULES — Facade cleaning: High-pressure washer or softwash lance aimed at exterior wall. Scaffold or ground level. Hard hat MANDATORY if under scaffold. Safety goggles/visor + work boots.`,
   nettoyage_gouttieres: `SAFETY RULES — Gutter Cleaning & Gutter Installation (Nettoyage et Travaux de Gouttières):

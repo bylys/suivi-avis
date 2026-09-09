@@ -2519,12 +2519,12 @@ async function main() {
                 interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT jardiniers / élagueurs au sol dans un jardin avec pelouse et végétation.";
             } else if (lowerLabel.includes('vitrier') || lowerLabel.includes('vitrerie') || lowerLabel.includes('vitre') || lowerLabel.includes('fenêtre') || lowerLabel.includes('fenetre') || lowerLabel.includes('miroir')) {
                 interdiction = "AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
-            } else if (lowerLabel.includes('démoussage') || lowerLabel.includes('demoussage') || lowerLabel.includes('nettoyage toiture') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture'))) {
-                interdiction = "AUCUNE échelle, AUCUN escabeau appuyé contre la toiture ou la façade (travail sur échelle formellement interdit), AUCUN travailleur marchant ou debout sur les tuiles ou sur le faîtage du toit (interdiction absolue de marcher sur le toit en pente). Nettoyage basse/haute pression 100% au sol avec perche télescopique ou nacelle élévatrice sécurisée.";
+            } else if (lowerLabel.includes('démoussage') || lowerLabel.includes('demoussage') || lowerLabel.includes('nettoyage toiture') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture')) || lowerLabel.includes('hydrofuge')) {
+                interdiction = "INTERDICTION FORMELLE DE MONTER SUR LA TOITURE : AUCUN ouvrier sur les tuiles, AUCUN ouvrier sur le toit en pente, AUCUN pied sur les tuiles mouillées et glissantes (extrême danger de chute) ! AUCUNE échelle en appui sur la toiture. Le technicien travaille 100% DEPUIS LE SOL dans le jardin/l'allée avec une perche télescopique orientée vers le haut.";
             } else if (lowerLabel.includes('gouttière') || lowerLabel.includes('gouttiere') || lowerLabel.includes('chéneau') || lowerLabel.includes('cheneau') || lowerLabel.includes('descente')) {
-                interdiction = "AUCUNE échelle, AUCUN escabeau en appui contre la façade ou la gouttière (le travail sur échelle est strictement interdit). UNIQUEMENT intervention sécurisée depuis un échafaudage réglementaire avec garde-corps le long de la rive ou techniciens travaillant au sol.";
+                interdiction = "INTERDICTION FORMELLE DE MARCHER SUR LES TUILES : Les artisans doivent avoir leurs deux pieds fermement posés sur le plancher de l'échafaudage derrière le garde-corps ou être au sol. AUCUN pied posé sur la pente de la toiture, AUCUN enjambement du garde-corps.";
             } else if (lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile')) {
-                interdiction = "AUCUNE échelle, AUCUN escabeau posé contre le mur ou sur la toiture (travail sur échelle formellement interdit), AUCUN travailleur debout ou marchant directement sur les tuiles en pente du toit ou sur le faîtage sans protection ! Artisans couvreurs UNIQUEMENT sur échafaudage de sécurité avec garde-corps le long de la rive du toit ou travaillant au sol.";
+                interdiction = "INTERDICTION FORMELLE DE MARCHER OU SE TENIR SUR LES TUILES EN PENTE : Les couvreurs ne doivent JAMAIS avoir les pieds sur les tuiles en pente du toit, JAMAIS enjamber le garde-corps de l'échafaudage, JAMAIS se tenir en équilibre sur la toiture ! Les ouvriers doivent avoir leurs deux pieds 100% POSÉS SUR LE PLANCHER DE L'ÉCHAFAUDAGE derrière le garde-corps métallique de sécurité, ou être debout au sol dans la cour/jardin.";
             } else if (lowerLabel.includes('façade') || lowerLabel.includes('facade') || lowerLabel.includes('ravalement') || lowerLabel.includes('crépi') || lowerLabel.includes('crepi') || lowerLabel.includes('enduit')) {
                 interdiction = "AUCUNE échelle, AUCUN escabeau en extérieur contre la façade (travail sur échelle strictement interdit). UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs avec échafaudage sécurisé avec garde-corps ou au sol.";
             } else if (lowerLabel.includes('étanchéité') || lowerLabel.includes('etancheite') || lowerLabel.includes('toit plat') || (lowerLabel.includes('terrasse') && !lowerLabel.includes('terrassement'))) {
@@ -2543,6 +2543,17 @@ async function main() {
                 interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT artisan peintre avec rouleau microfibres, bac à peinture et bâches de protection au sol.";
             }
 
+            const isToiture = lowerLabel.includes('couvreur') || lowerLabel.includes('toiture') || lowerLabel.includes('couverture') || lowerLabel.includes('tuile');
+            const isDemoussage = lowerLabel.includes('démoussage') || lowerLabel.includes('demoussage') || (lowerLabel.includes('nettoyage') && lowerLabel.includes('toiture')) || lowerLabel.includes('hydrofuge');
+            const isGouttiere = lowerLabel.includes('gouttière') || lowerLabel.includes('gouttiere') || lowerLabel.includes('chéneau') || lowerLabel.includes('cheneau');
+
+            let ouvriersInstruction = `Ouvrier(s) : ${nbOuvriers} visible(s), en tenue de travail, équipement de sécurité adapté au métier (casque, harnais, gants selon le cas). L'ouvrier doit être debout, actif, jamais assis dans du béton frais ou dans une position irréaliste.`;
+            if (isDemoussage) {
+                ouvriersInstruction = `Ouvrier(s) : ${nbOuvriers} visible(s), tenue de travail professionnelle. RÈGLE IMPÉRATIVE DE SÉCURITÉ NETTOYAGE TOITURE : Le technicien DOIT ÊTRE DEBOUT AU SOL (dans le jardin, la cour ou sur la terrasse), les deux pieds solidement ancrés sur la terre ferme, tenant une longue perche télescopique pulvérisant le toit depuis le bas. STRICTEMENT AUCUN OUVRIER SUR LE TOIT NI SUR LES TUILES MOUILLÉES (danger mortel de glissade interdit).`;
+            } else if (isToiture || isGouttiere) {
+                ouvriersInstruction = `Ouvrier(s) : ${nbOuvriers} visible(s), tenue de couvreur avec casque et gants. RÈGLE IMPÉRATIVE DE SÉCURITÉ TRAVAIL EN HAUTEUR : Les ouvriers doivent TOUJOURS avoir leurs deux pieds fermement posés sur le PLANCHER MÉTALLIQUE/BOIS DE L'ÉCHAFAUDAGE, protégés derrière le garde-corps de sécurité le long de la gouttière (ou être debout au sol dans la cour en train de préparer les matériaux). INTERDICTION STRICTE D'AVOIR LES PIEDS SUR LA PENTE DES TUILES, interdiction d'enjamber le garde-corps, interdiction de marcher sur le toit.`;
+            }
+
             const finalPrompt = `🔴 NOUVEAU CHANTIER TOTALEMENT INDÉPENDANT.
 CONSIGNE DALL-E : Génère une nouvelle photo originale pour ce chantier.
 
@@ -2556,7 +2567,7 @@ Génère une photo de chantier réaliste en ${paysLabel}, dans la ville de ${vil
 
 Contexte : ${travauxLabel} sur une ${contexteLabel}, état travaux en cours.
 
-Ouvrier(s) : ${nbOuvriers} visible(s), en tenue de travail, équipement de sécurité adapté au métier (casque, harnais, gants selon le cas). L'ouvrier doit être debout, actif, jamais assis dans du béton frais ou dans une position irréaliste.
+${ouvriersInstruction}
 
 Cadrage : ${pointDeVue}, angle oblique, pas centré parfaitement — photo prise à la va-vite.
 
@@ -2570,7 +2581,12 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
 
 ❌ INTERDICTION ABSOLUE : ${interdiction}`;
 
-            const cleanFallbackPrompt = `Génère une photo réaliste et authentique de chantier artisanal en France : ${travauxLabel} pour l'entreprise ${task.fiche_nom || ''} à ${villeLabel}. Style photo smartphone amateur sur le vif, ouvrier au travail en tenue professionnelle, sans texte ni logo.`;
+            let cleanFallbackPrompt = `Génère une photo réaliste et authentique de chantier artisanal en France : ${travauxLabel} pour l'entreprise ${task.fiche_nom || ''} à ${villeLabel}. Style photo smartphone amateur sur le vif, ouvrier au travail en tenue professionnelle, sans texte ni logo.`;
+            if (isDemoussage) {
+                cleanFallbackPrompt = `Génère une photo réaliste et authentique de nettoyage de toiture en France pour l'entreprise ${task.fiche_nom || ''} à ${villeLabel}. L'artisan est debout au sol dans le jardin avec une perche télescopique pulvérisant le toit. Aucun ouvrier sur la toiture. Photo amateur smartphone, sans texte ni logo.`;
+            } else if (isToiture || isGouttiere) {
+                cleanFallbackPrompt = `Génère une photo réaliste de travaux de couverture en France pour l'entreprise ${task.fiche_nom || ''} à ${villeLabel}. Les couvreurs sont sécurisés sur un échafaudage avec garde-corps (les deux pieds sur le plancher) ou au sol préparant les tuiles. Aucun ouvrier debout sur les tuiles. Photo smartphone amateur, sans texte ni logo.`;
+            }
             const secureRichPrompt = finalPrompt;
             
             console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 150)}...`);
