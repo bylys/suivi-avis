@@ -1264,21 +1264,47 @@ async function main() {
             console.log(`🤖 Agent configuré spécifiquement pour l'opérateur : "${rawOp}" (Recherche DB: "${targetOp}")`);
         }
         
-        let query = supabase.from('planning').select('*').eq('date', dateStr);
-        if (rawOp) {
-            const isFifa = rawOp.toLowerCase().includes('fif');
-            if (isFifa) {
-                query = query.or('operateur.ilike.Fifaliana,operateur.ilike.FIFA,operateur.ilike.fifa,operateur.ilike.Fif,operateur.ilike.%FIF%');
+        let { data: allTasksForDate, error } = await supabase
+            .from('planning')
+            .select('*')
+            .eq('date', dateStr)
+            .order('id', { ascending: true });
+
+        if (error) {
+            console.error("Erreur lors de la récupération du planning :", error.message);
+            throw error;
+        }
+
+        console.log(`📋 Total lignes dans planning pour le (${dateStr}) : ${allTasksForDate ? allTasksForDate.length : 0}`);
+        if (allTasksForDate && allTasksForDate.length > 0) {
+            const opsPresent = [...new Set(allTasksForDate.map(t => t.operateur))];
+            console.log(`👥 Opérateurs trouvés dans planning pour le ${dateStr} :`, opsPresent);
+        } else {
+            try {
+                const { data: recentRows } = await supabase.from('planning').select('date').limit(10);
+                const recentDates = [...new Set((recentRows || []).map(r => r.date))];
+                console.log("ℹ️ Dates disponibles dans la table planning :", recentDates);
+            } catch (e) {}
+        }
+
+        let tasks = [];
+        if (allTasksForDate && allTasksForDate.length > 0) {
+            if (!rawOp) {
+                tasks = allTasksForDate;
             } else {
-                query = query.or(`operateur.ilike.${targetOp},operateur.ilike.${rawOp},operateur.ilike.%${rawOp}%`);
+                const isFifa = rawOp.toLowerCase().includes('fif');
+                tasks = allTasksForDate.filter(t => {
+                    const op = (t.operateur || '').trim().toUpperCase();
+                    if (isFifa) {
+                        return op.includes('FIF');
+                    } else {
+                        return op.includes(rawOp.toUpperCase()) || op.includes('KEV');
+                    }
+                });
             }
         }
-        
-        let { data: tasks, error } = await query.order('id', { ascending: true });
-            
-        if (error) throw error;
-        
-        console.log(`${tasks.length} avis trouvés pour ${rawOp ? 'l\'opérateur ' + rawOp + ' (' + targetOp + ')' : 'tous les opérateurs'} pour le (${dateStr}).`);
+
+        console.log(`${tasks.length} avis retenus pour ${rawOp ? 'l\'opérateur ' + rawOp + ' (' + targetOp + ')' : 'tous les opérateurs'} pour le (${dateStr}).`);
         
         let isTestFallback = false;
         
