@@ -74,7 +74,7 @@ async function cleanOldPhotosFromDrive(drive, parentFolderId) {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
         console.log("🧹 Vérification et nettoyage automatique des anciennes photos sur Google Drive (> 7 jours)...");
 
-        const q = `mimeType != 'application/vnd.google-apps.folder' and createdTime < '${sevenDaysAgo}' and trashed=false`;
+        const q = `'${parentFolderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and createdTime < '${sevenDaysAgo}' and trashed=false`;
         const res = await drive.files.list({
             q: q,
             fields: 'files(id, name, createdTime)',
@@ -509,12 +509,14 @@ async function typeAndSendPrompt(page, text) {
         } catch (e) {}
     }
 
-    // Touche Entrée systématique en complément pour garantir la soumission
-    try {
-        await page.focus(activeSelector);
-        await page.keyboard.press('Enter');
-        console.log("⌨️ Touche Entrée pressée sur le champ.");
-    } catch (e) {}
+    // Touche Entrée uniquement en secours si aucun bouton d'envoi n'a pu être cliqué
+    if (!sendTriggered) {
+        try {
+            await page.focus(activeSelector);
+            await page.keyboard.press('Enter');
+            console.log("⌨️ Touche Entrée pressée sur le champ (secours bouton).");
+        } catch (e) {}
+    }
 
     // 5. VÉRIFICATION STRICTE QUE LE MESSAGE EST BIEN PARTI DANS CHATGPT
     console.log("⏳ Vérification que le message a bien été envoyé dans ChatGPT...");
@@ -534,13 +536,15 @@ async function typeAndSendPrompt(page, text) {
             break;
         }
 
-        console.log(`⚠️ Tentative ${checkAttempt}/10 : Le texte est encore présent dans le champ (${sendStatus.remainingLen} car.). Relance d'envoi...`);
-        try {
-            const btn = await page.$('button[data-testid="send-button"], button[aria-label*="Send"], button[aria-label*="Envoyer"]');
-            if (btn) await btn.click({ force: true }).catch(() => {});
-            await page.focus(activeSelector);
-            await page.keyboard.press('Enter').catch(() => {});
-        } catch (e) {}
+        if (checkAttempt > 2) {
+            console.log(`⚠️ Tentative ${checkAttempt}/10 : Le texte est encore présent dans le champ (${sendStatus.remainingLen} car.). Relance d'envoi...`);
+            try {
+                const btn = await page.$('button[data-testid="send-button"], button[aria-label*="Send"], button[aria-label*="Envoyer"]');
+                if (btn) await btn.click({ force: true }).catch(() => {});
+                await page.focus(activeSelector);
+                await page.keyboard.press('Enter').catch(() => {});
+            } catch (e) {}
+        }
     }
 
     // Screenshot APRÈS envoi pour confirmer
@@ -922,14 +926,13 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             }, { knownUrls: existingImageUrls });
         };
 
-        console.log("⏳ Attente active de la création DALL-E 3 (jusqu'à 100s)...");
+        console.log("⏳ Attente active de la création DALL-E 3 (jusqu'à 120s)...");
         let foundUrl = null;
-        let samePromptRetryCount = 0;
         let referenceImagePromptSent = false;
         let scanStart = Date.now();
-        const MAX_SCAN_MS = 100000;
+        let maxScanMs = 120000;
 
-        while (Date.now() - scanStart < MAX_SCAN_MS) {
+        while (Date.now() - scanStart < maxScanMs) {
             // Défilement forcé du vrai conteneur de discussion ChatGPT
             try {
                 await page.evaluate(() => {
@@ -942,7 +945,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     }
                     window.scrollTo(0, document.body.scrollHeight);
 
-                    const turns = document.querySelectorAll('[data-message-author-role="assistant"], [data-testid^="conversation-turn"], article');
+                    const turns = document.querySelectorAll('[data-message-author-role="assistant"], [data-testid^="conversation-turn"]');
                     if (turns.length > 0) {
                         turns[turns.length - 1].scrollIntoView({ behavior: 'smooth', block: 'end' });
                     }
@@ -951,6 +954,31 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
 
             foundUrl = await checkNewImage();
             if (foundUrl) break;
+
+            // Détection de l'état actif de génération DALL-E (bouton stop, animation de streaming, etc.)
+            const genStatus = await page.evaluate(() => {
+                const stopBtn = document.querySelector('button[data-testid="stop-button"], button[aria-label*="Stop"], button[aria-label*="Arrêter"], button[aria-label*="Interrompre"]');
+                const thinking = document.querySelector('.result-thinking, [class*="result-thinking"], [class*="streaming"], svg.animate-spin');
+                return {
+                    isGenerating: !!(stopBtn || thinking)
+                };
+            });
+
+            const elapsedSec = Math.round((Date.now() - scanStart) / 1000);
+
+            // TANT QUE DALL-E GÉNÈRE L'IMAGE : NE JAMAIS ÉCRIRE NI ENVOYER DE TEXTE (pour ne pas couper la génération)
+            if (genStatus.isGenerating) {
+                if (elapsedSec % 15 === 0 || elapsedSec === 6) {
+                    console.log(`⏳ DALL-E 3 en cours de génération active (${elapsedSec}s écoulées)...`);
+                }
+                // Si la génération est encore en cours et qu'on approche de la fin du délai, on prolonge jusqu'à 180s
+                if (Date.now() - scanStart > maxScanMs - 15000 && maxScanMs < 180000) {
+                    maxScanMs = 180000;
+                    console.log("⏳ DALL-E travaille toujours activement : prolongation automatique du délai d'attente à 180s...");
+                }
+                await page.waitForTimeout(3000);
+                continue;
+            }
 
             // Fallback API direct après 20s d'attente (interception directe de l'arbre conversationnel OpenAI)
             if (!foundUrl && (Date.now() - scanStart > 20000)) {
@@ -1006,87 +1034,61 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 }
             }
 
-            // Détection immédiate de message de limite/quota de génération d'images DALL-E 3
+            // Détection de message d'erreur explicite de limite/quota de génération d'images DALL-E 3
             const limitDetected = await page.evaluate(() => {
-                const bodyText = document.body.innerText || '';
-                const lower = bodyText.toLowerCase();
-                if (lower.includes("hit the") && lower.includes("limit")) return bodyText;
-                if (lower.includes("reached your limit") || lower.includes("reached the limit")) return bodyText;
-                if (lower.includes("limite de génération") || lower.includes("quota de génération") || lower.includes("business plan limit")) return bodyText;
-                if (lower.includes("too many requests") || lower.includes("try again after") || lower.includes("resets in")) return bodyText;
-                if (lower.includes("upgrade to plus") || lower.includes("free tier limit")) return bodyText;
+                const alertEl = document.querySelector('[data-testid="error-banner"], [role="alert"], .text-red-500');
+                if (!alertEl) return null;
+                const text = (alertEl.innerText || '').toLowerCase();
+                if (text.includes("limit") && (text.includes("reached") || text.includes("hit the") || text.includes("try again after") || text.includes("resets in"))) {
+                    return alertEl.innerText;
+                }
+                if (text.includes("quota de génération") || text.includes("limite de génération")) {
+                    return alertEl.innerText;
+                }
                 return null;
             });
 
             if (limitDetected) {
-                console.error("❌ QUOTA CHATGPT ATTEINT SUR CE COMPTE :");
+                console.error("❌ QUOTA CHATGPT ATTEINT SUR CE COMPTE :", limitDetected);
                 throw new Error("LIMITE_QUOTA_ATTEINTE: La limite de génération d'images a été atteinte sur ce compte ChatGPT.");
             }
 
-            // Détection si ChatGPT demande une image de référence ou refuse (consignes négatives / filtre OpenAI)
-            if (Date.now() - scanStart > 5000) {
-                const blockStatus = await page.evaluate(() => {
-                    const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"], .agent-turn, article'));
-                    const lastTurn = assistantTurns.length > 0 ? assistantTurns[assistantTurns.length - 1] : null;
-                    const text = lastTurn ? (lastTurn.innerText || '').toLowerCase() : (document.body.innerText || '').toLowerCase();
-                    const fullText = (document.body.innerText || '').toLowerCase();
+            // Gestion de refus : UNIQUEMENT si la génération est TERMINÉE (!genStatus.isGenerating),
+            // qu'au moins 25s se sont écoulées, et qu'aucune image n'est trouvée
+            if (!genStatus.isGenerating && Date.now() - scanStart > 25000 && !referenceImagePromptSent && !foundUrl) {
+                const refusalCheck = await page.evaluate((initialCount) => {
+                    const assistantTurns = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
+                    // On n'examine STRICTEMENT que le nouveau tour de réponse généré pour ce prompt
+                    if (assistantTurns.length <= initialCount) return null;
+                    const lastTurn = assistantTurns[assistantTurns.length - 1];
+                    const text = (lastTurn ? lastTurn.innerText : '').toLowerCase();
 
                     const isRefusal = (
-                        text.includes("image cible") ||
                         text.includes("téléverse une image") ||
                         text.includes("televerse une image") ||
                         text.includes("image de référence") ||
                         text.includes("image de reference") ||
-                        text.includes("déjà présente") ||
-                        text.includes("deja presente") ||
-                        text.includes("utiliser comme base") ||
-                        text.includes("modification d'image") ||
-                        text.includes("modification d’image") ||
-                        text.includes("édition d'image") ||
-                        text.includes("édition d’image") ||
-                        text.includes("edition d'image") ||
-                        text.includes("edition d’image") ||
-                        text.includes("création autonome") ||
-                        text.includes("creation autonome") ||
-                        text.includes("l’outil bloque") ||
-                        text.includes("l'outil bloque") ||
-                        text.includes("outil bloque") ||
-                        text.includes("bloque encore") ||
-                        text.includes("classant comme") ||
-                        text.includes("considérant à tort") ||
-                        text.includes("considérant a tort") ||
-                        text.includes("considerant a tort") ||
-                        text.includes("envoie simplement") ||
-                        text.includes("envoie-moi simplement") ||
-                        text.includes("envoie seulement") ||
-                        text.includes("envoie-moi seulement") ||
-                        text.includes("version courte et positive") ||
-                        text.includes("sans les mentions")
+                        text.includes("je ne peux pas générer") ||
+                        text.includes("je ne peux pas generer") ||
+                        text.includes("je ne peux pas créer") ||
+                        text.includes("impossible de générer") ||
+                        text.includes("impossible de generer") ||
+                        text.includes("règles relatives aux contenus") ||
+                        text.includes("content policy")
                     );
 
-                    const isPolicyBlock = (
-                        fullText.includes("susceptible d'enfreindre nos règles") ||
-                        fullText.includes("susceptible d’enfreindre nos règles") ||
-                        fullText.includes("enfreindre nos règles") ||
-                        fullText.includes("enfreindre nos regles") ||
-                        fullText.includes("règles relatives aux contenus") ||
-                        fullText.includes("regles relatives aux contenus") ||
-                        fullText.includes("image generation stopped") ||
-                        fullText.includes("content policy")
-                    );
+                    return isRefusal ? text.substring(0, 250) : null;
+                }, initialAssistantTurnCount);
 
-                    return { isRefusal, isPolicyBlock };
-                });
-
-                if (blockStatus && (blockStatus.isRefusal || blockStatus.isPolicyBlock) && !referenceImagePromptSent) {
-                    const motif = blockStatus.isPolicyBlock ? "Filtre de contenu OpenAI" : "Faux mode édition d'image détecté par ChatGPT";
-                    console.log(`⚠️ Refus/Blocage détecté sur ChatGPT (${motif}) !`);
-                    console.log("🔄 Envoi immédiat de la version courte et positive recommandée par ChatGPT pour débloquer DALL-E...");
+                if (refusalCheck) {
+                    console.log(`⚠️ Refus explicite de ChatGPT après fin de réponse : "${refusalCheck.replace(/\n+/g, ' ')}"`);
+                    console.log("🔄 Envoi d'un prompt alternatif positif simplifié...");
                     referenceImagePromptSent = true;
                     scanStart = Date.now();
                     const promptToSend = fallbackPrompt || "Génère une photo professionnelle et ultra-réaliste de ce chantier artisanal en France sans aucun texte.";
+                    await page.waitForTimeout(2000);
                     await typeAndSendPrompt(page, promptToSend);
-                    await page.waitForTimeout(5000);
+                    await page.waitForTimeout(3000);
                     continue;
                 }
             }
@@ -1097,7 +1099,7 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         if (foundUrl) {
             console.log("📸 NOUVELLE photo HD unique validée à l'écran ! URL :", foundUrl.substring(0, 100));
         } else {
-            console.log("🔄 Aucune nouvelle photo aperçue au bout de 100s. Actualisation de la page ChatGPT (page.reload())...");
+            console.log("🔄 Aucune nouvelle photo aperçue au bout de 120s. Actualisation de la page ChatGPT (page.reload())...");
             try {
                 await page.reload({ waitUntil: 'domcontentloaded' });
                 const reloadWait = Math.floor(Math.random() * (20000 - 15000 + 1)) + 15000;
@@ -2562,6 +2564,7 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
 
 ❌ INTERDICTION ABSOLUE : ${interdiction}`;
 
+            const cleanFallbackPrompt = `Génère une photo réaliste et authentique de chantier artisanal en France : ${travauxLabel} pour l'entreprise ${task.fiche_nom || ''} à ${villeLabel}. Style photo smartphone amateur sur le vif, ouvrier au travail en tenue professionnelle, sans texte ni logo.`;
             const secureRichPrompt = finalPrompt;
             
             console.log(`Prompt généré (${travauxLabel} / ${contexteLabel}) : ${finalPrompt.substring(0, 150)}...`);
@@ -2646,7 +2649,7 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             parsedCookies,
                             task.operateur,
                             targetUrlToUse,
-                            secureRichPrompt,
+                            cleanFallbackPrompt,
                             convIdsToDelete,
                             async (detectedConvUrl) => {
                                 activePlanUrls[plan.key] = detectedConvUrl;
@@ -2773,10 +2776,10 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                     console.log(`Photo sauvegardée sur Google Drive (${uploadResult.provider}) pour l'avis ID ${task.id} sans modifier le statut du planning.`);
                 }
 
-                // Pause de sécurité inter-tâches de 20 secondes avant le prochain avis
+                // Pause de sécurité inter-tâches de 25 secondes avant le prochain avis
                 if (taskIndex < tasksToGenerate.length - 1) {
-                    console.log("⏳ Pause de 20 secondes avant le prochain avis...");
-                    await new Promise(r => setTimeout(r, 20000));
+                    console.log("⏳ Pause de 25 secondes avant le prochain avis pour laisser respirer la session ChatGPT...");
+                    await new Promise(r => setTimeout(r, 25000));
                 }
                 
             } catch (err) {
