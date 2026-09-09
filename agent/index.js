@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🔴 UnhandledRejection:', reason);
+    process.exit(1);
+});
+process.on('uncaughtException', (err) => {
+    console.error('🔴 UncaughtException:', err);
+    process.exit(1);
+});
+
 const { createClient } = require('@supabase/supabase-js');
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -552,7 +562,10 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             try {
                 console.log(`Tentative de connexion à Browserless (${attempt}/3, URL GPT: ${targetUrl})...`);
                 browser = await chromium.connectOverCDP(`wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}&stealth`);
-                if (browser) break;
+                if (browser) {
+                    console.log(`✅ Connexion à Browserless établie avec succès (tentative ${attempt}/3).`);
+                    break;
+                }
             } catch (err) {
                 console.log(`Note connexion Browserless (tentative ${attempt}/3: ${err.message})...`);
                 if (attempt < 3) await new Promise(r => setTimeout(r, 10000));
@@ -574,6 +587,10 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         });
         isLocalBrowser = true;
     }
+
+    browser.on('disconnected', () => {
+        console.warn('⚠️ Session navigateur fermée ou déconnectée.');
+    });
     
     context = await browser.newContext({
         userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -605,6 +622,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                 break;
             } catch (navErr) {
                 console.log(`⚠️ Tentative ${navAttempt}/3 navigation vers "${targetUrl}" : ${navErr.message}`);
+                try {
+                    await page.screenshot({ path: `agent/debug-error-goto-${Date.now()}.png` }).catch(() => {});
+                } catch(e) {}
                 if (navAttempt < 3) await page.waitForTimeout(3000);
             }
         }
@@ -694,12 +714,14 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             console.log("Titre de la page après repli :", title);
 
             if (currentUrl.includes('/auth/login') || currentUrl.includes('/login')) {
+                try { await page.screenshot({ path: `agent/debug-error-login-${Date.now()}.png` }).catch(() => {}); } catch(e) {}
                 throw new Error("COOKIES_EXPIRES: Redirection vers la page de login ChatGPT. Les cookies de ce compte sont expirés ou invalides.");
             }
         }
 
         // ✅ DÉTECTION RAPIDE : Redirection vers Google Sign-in = cookies expirés à 100%
         if (currentUrl.includes('accounts.google.com') || currentUrl.includes('google.com/signin') || currentUrl.includes('google.com/v3/signin')) {
+            try { await page.screenshot({ path: `agent/debug-error-google-login-${Date.now()}.png` }).catch(() => {}); } catch(e) {}
             const cookieExpiredMsg = `🚨 <b>COOKIES EXPIRÉS (Google Auth détecté)</b> 🚨\n\nL'agent a été redirigé vers la page de connexion Google pour l'opérateur <b>${operatorName || TARGET_OPERATOR || 'Global'}</b>.\n\n👉 <b>Action requise :</b> Re-connectez-vous à ChatGPT dans votre navigateur, ré-exportez vos cookies JSON et mettez à jour le secret <code>CHATGPT_PERSO_COOKIES</code> / <code>CHATGPT_WORK_COOKIES</code> sur GitHub Secrets !`;
             console.error("❌ COOKIES EXPIRÉS : Redirection vers accounts.google.com détectée !");
             console.error("💡 ACTION REQUISE : Re-connectez-vous à ChatGPT et ré-exportez vos cookies.");
@@ -2735,16 +2757,13 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                             })
                             .eq('id', task.id);
                         if (upErr) {
+                            // Repli de secours : si la colonne url_image n'existe pas dans le schéma Postgres
                             await supabase
                                 .from('planning')
                                 .update({
                                     metier: uploadResult.url
                                 })
                                 .eq('id', task.id);
-                        } else {
-                            try {
-                                await supabase.from('planning').update({ metier: uploadResult.url }).eq('id', task.id);
-                            } catch (e) {}
                         }
                     } catch (sErr) {
                         try {
@@ -2784,4 +2803,7 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
     }
 }
 
-main();
+main().catch((err) => {
+    console.error('🔴 CRASH main():', err);
+    process.exit(1);
+});

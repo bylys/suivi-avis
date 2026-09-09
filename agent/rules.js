@@ -352,7 +352,6 @@ const VISUAL_RULES_BY_SERVICE = {
   'Carrelage sol': `VISUAL: Floor tiling installation, tile spacers, spirit level, adhesive mortar, tiler laying floor tile on ground.`,
   'Carrelage salle de bain': `VISUAL: Tiler installing floor or wall ceramic tiles in bathroom, tile spacers, trowel.`,
   'Carrelage cuisine': `VISUAL: Tiler installing kitchen floor tiles or wall splashback, tile spacers, trowel.`,
-  'Dessouchage': `VISUAL: MANDATORY SAFETY GLASSES / PROTECTIVE GOGGLES on all workers' eyes against flying wood debris. MANDATORY NOISE-CANCELING EAR PROTECTION on operator. Stump and roots visible.`,
   'Abattage arbre': `VISUAL: Operator beside trunk, chainsaw visible, protective clothing, felled sections on ground.`,
   'Depannage auto': `VISUAL: Flatbed tow truck or recovery vehicle with orange flashing beacons, breakdown car safely positioned on roadside or flatbed ramp.`,
   'Remorquage': `VISUAL: Car being secured onto flatbed tow truck with winch or wheel straps, operator in high-vis vest.`,

@@ -123,8 +123,9 @@ async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskD
     gpsIfd[piexif.GPSIFD.GPSLatitudeRef] = coords.lat >= 0 ? 'N' : 'S';
     gpsIfd[piexif.GPSIFD.GPSLatitude] = degToDmsRational(coords.lat);
     gpsIfd[piexif.GPSIFD.GPSLongitudeRef] = coords.lng >= 0 ? 'E' : 'W';
-    gpsIfd[piexif.GPSIFD.GPSLongitude] = degToDmsRational(coords.lng);
-    gpsIfd[piexif.GPSIFD.GPSDateStamp] = `${now.getFullYear()}:${pad(now.getMonth() + 1)}:${pad(now.getDate())}`;
+    // Alignement rigoureux de la date GPS sur la date fictive de prise de vue (cohérence forensics)
+    const gpsDatePart = dateStr.split(' ')[0];
+    gpsIfd[piexif.GPSIFD.GPSDateStamp] = gpsDatePart;
 
     // Construction du bloc 0th IFD
     const zerothIfd = {};

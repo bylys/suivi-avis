@@ -5,7 +5,12 @@ on:
     # Exécution automatique du lundi au vendredi à 06h00 du matin heure de Thaïlande (UTC+7 -> 23h00 UTC du dimanche au jeudi)
     # 0 = Dimanche UTC (Lundi 06:00 THA), 4 = Jeudi UTC (Vendredi 06:00 THA)
     - cron: '0 23 * * 0-4'
-  workflow_dispatch: # Permet de lancer le script manuellement depuis l'onglet Actions
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: 'Date cible (YYYY-MM-DD, optionnel - date du jour par défaut)'
+        required: false
+        default: ''
 
 concurrency:
   group: browserless-chatgpt-runner
@@ -36,7 +41,7 @@ jobs:
         working-directory: ./agent
         env:
           OPERATOR_NAME: Fifaliana
-          TARGET_DATE: '2026-09-09'
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
           FORCE_EXECUTION: 'true'
           FORCE_PLAN_PERSO: 'true'
           FORCE_PLAN_PRO: 'false'
@@ -79,5 +84,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debug-screenshots-fifa
-          path: agent/debug-error-*.png
+          path: |
+            agent/debug-error-*.png
+            agent/debug-step-*.png
           retention-days: 3
+          if-no-files-found: ignore
