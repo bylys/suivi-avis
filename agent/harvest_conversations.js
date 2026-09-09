@@ -268,12 +268,26 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
     const convId = convIdMatch ? convIdMatch[1] : null;
 
     const capturedImagesByUrl = new Map();
+    let conversationJsonResponse = null;
+
     const onResponse = async (resp) => {
         const url = resp.url();
-        if ((url.includes('files.oaiusercontent.com') || url.includes('/backend-api/files/')) && resp.ok()) {
+        const ct = (resp.headers()['content-type'] || '').toLowerCase();
+        
+        // Interception automatique du JSON complet de la conversation
+        if (convId && url.includes(`/backend-api/conversation/${convId}`) && resp.ok()) {
+            try {
+                conversationJsonResponse = await resp.json();
+                console.log(`🎉 Arbre JSON de la conversation intercepté en direct via le réseau !`);
+            } catch (e) {}
+        }
+
+        // Interception de toutes les images chargées
+        if ((url.includes('oaiusercontent') || url.includes('/backend-api/files/') || ct.startsWith('image/')) && resp.ok()) {
             try {
                 const buf = await resp.body();
-                if (buf && buf.length > 20000) {
+                if (buf && buf.length > 15000 && !url.includes('avatar') && !url.includes('profile') && !url.includes('icon')) {
+                    console.log(`⚡ Image réseau interceptée (${buf.length} octets) : ${url.substring(0, 90)}...`);
                     capturedImagesByUrl.set(url, buf);
                 }
             } catch (e) {}
@@ -282,13 +296,12 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
     page.on('response', onResponse);
 
     await page.goto(convUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(6000);
 
-    // 1. Tenter d'extraire la structure complète via l'API interne /backend-api/conversation/<id>
-    let apiConversation = null;
-    if (convId) {
-        console.log(`🔍 Tentative de lecture directe de l'arbre JSON de la conversation...`);
-        apiConversation = await page.evaluate(async (cId) => {
+    // Si le JSON n'a pas été intercepté lors du goto initial, appel explicite in-page
+    if (!conversationJsonResponse && convId) {
+        console.log(`🔍 Tentative de lecture in-page de /backend-api/conversation/${convId}...`);
+        conversationJsonResponse = await page.evaluate(async (cId) => {
             try {
                 let token = null;
                 try {
@@ -306,104 +319,342 @@ async function harvestSingleConversation(page, convUrl, planningTasks) {
                     headers,
                     credentials: 'include'
                 });
-                if (!res.ok) return null;
+                if (!res.ok) return { errorStatus: res.status, errorText: await res.text() };
                 return await res.json();
             } catch (err) {
-                return null;
+                return { error: err.message };
             }
         }, convId);
     }
 
-    // 2. Défilement progressif du fil de discussion du haut vers le bas pour forcer le rendu de toutes les images
-    console.log(`📜 Défilement complet de la conversation pour charger toutes les photos...`);
-    let previousHeight = 0;
-    for (let scrollStep = 0; scrollStep < 40; scrollStep++) {
-        const currentHeight = await page.evaluate(() => {
-            window.scrollBy(0, 1000);
-            return document.body.scrollHeight;
-        });
-        await page.waitForTimeout(1200);
-        if (currentHeight === previousHeight && scrollStep > 10) {
-            // Fin de page atteinte
-            break;
+    if (conversationJsonResponse) {
+        if (conversationJsonResponse.mapping) {
+            const nodeCount = Object.keys(conversationJsonResponse.mapping).length;
+            console.log(`✅ Arbre JSON chargé avec succès : ${nodeCount} nœuds détectés (Titre: "${conversationJsonResponse.title || ''}")`);
+        } else if (conversationJsonResponse.errorStatus) {
+            console.log(`⚠️ API conversation error : ${conversationJsonResponse.errorStatus} ${conversationJsonResponse.errorText?.substring(0, 100)}`);
         }
-        previousHeight = currentHeight;
     }
 
-    // Défiler vers le tout début puis re-descendre pour charger le lazy loading React
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(1500);
-    for (let scrollStep = 0; scrollStep < 20; scrollStep++) {
-        await page.evaluate(() => window.scrollBy(0, 1500));
-        await page.waitForTimeout(1000);
+    // Scroll progressif élément par élément pour forcer le rendu de chaque message
+    console.log(`📜 Défilement progressif sur chaque message pour forcer le rendu Chromium...`);
+    const assistantLocators = await page.$$('[data-message-author-role="assistant"], [data-message-author-role="user"]');
+    console.log(`🔍 ${assistantLocators.length} blocs de message trouvés dans le DOM.`);
+    for (let lIdx = 0; lIdx < assistantLocators.length; lIdx++) {
+        await assistantLocators[lIdx].scrollIntoViewIfNeeded().catch(() => {});
+        await page.waitForTimeout(600);
     }
 
-    // 3. Extraction des paires (Prompt, Image) dans le DOM
-    console.log(`🔎 Analyse des tours de parole (prompts et images générées)...`);
-    const domPairs = await page.evaluate(() => {
-        const pairs = [];
-        const userElements = Array.from(document.querySelectorAll('[data-message-author-role="user"]'));
+    // Capture d'écran complète pour diagnostic visuel
+    try {
+        await page.screenshot({ path: 'debug-fifa-conversation.png', fullPage: true });
+        console.log(`📸 Capture d'écran globale enregistrée (debug-fifa-conversation.png)`);
+    } catch (e) {}
+
+    // Diagnostic détaillé du DOM : extraire chaque tour et toutes les images
+    const domInspection = await page.evaluate(() => {
+        const users = Array.from(document.querySelectorAll('[data-message-author-role="user"]'));
+        const assistants = Array.from(document.querySelectorAll('[data-message-author-role="assistant"]'));
         
-        for (let i = 0; i < userElements.length; i++) {
-            const userEl = userElements[i];
-            const promptText = (userEl.innerText || userEl.textContent || '').trim();
+        const allImgs = Array.from(document.querySelectorAll('img')).map(im => ({
+            src: im.src || '',
+            currentSrc: im.currentSrc || '',
+            width: im.naturalWidth || im.width || 0,
+            height: im.naturalHeight || im.height || 0,
+            alt: im.alt || '',
+            className: im.className || ''
+        }));
 
-            // Trouver le message assistant qui suit directement
-            let assistantEl = null;
-            let curr = userEl.closest('article') || userEl.parentElement;
+        const turnPairs = [];
+        for (let i = 0; i < users.length; i++) {
+            const uText = (users[i].innerText || users[i].textContent || '').trim();
+            const asst = assistants[i] || null;
+            const asstText = asst ? (asst.innerText || asst.textContent || '').trim() : '';
             
-            while (curr && curr.nextElementSibling) {
-                curr = curr.nextElementSibling;
-                const asst = curr.querySelector('[data-message-author-role="assistant"]') || 
-                    (curr.getAttribute('data-message-author-role') === 'assistant' ? curr : null);
-                if (asst) {
-                    assistantEl = asst;
-                    break;
-                }
-                if (curr.querySelector('[data-message-author-role="user"]')) {
-                    // Nouvel utilisateur sans image entretemps
-                    break;
-                }
-            }
-
-            let imgSrc = null;
-            if (assistantEl) {
-                const imgs = Array.from(assistantEl.querySelectorAll('img'));
-                for (const im of imgs) {
-                    const src = im.src || '';
+            let foundImgSrc = null;
+            if (asst) {
+                const asstImgs = Array.from(asst.querySelectorAll('img'));
+                for (const im of asstImgs) {
+                    const src = im.currentSrc || im.src || '';
                     if (src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg')) {
-                        if (src.includes('oaiusercontent') || src.includes('blob:') || (im.naturalWidth >= 300 && im.naturalHeight >= 300)) {
-                            imgSrc = src;
-                            break;
-                        }
+                        foundImgSrc = src;
+                        break;
                     }
                 }
             }
 
-            pairs.push({
-                promptIndex: i + 1,
-                promptText,
-                imgSrc
+            turnPairs.push({
+                index: i + 1,
+                userPrompt: uText,
+                assistantReply: asstText,
+                imgSrc: foundImgSrc
             });
         }
 
-        // Si aucun appairage strict, récupérer toutes les images de la page dans l'ordre
-        if (pairs.every(p => !p.imgSrc)) {
-            const allPageImgs = Array.from(document.querySelectorAll('img'))
-                .map(im => im.src || '')
-                .filter(src => src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg') && (src.includes('oaiusercontent') || src.includes('blob:')));
-            
-            for (let k = 0; k < pairs.length && k < allPageImgs.length; k++) {
-                pairs[k].imgSrc = allPageImgs[k];
+        return {
+            userCount: users.length,
+            assistantCount: assistants.length,
+            turnPairs,
+            allImgs
+        };
+    });
+
+    console.log(`\n================== DIAGNOSTIC DE LA CONVERSATION ==================`);
+    console.log(`👤 Messages utilisateurs : ${domInspection.userCount}`);
+    console.log(`🤖 Messages assistants : ${domInspection.assistantCount}`);
+    console.log(`🖼️ Images totales dans le DOM : ${domInspection.allImgs.length}`);
+    for (const im of domInspection.allImgs) {
+        if (!im.src.includes('avatar') && !im.src.includes('profile') && !im.src.includes('svg')) {
+            console.log(`   👉 Image DOM : ${im.src.substring(0, 90)} (dim: ${im.width}x${im.height}, alt: "${im.alt}")`);
+        }
+    }
+
+    for (const pair of domInspection.turnPairs) {
+        console.log(`\n[Tour #${pair.index}]`);
+        console.log(`   👤 Prompt : "${pair.userPrompt.substring(0, 100).replace(/\n+/g, ' ')}..."`);
+        console.log(`   🤖 Réponse : "${pair.assistantReply.substring(0, 150).replace(/\n+/g, ' ')}..."`);
+        console.log(`   📸 Image liée : ${pair.imgSrc || 'AUCUNE DÉTECTÉE'}`);
+    }
+    console.log(`===================================================================\n`);
+
+    // Sauvegarde du diagnostic en fichier JSON
+    try {
+        fs.writeFileSync('debug-fifa-turns.json', JSON.stringify(domInspection, null, 2));
+    } catch (e) {}
+
+    // Tentative de récupération des images depuis l'arbre JSON (si présent)
+    const jsonImages = [];
+    if (conversationJsonResponse && conversationJsonResponse.mapping) {
+        const nodes = Object.values(conversationJsonResponse.mapping);
+        // Trier les nœuds par date de création si possible
+        nodes.sort((a, b) => (a.message?.create_time || 0) - (b.message?.create_time || 0));
+
+        let currentUserPrompt = '';
+        for (const n of nodes) {
+            const msg = n.message;
+            if (!msg) continue;
+            if (msg.author?.role === 'user') {
+                currentUserPrompt = (msg.content?.parts || []).join('\n');
+            }
+            if (msg.author?.role === 'assistant') {
+                const parts = msg.content?.parts || [];
+                for (const p of parts) {
+                    if (typeof p === 'object' && p.asset_pointer) {
+                        const fileId = p.asset_pointer.replace('file-service://', '');
+                        jsonImages.push({
+                            fileId,
+                            promptText: currentUserPrompt,
+                            width: p.width,
+                            height: p.height
+                        });
+                    }
+                }
+            }
+        }
+        if (jsonImages.length > 0) {
+            console.log(`🎯 ${jsonImages.length} image(s) DALL-E trouvée(s) directement dans l'arbre JSON !`);
+        }
+    }
+
+    // Récupérer les paires exploitables
+    let pairsToProcess = [];
+
+    // Priorité 1 : JSON de l'API avec les file-service
+    if (jsonImages.length > 0) {
+        for (const jImg of jsonImages) {
+            // Obtenir le lien de téléchargement via /backend-api/files/<file_id>/download
+            console.log(`📡 Récupération URL de téléchargement pour file_id : ${jImg.fileId}...`);
+            const dlData = await page.evaluate(async (fId) => {
+                try {
+                    let token = null;
+                    try {
+                        const sResp = await fetch('/api/auth/session');
+                        if (sResp.ok) token = (await sResp.json()).accessToken;
+                    } catch (e) {}
+                    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                    const res = await fetch(`/backend-api/files/${fId}/download`, { headers, credentials: 'include' });
+                    if (!res.ok) return null;
+                    return await res.json();
+                } catch (e) { return null; }
+            }, jImg.fileId);
+
+            if (dlData && dlData.download_url) {
+                console.log(`✅ URL de téléchargement obtenue : ${dlData.download_url.substring(0, 80)}...`);
+                pairsToProcess.push({
+                    promptText: jImg.promptText,
+                    imgUrl: dlData.download_url
+                });
+            }
+        }
+    }
+
+    // Priorité 2 : Paires issues du DOM
+    if (pairsToProcess.length === 0) {
+        for (const p of domInspection.turnPairs) {
+            if (p.imgSrc) {
+                pairsToProcess.push({
+                    promptText: p.userPrompt,
+                    imgUrl: p.imgSrc
+                });
+            }
+        }
+    }
+
+    // Priorité 3 : Si aucune image n'est liée à un tour, mais que des images sont dans capturedImagesByUrl
+    if (pairsToProcess.length === 0 && capturedImagesByUrl.size > 0) {
+        console.log(`🔄 Utilisation des ${capturedImagesByUrl.size} image(s) interceptée(s) sur le réseau...`);
+        const netUrls = Array.from(capturedImagesByUrl.keys());
+        for (let i = 0; i < domInspection.turnPairs.length && i < netUrls.length; i++) {
+            pairsToProcess.push({
+                promptText: domInspection.turnPairs[i].userPrompt,
+                imgUrl: netUrls[i]
+            });
+        }
+    }
+
+    // Priorité 4 : N'importe quelle image non-avatar trouvée dans allImgs
+    if (pairsToProcess.length === 0) {
+        const candidateImgs = domInspection.allImgs
+            .map(im => im.src || im.currentSrc)
+            .filter(src => src && !src.includes('avatar') && !src.includes('profile') && !src.includes('svg'));
+        
+        if (candidateImgs.length > 0) {
+            console.log(`🔄 Fallback : ${candidateImgs.length} image(s) candidates trouvée(s) dans le DOM.`);
+            for (let i = 0; i < domInspection.turnPairs.length && i < candidateImgs.length; i++) {
+                pairsToProcess.push({
+                    promptText: domInspection.turnPairs[i].userPrompt,
+                    imgUrl: candidateImgs[i]
+                });
+            }
+        }
+    }
+
+    console.log(`📸 Total final de photos prêtes pour traitement : ${pairsToProcess.length}`);
+
+    let processedCount = 0;
+    const harvestedTaskIds = new Set();
+    const uploadedLinks = [];
+
+    for (let idx = 0; idx < pairsToProcess.length; idx++) {
+        const item = pairsToProcess[idx];
+        console.log(`\n-------------------------------------------------------------`);
+        console.log(`🎨 Traitement Photo #${idx + 1} / ${pairsToProcess.length}...`);
+
+        // Matching de la tâche correspondante dans le planning
+        let matchedTask = null;
+        let matchedTaskIndex = -1;
+
+        if (planningTasks && planningTasks.length > 0) {
+            const cleanPrompt = normalizeStr(item.promptText);
+            for (let tIdx = 0; tIdx < planningTasks.length; tIdx++) {
+                const t = planningTasks[tIdx];
+                if (harvestedTaskIds.has(t.id)) continue;
+
+                const safeFiche = normalizeStr(t.fiche_nom);
+                const safeVille = normalizeStr(t.ville);
+
+                if (safeFiche.length > 3 && cleanPrompt.includes(safeFiche)) {
+                    matchedTask = t;
+                    matchedTaskIndex = tIdx;
+                    break;
+                }
+                if (safeVille.length > 3 && cleanPrompt.includes(safeVille) && cleanPrompt.includes(normalizeStr((t.fiche_nom || '').split(' ')[0]))) {
+                    matchedTask = t;
+                    matchedTaskIndex = tIdx;
+                    break;
+                }
+            }
+
+            // Fallback séquentiel
+            if (!matchedTask) {
+                for (let tIdx = 0; tIdx < planningTasks.length; tIdx++) {
+                    const t = planningTasks[tIdx];
+                    if (!harvestedTaskIds.has(t.id)) {
+                        matchedTask = t;
+                        matchedTaskIndex = tIdx;
+                        break;
+                    }
+                }
             }
         }
 
-        return pairs;
-    });
+        const taskData = matchedTask || {
+            id: `fifa_${idx + 1}`,
+            fiche_nom: `Chantier_${idx + 1}`,
+            ville: 'Paris',
+            pays: 'France',
+            date: TARGET_DATE,
+            operateur: TARGET_OPERATOR
+        };
 
-    console.log(`📋 ${domPairs.length} prompt(s) identifié(s) dans le fil.`);
-    const validPairs = domPairs.filter(p => !!p.imgSrc);
-    console.log(`📸 ${validPairs.length} photo(s) avec source image valide trouvée(s) !`);
+        console.log(`🎯 Tâche associée : "${taskData.fiche_nom}" (${taskData.ville})`);
+
+        // Récupération du buffer binaire de l'image
+        let rawBuffer = capturedImagesByUrl.get(item.imgUrl);
+        if (!rawBuffer) {
+            console.log(`📥 Téléchargement in-page de l'image : ${item.imgUrl.substring(0, 80)}...`);
+            const b64 = await page.evaluate(async (url) => {
+                try {
+                    const r = await fetch(url);
+                    if (!r.ok) return null;
+                    const b = await r.blob();
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                        reader.readAsDataURL(b);
+                    });
+                } catch (e) { return null; }
+            }, item.imgUrl);
+
+            if (b64 && b64.length > 5000) {
+                rawBuffer = Buffer.from(b64, 'base64');
+            }
+        }
+
+        if (!rawBuffer) {
+            console.log(`❌ Impossible de récupérer les octets de la photo #${idx + 1}.`);
+            continue;
+        }
+
+        // Injection des métadonnées EXIF Smartphone & GPS
+        const reviewTextContent = (taskData.commentaire || '') + ' ' + (taskData.travaux || '') + ' ' + item.promptText;
+        const geoBuffer = await injectExifAndGps(
+            rawBuffer,
+            taskData.ville || 'Paris',
+            taskData.pays || 'France',
+            taskData.date || TARGET_DATE,
+            reviewTextContent
+        );
+
+        // Nommage standard : [OPERATEUR]_[DATE]_[FICHE]_img[N].jpg
+        const safeOpName = (taskData.operateur || TARGET_OPERATOR).trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, '');
+        const safeGmbName = (taskData.fiche_nom || 'GMB').normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\-]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+        const taskDate = taskData.date || TARGET_DATE;
+        const dateParts = taskDate.split('-');
+        const dateFormatShort = dateParts.length === 3 
+            ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0].slice(-2)}` 
+            : taskDate.replace(/[^0-9]/g, '');
+        const imgNum = matchedTaskIndex >= 0 ? matchedTaskIndex + 1 : idx + 1;
+        const fileName = `${safeOpName}_${dateFormatShort}_${safeGmbName}_img${imgNum}.jpg`;
+
+        // Upload Google Drive
+        console.log(`☁️ Upload Google Drive : [${TARGET_OPERATOR}/${taskDate}/${fileName}]...`);
+        const driveUrl = await uploadToGoogleDrive(fileName, geoBuffer, TARGET_OPERATOR, taskDate);
+        console.log(`✅ PHOTO UPLOADÉE AVEC SUCCÈS SUR GOOGLE DRIVE ! Lien : ${driveUrl}`);
+
+        uploadedLinks.push({ fiche: taskData.fiche_nom, ville: taskData.ville, url: driveUrl });
+        processedCount++;
+        if (matchedTask) {
+            harvestedTaskIds.add(matchedTask.id);
+            try {
+                await supabase.from('planning').update({ url_image: driveUrl }).eq('id', matchedTask.id);
+            } catch (e) {}
+        }
+    }
+
+    page.off('response', onResponse);
+    return { processedCount, uploadedLinks };
+}
 
     let processedCount = 0;
     const harvestedTaskIds = new Set();
