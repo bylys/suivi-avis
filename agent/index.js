@@ -893,6 +893,10 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
             }
         }
 
+        // ⏳ Pause obligatoire initiale de 70 secondes pour laisser à DALL-E 3 le temps de générer la photo HD complète
+        console.log("⏳ Pause obligatoire initiale de 70 secondes pour laisser à DALL-E 3 le temps de générer la photo HD complète...");
+        await page.waitForTimeout(70000);
+
         // Scanneur d'image dynamique universel : DOM complet + API OpenAI
         const checkNewImage = async () => {
             return await page.evaluate(({ knownUrls }) => {
@@ -1088,7 +1092,9 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
                     const promptToSend = fallbackPrompt || "Génère une photo professionnelle et ultra-réaliste de ce chantier artisanal en France sans aucun texte.";
                     await page.waitForTimeout(2000);
                     await typeAndSendPrompt(page, promptToSend);
-                    await page.waitForTimeout(3000);
+                    console.log("⏳ Pause obligatoire de 70 secondes pour laisser à DALL-E 3 le temps de générer la photo du prompt alternatif...");
+                    await page.waitForTimeout(70000);
+                    scanStart = Date.now();
                     continue;
                 }
             }
