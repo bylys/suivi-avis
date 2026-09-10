@@ -3593,22 +3593,54 @@ async function computeRecos(offset) {
   const recos = [];
   let totalAvis = 0;
 
+  // Historique des niches/métiers par gmail sur les 30 derniers jours (avis + planning)
+  const cutoff30d = now - 30 * 86400000;
+  const gmailRecentNiches = {};
+  avis.forEach(a => {
+    const g = (a.auteur || '').toLowerCase().trim();
+    const dStr = a.date;
+    if (g && a.fiche_nom && dStr) {
+      const d = new Date(dStr).getTime();
+      if (!isNaN(d) && d >= cutoff30d) {
+        const m = detecterMetier(a.fiche_nom);
+        if (m && m !== 'generic') {
+          if (!gmailRecentNiches[g]) gmailRecentNiches[g] = new Set();
+          gmailRecentNiches[g].add(m);
+        }
+      }
+    }
+  });
+
   // 1 gmail → 1 fiche, mais compte pour 1 ou 2 avis selon l'âge de la fiche
   for (let i = 0; totalAvis < 20 && i < available.length; i++) {
     const acct = available[(start + i) % available.length];
+    const gKey = acct.gmail.toLowerCase().trim();
     const city = acct.city || extractCity(acct.domain);
     const lg = isLocalGuide(acct.gmail);
+    const recentNiches = gmailRecentNiches[gKey] || new Set();
 
     const ownFiche = ficheData
       .map(f => ({ f, s: ficheMatchScore(f.nom, city) }))
       .filter(x => x.s >= 0.5)
       .sort((a, b) => b.s - a.s)[0]?.f;
 
-    const candidates = ficheData
+    // Priorité aux fiches respectant la rotation de niche (pas de même métier dans les 30 jours)
+    let candidates = ficheData
       .filter(f =>
         f.nom !== ownFiche?.nom &&
+        (ficheSlots[f.nom] || 0) < f.maxPerDay &&
+        (detecterMetier(f.nom) === 'generic' || !recentNiches.has(detecterMetier(f.nom)))
+      );
+
+    // Fallback si aucune fiche d'une autre niche n'est éligible
+    if (!candidates.length) {
+      candidates = ficheData.filter(f =>
+        f.nom !== ownFiche?.nom &&
         (ficheSlots[f.nom] || 0) < f.maxPerDay
-      )
+      );
+    }
+
+    const scoredCandidates = candidates
       .map(f => {
         const geoBonus = getGeoScore(city, f.nom, lg);
         // Priorité absolue aux fiches de moins de 6 semaines (<= 42 jours)
@@ -3618,10 +3650,16 @@ async function computeRecos(offset) {
       })
       .sort((a, b) => b.score - a.score);
 
-    if (candidates[0]) {
-      ficheSlots[candidates[0].nom] = (ficheSlots[candidates[0].nom] || 0) + 1;
-      totalAvis += candidates[0].maxPerDay;
-      recos.push({ acct, target: candidates[0], ownFiche, dayNum, lg });
+    if (scoredCandidates[0]) {
+      const chosen = scoredCandidates[0];
+      ficheSlots[chosen.nom] = (ficheSlots[chosen.nom] || 0) + 1;
+      totalAvis += chosen.maxPerDay;
+      const m = detecterMetier(chosen.nom);
+      if (m && m !== 'generic') {
+        if (!gmailRecentNiches[gKey]) gmailRecentNiches[gKey] = new Set();
+        gmailRecentNiches[gKey].add(m);
+      }
+      recos.push({ acct, target: chosen, ownFiche, dayNum, lg });
     }
   }
   return recos;

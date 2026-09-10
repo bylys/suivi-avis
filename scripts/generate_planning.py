@@ -48,6 +48,7 @@ SLACK_OPERATEURS = {
 
 DELAI_GMAIL_JOURS  = int(os.environ.get("DELAI_GMAIL_JOURS", "8"))   # cooldown 8 j entre deux posts du même gmail
 DELAI_FICHE_JOURS  = int(os.environ.get("DELAI_FICHE_JOURS", "2"))   # délai min entre deux posts sur la même fiche
+DELAI_NICHE_JOURS  = int(os.environ.get("DELAI_NICHE_JOURS", "30"))  # délai min 30 j entre deux posts dans la même niche/métier pour un même gmail
 QUOTA_KEVIN_FIF    = int(os.environ.get("QUOTA_PAR_OPERATEUR", os.environ.get("QUOTA_KEVIN_FIF", "68")))      # Kevin & Fifaliana : 65-70/jour (défaut 68)
 OPERATEURS = ["Kevin", "Fifaliana"]
 OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
@@ -454,6 +455,34 @@ def main():
             if fn not in last_fiche_date or d > last_fiche_date[fn]:
                 last_fiche_date[fn] = d
 
+    # Historique des niches/métiers par gmail sur les DELAI_NICHE_JOURS (30 jours)
+    cutoff_niche = today - timedelta(days=DELAI_NICHE_JOURS)
+    gmail_recent_niches = defaultdict(set)
+    for a in all_avis:
+        g = (a['auteur'] or '').lower().strip()
+        fn = a['fiche_nom']
+        if g and fn and a['date']:
+            try:
+                d = date.fromisoformat(a['date'][:10])
+                if d >= cutoff_niche:
+                    m = extract_metier(fn)
+                    if m != 'autre':
+                        gmail_recent_niches[g].add(m)
+            except:
+                pass
+    for p in past_planning:
+        g = (p['gmail'] or '').lower().strip()
+        fn = p['fiche_nom']
+        if g and fn and p['date']:
+            try:
+                d = date.fromisoformat(p['date'][:10])
+                if d >= cutoff_niche:
+                    m = extract_metier(fn)
+                    if m != 'autre':
+                        gmail_recent_niches[g].add(m)
+            except:
+                pass
+
     # Paires bloquées (gmail déjà posté sur cette fiche)
     used_pairs = set()
     for a in all_avis:
@@ -506,14 +535,37 @@ def main():
         """Trouve le meilleur gmail disponible de l'opérateur pour cette fiche (ou None)."""
         ville = fiche_ville[fn]
         fn_key = fn.strip().lower()
-        # 1. Priorité : gmails déjà rattachés à cette ville
+        metier_target = extract_metier(fn)
+
+        def is_niche_ok(g):
+            return metier_target == 'autre' or metier_target not in gmail_recent_niches[g]
+
+        # 1. Priorité : gmails déjà rattachés à cette ville (respectant la rotation de niche)
         candidats = [
             g for g in pools[operateur]
             if gmail_ville.get(g) == ville
             and g not in gmails_used_today
             and (g, fn_key) not in used_pairs
+            and is_niche_ok(g)
         ]
-        # 2. Fallback : gmails neufs (sans ville) — 1re utilisation
+        # 1b. Fallback même ville sans contrainte niche si aucun candidat
+        if not candidats:
+            candidats = [
+                g for g in pools[operateur]
+                if gmail_ville.get(g) == ville
+                and g not in gmails_used_today
+                and (g, fn_key) not in used_pairs
+            ]
+        # 2. Fallback : gmails neufs (sans ville) — 1re utilisation (respectant la rotation de niche)
+        if not candidats:
+            candidats = [
+                g for g in pools[operateur]
+                if g not in gmail_ville
+                and g not in gmails_used_today
+                and (g, fn_key) not in used_pairs
+                and is_niche_ok(g)
+            ]
+        # 2b. Fallback gmails neufs sans contrainte niche
         if not candidats:
             candidats = [
                 g for g in pools[operateur]
@@ -521,7 +573,15 @@ def main():
                 and g not in gmails_used_today
                 and (g, fn_key) not in used_pairs
             ]
-        # 3. Fallback : gmails disponibles du pool pour assurer le quota de 65-70 sans fiche vide
+        # 3. Fallback : gmails disponibles du pool avec respect de niche
+        if not candidats:
+            candidats = [
+                g for g in pools[operateur]
+                if g not in gmails_used_today
+                and (g, fn_key) not in used_pairs
+                and is_niche_ok(g)
+            ]
+        # 3b. Fallback ultime pool
         if not candidats:
             candidats = [
                 g for g in pools[operateur]
