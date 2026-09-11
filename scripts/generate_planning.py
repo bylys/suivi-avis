@@ -9,7 +9,7 @@ Génère le planning quotidien des avis GMB.
 """
 
 import os, sys, json, re, urllib.request, urllib.error, urllib.parse
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from collections import defaultdict, Counter
 import random
 
