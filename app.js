@@ -155,6 +155,11 @@ async function getFiches() {
 }
 function invalidateFichesCache() { _fichesCache = null; }
 
+async function getPlanning(date = '') {
+  const query = date ? `select=*&date=eq.${date}&order=date.desc` : 'select=*&order=date.desc&limit=1000';
+  return await sbGet('planning', query);
+}
+
 // ── INIT ──
 async function init() {
   if (!sessionStorage.getItem('gmb_auth')) return;
@@ -6576,7 +6581,7 @@ async function renderImagesHistory() {
 
   try {
     const [planningRows, allFiches] = await Promise.all([
-      getPlanning(),
+      getPlanning(selectedDate),
       getFiches()
     ]);
 
