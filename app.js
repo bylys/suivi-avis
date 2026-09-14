@@ -233,15 +233,15 @@ function normalizeTabName(name) {
 }
 
 function getTabFromUrl() {
+  const hash = window.location.hash.replace(/^#/, '').trim();
+  if (VALID_TABS.includes(hash)) return normalizeTabName(hash);
+
   const params = new URLSearchParams(window.location.search);
-  const redirectPath = params.get('p');
+  const redirectPath = params.get('p') || params.get('tab');
   if (redirectPath) {
-    const cleanPath = redirectPath.replace(/^\/+|\/+$/g, '');
+    const cleanPath = redirectPath.replace(/^\/+|\/+$/g, '').trim();
     if (VALID_TABS.includes(cleanPath)) return normalizeTabName(cleanPath);
   }
-
-  const hash = window.location.hash.replace(/^#/, '');
-  if (VALID_TABS.includes(hash)) return normalizeTabName(hash);
 
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const lastPart = pathParts[pathParts.length - 1];
@@ -253,16 +253,15 @@ function getTabFromUrl() {
 function updateUrlForTab(name, replace = false) {
   name = normalizeTabName(name);
   if (!VALID_TABS.includes(name)) return;
-  const base = getBasePath();
-  const targetUrl = `${base}/${name}`;
-
-  if (window.location.pathname === targetUrl && !window.location.search) return;
-
   try {
-    if (replace) {
-      window.history.replaceState({ tab: name }, '', targetUrl);
-    } else {
-      window.history.pushState({ tab: name }, '', targetUrl);
+    const base = getBasePath();
+    const newHash = '#' + name;
+    if (window.location.hash !== newHash) {
+      if (replace) {
+        window.history.replaceState({ tab: name }, '', base ? `${base}/${newHash}` : newHash);
+      } else {
+        window.history.pushState({ tab: name }, '', base ? `${base}/${newHash}` : newHash);
+      }
     }
   } catch (e) {
     window.location.hash = name;
