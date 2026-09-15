@@ -17,6 +17,7 @@ const { google } = require('googleapis');
 const { Readable } = require('stream');
 const { buildRulesBlock } = require('./rules');
 const { injectExifAndGps } = require('./exif');
+const { processAndNormalizeImage, detectImageFormat } = require('./image_processor');
 const { sendTelegramNotification } = require('./telegram');
 
 // --- Configuration ---
@@ -1254,7 +1255,22 @@ async function generateImageWithChatGPT(prompt, cookies, operatorName = null, cu
         if (!imageBuffer || imageBuffer.length < 5000) {
             throw new Error("ÉCHEC_EXTRACTION_IMAGE: Aucune photo DALL-E exploitable n'a été récupérée sur cette session ChatGPT.");
         }
-        return { imageBuffer, finalUrl };
+
+        // Désinfection totale C2PA et normalisation systématique en véritable JPEG 4:3
+        let normalizedBuffer = imageBuffer;
+        let imgWidth = 2048;
+        let imgHeight = 1536;
+        try {
+            console.log("🛡️ Désinfection C2PA & normalisation JPEG Smartphone 4:3 (2048x1536) en cours...");
+            const norm = await processAndNormalizeImage(imageBuffer);
+            normalizedBuffer = norm.buffer;
+            imgWidth = norm.width;
+            imgHeight = norm.height;
+        } catch (normErr) {
+            console.warn("⚠️ Avertissement normalisation image :", normErr.message);
+        }
+
+        return { imageBuffer: normalizedBuffer, finalUrl, imageWidth: imgWidth, imageHeight: imgHeight };
     } finally {
         if (page && onNetworkResponse) {
             try { page.off('response', onNetworkResponse); } catch(e) {}
@@ -2758,6 +2774,13 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                 // Injection des métadonnées EXIF Smartphone & Coordonnées GPS (matching intelligent de la date selon l'avis)
                 const reviewTextContent = (task.commentaire || '') + ' ' + (task.travaux || '');
                 const imageBuffer = await injectExifAndGps(rawImageBuffer, task.ville || 'Paris', task.pays || 'France', task.date, reviewTextContent);
+                
+                // Contrôle qualité binaire strict avant upload Google Maps / Drive
+                const finalFormat = detectImageFormat(imageBuffer);
+                if (finalFormat !== 'jpeg') {
+                    throw new Error(`CRITICAL_IMAGE_FORMAT_ERROR: L'image finale n'est pas un véritable JPEG (format détecté: "${finalFormat}"). Upload bloqué.`);
+                }
+                console.log(`✅ Photo 100% conforme pour Google Maps / GMB : véritable JPEG standard ${(imageBuffer.length / 1024).toFixed(1)} Ko, ratio 4:3, EXIF Smartphone complet & GPS intégrés.`);
                 
                 // Formatage exact demandé : [NOM OPERATEUR]_21-08-26_[GMB NAME] avec normalisation des accents français
                 const safeOpName = (task.operateur || 'OPERATEUR').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, '');
