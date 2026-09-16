@@ -161,8 +161,8 @@ async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskD
     exifIfd[piexif.ExifIFD.Flash] = 16; // Flash non déclenché en extérieur
     exifIfd[piexif.ExifIFD.FocalLength] = phone.focalLength;
     exifIfd[piexif.ExifIFD.FocalLengthIn35mmFilm] = phone.focal35 || 24;
-    exifIfd[piexif.ExifIFD.SubsecTimeOriginal] = `${Math.floor(Math.random() * 900) + 100}`;
-    exifIfd[piexif.ExifIFD.SubsecTimeDigitized] = exifIfd[piexif.ExifIFD.SubsecTimeOriginal];
+    exifIfd[piexif.ExifIFD.SubSecTimeOriginal] = `${Math.floor(Math.random() * 900) + 100}`;
+    exifIfd[piexif.ExifIFD.SubSecTimeDigitized] = exifIfd[piexif.ExifIFD.SubSecTimeOriginal];
     exifIfd[piexif.ExifIFD.ColorSpace] = 1; // sRGB (recommandé Google Maps)
     exifIfd[piexif.ExifIFD.PixelXDimension] = finalWidth;
     exifIfd[piexif.ExifIFD.PixelYDimension] = finalHeight;
@@ -204,13 +204,20 @@ async function injectExifAndGps(imageBuffer, cityName, country = 'France', taskD
     const base64Clean = newImageDataUrl.split(',')[1];
     const cleanBuffer = Buffer.from(base64Clean, 'base64');
 
+    // Vérification de sécurité : confirmation de la présence du marqueur APP1 EXIF
+    const hasApp1 = cleanBuffer.includes(Buffer.from([0xFF, 0xE1]));
+    if (!hasApp1) {
+      throw new Error("ÉCHEC_INJECTION_EXIF: Le marqueur APP1 EXIF est absent du fichier généré.");
+    }
+
     console.log(`📍 Métadonnées EXIF & GPS injectées avec succès !`);
     console.log(`📱 Smartphone simulé : ${phone.make} ${phone.model} | Ville : ${cityName} (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}) | Format : ${finalWidth}x${finalHeight}`);
 
     return cleanBuffer;
   } catch (err) {
-    console.warn("⚠️ Note injection EXIF :", err.message, "- Conservation du buffer.");
-    return imageBuffer;
+    console.error("🔴 ERREUR CRITIQUE injection EXIF :", err.message);
+    if (err.stack) console.error(err.stack);
+    throw err;
   }
 }
 

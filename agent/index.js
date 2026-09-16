@@ -2780,6 +2780,10 @@ Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HD
                 if (finalFormat !== 'jpeg') {
                     throw new Error(`CRITICAL_IMAGE_FORMAT_ERROR: L'image finale n'est pas un véritable JPEG (format détecté: "${finalFormat}"). Upload bloqué.`);
                 }
+                const hasApp1 = imageBuffer.includes(Buffer.from([0xFF, 0xE1]));
+                if (!hasApp1) {
+                    throw new Error(`CRITICAL_IMAGE_EXIF_ERROR: L'image ne contient aucun segment APP1 EXIF/GPS. Upload bloqué pour préserver l'intégrité GMB.`);
+                }
                 console.log(`✅ Photo 100% conforme pour Google Maps / GMB : véritable JPEG standard ${(imageBuffer.length / 1024).toFixed(1)} Ko, ratio 4:3, EXIF Smartphone complet & GPS intégrés.`);
                 
                 // Formatage exact demandé : [NOM OPERATEUR]_21-08-26_[GMB NAME] avec normalisation des accents français
