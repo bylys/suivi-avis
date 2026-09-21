@@ -105,21 +105,39 @@
     .btn-perso { background: #16a34a; }
     .btn-perso:hover { background: #15803d; }
 
+    .btn-copy { background: #334155; }
+    .btn-copy:hover { background: #475569; }
+
     .sync-time {
       font-size: 10px;
       color: #475569;
       text-align: center;
       margin-top: 8px;
     }
+    .auto-notice {
+      font-size: 10px;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
   </style>
 </head>
 <body>
-  <h2>📍 GMB Cookie Sync v2.0</h2>
+  <h2>📍 GMB Cookie Sync v2.1</h2>
 
-  <label for="op-select">Opérateur :</label>
+  <div class="auto-notice">
+    ✨ <b>Mode Commun :</b> Un seul compte Pro et Perso pour toute l'équipe. L'agent ouvre et nettoie automatiquement une conversation dédiée pour chaque opérateur chaque jour !
+  </div>
+
+  <label for="op-select">Cible de synchronisation :</label>
   <select id="op-select">
-    <option value="KEVIN">Kevin</option>
-    <option value="FIF">Fif / Fifaliana</option>
+    <option value="GLOBAL" selected>⭐ Équipe Complète (Kevin & Fifa - Commun)</option>
+    <option value="KEVIN">Kevin uniquement (Spécifique)</option>
+    <option value="FIF">Fifaliana uniquement (Spécifique)</option>
   </select>
 
   <!-- Bandeau statut session -->
@@ -133,19 +151,18 @@
     <span>🍪 Cookies capturés :</span>
     <span id="cookie-count">—</span>
   </div>
-  <div class="info-row" style="margin-bottom: 10px;">
+  <div class="info-row" style="margin-bottom: 12px;">
     <span>⏱️ Dernière sync :</span>
     <span id="sync-time-inline">—</span>
   </div>
 
-  <!-- URL de conversation enregistrée -->
-  <div class="url-label">🔗 URL conversation (onglet actif) :</div>
-  <div class="url-box" id="url-text">Recherche de l'onglet ChatGPT actif...</div>
-
   <div class="btn-group">
-    <button class="btn-sync btn-pro" id="btn-sync-pro">💼 Enregistrer Compte PRO</button>
-    <button class="btn-sync btn-perso" id="btn-sync-perso">🏠 Enregistrer Compte PERSO</button>
+    <button class="btn-sync btn-pro" id="btn-sync-pro">💼 Enregistrer comme Compte PRO</button>
+    <button class="btn-sync btn-perso" id="btn-sync-perso">🏠 Enregistrer comme Compte PERSO</button>
+    <button class="btn-sync btn-copy" id="btn-copy-json">📋 Copier Cookies JSON (pour GitHub Secrets)</button>
   </div>
+
+  <div class="sync-time" id="copy-status"></div>
 
   <script src="popup.js"></script>
 </body>

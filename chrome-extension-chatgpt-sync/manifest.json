@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "GMB Tracker — ChatGPT Cookie Auto-Sync",
-  "version": "2.0.0",
-  "description": "Sync complet cookies (chatgpt.com + openai.com) + URL fixe par opérateur. Session active affichée en vert.",
+  "version": "2.1.0",
+  "description": "Sync complet cookies ChatGPT (Pro/Perso) - Support mode commun d'équipe et export GitHub Secrets.",
   "permissions": [
     "cookies",
     "storage",

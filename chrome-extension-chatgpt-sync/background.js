@@ -106,11 +106,49 @@ async function syncCookiesToSupabase(targetType = 'WORK', forcedOp = null, conve
     );
     const sessionOk = Boolean(sessionToken);
 
-    // 3. Sauvegarde des cookies
+    // 3. Sauvegarde des cookies dans Supabase
     const jsonStr = JSON.stringify(allCookies);
-    const keysToUpdate = isPerso
-      ? [`CHATGPT_PERSO_COOKIES_${targetOp}`, `CHATGPT_PERSO_COOKIES`]
-      : [`CHATGPT_WORK_COOKIES_${targetOp}`, `CHATGPT_COOKIES_${targetOp}`, `CHATGPT_COOKIES`];
+    let keysToUpdate = [];
+
+    if (isPerso) {
+      if (targetOp === 'GLOBAL') {
+        keysToUpdate = [
+          'CHATGPT_PERSO_COOKIES',
+          'CHATGPT_COOKIES_PERSO',
+          'CHATGPT_PERSO_COOKIES_KEVIN',
+          'CHATGPT_PERSO_COOKIES_FIF',
+          'CHATGPT_PERSO_COOKIES_FIFA'
+        ];
+      } else {
+        keysToUpdate = [
+          `CHATGPT_PERSO_COOKIES_${targetOp}`,
+          `CHATGPT_COOKIES_PERSO_${targetOp}`,
+          'CHATGPT_PERSO_COOKIES'
+        ];
+      }
+    } else {
+      if (targetOp === 'GLOBAL') {
+        keysToUpdate = [
+          'CHATGPT_PRO_COOKIES',
+          'CHATGPT_WORK_COOKIES',
+          'CHATGPT_COOKIES',
+          'CHATGPT_PRO_COOKIES_KEVIN',
+          'CHATGPT_WORK_COOKIES_KEVIN',
+          'CHATGPT_PRO_COOKIES_FIF',
+          'CHATGPT_WORK_COOKIES_FIF',
+          'CHATGPT_PRO_COOKIES_FIFA',
+          'CHATGPT_WORK_COOKIES_FIFA'
+        ];
+      } else {
+        keysToUpdate = [
+          `CHATGPT_PRO_COOKIES_${targetOp}`,
+          `CHATGPT_WORK_COOKIES_${targetOp}`,
+          `CHATGPT_COOKIES_${targetOp}`,
+          'CHATGPT_PRO_COOKIES',
+          'CHATGPT_COOKIES'
+        ];
+      }
+    }
 
     for (const keyName of keysToUpdate) {
       await saveKeyToSupabase(keyName, jsonStr);
@@ -202,6 +240,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       });
     }).catch(() => {
       chrome.storage.local.get(['lastSyncStatus', 'lastSyncTime', 'cookieCount', 'operatorName', 'lastType'], sendResponse);
+    });
+    return true;
+  }
+  if (msg.action === 'GET_COOKIES_JSON') {
+    getAllChatGPTCookies().then(cookies => {
+      sendResponse({
+        json: JSON.stringify(cookies),
+        count: cookies ? cookies.length : 0
+      });
+    }).catch(err => {
+      sendResponse({ error: err.message, count: 0 });
     });
     return true;
   }

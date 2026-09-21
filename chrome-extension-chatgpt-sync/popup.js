@@ -116,4 +116,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   btnPro.addEventListener('click', () => handleSync('WORK'));
   btnPerso.addEventListener('click', () => handleSync('PERSO'));
+
+  // ─── Copier JSON pour GitHub Secrets ───────────────────────────────────────
+  const btnCopy = document.getElementById('btn-copy-json');
+  const copyStatus = document.getElementById('copy-status');
+
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => {
+      chrome.runtime.sendMessage({ action: 'GET_COOKIES_JSON' }, async (res) => {
+        if (res && res.json) {
+          try {
+            await navigator.clipboard.writeText(res.json);
+            copyStatus.textContent = `✅ ${res.count} cookies copiés dans le presse-papier !`;
+            copyStatus.style.color = '#4ade80';
+            setTimeout(() => { copyStatus.textContent = ''; }, 4000);
+          } catch (e) {
+            copyStatus.textContent = '❌ Échec de la copie';
+            copyStatus.style.color = '#f87171';
+          }
+        } else {
+          copyStatus.textContent = '⚠️ Aucun cookie à copier';
+          copyStatus.style.color = '#fbbf24';
+        }
+      });
+    });
+  }
 });
