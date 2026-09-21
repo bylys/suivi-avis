@@ -49,7 +49,7 @@ SLACK_OPERATEURS = {
 DELAI_GMAIL_JOURS  = int(os.environ.get("DELAI_GMAIL_JOURS", "8"))   # cooldown 8 j entre deux posts du même gmail
 DELAI_FICHE_JOURS  = int(os.environ.get("DELAI_FICHE_JOURS", "2"))   # délai min entre deux posts sur la même fiche
 DELAI_NICHE_JOURS  = int(os.environ.get("DELAI_NICHE_JOURS", "30"))  # délai min 30 j entre deux posts dans la même niche/métier pour un même gmail
-QUOTA_KEVIN_FIF    = int(os.environ.get("QUOTA_PAR_OPERATEUR", os.environ.get("QUOTA_KEVIN_FIF", "68")))      # Kevin & Fifaliana : 65-70/jour (défaut 68)
+QUOTA_KEVIN_FIF    = int(os.environ.get("QUOTA_PAR_OPERATEUR", os.environ.get("QUOTA_KEVIN_FIF", "50")))      # Kevin & Fifaliana : 50/jour (25 photos)
 OPERATEURS = ["Kevin", "Fifaliana"]
 OPERATEURS_ANCIENS_GMAILS = ["Kevin", "Fifaliana"]
 QUOTAS = {op: QUOTA_KEVIN_FIF for op in OPERATEURS}
@@ -389,6 +389,19 @@ def main():
     else:
         operateurs_actifs = list(OPERATEURS)
 
+    # Sauvegarder les photos déjà générées aujourd'hui (pour ne jamais les écraser en cas de relance)
+    existing_images = {}
+    try:
+        current_rows = sb_get_all("planning", f"date=eq.{today_str}")
+        for r in current_rows:
+            img = r.get('url_image') or (r.get('metier') if str(r.get('metier', '')).startswith('http') else None)
+            if img and r.get('fiche_nom'):
+                existing_images[r.get('fiche_nom')] = img
+        if existing_images:
+            print(f"💾 {len(existing_images)} image(s) existante(s) préservée(s) pour {today_str}.")
+    except Exception as e:
+        print(f"Note sauvegarde images: {e}")
+
     # Supprimer le planning existant pour aujourd'hui (recalcul propre)
     sb_delete("planning", f"date=eq.{today_str}")
 
@@ -641,7 +654,7 @@ def main():
         print(f"  {operateur} : {len(assignations[operateur])} assignations")
         for a in assignations[operateur]:
             pays = fiche_pays.get(a['fiche_nom'], 'FR')
-            planning_rows.append({
+            row = {
                 'date': today_str,
                 'fiche_nom': a['fiche_nom'],
                 'ville': a['ville'],
@@ -649,7 +662,10 @@ def main():
                 'operateur': operateur,
                 'statut': 'pending',
                 'pays': pays,
-            })
+            }
+            if a['fiche_nom'] in existing_images:
+                row['url_image'] = existing_images[a['fiche_nom']]
+            planning_rows.append(row)
 
     print(f"Total assignations : {len(planning_rows)}")
 
