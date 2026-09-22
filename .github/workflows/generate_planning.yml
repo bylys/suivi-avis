@@ -1,9 +1,6 @@
 name: Génération planning quotidien GMB
 
 on:
-  schedule:
-    # Exécution automatique chaque jour à 23h00 heure de Thaïlande (UTC+7 -> 16h00 UTC la veille)
-    - cron: '0 16 * * *'
   workflow_dispatch:
     inputs:
       quota:
