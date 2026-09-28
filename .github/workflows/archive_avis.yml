@@ -1,8 +1,6 @@
 name: Archive avis anciens
 
 on:
-  schedule:
-    - cron: '0 3 * * 0'  # Dimanche 3h UTC
   workflow_dispatch:       # Lancement manuel possible
 
 jobs:
