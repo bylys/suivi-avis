@@ -2418,8 +2418,13 @@ async function populateGenFiche() {
       if (!val) return;
       const extracted = extraireVilleFiche(val);
       const villeInput = document.getElementById('gen-ville');
-      if (villeInput && extracted) {
+      if (villeInput && extracted && !villeInput.value.trim()) {
         villeInput.value = extracted;
+      }
+      const travauxInput = document.getElementById('gen-travaux');
+      if (travauxInput && !travauxInput.value.trim()) {
+        const autoTravaux = detecterTravauxParDefaut(val);
+        if (autoTravaux) travauxInput.value = autoTravaux;
       }
     };
     ficheInput.addEventListener('input', autoUpdateVille);
@@ -2710,6 +2715,68 @@ function detecterMetier(fiche) {
   if (/dépann|depann|auto|voiture|mécanic|mecanic|garage/.test(f)) return 'auto';
   if (/nettoy/.test(f)) return 'nettoyage';
   return 'generic';
+}
+
+const METIER_TRAVAUX_DEFAULTS = {
+  elagage: "élagage et abattage d'arbres",
+  ravalement: "ravalement de façade et enduit",
+  couvreur: "réfection et démoussage de toiture",
+  nettoyage_toiture: "démoussage et nettoyage de toiture",
+  terrassement: "travaux de terrassement et nivellement",
+  maconnerie: "travaux de maçonnerie",
+  carreleur: "pose de carrelage",
+  peintre: "travaux de peinture",
+  debarras: "débarras et enlèvement d'encombrants",
+  plomberie: "dépannage de plomberie",
+  electricite: "travaux d'électricité générale",
+  auto: "dépannage et remorquage automobile",
+  nettoyage: "nettoyage haute pression extérieur"
+};
+
+function detecterTravauxParDefaut(fiche) {
+  if (!fiche || typeof fiche !== 'string') return '';
+  const nomL = fiche.toLowerCase();
+  if (nomL.includes('depann') || nomL.includes('remorqu') || nomL.includes('auto') || nomL.includes('garage') || nomL.includes('voiture')) {
+    return 'dépannage et remorquage automobile';
+  }
+  if (nomL.includes('debarras') || nomL.includes('vide')) {
+    return 'débarras et enlèvement';
+  }
+  if (nomL.includes('terrassement')) {
+    return 'travaux de terrassement';
+  }
+  if (nomL.includes('elag') || nomL.includes('abatt') || nomL.includes('arbor')) {
+    return 'élagage et abattage d\'arbres';
+  }
+  if (nomL.includes('couvreur') || nomL.includes('toiture') || nomL.includes('couverture') || nomL.includes('zinguerie')) {
+    return 'réfection de toiture';
+  }
+  if (nomL.includes('ravalement') || nomL.includes('facade') || nomL.includes('façade')) {
+    return 'ravalement de façade';
+  }
+  if (nomL.includes('demouss') || nomL.includes('hydrofuge')) {
+    return 'démoussage de toiture';
+  }
+  if (nomL.includes('peintr') || nomL.includes('peinture')) {
+    return 'travaux de peinture';
+  }
+  if (nomL.includes('plomb')) {
+    return 'travaux de plomberie';
+  }
+  if (nomL.includes('electr')) {
+    return 'travaux d\'électricité';
+  }
+  if (nomL.includes('macon') || nomL.includes('maçon')) {
+    return 'travaux de maçonnerie';
+  }
+  if (nomL.includes('carrel')) {
+    return 'pose de carrelage';
+  }
+  if (nomL.includes('paysag') || nomL.includes('jardin')) {
+    return 'aménagement paysager et entretien de jardin';
+  }
+  const m = detecterMetier(fiche);
+  return METIER_TRAVAUX_DEFAULTS[m] || 'travaux de rénovation artisanale';
 }
 
 const _UNUSED = {
@@ -3177,11 +3244,52 @@ Avis :`;
     textEl.style.color = '';
     textEl.style.fontStyle = 'italic';
     textEl.textContent = texte;
+
+    // Enregistrer l'avis et ses travaux pour le générateur d'images
+    enregistrerAvisGenerePourImages({
+      fiche,
+      travaux,
+      ville: ville || villeFiche,
+      texte,
+      date: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    });
   } catch(e) {
     textEl.textContent = '❌ Erreur réseau, vérifie ta connexion.';
     textEl.style.color = '#ef4444';
     textEl.style.fontStyle = 'normal';
   }
+}
+
+function enregistrerAvisGenerePourImages(avis) {
+  if (!avis || !avis.fiche) return;
+  window._lastGeneratedAvis = avis;
+  try {
+    localStorage.setItem('gmb_last_generated_avis', JSON.stringify(avis));
+    let recents = [];
+    try {
+      const raw = localStorage.getItem('gmb_recent_generated_avis');
+      recents = raw ? JSON.parse(raw) : [];
+    } catch(e) {}
+    recents = recents.filter(r => !(r.fiche === avis.fiche && r.travaux === avis.travaux));
+    recents.unshift(avis);
+    if (recents.length > 10) recents = recents.slice(0, 10);
+    localStorage.setItem('gmb_recent_generated_avis', JSON.stringify(recents));
+  } catch(e) {}
+}
+
+function genererImageDepuisAvisActuel() {
+  const fiche = document.getElementById('gen-fiche')?.value.trim();
+  const travaux = document.getElementById('gen-travaux')?.value.trim() || detecterTravauxParDefaut(fiche);
+  let ville = document.getElementById('gen-ville')?.value.trim() || extraireVilleFiche(fiche);
+
+  if (!fiche && !travaux) {
+    alert("Veuillez d'abord générer un avis ou renseigner la fiche.");
+    return;
+  }
+
+  showTab('images');
+  appliquerExempleImage(fiche, travaux, ville);
+  genererImageChatGPT();
 }
 
 function copierAvis() {
@@ -6379,12 +6487,13 @@ function onImgGenInputsChange() {
 async function onImgGenFicheSelected() {
   const ficheInput = document.getElementById('img-gen-fiche');
   const villeInput = document.getElementById('img-gen-ville');
-  if (!ficheInput || !villeInput) return;
+  const travauxInput = document.getElementById('img-gen-travaux');
+  if (!ficheInput) return;
 
   const ficheVal = ficheInput.value.trim();
   if (!ficheVal) return;
 
-  if (!villeInput.value.trim()) {
+  if (villeInput && !villeInput.value.trim()) {
     const detectedCity = extractCityFromFicheName(ficheVal);
     if (detectedCity) {
       villeInput.value = detectedCity;
@@ -6400,7 +6509,73 @@ async function onImgGenFicheSelected() {
     }
   }
 
+  // Auto-remplir les travaux par défaut pour ce métier si vides
+  if (travauxInput && !travauxInput.value.trim()) {
+    const autoTravaux = detecterTravauxParDefaut(ficheVal);
+    if (autoTravaux) travauxInput.value = autoTravaux;
+  }
+
   onImgGenInputsChange();
+}
+
+function getLastGeneratedAvis() {
+  if (window._lastGeneratedAvis) return window._lastGeneratedAvis;
+  try {
+    const raw = localStorage.getItem('gmb_last_generated_avis');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) {
+    return null;
+  }
+}
+
+function renderRecentAvisBanner() {
+  const lastAvis = getLastGeneratedAvis();
+  const banner = document.getElementById('img-gen-from-avis-box');
+  const bannerTitle = document.getElementById('img-gen-avis-title');
+
+  if (lastAvis && banner && bannerTitle) {
+    banner.style.display = 'flex';
+    bannerTitle.textContent = `${lastAvis.fiche} • ${lastAvis.travaux} (${lastAvis.ville})`;
+  } else if (banner) {
+    banner.style.display = 'none';
+  }
+
+  const wrap = document.getElementById('img-gen-recent-wrap');
+  const select = document.getElementById('img-gen-recent-select');
+  if (wrap && select) {
+    try {
+      const recents = JSON.parse(localStorage.getItem('gmb_recent_generated_avis') || '[]');
+      if (recents && recents.length > 1) {
+        wrap.style.display = 'flex';
+        select.innerHTML = '<option value="">-- Choisir un avis généré --</option>' +
+          recents.map((r, i) => `<option value="${i}">${r.date ? r.date + ' : ' : ''}${r.fiche} — ${r.travaux} (${r.ville})</option>`).join('');
+      } else {
+        wrap.style.display = 'none';
+      }
+    } catch(e) {
+      wrap.style.display = 'none';
+    }
+  }
+}
+
+function reprendreDernierAvisPourImage() {
+  const lastAvis = getLastGeneratedAvis();
+  if (!lastAvis) return;
+  appliquerExempleImage(lastAvis.fiche, lastAvis.travaux, lastAvis.ville);
+  showToast("✅ Travaux et fiche du dernier avis réappliqués !", "success", 3000);
+}
+
+function onSelectRecentAvisForImage(indexStr) {
+  if (indexStr === '') return;
+  const idx = parseInt(indexStr, 10);
+  try {
+    const recents = JSON.parse(localStorage.getItem('gmb_recent_generated_avis') || '[]');
+    const chosen = recents[idx];
+    if (chosen) {
+      appliquerExempleImage(chosen.fiche, chosen.travaux, chosen.ville);
+      showToast(`✅ Travaux repris pour "${chosen.fiche}"`, "success", 3000);
+    }
+  } catch(e) {}
 }
 
 function appliquerExempleImage(fiche, travaux, ville) {
@@ -6514,6 +6689,20 @@ function copierPromptManuel() {
 
 function initImageGenerator() {
   populateFicheSelects();
+
+  // Synchroniser automatiquement avec le dernier avis généré si les champs sont vides
+  const lastAvis = getLastGeneratedAvis();
+  const fInput = document.getElementById('img-gen-fiche');
+  const tInput = document.getElementById('img-gen-travaux');
+  const vInput = document.getElementById('img-gen-ville');
+
+  if (lastAvis && tInput && (!tInput.value || tInput.value.trim() === '')) {
+    if (fInput && !fInput.value) fInput.value = lastAvis.fiche;
+    if (tInput) tInput.value = lastAvis.travaux;
+    if (vInput && !vInput.value) vInput.value = lastAvis.ville;
+  }
+
+  renderRecentAvisBanner();
   onImgGenInputsChange();
 }
 

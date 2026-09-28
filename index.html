@@ -306,7 +306,12 @@
     <div id="gen-result" class="gen-result hidden">
       <div class="gen-result-header">
         <span>Avis généré</span>
-        <button class="btn-copy" onclick="copierAvis()">📋 Copier</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn-copy" onclick="copierAvis()">📋 Copier</button>
+          <button id="gen-btn-image" class="btn-primary" onclick="genererImageDepuisAvisActuel()" style="font-size:12px;padding:6px 14px;background:linear-gradient(135deg, #10b981, #059669);border:none;border-radius:6px;font-weight:700;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(16,185,129,0.3);cursor:pointer;color:#fff">
+            🎨 Générer l'image dans ChatGPT
+          </button>
+        </div>
       </div>
       <div id="gen-texte" class="gen-texte"></div>
       <p id="gen-copy-confirm" class="success hidden">✅ Copié dans le presse-papiers !</p>
@@ -378,17 +383,38 @@
   <!-- GÉNÉRER UNE IMAGE -->
   <section id="tab-images" class="tab-content hidden">
     <h2>🎨 Générer une image de chantier</h2>
-    <p style="color:#94a3b8;font-size:0.92rem;margin-bottom:1.5rem;">
-      Renseignez simplement l'établissement, les travaux et la ville : le prompt est automatiquement rédigé avec les règles de sécurité, le style photo smartphone amateur et prêt pour ChatGPT.
+    <p style="color:#94a3b8;font-size:0.92rem;margin-bottom:1.2rem;">
+      Les travaux sont automatiquement repris du générateur d'avis : le prompt ChatGPT est rédigé sur mesure avec les règles de sécurité, le style photo smartphone amateur et prêt à être généré.
     </p>
+
+    <!-- BANNIÈRE SYNCHRONISATION DU DERNIER AVIS GÉNÉRÉ -->
+    <div id="img-gen-from-avis-box" style="display:none;margin-bottom:14px;padding:12px 16px;border-radius:10px;background:rgba(99,102,241,0.12);border:1.5px solid #6366f1;color:#c7d2fe;font-size:13px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">✨</span>
+        <div>
+          <div style="font-size:11px;color:#a5b4fc;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Travaux issus du générateur d'avis :</div>
+          <div style="color:#fff;font-weight:600;font-size:14px" id="img-gen-avis-title"></div>
+        </div>
+      </div>
+      <button type="button" onclick="reprendreDernierAvisPourImage()" class="btn-secondary" style="font-size:12px;padding:5px 12px;border-color:#818cf8;color:#e0e7ff;background:#312e81;display:inline-flex;align-items:center;gap:6px">
+        🔄 Réappliquer ces travaux
+      </button>
+    </div>
+
+    <!-- SÉLECTEUR D'AVIS RÉCEMMENT GÉNÉRÉS (si plusieurs) -->
+    <div id="img-gen-recent-wrap" style="display:none;margin-bottom:14px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <span style="font-size:12px;color:#94a3b8;font-weight:600">📋 Choisir parmi les avis générés récemment :</span>
+      <select id="img-gen-recent-select" onchange="onSelectRecentAvisForImage(this.value)" style="padding:6px 10px;border-radius:6px;background:#1e293b;border:1px solid #475569;color:#f1f5f9;font-size:12px;max-width:380px">
+      </select>
+    </div>
 
     <div class="gen-form" style="max-width:740px;">
       <label>Nom du GMB / Établissement *
         <input type="text" id="img-gen-fiche" list="datalist-form-fiche" placeholder="Sélectionnez ou tapez le nom (ex : Élagage Azur, Couvreur Cannes...)" autocomplete="off" oninput="onImgGenInputsChange()" onchange="onImgGenFicheSelected()" />
       </label>
 
-      <label>Travaux réalisés *
-        <input type="text" id="img-gen-travaux" placeholder="Ex : Taille d'un olivier dans le jardin d'une maison individuelle" autocomplete="off" oninput="onImgGenInputsChange()" />
+      <label>Travaux de l'intervention (automatiquement synchronisés avec l'avis) *
+        <input type="text" id="img-gen-travaux" placeholder="Ex : élagage de deux pins, réfection de toiture..." autocomplete="off" oninput="onImgGenInputsChange()" />
       </label>
 
       <label>Ville d'intervention *
