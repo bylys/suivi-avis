@@ -217,7 +217,7 @@ async function init() {
 }
 
 // ── ROUTER & TABS ──
-const VALID_TABS = ['dashboard', 'planning', 'generateur', 'images', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
+const VALID_TABS = ['dashboard', 'images', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
 
 function getBasePath() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -228,6 +228,7 @@ function getBasePath() {
 }
 
 function normalizeTabName(name) {
+  if (name === 'planning') return 'images';
   if (name === 'saisir') return 'saisie';
   return name;
 }
@@ -288,12 +289,11 @@ function showTab(name, skipUrlUpdate = false) {
   }
 
   if (name === 'dashboard') renderDashboard();
+  if (name === 'images') initImageGenerator();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
   if (name === 'generateur') populateGenFiche();
   if (name === 'gmails') renderGmails();
-  if (name === 'planning') renderPlanning();
-  if (name === 'images') renderImagesHistory();
 }
 
 window.addEventListener('popstate', () => {
@@ -3971,177 +3971,10 @@ function clearNotes() {
   updateNotesLines();
 }
 
-// ── PLANNING ──
-
+// ── PLANNING (Fonctionnalité retirée) ──
 async function renderPlanning() {
-  const dateEl = document.getElementById('planning-date');
-  const opEl   = document.getElementById('planning-operateur');
-  const stEl   = document.getElementById('planning-statut-filter');
-  const list   = document.getElementById('planning-list');
-  const stats  = document.getElementById('planning-stats');
-
-  if (!dateEl.value) {
-    const today = new Date();
-    dateEl.value = today.toISOString().slice(0, 10);
-  }
-
-  const dateVal = dateEl.value;
-  const opVal   = opEl.value;
-  const stVal   = stEl.value;
-
-  list.innerHTML = '<p style="color:#94a3b8">Chargement...</p>';
-
-  let query = `select=*&date=eq.${dateVal}&order=operateur.asc,ville.asc`;
-  if (opVal) query += `&operateur=eq.${encodeURIComponent(opVal)}`;
-  if (stVal) query += `&statut=eq.${stVal}`;
-
-  const rows = await sbGet('planning', query);
-  window._currentPlanningRows = rows || [];
-
-  // Stats
-  const total   = rows.length;
-  const pending = rows.filter(r => r.statut === 'pending').length;
-  const done    = rows.filter(r => r.statut === 'done').length;
-  const generated = rows.filter(r => r.statut === 'generated').length;
-
-  stats.innerHTML = [
-    ['Total', total, '#3b82f6'],
-    ['En attente', pending, '#f59e0b'],
-    ['Généré', generated, '#8b5cf6'],
-    ['Terminé', done, '#22c55e'],
-  ].map(([label, val, color]) => `
-    <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 18px;text-align:center">
-      <div style="font-size:22px;font-weight:700;color:${color}">${val}</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:2px">${label}</div>
-    </div>`).join('');
-
-  if (!rows.length) {
-    list.innerHTML = '<p style="color:#94a3b8;padding:20px">Aucune assignation pour cette date. Le planning est généré automatiquement chaque matin à 6h.</p>';
-    return;
-  }
-
-  // Grouper par opérateur
-  const byOp = {};
-  for (const r of rows) {
-    const op = r.operateur || '—';
-    if (!byOp[op]) byOp[op] = [];
-    byOp[op].push(r);
-  }
-
-  const STATUT_COLORS = {
-    pending: '#f59e0b', generated: '#8b5cf6', done: '#22c55e', skip: '#64748b'
-  };
-  const STATUT_LABELS = {
-    pending: 'En attente', generated: 'Généré', done: 'Terminé', skip: 'Ignoré'
-  };
-
-  list.innerHTML = Object.entries(byOp).map(([op, taches]) => {
-    // Trier par ID croissant pour reproduire rigoureusement l'ordre de passage de l'agent IA nocturne
-    taches.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
-
-    // Décompte de la règle des 50% de photos (index pairs: 0, 2, 4...)
-    const tachesAvecPhoto = taches.filter((_, idx) => idx % 2 === 0);
-    const photosPretes = tachesAvecPhoto.filter(r => r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http'))).length;
-    const photosManquantes = tachesAvecPhoto.length - photosPretes;
-    const isKevin = op.toLowerCase().includes('kevin');
-
-    return `
-    <div style="margin-bottom:24px">
-      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span>👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span></span>
-          <span style="background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
-            📸 Photos requises (50%) : ${photosPretes}/${tachesAvecPhoto.length}
-          </span>
-          ${photosManquantes > 0 ? `
-            <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
-              ⚠️ ${photosManquantes} image(s) manquante(s)
-            </span>
-          ` : `
-            <span style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
-              ✅ Toutes prêtes
-            </span>
-          `}
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button onclick="openOperatorDriveFolder('${op}')" style="padding:4px 10px;border-radius:6px;background:#1e293b;color:#38bdf8;border:1px solid #334155;cursor:pointer;font-size:12px">
-            📁 Dossier Drive ${op}
-          </button>
-          ${photosManquantes > 0 ? `
-            <a href="https://github.com/bylys/suivi-avis/actions/workflows/gmb-image-${isKevin ? 'kevin' : 'fifa'}.yml" target="_blank"
-              style="padding:4px 10px;border-radius:6px;background:#6366f1;color:#fff;text-decoration:none;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px">
-              ⚡ Relancer Agent IA (${op})
-            </a>
-          ` : ''}
-        </div>
-      </h3>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead>
-          <tr style="color:#64748b;text-align:left">
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Ville</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Gmail</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Fiche</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Photo (Règle 50%)</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Statut</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${taches.map((r, idx) => {
-            const isPhotoRequired = (idx % 2 === 0);
-            const photoUrl = r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http') ? r.metier : null);
-            return `
-            <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}" data-operateur="${op}" data-ville="${r.ville || ''}">
-              <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
-              <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#a5b4fc">${r.gmail}</td>
-              <td style="padding:7px 10px;color:#e2e8f0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fiche_nom}">${r.fiche_nom}</td>
-              <td style="padding:7px 10px;white-space:nowrap">
-                ${photoUrl ? `
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <a href="${photoUrl}" target="_blank" rel="noopener"
-                      style="padding:3px 8px;border-radius:5px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;font-weight:600">
-                      📸 Voir Photo
-                    </a>
-                    <span style="font-size:10px;color:#34d399;font-weight:600" title="Photo requise (règle 50%) — prête">✓ (50%)</span>
-                  </div>
-                ` : isPhotoRequired ? `
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
-                    <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap" title="Avis éligible photo (règle 50%) — non générée lors du passage nocturne">
-                      ⚠️ 50% Requis
-                    </span>
-                    <button onclick="ouvrirGenerateurImagePlanning('${r.id}')"
-                      style="padding:3px 8px;border-radius:5px;background:linear-gradient(135deg, #6366f1, #8b5cf6);color:#fff;border:none;cursor:pointer;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(99,102,241,0.3)"
-                      title="Générer la photo manquante pour cet avis éligible">
-                      🎨 Générer l'image
-                    </button>
-                  </div>
-                ` : `
-                  <span style="color:#64748b;font-size:11px;font-style:italic" title="Avis textuel simple sans photo (règle des 50% alternée)">— Sans photo</span>
-                `}
-              </td>
-              <td style="padding:7px 10px">
-                <span style="background:${(STATUT_COLORS[r.statut]||'#64748b')}22;color:${STATUT_COLORS[r.statut]||'#64748b'};padding:2px 8px;border-radius:99px;font-size:11px">
-                  ${STATUT_LABELS[r.statut] || r.statut}
-                </span>
-              </td>
-              <td style="padding:7px 10px;white-space:nowrap">
-                ${r.statut === 'pending' || r.statut === 'generated' ? `
-                  <button onclick="planningGenerer('${r.id}','${r.fiche_nom.replace(/'/g,"\\'")}','${r.gmail}','${op}')"
-                    style="padding:3px 10px;border-radius:5px;background:#6366f1;color:#fff;border:none;cursor:pointer;font-size:12px;margin-right:4px">
-                    ✍️ Générer
-                  </button>
-                  <button onclick="planningSkip('${r.id}')"
-                    style="padding:3px 10px;border-radius:5px;background:#334155;color:#94a3b8;border:none;cursor:pointer;font-size:12px">
-                    Ignorer
-                  </button>
-                ` : r.statut === 'done' ? `<span style="color:#22c55e;font-size:12px">✅ Fait</span>` : ''}
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`;
-  }).join('');
+  // Le planning automatique a été supprimé. Redirection vers le générateur d'images.
+  showTab('images');
 }
 
 // ── Toast éphémère ────────────────────────────────────────────────────────────
@@ -4924,616 +4757,7 @@ async function donutRafraichirProxy() {
   );
 }
 
-async function planningGenerer(id, ficheNom, gmail, operateur = '') {
-  await sbUpdate('planning', id, { statut: 'generated' });
 
-  // Extraire la ville principale depuis la fiche GMB (priorité absolue)
-  // Fallback sur la ville de la ligne du planning si non trouvée
-  const row = document.getElementById(`planning-row-${id}`);
-  const rowVille = row?.dataset?.ville || (row ? row.querySelector('td')?.textContent?.trim() : '');
-  const villeExtraite = extraireVilleFiche(ficheNom);
-  const ville = (villeExtraite && villeExtraite !== ficheNom)
-    ? villeExtraite
-    : (rowVille && rowVille !== '—' ? rowVille : (villeExtraite || ''));
-
-  // Dériver les travaux et le métier depuis le nom de la fiche (utilisé pour avis et images)
-  const _TRAVAUX_MAP = {
-    depannage: 'dépannage et remorquage automobile',
-    remorquage: 'dépannage et remorquage automobile',
-    auto: 'dépannage et remorquage automobile',
-    voiture: 'dépannage et remorquage automobile',
-    garage: 'dépannage et réparation automobile',
-    debarras: 'débarras et enlèvement',
-    terrassement: 'travaux de terrassement',
-    couvreur: 'réfection de toiture', toiture: 'réfection de toiture', couverture: 'travaux de couverture',
-    demoussage: 'démoussage toiture', hydrofuge: 'traitement hydrofuge toiture',
-    gouttieres: 'nettoyage gouttières',
-    etancheite: 'travaux d\'étanchéité',
-    paysagiste: 'aménagement paysager', jardinage: 'entretien jardin',
-    elagage: 'élagage et abattage d\'arbres', abattage: 'élagage et abattage d\'arbres',
-    ravalement: 'ravalement de façade', facade: 'ravalement de façade',
-    nettoyage: 'nettoyage haute pression',
-    peintre: 'travaux de peinture', peinture: 'travaux de peinture',
-    plombier: 'travaux de plomberie',
-    electricien: 'travaux d\'électricité',
-    macon: 'travaux de maçonnerie', carrelage: 'pose de carrelage',
-  };
-  const _nomL = ficheNom.toLowerCase();
-  let _travaux = Object.entries(_TRAVAUX_MAP).find(([k]) => _nomL.includes(k))?.[1];
-  if (!_travaux) {
-    const metierDet = detecterMetier(ficheNom);
-    if (metierDet === 'auto') _travaux = 'dépannage et remorquage automobile';
-    else if (metierDet === 'debarras') _travaux = 'débarras et enlèvement';
-    else if (metierDet === 'terrassement') _travaux = 'travaux de terrassement';
-    else if (metierDet === 'elagage') _travaux = 'élagage et abattage d\'arbres';
-    else if (metierDet === 'ravalement') _travaux = 'ravalement de façade';
-    else if (metierDet === 'couvreur') _travaux = 'réfection de toiture';
-    else if (metierDet === 'nettoyage_toiture') _travaux = 'démoussage toiture';
-    else _travaux = 'travaux à domicile';
-  }
-
-  // Créer et lancer le profil anti-détection selon le choix utilisateur (GoLogin / DonutBrowser / Auto / Aucun)
-  if (ville && ville !== '—') {
-    const engine = localStorage.getItem('antidetect_engine') || 'gologin';
-    if (engine !== 'none') {
-      const opFromRow = row?.dataset?.operateur || '';
-      const opSaved   = localStorage.getItem('gmb_operateur') || '';
-      const opVal     = document.getElementById('planning-operateur')?.value || '';
-      const rawOpStr  = (operateur || opFromRow || opSaved || opVal || 'Kevin').trim();
-
-      try {
-        const ficheObj = (window._fichesCache || []).find(f => f.nom === ficheNom || f.nom_clean === ficheNom);
-        const rowPays  = ficheObj?.pays || row?.dataset?.pays || 'FR';
-
-        if (engine === 'gologin') {
-          await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
-        } else if (engine === 'donut') {
-          if (getDonutToken()) {
-            await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
-          } else {
-            showToast('⚠️ Token DonutBrowser manquant dans ⚙️ Config Anti-Detect.', 'warn', 6000);
-          }
-        } else if (engine === 'auto') {
-          const isKevinOrFif = rawOpStr.includes('kevin') || rawOpStr.includes('fif');
-          if (isKevinOrFif) {
-            const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
-            if (!glRes && getDonutToken()) {
-              await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
-            }
-          } else if (getDonutToken()) {
-            await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
-          }
-        }
-      } catch (e) {
-        console.warn('Profil anti-detect ignoré (erreur):', e?.message || e);
-      }
-    }
-  }
-
-
-
-  // Basculer vers le générateur d'avis
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
-  document.getElementById('tab-generateur').classList.remove('hidden');
-  document.querySelector('.tab-btn[onclick*="generateur"]').classList.add('active');
-
-  await populateGenFiche();
-
-  const ficheInput = document.getElementById('gen-fiche');
-  if (ficheInput) { ficheInput.value = ficheNom; ficheInput.dispatchEvent(new Event('input')); }
-
-  const auteurInput = document.getElementById('gen-auteur');
-  if (auteurInput) auteurInput.value = gmail;
-
-  // Pré-remplir ville et travaux dans le générateur d'avis
-  const villeInput = document.getElementById('gen-ville');
-  if (villeInput && ville) villeInput.value = ville;
-  const travauxInput = document.getElementById('gen-travaux');
-  if (travauxInput) travauxInput.value = _travaux;
-
-  if (row) {
-    const badge = row.querySelector('span[style*="border-radius:99px"]');
-    if (badge) { badge.style.color = '#8b5cf6'; badge.style.background = '#8b5cf622'; badge.textContent = 'Généré'; }
-  }
-
-  // Lancer la génération automatiquement si clé Gemini configurée
-  if (getGeminiKey()) await genererAvis();
-}
-
-async function planningSkip(id) {
-  await sbUpdate('planning', id, { statut: 'skip' });
-  renderPlanning();
-}
-
-// ── GÉNÉRATION & GESTION D'IMAGES DU PLANNING (RÈGLE 50%) ──
-
-function construirePromptImagePlanning(task) {
-  if (!task) return '';
-  const ficheNom = task.fiche_nom || '';
-  const ville = task.ville || 'Paris';
-  const pays = task.pays || 'France';
-  const locationStr = `${ville} (${pays})`;
-
-  // Détection des travaux
-  const nomL = ficheNom.toLowerCase();
-  let travauxLabel = task.travaux || '';
-
-  if (!travauxLabel) {
-    if (nomL.includes('vitr') || nomL.includes('fenêtre') || nomL.includes('miroir')) {
-      travauxLabel = 'remplacement de vitrage et vitrerie sur mesure';
-    } else if (nomL.includes('charpente') || nomL.includes('comble') || nomL.includes('ossature')) {
-      travauxLabel = 'travaux de charpente traditionnelle en bois';
-    } else if (nomL.includes('demoussage') || nomL.includes('nettoyage toiture') || nomL.includes('gouttiere')) {
-      travauxLabel = 'nettoyage et démoussage de toiture';
-    } else if (nomL.includes('etancheite') || nomL.includes('toit plat') || nomL.includes('terrasse')) {
-      travauxLabel = 'étanchéité de toiture terrasse plate';
-    } else if (nomL.includes('facade') || nomL.includes('ravalement') || nomL.includes('crepi')) {
-      travauxLabel = 'ravalement et rénovation d\'enduit de façade';
-    } else if (nomL.includes('couvr') || nomL.includes('toiture') || nomL.includes('tuile')) {
-      travauxLabel = 'travaux de couverture et réfection de toiture en tuiles';
-    } else if (nomL.includes('elag') || nomL.includes('abattage') || nomL.includes('arbre') || nomL.includes('paysag')) {
-      travauxLabel = 'élagage d\'arbre et entretien paysager d\'un jardin';
-    } else if (nomL.includes('macon') || nomL.includes('beton') || nomL.includes('dalle')) {
-      travauxLabel = 'travaux de maçonnerie extérieure';
-    } else if (nomL.includes('auto') || nomL.includes('depann') || nomL.includes('remorqu')) {
-      travauxLabel = 'dépannage et remorquage automobile sur route';
-    } else if (nomL.includes('debarras') || nomL.includes('encombrant')) {
-      travauxLabel = 'débarras et désencombrement de maison';
-    } else if (nomL.includes('carrel')) {
-      travauxLabel = 'pose de carrelage au sol en intérieur';
-    } else if (nomL.includes('peint')) {
-      travauxLabel = 'travaux de peinture sur façade extérieure';
-    } else if (nomL.includes('plomb')) {
-      travauxLabel = 'travaux de plomberie sanitaire';
-    } else {
-      travauxLabel = 'travaux de rénovation artisanale';
-    }
-  }
-
-  // Contexte du bâtiment
-  const contexteMap = {
-    maison: 'maison individuelle',
-    appartement: 'appartement',
-    immeuble: 'immeuble résidentiel',
-    commerce: 'local commercial',
-    professionnel: 'local professionnel',
-    entrepot: 'entrepôt',
-    agricole: 'bâtiment agricole'
-  };
-  const contexteLabel = contexteMap[task.contexte] || 'maison individuelle';
-  const pointDeVue = (task.contexte === 'commerce' || task.contexte === 'professionnel')
-    ? 'depuis le trottoir en angle oblique'
-    : 'depuis la rue en face, angle oblique';
-
-  // Nombre d'ouvriers selon les règles officielles par métier
-  const metierText = (lowerTrade + ' ' + nomL + ' ' + (task.metier || '')).toLowerCase();
-  const randWorker = Math.random();
-  let nbOuvriers = '1 ou 2 artisans';
-
-  if (metierText.includes('haie') || metierText.includes('taille')) {
-    nbOuvriers = 'exactement 2 ouvriers en duo';
-  } else if (metierText.includes('debroussaillage') || metierText.includes('débroussaillage') || metierText.includes('dessouchage')) {
-    nbOuvriers = '2 ouvriers (1 opérateur et 1 assistant au sol)';
-  } else if (metierText.includes('double vitrage') || metierText.includes('vitrine')) {
-    nbOuvriers = '2 artisans vitriers';
-  } else if (metierText.includes('vitrier') || metierText.includes('vitrerie') || metierText.includes('vitre') || metierText.includes('fenêtre') || metierText.includes('fenetre') || metierText.includes('miroir')) {
-    nbOuvriers = randWorker < 0.40 ? '1 artisan vitrier' : '2 artisans vitriers';
-  } else if ((metierText.includes('terrasse') && !metierText.includes('terrassement')) || metierText.includes('patio')) {
-    nbOuvriers = randWorker < 0.85 ? '1 artisan solo' : '2 artisans';
-  } else if (metierText.includes('facade') || metierText.includes('façade') || metierText.includes('ravalement')) {
-    nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
-  } else if (metierText.includes('demoussage') || metierText.includes('démoussage') || (metierText.includes('nettoyage') && metierText.includes('toiture'))) {
-    nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
-  } else if (['couvreur', 'couverture', 'gouttiere', 'gouttière', 'cheneau', 'chéneau', 'zinguerie', 'elagage', 'élagage', 'abattage', 'charpente', 'maconnerie', 'maçonnerie', 'terrassement'].some(k => metierText.includes(k))) {
-    nbOuvriers = randWorker < 0.55 ? '2 ouvriers' : '3 ouvriers';
-  } else {
-    nbOuvriers = randWorker < 0.50 ? '1 artisan solo' : '2 artisans';
-  }
-
-  const lumiere = 'lumière naturelle du jour, ciel légèrement voilé';
-  const orientation = '3:2 paysage';
-
-  // Construction des interdictions selon le métier (terrassement en premier pour éviter toute confusion avec terrasse)
-  const lower = (travauxLabel || '').toLowerCase() + ' ' + nomL;
-  let interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse.";
-  if (lower.includes('terrassement') || lower.includes('mini-pelle') || lower.includes('excavation') || lower.includes('décaissement') || lower.includes('decaissement') || lower.includes('vrd') || lower.includes('assainissement') || lower.includes('enrochement') || lower.includes('accès') || lower.includes('acces') || lower.includes('parking') || lower.includes('allée') || lower.includes('allee')) {
-    interdiction = "AUCUN toit, AUCUNE toiture, AUCUN couvreur, AUCUN élagage d'arbre, AUCUN nettoyeur haute pression sur toiture, AUCUNE dépanneuse. UNIQUEMENT des travaux de terrassement au sol, excavation, mini-pelle, nivellement, tranchées VRD, géotextile, grave concassée, création d'allée ou assainissement.";
-  } else if (lower.includes('elag') || lower.includes('abattage') || lower.includes('jardin') || lower.includes('arbre') || lower.includes('paysag') || lower.includes('haie') || lower.includes('dessouch')) {
-    interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT jardiniers / élagueurs au sol dans un jardin avec pelouse et végétation.";
-  } else if (lower.includes('vitr') || lower.includes('fenêtre') || lower.includes('fenetre') || lower.includes('miroir')) {
-    interdiction = "AUCUN toit, AUCUN couvreur, AUCUN arbre, AUCUN jardinier, AUCUN casque de chantier lourd pour les travaux intérieurs. Les ventouses de vitrier DOIVENT être fermement tenues par les mains de l'artisan sur le verre.";
-  } else if (lower.includes('demoussage') || lower.includes('démoussage') || lower.includes('nettoyage toiture') || (lower.includes('nettoyage') && lower.includes('toiture'))) {
-    interdiction = "AUCUNE échelle, AUCUN escabeau appuyé contre la toiture ou la façade (travail sur échelle formellement interdit), AUCUN travailleur marchant ou debout sur les tuiles ou sur le faîtage du toit (interdiction absolue de marcher sur le toit en pente). Nettoyage basse/haute pression 100% au sol avec perche télescopique ou nacelle élévatrice sécurisée.";
-  } else if (lower.includes('gouttière') || lower.includes('gouttiere') || lower.includes('chéneau') || lower.includes('cheneau') || lower.includes('descente')) {
-    interdiction = "AUCUNE échelle, AUCUN escabeau en appui contre la façade ou la gouttière (le travail sur échelle est strictement interdit). UNIQUEMENT intervention sécurisée depuis un échafaudage réglementaire avec garde-corps le long de la rive ou techniciens travaillant au sol.";
-  } else if (lower.includes('couvr') || lower.includes('toiture') || lower.includes('tuile')) {
-    interdiction = "AUCUNE échelle, AUCUN escabeau posé contre le mur ou sur la toiture (travail sur échelle formellement interdit), AUCUN travailleur debout ou marchant directement sur les tuiles en pente du toit ou sur le faîtage sans protection ! Artisans couvreurs UNIQUEMENT sur échafaudage de sécurité avec garde-corps le long de la rive du toit ou travaillant au sol.";
-  } else if (lower.includes('facade') || lower.includes('façade') || lower.includes('ravalement') || lower.includes('crepi') || lower.includes('crépi') || lower.includes('enduit')) {
-    interdiction = "AUCUNE échelle, AUCUN escabeau en extérieur contre la façade (travail sur échelle strictement interdit). UNIQUEMENT des façadiers/peintres travaillant sur les murs extérieurs avec échafaudage sécurisé avec garde-corps ou au sol.";
-  } else if (lower.includes('etancheite') || lower.includes('étanchéité') || lower.includes('toit plat') || (lower.includes('terrasse') && !lower.includes('terrassement'))) {
-    interdiction = "PAS d'arbre, AUCUN jardinier, AUCUN sécateur, AUCUN escabeau dans le jardin, AUCUNE débroussailleuse, AUCUN toit en pente avec tuiles, AUCUNE dépanneuse ! Le toit ou la terrasse DOIT ÊTRE 100% PLAT (toiture terrasse ou terrasse avec membrane bitumineuse noire/grise soudée au chalumeau, EPDM, PVC ou résine liquide).";
-  } else if (lower.includes('charpente') || lower.includes('fermette') || lower.includes('ossature')) {
-    interdiction = "AUCUN jardinier, AUCUN sécateur, AUCUNE dépanneuse. UNIQUEMENT des travaux de charpente, menuiserie et structures bois par des charpentiers qualifiés avec harnais et échafaudages sécurisés.";
-  } else if (lower.includes('macon') || lower.includes('maçon') || lower.includes('beton') || lower.includes('béton') || lower.includes('parpaing') || lower.includes('dalle')) {
-    interdiction = "AUCUN toit, AUCUN couvreur posant des tuiles, AUCUN élagage d'arbre. UNIQUEMENT des maçons professionnels travaillant avec parpaings, béton, mortier, truelles, échafaudage de maçonnerie sécurisé ou au sol.";
-  } else if (lower.includes('depann') || lower.includes('dépannage') || lower.includes('auto') || lower.includes('remorqu') || lower.includes('voiture')) {
-    interdiction = "AUCUN toit, AUCUNE toiture, AUCUN élagage d'arbre. UNIQUEMENT dépanneuse à plateau, technicien avec gilet haute visibilité jaune fluo intervenant sur un véhicule.";
-  } else if (lower.includes('debarras') || lower.includes('débarras') || lower.includes('encombrant')) {
-    interdiction = "AUCUN toit, AUCUN engin de terrassement lourd. UNIQUEMENT des professionnels du débarras avec diables de manutention, cartons empilés et camionnette utilitaire.";
-  } else if (lower.includes('carrel') || lower.includes('faïence') || lower.includes('faience')) {
-    interdiction = "AUCUN toit, AUCUN couvreur, AUCUN casque de chantier lourd pour la pose intérieure. UNIQUEMENT artisan carreleur à genoux avec genouillères, mortier-colle, peigne cranté et croisillons autonivelants.";
-  } else if (lower.includes('peint')) {
-    interdiction = "AUCUN toit, AUCUN couvreur, AUCUNE dépanneuse. UNIQUEMENT artisan peintre avec rouleau microfibres, bac à peinture et bâches de protection au sol.";
-  }
-
-  return `🔴 NOUVEAU CHANTIER TOTALEMENT INDÉPENDANT.
-CONSIGNE DALL-E : Génère une nouvelle photo originale pour ce chantier.
-
-🎯 OBJET UNIQUE ET OBLIGATOIRE DU CHANTIER :
-- Métier & Travaux réels : ${travauxLabel.toUpperCase()}
-- Entreprise : ${ficheNom}
-- Bâtiment & Lieu : ${contexteLabel} (${locationStr})
-- Présence sur l'image : ${nbOuvriers}, ambiance ${lumiere}, vue ${pointDeVue}, format ${orientation}.
-
-Génère une photo de chantier réaliste en ${pays}, dans la ville de ${ville}, style smartphone amateur, prise par le client ou un voisin (pas une photo pro). Shot on a mid-range Android smartphone (Samsung ou similaire), mode automatique.
-
-Contexte : ${travauxLabel} sur une ${contexteLabel}, état travaux en cours.
-
-Ouvrier(s) : ${nbOuvriers} visible(s), en tenue de travail, équipement de sécurité adapté au métier (casque, harnais, gants selon le cas). L'ouvrier doit être debout, actif, jamais assis dans du béton frais ou dans une position irréaliste.
-
-Cadrage : ${pointDeVue}, angle oblique, pas centré parfaitement — photo prise à la va-vite.
-
-Lumière : ${lumiere}, naturelle. Légère surexposition sur les zones lumineuses, reflet de soleil possible si le ciel est dégagé.
-
-Qualité photo : légère surexposition en mode auto, léger flou de mouvement sur l'ouvrier (il bouge), bruit numérique subtil dans les zones d'ombre, bords du cadre légèrement flous, couleurs légèrement délavées comme si prise sans régler les paramètres. Aucun post-traitement, aucun filtre.
-
-À exclure absolument : texte, logo, watermark, triangle de signalisation (sauf chantier en bord de route), échafaudage industriel si petite maison, pelle mécanique si c'est un ravalement.
-
-Format : jpeg, ${orientation}, rendu photo réaliste — pas illustratif, pas HDR, pas trop parfait.
-
-❌ INTERDICTION ABSOLUE : ${interdiction}`;
-}
-
-async function ouvrirGenerateurImagePlanning(id) {
-  const modal = document.getElementById('planning-img-modal');
-  const overlay = document.getElementById('planning-img-overlay');
-  if (!modal || !overlay) return;
-
-  let task = (window._currentPlanningRows || []).find(r => String(r.id) === String(id));
-  if (!task) {
-    const fetched = await sbGet('planning', `id=eq.${id}`);
-    task = (fetched && fetched[0]) ? fetched[0] : null;
-  }
-  if (!task) {
-    alert("Impossible de charger les détails de cette tâche.");
-    return;
-  }
-
-  modal.dataset.taskId = id;
-
-  const op = task.operateur || 'Kevin';
-  const isKevin = op.toLowerCase().includes('kevin');
-
-  document.getElementById('pimg-modal-title').textContent = `🎨 Photo Requise (50%) • ${task.fiche_nom}`;
-  document.getElementById('pimg-modal-subtitle').textContent = `Avis #${task.id} — Tâche éligible photo (génération manuelle ou relance robot)`;
-
-  document.getElementById('pimg-info-box').innerHTML = `
-    <div><span style="color:#64748b">Fiche :</span> <strong style="color:#f1f5f9">${task.fiche_nom}</strong></div>
-    <div><span style="color:#64748b">Ville :</span> <strong style="color:#38bdf8">${task.ville || '—'} (${task.pays || 'FR'})</strong></div>
-    <div><span style="color:#64748b">Opérateur :</span> <strong style="color:#a855f7">${op}</strong></div>
-    <div><span style="color:#64748b">Règle :</span> <strong style="color:#f59e0b">⚠️ 50% Photo requise</strong></div>
-  `;
-
-  // Construire le prompt optimisé
-  const promptText = construirePromptImagePlanning(task);
-  const promptTextarea = document.getElementById('pimg-prompt-text');
-  if (promptTextarea) promptTextarea.value = promptText;
-
-  // Résoudre l'URL de conversation ChatGPT
-  let gptUrl = 'https://chatgpt.com/';
-  if (window._fichesCache && Array.isArray(window._fichesCache)) {
-    const fMap = {};
-    for (const f of window._fichesCache) { if (f && f.nom) fMap[f.nom.toUpperCase()] = f.lien; }
-    if (isKevin) {
-      gptUrl = fMap['CHATGPT_WORK_CONVERSATION_URL_KEVIN'] || fMap['CHATGPT_CONVERSATION_URL_KEVIN'] || fMap['CHATGPT_PRO_CONVERSATION_URL_KEVIN'] || 'https://chatgpt.com/';
-    } else {
-      gptUrl = fMap['CHATGPT_WORK_CONVERSATION_URL_FIF'] || fMap['CHATGPT_CONVERSATION_URL_FIF'] || fMap['CHATGPT_PRO_CONVERSATION_URL_FIF'] || 'https://chatgpt.com/';
-    }
-  }
-  const chatGptLink = document.getElementById('pimg-chatgpt-link');
-  if (chatGptLink) {
-    chatGptLink.href = gptUrl;
-    chatGptLink.textContent = `💬 Ouvrir ChatGPT (${op})`;
-  }
-
-  // Lien Drive
-  const driveLink = document.getElementById('pimg-drive-link');
-  if (driveLink) {
-    driveLink.onclick = (e) => {
-      e.preventDefault();
-      openOperatorDriveFolder(op);
-    };
-    driveLink.textContent = `📁 Ouvrir Drive ${op}`;
-  }
-
-  // Lien GitHub Actions
-  const ghLink = document.getElementById('pimg-github-agent-link');
-  if (ghLink) {
-    ghLink.href = `https://github.com/bylys/suivi-avis/actions/workflows/gmb-image-${isKevin ? 'kevin' : 'fifa'}.yml`;
-    ghLink.textContent = `⚡ Relancer l'Agent IA (${op}) sur GitHub Actions`;
-  }
-
-  // Réinitialiser les champs
-  const urlInput = document.getElementById('pimg-url-input');
-  if (urlInput) urlInput.value = '';
-  const fileInput = document.getElementById('pimg-file-input');
-  if (fileInput) fileInput.value = '';
-
-  overlay.style.display = 'block';
-  modal.style.display = 'block';
-}
-
-function fermerModalImagePlanning() {
-  const modal = document.getElementById('planning-img-modal');
-  const overlay = document.getElementById('planning-img-overlay');
-  if (modal) modal.style.display = 'none';
-  if (overlay) overlay.style.display = 'none';
-}
-
-function copierPromptPlanning() {
-  const promptTextarea = document.getElementById('pimg-prompt-text');
-  const btn = document.getElementById('btn-copy-prompt');
-  if (!promptTextarea) return;
-  navigator.clipboard.writeText(promptTextarea.value).then(() => {
-    if (btn) {
-      const orig = btn.innerHTML;
-      btn.innerHTML = '✅ Copié dans le presse-papier !';
-      btn.style.background = '#059669';
-      btn.style.borderColor = '#10b981';
-      setTimeout(() => {
-        btn.innerHTML = orig;
-        btn.style.background = '#334155';
-        btn.style.borderColor = '#475569';
-      }, 2500);
-    }
-    showToast('📋 Prompt copié ! Collez-le dans ChatGPT.', 'success', 3000);
-  }).catch(() => {
-    promptTextarea.select();
-    document.execCommand('copy');
-    showToast('📋 Prompt copié !', 'success', 3000);
-  });
-}
-
-// ── INJECTION EXIF & GPS CLIENT POUR LE PLANNING (Canvas -> JPEG Pur -> EXIF Smartphone) ──
-
-const KNOWN_CITIES_CLIENT = {
-  'nantes': { lat: 47.218371, lng: -1.553621 },
-  'quimper': { lat: 48.000000, lng: -4.100000 },
-  'valence': { lat: 44.933333, lng: 4.891667 },
-  'lyon': { lat: 45.764043, lng: 4.835659 },
-  'bordeaux': { lat: 44.837789, lng: -0.579180 },
-  'mérignac': { lat: 44.838500, lng: -0.644100 },
-  'merignac': { lat: 44.838500, lng: -0.644100 },
-  'pessac': { lat: 44.806700, lng: -0.631100 },
-  'talence': { lat: 44.807800, lng: -0.590800 },
-  'bègles': { lat: 44.808600, lng: -0.548900 },
-  'begles': { lat: 44.808600, lng: -0.548900 },
-  'lille': { lat: 50.629250, lng: 3.057256 },
-  'paris': { lat: 48.856614, lng: 2.352222 },
-  'marseille': { lat: 43.296482, lng: 5.369780 },
-  'toulouse': { lat: 43.604652, lng: 1.444209 },
-  'nice': { lat: 43.710173, lng: 7.261953 },
-  'strasbourg': { lat: 48.573405, lng: 7.752111 },
-  'montpellier': { lat: 43.610769, lng: 3.876716 },
-  'rennes': { lat: 48.117266, lng: -1.677793 },
-  'grenoble': { lat: 45.188529, lng: 5.724524 },
-  'rouen': { lat: 49.443232, lng: 1.099971 },
-  'toulon': { lat: 43.124228, lng: 5.928000 },
-  'angers': { lat: 47.478419, lng: -0.563166 },
-  'dijon': { lat: 47.322047, lng: 5.041480 },
-  'brest': { lat: 48.390394, lng: -4.486076 },
-  'tours': { lat: 47.394144, lng: 0.684840 },
-  'clermont-ferrand': { lat: 45.777222, lng: 3.087025 },
-  'agen': { lat: 44.203142, lng: 0.616363 },
-  'bruxelles': { lat: 50.850346, lng: 4.351721 },
-  'liege': { lat: 50.632557, lng: 5.579666 },
-  'geneve': { lat: 46.204391, lng: 6.143158 },
-  'lausanne': { lat: 46.519653, lng: 6.632273 },
-  'montreal': { lat: 45.501689, lng: -73.567256 },
-  'quebec': { lat: 46.813878, lng: -71.207981 }
-};
-
-function degToDmsRationalClient(degFloat) {
-  const absolute = Math.abs(degFloat);
-  const degrees = Math.floor(absolute);
-  const minutesNotTruncated = (absolute - degrees) * 60;
-  const minutes = Math.floor(minutesNotTruncated);
-  const seconds = Math.floor((minutesNotTruncated - minutes) * 60 * 100);
-  return [
-    [degrees, 1],
-    [minutes, 1],
-    [seconds, 100],
-  ];
-}
-
-async function injecterExifEtGpsFichierClient(file, task) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const img = new Image();
-        img.onload = async () => {
-          // 1. Dessiner sur Canvas pour convertir en JPEG pur (suppression définitive des filigranes numériques C2PA d'OpenAI)
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
-
-          if (typeof piexif === 'undefined') {
-            const blob = await (await fetch(jpegDataUrl)).blob();
-            return resolve(blob);
-          }
-
-          // 2. Coordonnées GPS
-          const cityName = (task?.ville || 'Paris').toLowerCase().trim()
-            .replace(/[éèê]/g, 'e').replace(/[àâ]/g, 'a').replace(/[îï]/g, 'i').replace(/[ôö]/g, 'o');
-          let coords = KNOWN_CITIES_CLIENT[cityName] || { lat: 48.856614, lng: 2.352222 };
-          const jitterLat = (Math.random() - 0.5) * 0.005;
-          const jitterLng = (Math.random() - 0.5) * 0.005;
-          const lat = coords.lat + jitterLat;
-          const lng = coords.lng + jitterLng;
-
-          // 3. Modèle Smartphone
-          const phones = [
-            { make: 'Apple', model: 'iPhone 15 Pro', software: '17.5', focalLength: [68, 10] },
-            { make: 'Apple', model: 'iPhone 14', software: '16.6', focalLength: [57, 10] },
-            { make: 'Samsung', model: 'Galaxy S24', software: 'S921BXXU1AXB5', focalLength: [54, 10] },
-            { make: 'Samsung', model: 'Galaxy A55 5G', software: 'A556BXXU1AXB8', focalLength: [52, 10] },
-            { make: 'Xiaomi', model: 'Redmi Note 13 Pro', software: 'HyperOS 1.0.2', focalLength: [54, 10] },
-            { make: 'Google', model: 'Pixel 8', software: 'UD1A.230803.041', focalLength: [68, 10] }
-          ];
-          const phone = phones[Math.floor(Math.random() * phones.length)];
-
-          // 4. Date de prise de vue naturelle
-          let baseDate = new Date();
-          if (task?.date && /^\d{4}-\d{2}-\d{2}$/.test(task.date)) {
-            const [y, m, d] = task.date.split('-').map(Number);
-            baseDate = new Date(y, m - 1, d);
-          }
-          const daysBefore = Math.floor(Math.random() * (21 - 3 + 1)) + 3;
-          const photoDate = new Date(baseDate.getTime() - daysBefore * 24 * 60 * 60 * 1000);
-          photoDate.setHours(Math.floor(Math.random() * (18 - 8 + 1)) + 8, Math.floor(Math.random() * 60), Math.floor(Math.random() * 60));
-          const pad = (n) => String(n).padStart(2, '0');
-          const dateStr = `${photoDate.getFullYear()}:${pad(photoDate.getMonth() + 1)}:${pad(photoDate.getDate())} ${pad(photoDate.getHours())}:${pad(photoDate.getMinutes())}:${pad(photoDate.getSeconds())}`;
-
-          // 5. Blocs EXIF
-          const gpsIfd = {};
-          gpsIfd[piexif.GPSIFD.GPSLatitudeRef] = lat >= 0 ? 'N' : 'S';
-          gpsIfd[piexif.GPSIFD.GPSLatitude] = degToDmsRationalClient(lat);
-          gpsIfd[piexif.GPSIFD.GPSLongitudeRef] = lng >= 0 ? 'E' : 'W';
-          gpsIfd[piexif.GPSIFD.GPSLongitude] = degToDmsRationalClient(lng);
-          gpsIfd[piexif.GPSIFD.GPSDateStamp] = `${photoDate.getFullYear()}:${pad(photoDate.getMonth() + 1)}:${pad(photoDate.getDate())}`;
-
-          const zerothIfd = {};
-          zerothIfd[piexif.ImageIFD.Make] = phone.make;
-          zerothIfd[piexif.ImageIFD.Model] = phone.model;
-          zerothIfd[piexif.ImageIFD.Software] = phone.software;
-          zerothIfd[piexif.ImageIFD.DateTime] = dateStr;
-
-          const exifIfd = {};
-          exifIfd[piexif.ExifIFD.DateTimeOriginal] = dateStr;
-          exifIfd[piexif.ExifIFD.DateTimeDigitized] = dateStr;
-          exifIfd[piexif.ExifIFD.FocalLength] = phone.focalLength;
-          exifIfd[piexif.ExifIFD.FNumber] = [18, 10];
-          exifIfd[piexif.ExifIFD.ISOSpeedRatings] = [100, 125, 160, 200, 250, 320][Math.floor(Math.random() * 6)];
-
-          const exifObj = { '0th': zerothIfd, 'Exif': exifIfd, 'GPS': gpsIfd };
-          const exifBytes = piexif.dump(exifObj);
-          const finalDataUrl = piexif.insert(exifBytes, jpegDataUrl);
-
-          const res = await fetch(finalDataUrl);
-          const finalBlob = await res.blob();
-          console.log(`📍 [Planning] EXIF & GPS injectés avec succès (${phone.make} ${phone.model}, ${task?.ville || 'Paris'})`);
-          resolve(finalBlob);
-        };
-        img.onerror = () => resolve(file);
-        img.src = e.target.result;
-      } catch (err) {
-        console.warn("Note injection EXIF client :", err);
-        resolve(file);
-      }
-    };
-    reader.onerror = () => resolve(file);
-    reader.readAsDataURL(file);
-  });
-}
-
-async function sauvegarderPhotoPlanning() {
-  const modal = document.getElementById('planning-img-modal');
-  const taskId = modal?.dataset?.taskId;
-  if (!taskId) return;
-
-  let task = (window._currentPlanningRows || []).find(r => String(r.id) === String(taskId));
-  if (!task) {
-    const fetched = await sbGet('planning', `id=eq.${taskId}`);
-    task = (fetched && fetched[0]) ? fetched[0] : null;
-  }
-
-  const urlInput = document.getElementById('pimg-url-input');
-  const fileInput = document.getElementById('pimg-file-input');
-  const btn = document.getElementById('btn-save-photo');
-
-  let finalUrl = (urlInput?.value || '').trim();
-
-  // Si un fichier local a été sélectionné, on nettoie le C2PA, injecte les métadonnées EXIF & GPS, puis on l'uploade
-  if (fileInput && fileInput.files && fileInput.files[0]) {
-    const rawFile = fileInput.files[0];
-    btn.disabled = true;
-    btn.innerHTML = '⚙️ Traitement EXIF & GPS smartphone...';
-
-    let fileToUpload = rawFile;
-    try {
-      fileToUpload = await injecterExifEtGpsFichierClient(rawFile, task);
-    } catch (exErr) {
-      console.warn("Note injection EXIF :", exErr);
-    }
-
-    btn.innerHTML = '⏳ Upload de la photo sécurisée en cours...';
-
-    try {
-      const fileName = `manual_${taskId}_${Date.now()}.jpg`;
-      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/images/${fileName}`, {
-        method: 'POST',
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'image/jpeg',
-          'x-upsert': 'true'
-        },
-        body: fileToUpload
-      });
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
-      finalUrl = `${SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
-    } catch (upErr) {
-      alert("Erreur lors de l'upload de l'image : " + upErr.message);
-      btn.disabled = false;
-      btn.innerHTML = '✅ Enregistrer et valider la photo';
-      return;
-    }
-  }
-
-  if (!finalUrl || finalUrl.length < 5) {
-    alert("Veuillez renseigner une URL d'image (Google Drive / web) ou sélectionner un fichier image sur votre ordinateur.");
-    return;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = '💾 Enregistrement...';
-
-  try {
-    let ok = await sbUpdate('planning', taskId, { url_image: finalUrl });
-    if (!ok) {
-      ok = await sbUpdate('planning', taskId, { metier: finalUrl });
-    }
-    if (ok) {
-      showToast("✅ Photo enregistrée et associée avec succès à l'avis !", "success");
-      fermerModalImagePlanning();
-      await renderPlanning();
-    } else {
-      alert("Impossible de mettre à jour la tâche dans Supabase.");
-    }
-  } catch (err) {
-    alert("Erreur lors de la sauvegarde : " + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '✅ Enregistrer et valider la photo';
-  }
-}
 
 // ── GMAILS ──
 
@@ -6560,179 +5784,369 @@ function openOperatorDriveFolder(operatorName) {
   window.open(searchUrl, '_blank');
 }
 
-// ─── Historique & Suivi des Images Générées ──────────────────────────────────
-async function renderImagesHistory() {
-  const container = document.getElementById('img-history-table-container');
-  if (!container) return;
+// ── NOUVEAU GÉNÉRATEUR D'IMAGES CHANTIER MANUEL (ChatGPT / DALL-E) ──────────
 
-  const dateInput = document.getElementById('img-filter-date');
-  if (dateInput && !dateInput.value) {
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.value = today;
+function getRegionalArchitecture(ville) {
+  const v = (ville || '').toLowerCase().trim();
+  if (/cannes|nice|antibes|grasse|mougins|vallauris|monaco|menton|frejus|fréjus|saint-tropez|st-tropez|hyeres|hyères|toulon|marseille|aix|provence|avignon|var|alpes-maritimes|06|83|13/.test(v)) {
+    return {
+      region: "Provence-Alpes-Côte d'Azur",
+      details: "Architecture méditerranéenne provençale typique : maison individuelle ou villa avec toiture en tuiles canal en terre cuite claire/rougeoyante, façade crépie ocre clair ou beige chaud, volets battants en bois, végétation méditerranéenne (olivier, cyprès, lauriers roses ou pins) sous une vive lumière naturelle ensoleillée."
+    };
+  }
+  if (/paris|versailles|boulogne|neuilly|saint-denis|creteil|créteil|nanterre|antony|cergy|evry|évry|melun|meaux|idf|ile-de-france|île-de-france|75|92|93|94|78|91|95|77/.test(v)) {
+    return {
+      region: "Île-de-France",
+      details: "Architecture francilienne typique : pavillon de banlieue ou immeuble en pierre calcaire/pierre de taille avec toiture en zinc ou tuiles mécaniques plates sombres, environnement résidentiel soigné."
+    };
+  }
+  if (/lille|roubaix|tourcoing|dunkerque|calais|arras|valenciennes|douai|amiens|lens|nord|pas-de-calais|59|62|80/.test(v)) {
+    return {
+      region: "Hauts-de-France / Nord",
+      details: "Architecture typique du Nord : maison individuelle ou bâtisse en briques rouges traditionnelles, toitures à forte pente en tuiles flamandes ou ardoises sombres."
+    };
+  }
+  if (/rennes|brest|quimper|lorient|vannes|saint-malo|st-malo|nantes|rouen|le havre|caen|bretagne|normandie|finistere|finistère|morbihan|35|29|56|22|76|14|50/.test(v)) {
+    return {
+      region: "Grand Ouest (Bretagne / Normandie)",
+      details: "Architecture de l'Ouest : maison en moellons de granit ou maçonnerie enduite claire, toiture inclinée en ardoise naturelle sombre avec cheminées en pierre."
+    };
+  }
+  if (/bordeaux|toulouse|montauban|agen|pau|bayonne|biarritz|tarbes|dordogne|gironde|33|31|64|40|47|82/.test(v)) {
+    return {
+      region: "Sud-Ouest",
+      details: "Architecture du Sud-Ouest : maison individuelle en pierre blonde ou briques foraines toulousaines, toiture en tuiles canal ou romanes en terre cuite."
+    };
+  }
+  if (/lyon|grenoble|saint-etienne|st-etienne|annecy|chambery|chambéry|valence|rhone|alpes|isere|savoie|haute-savoie|69|38|73|74|42|26/.test(v)) {
+    return {
+      region: "Auvergne-Rhône-Alpes",
+      details: "Architecture régionale Rhône-Alpes : maison individuelle aux toitures débordantes en tuiles écailles ou terre cuite, soubassements en pierre et enduit soigné."
+    };
+  }
+  return {
+    region: "France",
+    details: `Architecture résidentielle française contemporaine typique de la région de ${ville || 'France'} : maison individuelle ou bâtiment avec matériaux locaux authentiques.`
+  };
+}
+
+function extractCityFromFicheName(name) {
+  if (!name) return '';
+  const clean = name.replace(/\b(0[1-9]|[1-8][0-9]|9[0-5]|97[1-6]|2[AB])\b/g, '').trim();
+  const knownCities = [
+    'Cannes', 'Grasse', 'Nice', 'Antibes', 'Mougins', 'Vallauris', 'Monaco', 'Menton',
+    'Fréjus', 'Saint-Tropez', 'Hyères', 'Toulon', 'Marseille', 'Aix-en-Provence', 'Avignon',
+    'Paris', 'Versailles', 'Boulogne', 'Créteil', 'Saint-Denis', 'Nanterre', 'Lyon', 'Grenoble',
+    'Valence', 'Annecy', 'Chambéry', 'Toulouse', 'Bordeaux', 'Montpellier', 'Nîmes', 'Rennes',
+    'Nantes', 'Brest', 'Quimper', 'Rouen', 'Le Havre', 'Caen', 'Lille', 'Amiens', 'Strasbourg',
+    'Metz', 'Nancy', 'Reims', 'Dijon', 'Besançon', 'Clermont-Ferrand', 'Tours', 'Angers', 'Pau'
+  ];
+  for (const c of knownCities) {
+    const reg = new RegExp(`\\b${c}\\b`, 'i');
+    if (reg.test(clean)) return c;
+  }
+  return '';
+}
+
+function buildGmbImagePrompt(params = {}) {
+  const ficheNom = (params.ficheNom || '').trim();
+  const travaux = (params.travaux || '').trim();
+  const ville = (params.ville || '').trim() || 'France';
+
+  const nomL = ficheNom.toLowerCase();
+  const travL = travaux.toLowerCase();
+  const combined = `${travL} ${nomL}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  // 1. Détection du métier & règles spécifiques
+  let metierTitre = 'TRAVAUX ARTISANAUX';
+  let ouvriersConsigne = '1 ou 2 artisans professionnels actifs en tenue de travail réglementaire.';
+  let securiteConsigne = '';
+  let interdictions = 'AUCUN texte, AUCUN logo d\'entreprise, AUCUN filigrane, AUCUN effet 3D/CGI.';
+
+  const isTerrassement = combined.includes('terrassement') || combined.includes('mini-pelle') || combined.includes('excavation') || combined.includes('decaissement') || combined.includes('vrd') || combined.includes('assainissement') || combined.includes('enrochement');
+  const isElagage = combined.includes('elag') || combined.includes('abatt') || combined.includes('arbre') || combined.includes('olivier') || combined.includes('taille') || combined.includes('haie') || combined.includes('dessouch') || combined.includes('debrouss') || combined.includes('jardin') || combined.includes('paysag');
+  const isVitrier = combined.includes('vitr') || combined.includes('fenetre') || combined.includes('miroir') || combined.includes('double vitrage') || combined.includes('vitrine');
+  const isDemoussage = (combined.includes('demouss') || (combined.includes('nettoyage') && combined.includes('toiture')) || combined.includes('hydrofuge')) && !isTerrassement;
+  const isGouttiere = (combined.includes('gouttiere') || combined.includes('cheneau') || combined.includes('descente')) && !isTerrassement;
+  const isToiture = (combined.includes('couvr') || combined.includes('toiture') || combined.includes('tuile') || combined.includes('faitage') || combined.includes('rive') || combined.includes('zinguerie')) && !isDemoussage && !isGouttiere && !isTerrassement;
+  const isEtancheite = (combined.includes('etancheite') || combined.includes('toit plat') || (combined.includes('terrasse') && !isTerrassement)) && !isToiture;
+  const isFacade = (combined.includes('facade') || combined.includes('ravalement') || combined.includes('crepi') || combined.includes('enduit')) && !isToiture;
+  const isMaconnerie = (combined.includes('macon') || combined.includes('beton') || combined.includes('parpaing') || combined.includes('dalle') || combined.includes('muret') || combined.includes('fondation')) && !isToiture;
+  const isCarrelage = (combined.includes('carrel') || combined.includes('faience') || combined.includes('salle de bain') || combined.includes('douche')) && !isTerrassement;
+  const isPeinture = combined.includes('peint') && !isFacade;
+  const isDepannage = combined.includes('depann') || combined.includes('remorqu') || combined.includes('batterie') || combined.includes('auto') || combined.includes('voiture');
+  const isDebarras = combined.includes('debarras') || combined.includes('encombrant') || combined.includes('diogene');
+
+  if (isTerrassement) {
+    metierTitre = 'TERRASSEMENT & AMÉNAGEMENT DU SOL';
+    ouvriersConsigne = '2 ouvriers terrassiers en tenue de chantier, chaussures de sécurité et lunettes de protection, à côté d\'une mini-pelle compacte.';
+    securiteConsigne = 'Travaux de terrassement au sol, excavation, nivellement ou tranchée VRD. Mini-pelle jaune ou orange en action au sol, niveau laser sur trépied.';
+    interdictions = 'AUCUN ouvrier sur un toit, AUCUN couvreur, AUCUNE échelle sur le toit. UNIQUEMENT des travaux de terrassement au sol avec mini-pelle, terre, gravier ou tranchées.';
+  } else if (isElagage) {
+    metierTitre = 'ÉLAGAGE, TAILLE & ENTRETIEN PAYSAGER';
+    const isHaie = combined.includes('haie');
+    const isSmallTree = combined.includes('olivier') || combined.includes('fruitier') || combined.includes('jardin') || (!combined.includes('grand') && !combined.includes('hauteur') && !combined.includes('abatt'));
+
+    if (isHaie) {
+      ouvriersConsigne = 'Exactement 2 jardiniers paysagistes en duo : l\'un taille la haie avec un taille-haie sur un escabeau double de jardin, le second ramasse les branches au sol dans de grands sacs végétaux.';
+      securiteConsigne = 'Escabeau double de jardin stable en A. Lunettes de protection et gants. AUCUNE échelle droite instable contre la haie.';
+    } else if (isSmallTree) {
+      ouvriersConsigne = '1 ou 2 jardiniers/élagueurs professionnels actifs dans le jardin, l\'artisan est debout sur un escabeau double stable en A ou au sol avec un coupe-branche/sécateur/scie d\'arboriste.';
+      securiteConsigne = 'Arbre de jardin à hauteur accessible : STRICTEMENT PAS de harnais d\'escalade lourd, PAS de cordes d\'alpiniste suspendues dans les branches. Lunettes de sécurité obligatoires.';
+    } else {
+      ouvriersConsigne = '2 élagueurs arboristes professionnels : 1 grimpeur sécurisé dans le houppier de l\'arbre avec casque d\'arboriste et harnais conforme, 1 assistant au sol guidant la zone de sécurité.';
+      securiteConsigne = 'Équipement d\'arboriste grimpeur complet avec casque à jugulaire et lunettes de protection.';
+    }
+    interdictions = 'AUCUN ouvrier sur une toiture de maison, AUCUN couvreur, AUCUNE échelle droite posée contre le vide, AUCUN nettoyeur haute pression sur toiture.';
+  } else if (isDemoussage) {
+    metierTitre = 'NETTOYAGE & DÉMOUSSAGE DE TOITURE';
+    ouvriersConsigne = '1 technicien professionnel debout SAFELY AU SOL (dans le jardin, l\'allée ou la cour) tenant une longue perche télescopique en carbone pulvérisant le traitement anti-mousse vers la toiture.';
+    securiteConsigne = 'RÈGLE DE SÉCURITÉ ABSOLUE : Le technicien travaille 100% DEPUIS LE SOL les deux pieds solidement posés sur la terre ferme avec sa perche télescopique (ou depuis le panier sécurisé d\'une nacelle élévatrice). STRICTEMENT AUCUN OUVRIER SUR LES TUILES MOUILLÉES GLISSANTES.';
+    interdictions = 'INTERDICTION ABSOLUE DE MARCHER SUR LE TOIT : AUCUN ouvrier debout, marchant ou accroupi sur les tuiles ou le faîtage ! AUCUNE échelle en appui contre la toiture (travail sur échelle formellement interdit).';
+  } else if (isGouttiere) {
+    metierTitre = 'TRAVAUX & POSE DE GOUTTIÈRES';
+    ouvriersConsigne = '2 artisans couvreurs-zingueurs travaillant en binôme : l\'un sécurisé sur un échafaudage roulant réglementaire avec garde-corps le long de la rive, l\'autre au sol préparant les profilés zinc ou alu sur établi.';
+    securiteConsigne = 'RÈGLE DE SÉCURITÉ : Artisans avec les deux pieds fermement posés sur le plancher de l\'échafaudage derrière la rambarde de sécurité, ou au sol.';
+    interdictions = 'AUCUNE échelle simple, AUCUN escabeau en appui sur la façade ou sur la gouttière (strictement interdit par le Code du travail R.4323-63). AUCUN ouvrier marchant sur les tuiles.';
+  } else if (isToiture) {
+    metierTitre = 'COUVERTURE & RÉFECTION DE TOITURE EN TUILES';
+    ouvriersConsigne = 'Minimum 2 couvreurs professionnels en tenue de travail avec casque et gants. Les ouvriers travaillent soit sur le plancher d\'un échafaudage de couvreur avec garde-corps métallique le long de la rive du toit, soit au sol dans la cour en train de tailler et préparer les tuiles en terre cuite.';
+    securiteConsigne = 'RÈGLE DE SÉCURITÉ OBLIGATOIRE : Les deux pieds des couvreurs doivent TOUJOURS être 100% sur le plancher de l\'échafaudage derrière le garde-corps ou au sol. STRICTEMENT AUCUN PIED SUR LA PENTE DES TUILES SANS PROTECTION.';
+    interdictions = 'INTERDICTION FORMELLE DE MARCHER OU SE TENIR SUR LES TUILES DU TOIT : Les couvreurs ne doivent JAMAIS marcher sur les tuiles en pente du toit, JAMAIS se tenir en équilibre sur le faîtage, JAMAIS enjamber le garde-corps de l\'échafaudage ! AUCUNE échelle droite posée contre le toit.';
+  } else if (isEtancheite) {
+    metierTitre = 'ÉTANCHÉITÉ TOITURE TERRASSE & TOIT PLAT';
+    ouvriersConsigne = '1 ou 2 spécialistes de l\'étanchéité déroulant une membrane EPDM ou soudant au chalumeau propane des lés de bitume noir/gris sur une toiture terrasse 100% plate bordée d\'acrotères.';
+    securiteConsigne = 'Surface 100% plate (toiture-terrasse béton ou dalles sur plots). Bouteille de gaz propane et chalumeau d\'étancheur.';
+    interdictions = 'PAS de toit en pente ! PAS de tuiles en terre cuite ! Le toit DOIT ÊTRE TOTALEMENT PLAT. Aucun jardinier, aucune dépanneuse.';
+  } else if (isVitrier) {
+    metierTitre = 'VITRERIE, MIROITERIE & REMPLACEMENT DE VITRAGE';
+    ouvriersConsigne = '1 ou 2 vitriers professionnels portant des gants anti-coupure et des lunettes de sécurité, manipulant un vitrage ou double vitrage avec des poignées ventouses de vitrier professionnelles solidement fixées sur la vitre.';
+    securiteConsigne = 'Tenue d\'atelier/artisan soignée, tête nue ou casquette de travail (PAS de casque de chantier lourd en intérieur). Les ventouses de vitrier DOIVENT être fermement tenues par les mains des artisans sur le verre.';
+    interdictions = 'AUCUN ouvrier sur un toit, AUCUN couvreur, AUCUN casque de chantier lourd en intérieur, AUCUN arbre dans la pièce.';
+  } else if (isFacade) {
+    metierTitre = 'RAVALEMENT DE FAÇADE & ENDUIT EXTÉRIEUR';
+    ouvriersConsigne = '1 ou 2 façadiers/enduiseurs professionnels en tenue de travail appliquant un enduit taloché ou nettoyant le mur crépi, travaillant depuis un échafaudage de façade sécurisé avec garde-corps ou au sol.';
+    securiteConsigne = 'Taloche, platoir inox et seau d\'enduit ou nettoyeur façade. Lunettes de protection.';
+    interdictions = 'AUCUNE échelle ou escabeau en appui extérieur contre la façade (échafaudage réglementaire obligatoire). AUCUN ouvrier sur le toit.';
+  } else if (isMaconnerie) {
+    metierTitre = 'MAÇONNERIE EXTÉRIEURE & GROS ŒUVRE';
+    ouvriersConsigne = '2 maçons professionnels en équipement de sécurité (casque, lunettes, chaussures de sécurité) montant un muret ou des piliers en parpaings/pierres au sol avec truelle, mortier, niveau à bulle et cordeau d\'alignement.';
+    securiteConsigne = 'Chantier ordonné, bétonnière ou auge à mortier visible à proximité.';
+    interdictions = 'AUCUN ouvrier sur le toit posant des tuiles, AUCUN ouvrier assis dans le béton frais.';
+  } else if (isCarrelage) {
+    metierTitre = 'POSE DE CARRELAGE & FAÏENCE';
+    ouvriersConsigne = '1 artisan carreleur à genoux avec des genouillères de protection renforcées, appliquant du mortier-colle au peigne cranté et posant des carreaux avec des croisillons autonivelants.';
+    securiteConsigne = 'Intérieur soigné, carrelette manuelle, niveau à bulle et maillet en caoutchouc. Tête nue ou casquette (PAS de casque lourd).';
+    interdictions = 'AUCUN casque de chantier lourd pour la pose intérieure, AUCUN couvreur, AUCUN échafaudage extérieur.';
+  } else if (isPeinture) {
+    metierTitre = 'TRAVAUX DE PEINTURE INTÉRIEURE / EXTÉRIEURE';
+    ouvriersConsigne = '1 peintre artisan en salopette blanche de peintre propre, avec rouleau microfibres sur manche ou perche et pinceau à rechampir, bâches de protection au sol.';
+    securiteConsigne = 'Escabeau double bas ou au sol, bac à peinture avec grille d\'essorage, ruban de masquage adhésif sur les plinthes.';
+    interdictions = 'AUCUN casque de chantier lourd en intérieur, AUCUN ouvrier sur les tuiles d\'un toit.';
+  } else if (isDepannage) {
+    metierTitre = 'DÉPANNAGE & REMORQUAGE AUTOMOBILE';
+    ouvriersConsigne = '1 dépanneur en gilet haute visibilité jaune fluo intervenant sur un véhicule avec une dépanneuse à plateau munie de gyrophares orange.';
+    securiteConsigne = 'Intervention en bord de route ou parking, triangle de pré-signalisation posé en amont.';
+    interdictions = 'AUCUN ouvrier sur un toit, AUCUN couvreur, AUCUN jardinier.';
+  } else if (isDebarras) {
+    metierTitre = 'DÉBARRAS & ENLÈVEMENT D\'ENCOMBRANTS';
+    ouvriersConsigne = '2 professionnels du débarras en tenue de travail et gants de manutention, chargeant des cartons et meubles à l\'aide d\'un diable dans une camionnette utilitaire aux portes arrière ouvertes.';
+    securiteConsigne = 'Camionnette garée dans l\'allée ou devant la maison, cartons empilés soigneusement.';
+    interdictions = 'AUCUN engin lourd de terrassement, AUCUN couvreur sur le toit.';
   }
 
-  const selectedDate = dateInput ? dateInput.value : '';
-  const selectedOp   = document.getElementById('img-filter-operateur')?.value || '';
-  const selectedStat = document.getElementById('img-filter-statut')?.value || '';
-  const searchKw     = (document.getElementById('img-filter-search')?.value || '').toLowerCase().trim();
+  // 2. Détection du contexte architectural selon la ville
+  const arch = getRegionalArchitecture(ville);
+  const locationLabel = `${ville} (${arch.region}, France)`;
+  const travauxLabel = travaux || 'travaux de rénovation artisanale';
+  const ficheLabel = ficheNom || 'Entreprise Artisanale';
 
-  container.innerHTML = '<div style="text-align:center;padding:2.5rem;color:#94a3b8;font-size:14px;">⏳ Chargement de l\'historique des images...</div>';
+  // 3. Construction du prompt complet et rigoureux
+  return `🔴 NOUVEAU CHANTIER TOTALEMENT INDÉPENDANT.
+CONSIGNE DALL-E / CHATGPT : Génère une nouvelle photo originale pour ce chantier.
 
+🎯 OBJET UNIQUE ET OBLIGATOIRE DU CHANTIER :
+- Métier & Travaux réels : ${travauxLabel.toUpperCase()}
+- Catégorie : ${metierTitre}
+- Entreprise : ${ficheLabel}
+- Lieu & Ville : ${locationLabel}
+- Architecture locale : ${arch.details}
+
+👷 PRÉSENCE & SÉCURITÉ DES OUVRIERS :
+- Ouvrier(s) : ${ouvriersConsigne}
+- Règle de sécurité métier : ${securiteConsigne}
+- L'artisan doit être actif, en posture naturelle de travail, jamais assis dans du béton ni dans une pose figée de mannequin.
+
+📸 STYLE & CADRAGE SMARTPHONE AMATEUR :
+- Photo de chantier réaliste prise sur le vif par le client ou un voisin depuis le sol (jardin, allée, terrasse ou trottoir).
+- Cadrage spontané à hauteur d'yeux, angle oblique légèrement imparfait, pas centré au millimètre — aspect pris rapidement avec un smartphone de moyenne gamme (Samsung Galaxy ou similaire), mode automatique.
+- Lumière : lumière naturelle du jour, ciel clair ou légèrement voilé, exposition automatique naturelle.
+- Qualité & Texture photo : rendu photographique pur, subtil flou de mouvement sur les mains ou outils actifs, léger bruit numérique naturel dans les ombres, couleurs fidèles non retouchées sans filtre HDR ni saturation artificielle.
+
+❌ INTERDICTIONS STRICTES :
+- ${interdictions}
+- STRICTEMENT AUCUN texte, AUCUN logo d'entreprise, AUCUN filigrane, AUCUN panneau publicitaire avec écriture.
+- AUCUN rendu 3D, AUCUN style CGI / modélisation numérique / illustration cartoon.
+- Format : 4:3 paysage, rendu photo réaliste brut.`;
+}
+
+function onImgGenInputsChange() {
+  const ficheNom = (document.getElementById('img-gen-fiche')?.value || '').trim();
+  const travaux  = (document.getElementById('img-gen-travaux')?.value || '').trim();
+  const ville    = (document.getElementById('img-gen-ville')?.value || '').trim();
+
+  const preview = document.getElementById('img-gen-prompt-preview');
+  const countEl = document.getElementById('img-gen-char-count');
+
+  if (!ficheNom && !travaux && !ville) {
+    if (preview) preview.value = '';
+    if (countEl) countEl.textContent = '0 caractère';
+    return;
+  }
+
+  const prompt = buildGmbImagePrompt({ ficheNom, travaux, ville });
+  if (preview) preview.value = prompt;
+  if (countEl) countEl.textContent = `${prompt.length} caractères`;
+}
+
+async function onImgGenFicheSelected() {
+  const ficheInput = document.getElementById('img-gen-fiche');
+  const villeInput = document.getElementById('img-gen-ville');
+  if (!ficheInput || !villeInput) return;
+
+  const ficheVal = ficheInput.value.trim();
+  if (!ficheVal) return;
+
+  if (!villeInput.value.trim()) {
+    const detectedCity = extractCityFromFicheName(ficheVal);
+    if (detectedCity) {
+      villeInput.value = detectedCity;
+    } else {
+      // Chercher dans le cache des fiches
+      try {
+        const fiches = await getFiches();
+        const found = fiches.find(f => f.nom.toLowerCase() === ficheVal.toLowerCase());
+        if (found && found.ville) {
+          villeInput.value = found.ville;
+        }
+      } catch (e) {}
+    }
+  }
+
+  onImgGenInputsChange();
+}
+
+function appliquerExempleImage(fiche, travaux, ville) {
+  const fInput = document.getElementById('img-gen-fiche');
+  const tInput = document.getElementById('img-gen-travaux');
+  const vInput = document.getElementById('img-gen-ville');
+
+  if (fInput) fInput.value = fiche;
+  if (tInput) tInput.value = travaux;
+  if (vInput) vInput.value = ville;
+
+  onImgGenInputsChange();
+}
+
+function showImgGenFeedback(text, isError = false) {
+  const feedback = document.getElementById('img-gen-feedback');
+  const feedbackText = document.getElementById('img-gen-feedback-text');
+  if (!feedback) return;
+
+  if (feedbackText) feedbackText.textContent = text;
+  feedback.style.display = 'flex';
+  feedback.style.background = isError ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
+  feedback.style.borderColor = isError ? '#ef4444' : '#10b981';
+  feedback.style.color = isError ? '#fca5a5' : '#86efac';
+
+  setTimeout(() => {
+    feedback.style.display = 'none';
+  }, 4500);
+}
+
+function fallbackCopyText(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
   try {
-    const [planningRows, allFiches] = await Promise.all([
-      getPlanning(selectedDate),
-      getFiches()
-    ]);
+    document.execCommand('copy');
+  } catch (e) {}
+  document.body.removeChild(ta);
+}
 
-    const fichesMap = {};
-    for (const f of (allFiches || [])) {
-      fichesMap[f.nom] = f;
-    }
+function genererImageChatGPT() {
+  const ficheNom = (document.getElementById('img-gen-fiche')?.value || '').trim();
+  const travaux  = (document.getElementById('img-gen-travaux')?.value || '').trim();
+  const ville    = (document.getElementById('img-gen-ville')?.value || '').trim();
 
-    let filtered = planningRows || [];
-    if (selectedDate) {
-      filtered = filtered.filter(r => r.date === selectedDate);
-    }
-    if (selectedOp) {
-      filtered = filtered.filter(r => (r.operateur || '').toLowerCase().includes(selectedOp.toLowerCase()));
-    }
-    if (selectedStat) {
-      filtered = filtered.filter(r => r.statut === selectedStat);
-    }
-    if (searchKw) {
-      filtered = filtered.filter(r => 
-        (r.fiche_nom || '').toLowerCase().includes(searchKw) ||
-        (r.ville || '').toLowerCase().includes(searchKw) ||
-        (r.metier || '').toLowerCase().includes(searchKw) ||
-        (r.operateur || '').toLowerCase().includes(searchKw)
-      );
-    }
+  if (!travaux && !ficheNom) {
+    alert("Veuillez renseigner au moins les travaux réalisés ou le nom du GMB / établissement.");
+    document.getElementById('img-gen-travaux')?.focus();
+    return;
+  }
 
-    // Mettre à jour les stats rapides
-    const totalCount = filtered.length;
-    const genCount   = filtered.filter(r => r.statut === 'generated').length;
-    const pendCount  = filtered.filter(r => r.statut === 'pending').length;
-    const doneCount  = filtered.filter(r => r.statut === 'done').length;
+  const prompt = buildGmbImagePrompt({ ficheNom, travaux, ville });
 
-    const elTotal = document.getElementById('img-stat-total');
-    const elGen   = document.getElementById('img-stat-generated');
-    const elPend  = document.getElementById('img-stat-pending');
-    const elDone  = document.getElementById('img-stat-done');
+  // 1. Mise à jour de l'aperçu
+  const preview = document.getElementById('img-gen-prompt-preview');
+  if (preview) preview.value = prompt;
+  const countEl = document.getElementById('img-gen-char-count');
+  if (countEl) countEl.textContent = `${prompt.length} caractères`;
 
-    if (elTotal) elTotal.textContent = totalCount;
-    if (elGen)   elGen.textContent = genCount;
-    if (elPend)  elPend.textContent = pendCount;
-    if (elDone)  elDone.textContent = doneCount;
+  // 2. Copie automatique dans le presse-papier
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(prompt).then(() => {
+      showImgGenFeedback("Prompt copié dans le presse-papier & ChatGPT ouvert !");
+    }).catch(() => {
+      fallbackCopyText(prompt);
+      showImgGenFeedback("Prompt copié & ChatGPT ouvert !");
+    });
+  } else {
+    fallbackCopyText(prompt);
+    showImgGenFeedback("Prompt copié & ChatGPT ouvert !");
+  }
 
-    if (filtered.length === 0) {
-      container.innerHTML = '<div class="empty-state" style="text-align:center;padding:2.5rem;background:#1e293b;border-radius:10px;border:1px dashed #334155;color:#94a3b8;font-size:14px;">Aucune image trouvée pour ces filtres.</div>';
-      return;
-    }
+  // 3. Ouvrir ChatGPT avec le prompt prérempli
+  const chatGptUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+  window.open(chatGptUrl, '_blank');
+}
 
-    // Trier : plus récents d'abord
-    filtered.sort((a, b) => (b.date || '').localeCompare(a.date || '') || (a.operateur || '').localeCompare(b.operateur || ''));
+function copierPromptManuel() {
+  const ficheNom = (document.getElementById('img-gen-fiche')?.value || '').trim();
+  const travaux  = (document.getElementById('img-gen-travaux')?.value || '').trim();
+  const ville    = (document.getElementById('img-gen-ville')?.value || '').trim();
 
-    // URLs des conversations ChatGPT pour chaque opérateur
-    const chatGptUrls = {
-      'kevin': (fichesMap['CHATGPT_WORK_CONVERSATION_URL_KEVIN']?.lien || fichesMap['CHATGPT_CONVERSATION_URL_KEVIN']?.lien || 'https://chatgpt.com/'),
-      'fif': (fichesMap['CHATGPT_WORK_CONVERSATION_URL_FIF']?.lien || fichesMap['CHATGPT_CONVERSATION_URL_FIF']?.lien || 'https://chatgpt.com/'),
-      'fifaliana': (fichesMap['CHATGPT_WORK_CONVERSATION_URL_FIF']?.lien || fichesMap['CHATGPT_CONVERSATION_URL_FIF']?.lien || 'https://chatgpt.com/')
-    };
+  if (!travaux && !ficheNom) {
+    alert("Veuillez renseigner au moins les travaux réalisés ou le nom du GMB / établissement.");
+    document.getElementById('img-gen-travaux')?.focus();
+    return;
+  }
 
-    let html = `
-      <div style="overflow-x:auto;">
-        <table class="avis-table">
-          <thead>
-            <tr>
-              <th style="width:100px;">Date</th>
-              <th>Fiche GMB</th>
-              <th style="width:130px;">Ville / Métier</th>
-              <th style="width:90px;">Opérateur</th>
-              <th style="width:120px;">Statut</th>
-              <th style="width:140px;text-align:center;">Lien Web ChatGPT</th>
-              <th style="width:140px;text-align:center;">Dossier Drive</th>
-              <th style="width:90px;text-align:center;">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
+  const prompt = buildGmbImagePrompt({ ficheNom, travaux, ville });
 
-    for (const row of filtered) {
-      const f = fichesMap[row.fiche_nom] || {};
-      const mapsLien = f.lien || row.lien || '';
-      const op = row.operateur || 'Kevin';
-      const isKevin = op.toLowerCase().includes('kevin');
-      const opBadge = isKevin 
-        ? `<span style="background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Kevin</span>`
-        : `<span style="background:rgba(168,85,247,0.15);border:1px solid #a855f7;color:#d8b4fe;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">Fifaliana</span>`;
+  const preview = document.getElementById('img-gen-prompt-preview');
+  if (preview) preview.value = prompt;
+  const countEl = document.getElementById('img-gen-char-count');
+  if (countEl) countEl.textContent = `${prompt.length} caractères`;
 
-      const gptUrl = isKevin ? chatGptUrls['kevin'] : chatGptUrls['fifaliana'];
-
-      let statutBadge = '';
-      if (row.statut === 'generated') {
-        statutBadge = `<span style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">✅ Générée</span>`;
-      } else if (row.statut === 'done') {
-        statutBadge = `<span style="background:rgba(234,179,8,0.15);border:1px solid #eab308;color:#fde047;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">✔️ Avis posté</span>`;
-      } else {
-        statutBadge = `<span style="background:rgba(148,163,184,0.15);border:1px solid #64748b;color:#cbd5e1;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;">⏳ En attente</span>`;
-      }
-
-      const cleanFicheName = (row.fiche_nom || '').replace(/"/g, '&quot;');
-      const ficheLinkHtml = mapsLien 
-        ? `<a href="${mapsLien}" target="_blank" style="color:#38bdf8;text-decoration:none;font-weight:600;">${row.fiche_nom}</a>`
-        : `<span style="color:#f1f5f9;font-weight:600;">${row.fiche_nom}</span>`;
-
-      const villeMetier = `${row.ville || '—'} ${row.metier ? `• <span style="color:#94a3b8;font-size:11px;">${row.metier}</span>` : ''}`;
-
-      html += `
-        <tr>
-          <td style="white-space:nowrap;font-size:12px;color:#cbd5e1;">${row.date || '—'}</td>
-          <td>${ficheLinkHtml}</td>
-          <td style="font-size:12px;">${villeMetier}</td>
-          <td>${opBadge}</td>
-          <td>${statutBadge}</td>
-          <td style="text-align:center;">
-            <a href="${gptUrl}" target="_blank" class="btn-secondary" style="padding:4px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px;text-decoration:none;white-space:nowrap;color:#38bdf8;border-color:#0284c7;">
-              💬 Ouvrir ChatGPT
-            </a>
-          </td>
-          <td style="text-align:center;">
-            <button onclick="openOperatorDriveFolder('${op}')" class="btn-secondary" style="padding:4px 10px;font-size:11px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
-              📂 Drive ${isKevin ? 'Kevin' : 'Fif'}
-            </button>
-          </td>
-          <td style="text-align:center;">
-            <button onclick="prefillSaisieFromImage('${cleanFicheName}', '${op}')" class="btn-primary" style="padding:4px 8px;font-size:11px;white-space:nowrap;">
-              ✍️ Saisir
-            </button>
-          </td>
-        </tr>
-      `;
-    }
-
-    html += `
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    container.innerHTML = html;
-
-  } catch (err) {
-    container.innerHTML = `<div style="color:#ef4444;padding:1.5rem;text-align:center;">❌ Erreur chargement images : ${err.message}</div>`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(prompt).then(() => {
+      showImgGenFeedback("Prompt copié dans le presse-papier !");
+    }).catch(() => {
+      fallbackCopyText(prompt);
+      showImgGenFeedback("Prompt copié dans le presse-papier !");
+    });
+  } else {
+    fallbackCopyText(prompt);
+    showImgGenFeedback("Prompt copié dans le presse-papier !");
   }
 }
 
-function prefillSaisieFromImage(ficheNom, operateur) {
-  showTab('saisie');
-  const ficheInput = document.getElementById('form-fiche');
-  const opInput    = document.getElementById('form-operateur');
-  const dateInput  = document.getElementById('form-date');
-  const photoInput = document.getElementById('form-photo');
-
-  if (ficheInput) ficheInput.value = ficheNom;
-  if (opInput)    opInput.value = operateur || 'Kevin';
-  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
-  if (photoInput) photoInput.checked = true;
+function initImageGenerator() {
+  populateFicheSelects();
+  onImgGenInputsChange();
 }
 
