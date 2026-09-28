@@ -217,7 +217,7 @@ async function init() {
 }
 
 // ── ROUTER & TABS ──
-const VALID_TABS = ['dashboard', 'images', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
+const VALID_TABS = ['dashboard', 'planning', 'images', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
 
 function getBasePath() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -228,7 +228,6 @@ function getBasePath() {
 }
 
 function normalizeTabName(name) {
-  if (name === 'planning') return 'images';
   if (name === 'saisir') return 'saisie';
   return name;
 }
@@ -289,6 +288,7 @@ function showTab(name, skipUrlUpdate = false) {
   }
 
   if (name === 'dashboard') renderDashboard();
+  if (name === 'planning') renderPlanning();
   if (name === 'images') initImageGenerator();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
@@ -3971,10 +3971,184 @@ function clearNotes() {
   updateNotesLines();
 }
 
-// ── PLANNING (Fonctionnalité retirée) ──
-async function renderPlanning() {
-  // Le planning automatique a été supprimé. Redirection vers le générateur d'images.
+// ── PLANNING ──
+
+function ouvrirGenerateurImageDepuisPlanning(ficheNom, travaux = '', ville = '') {
   showTab('images');
+  appliquerExempleImage(ficheNom, travaux, ville);
+}
+
+async function renderPlanning() {
+  const dateEl = document.getElementById('planning-date');
+  const opEl   = document.getElementById('planning-operateur');
+  const stEl   = document.getElementById('planning-statut-filter');
+  const list   = document.getElementById('planning-list');
+  const stats  = document.getElementById('planning-stats');
+
+  if (!dateEl) return;
+
+  if (!dateEl.value) {
+    const today = new Date();
+    dateEl.value = today.toISOString().slice(0, 10);
+  }
+
+  const dateVal = dateEl.value;
+  const opVal   = opEl?.value || '';
+  const stVal   = stEl?.value || '';
+
+  if (list) list.innerHTML = '<p style="color:#94a3b8">Chargement...</p>';
+
+  let query = `select=*&date=eq.${dateVal}&order=operateur.asc,ville.asc`;
+  if (opVal) query += `&operateur=eq.${encodeURIComponent(opVal)}`;
+  if (stVal) query += `&statut=eq.${stVal}`;
+
+  const rows = await sbGet('planning', query);
+  window._currentPlanningRows = rows || [];
+
+  // Stats
+  const total   = rows.length;
+  const pending = rows.filter(r => r.statut === 'pending').length;
+  const done    = rows.filter(r => r.statut === 'done').length;
+  const generated = rows.filter(r => r.statut === 'generated').length;
+
+  if (stats) {
+    stats.innerHTML = [
+      ['Total', total, '#3b82f6'],
+      ['En attente', pending, '#f59e0b'],
+      ['Généré', generated, '#8b5cf6'],
+      ['Terminé', done, '#22c55e'],
+    ].map(([label, val, color]) => `
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 18px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:${color}">${val}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px">${label}</div>
+      </div>`).join('');
+  }
+
+  if (!list) return;
+
+  if (!rows.length) {
+    list.innerHTML = '<p style="color:#94a3b8;padding:20px">Aucune assignation pour cette date.</p>';
+    return;
+  }
+
+  // Grouper par opérateur
+  const byOp = {};
+  for (const r of rows) {
+    const op = r.operateur || '—';
+    if (!byOp[op]) byOp[op] = [];
+    byOp[op].push(r);
+  }
+
+  const STATUT_COLORS = {
+    pending: '#f59e0b', generated: '#8b5cf6', done: '#22c55e', skip: '#64748b'
+  };
+  const STATUT_LABELS = {
+    pending: 'En attente', generated: 'Généré', done: 'Terminé', skip: 'Ignoré'
+  };
+
+  list.innerHTML = Object.entries(byOp).map(([op, taches]) => {
+    // Trier par ID croissant pour reproduire rigoureusement l'ordre de passage
+    taches.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+
+    // Décompte de la règle des 50% de photos (index pairs: 0, 2, 4...)
+    const tachesAvecPhoto = taches.filter((_, idx) => idx % 2 === 0);
+    const photosPretes = tachesAvecPhoto.filter(r => r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http'))).length;
+    const photosManquantes = tachesAvecPhoto.length - photosPretes;
+
+    return `
+    <div style="margin-bottom:24px">
+      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span>👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span></span>
+          <span style="background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
+            📸 Photos requises (50%) : ${photosPretes}/${tachesAvecPhoto.length}
+          </span>
+          ${photosManquantes > 0 ? `
+            <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
+              ⚠️ ${photosManquantes} image(s) manquante(s)
+            </span>
+          ` : `
+            <span style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
+              ✅ Toutes prêtes
+            </span>
+          `}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="openOperatorDriveFolder('${op}')" style="padding:4px 10px;border-radius:6px;background:#1e293b;color:#38bdf8;border:1px solid #334155;cursor:pointer;font-size:12px">
+            📁 Dossier Drive ${op}
+          </button>
+        </div>
+      </h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="color:#64748b;text-align:left">
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Ville</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Gmail</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Fiche</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Photo (Règle 50%)</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Statut</th>
+            <th style="padding:6px 10px;border-bottom:1px solid #334155">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${taches.map((r, idx) => {
+            const isPhotoRequired = (idx % 2 === 0);
+            const photoUrl = r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http') ? r.metier : null);
+            const cleanFiche = (r.fiche_nom || '').replace(/'/g, "\\'");
+            const cleanTravaux = (r.travaux || '').replace(/'/g, "\\'");
+            const cleanVille = (r.ville || '').replace(/'/g, "\\'");
+            return `
+            <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}" data-operateur="${op}" data-ville="${r.ville || ''}">
+              <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
+              <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#a5b4fc">${r.gmail}</td>
+              <td style="padding:7px 10px;color:#e2e8f0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fiche_nom}">${r.fiche_nom}</td>
+              <td style="padding:7px 10px;white-space:nowrap">
+                ${photoUrl ? `
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <a href="${photoUrl}" target="_blank" rel="noopener"
+                      style="padding:3px 8px;border-radius:5px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;font-weight:600">
+                      📸 Voir Photo
+                    </a>
+                    <span style="font-size:10px;color:#34d399;font-weight:600" title="Photo requise (règle 50%) — prête">✓ (50%)</span>
+                  </div>
+                ` : isPhotoRequired ? `
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
+                    <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap" title="Avis éligible photo (règle 50%)">
+                      ⚠️ 50% Requis
+                    </span>
+                    <button onclick="ouvrirGenerateurImageDepuisPlanning('${cleanFiche}', '${cleanTravaux}', '${cleanVille}')"
+                      style="padding:3px 8px;border-radius:5px;background:linear-gradient(135deg, #6366f1, #8b5cf6);color:#fff;border:none;cursor:pointer;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(99,102,241,0.3)"
+                      title="Générer la photo dans ChatGPT">
+                      🎨 Générer l'image
+                    </button>
+                  </div>
+                ` : `
+                  <span style="color:#64748b;font-size:11px;font-style:italic" title="Avis textuel simple sans photo">— Sans photo</span>
+                `}
+              </td>
+              <td style="padding:7px 10px">
+                <span style="background:${(STATUT_COLORS[r.statut]||'#64748b')}22;color:${STATUT_COLORS[r.statut]||'#64748b'};padding:2px 8px;border-radius:99px;font-size:11px">
+                  ${STATUT_LABELS[r.statut] || r.statut}
+                </span>
+              </td>
+              <td style="padding:7px 10px;white-space:nowrap">
+                ${r.statut === 'pending' || r.statut === 'generated' ? `
+                  <button onclick="planningGenerer('${r.id}','${cleanFiche}','${r.gmail}','${op}')"
+                    style="padding:3px 10px;border-radius:5px;background:#6366f1;color:#fff;border:none;cursor:pointer;font-size:12px;margin-right:4px">
+                    ✍️ Générer
+                  </button>
+                  <button onclick="planningSkip('${r.id}')"
+                    style="padding:3px 10px;border-radius:5px;background:#334155;color:#94a3b8;border:none;cursor:pointer;font-size:12px">
+                    Ignorer
+                  </button>
+                ` : r.statut === 'done' ? `<span style="color:#22c55e;font-size:12px">✅ Fait</span>` : ''}
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }).join('');
 }
 
 // ── Toast éphémère ────────────────────────────────────────────────────────────
@@ -4755,6 +4929,126 @@ async function donutRafraichirProxy() {
        : `⚠️ Proxy créé mais attache échouée — sélectionne-le à la main dans DonutBrowser.`,
     ok ? 'success' : 'warn', 8000
   );
+}
+
+async function planningGenerer(id, ficheNom, gmail, operateur = '') {
+  await sbUpdate('planning', id, { statut: 'generated' });
+
+  // Extraire la ville principale depuis la fiche GMB (priorité absolue)
+  // Fallback sur la ville de la ligne du planning si non trouvée
+  const row = document.getElementById(`planning-row-${id}`);
+  const rowVille = row?.dataset?.ville || (row ? row.querySelector('td')?.textContent?.trim() : '');
+  const villeExtraite = extraireVilleFiche(ficheNom);
+  const ville = (villeExtraite && villeExtraite !== ficheNom)
+    ? villeExtraite
+    : (rowVille && rowVille !== '—' ? rowVille : (villeExtraite || ''));
+
+  // Dériver les travaux et le métier depuis le nom de la fiche (utilisé pour avis et images)
+  const _TRAVAUX_MAP = {
+    depannage: 'dépannage et remorquage automobile',
+    remorquage: 'dépannage et remorquage automobile',
+    auto: 'dépannage et remorquage automobile',
+    voiture: 'dépannage et remorquage automobile',
+    garage: 'dépannage et réparation automobile',
+    debarras: 'débarras et enlèvement',
+    terrassement: 'travaux de terrassement',
+    couvreur: 'réfection de toiture', toiture: 'réfection de toiture', couverture: 'travaux de couverture',
+    demoussage: 'démoussage toiture', hydrofuge: 'traitement hydrofuge toiture',
+    gouttieres: 'nettoyage gouttières',
+    etancheite: 'travaux d\'étanchéité',
+    paysagiste: 'aménagement paysager', jardinage: 'entretien jardin',
+    elagage: 'élagage et abattage d\'arbres', abattage: 'élagage et abattage d\'arbres',
+    ravalement: 'ravalement de façade', facade: 'ravalement de façade',
+    nettoyage: 'nettoyage haute pression',
+    peintre: 'travaux de peinture', peinture: 'travaux de peinture',
+    plombier: 'travaux de plomberie',
+    electricien: 'travaux d\'électricité',
+    macon: 'travaux de maçonnerie', carrelage: 'pose de carrelage',
+  };
+  const _nomL = ficheNom.toLowerCase();
+  let _travaux = Object.entries(_TRAVAUX_MAP).find(([k]) => _nomL.includes(k))?.[1];
+  if (!_travaux) {
+    const metierDet = detecterMetier(ficheNom);
+    if (metierDet === 'auto') _travaux = 'dépannage et remorquage automobile';
+    else if (metierDet === 'debarras') _travaux = 'débarras et enlèvement';
+    else if (metierDet === 'terrassement') _travaux = 'travaux de terrassement';
+    else if (metierDet === 'elagage') _travaux = 'élagage et abattage d\'arbres';
+    else if (metierDet === 'ravalement') _travaux = 'ravalement de façade';
+    else if (metierDet === 'couvreur') _travaux = 'réfection de toiture';
+    else if (metierDet === 'nettoyage_toiture') _travaux = 'démoussage toiture';
+    else _travaux = 'travaux à domicile';
+  }
+
+  // Créer et lancer le profil anti-détection selon le choix utilisateur (GoLogin / DonutBrowser / Auto / Aucun)
+  if (ville && ville !== '—') {
+    const engine = localStorage.getItem('antidetect_engine') || 'gologin';
+    if (engine !== 'none') {
+      const opFromRow = row?.dataset?.operateur || '';
+      const opSaved   = localStorage.getItem('gmb_operateur') || '';
+      const opVal     = document.getElementById('planning-operateur')?.value || '';
+      const rawOpStr  = (operateur || opFromRow || opSaved || opVal || 'Kevin').trim();
+
+      try {
+        const ficheObj = (window._fichesCache || []).find(f => f.nom === ficheNom || f.nom_clean === ficheNom);
+        const rowPays  = ficheObj?.pays || row?.dataset?.pays || 'FR';
+
+        if (engine === 'gologin') {
+          await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
+        } else if (engine === 'donut') {
+          if (getDonutToken()) {
+            await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
+          } else {
+            showToast('⚠️ Token DonutBrowser manquant dans ⚙️ Config Anti-Detect.', 'warn', 6000);
+          }
+        } else if (engine === 'auto') {
+          const isKevinOrFif = rawOpStr.includes('kevin') || rawOpStr.includes('fif');
+          if (isKevinOrFif) {
+            const glRes = await gologinCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
+            if (!glRes && getDonutToken()) {
+              await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
+            }
+          } else if (getDonutToken()) {
+            await donutCreerProfil(ville, gmail, ficheNom, rowPays, rawOpStr);
+          }
+        }
+      } catch (e) {
+        console.warn('Profil anti-detect ignoré (erreur):', e?.message || e);
+      }
+    }
+  }
+
+  // Basculer vers le générateur d'avis
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+  document.getElementById('tab-generateur').classList.remove('hidden');
+  document.querySelector('.tab-btn[onclick*="generateur"]').classList.add('active');
+
+  await populateGenFiche();
+
+  const ficheInput = document.getElementById('gen-fiche');
+  if (ficheInput) { ficheInput.value = ficheNom; ficheInput.dispatchEvent(new Event('input')); }
+
+  const auteurInput = document.getElementById('gen-auteur');
+  if (auteurInput) auteurInput.value = gmail;
+
+  // Pré-remplir ville et travaux dans le générateur d'avis
+  const villeInput = document.getElementById('gen-ville');
+  if (villeInput && ville) villeInput.value = ville;
+  const travauxInput = document.getElementById('gen-travaux');
+  if (travauxInput) travauxInput.value = _travaux;
+
+  if (row) {
+    const badge = row.querySelector('span[style*="border-radius:99px"]');
+    if (badge) { badge.style.color = '#8b5cf6'; badge.style.background = '#8b5cf622'; badge.textContent = 'Généré'; }
+  }
+
+  // Lancer la génération automatiquement si clé Gemini configurée
+  if (getGeminiKey()) await genererAvis();
+}
+
+async function planningSkip(id) {
+  await sbUpdate('planning', id, { statut: 'skip' });
+  renderPlanning();
 }
 
 
