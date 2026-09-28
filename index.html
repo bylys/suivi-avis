@@ -50,7 +50,7 @@
     </div>
     <nav class="header-nav">
       <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
-      <button class="tab-btn" onclick="showTab('planning')">📋 Planning</button>
+      <button class="tab-btn" onclick="showTab('session')">🌐 Session Navigateur</button>
       <button class="tab-btn" onclick="showTab('images')">🎨 Générer une image</button>
       <button class="tab-btn" onclick="showTab('generateur')">Générateur d'avis</button>
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
@@ -518,44 +518,149 @@
     </details>
   </section>
 
-  <!-- PLANNING -->
-  <section id="tab-planning" class="tab-content hidden">
-    <h2>📋 Planning du jour</h2>
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-      <input type="date" id="planning-date" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px" />
-      <select id="planning-operateur" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
-        <option value="">Tous les opérateurs</option>
-        <option value="Kevin">Kevin</option>
-        <option value="Fifaliana">Fifaliana</option>
-      </select>
-      <select id="planning-statut-filter" onchange="renderPlanning()" style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px">
-        <option value="">Tous les statuts</option>
-        <option value="pending">En attente</option>
-        <option value="generated">Généré</option>
-        <option value="done">Terminé</option>
-        <option value="skip">Ignoré</option>
-      </select>
-      <button onclick="renderPlanning()" style="padding:6px 14px;border-radius:6px;background:#3b82f6;color:#fff;border:none;cursor:pointer;font-size:14px">🔄 Actualiser</button>
+  <!-- CRÉER UNE SESSION NAVIGATEUR (GOLOGIN / DONUT) -->
+  <section id="tab-session" class="tab-content hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="margin:0 0 4px 0;display:flex;align-items:center;gap:10px;font-size:1.35rem">
+          🌐 Créer une session navigateur
+        </h2>
+        <p style="margin:0;font-size:13px;color:#94a3b8">
+          Configurez et lancez une session isolée avec proxy résidentiel géolocalisé pour GoLogin ou Donut Browser.
+        </p>
+      </div>
     </div>
-    <details style="margin-bottom:14px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 16px">
-      <summary style="cursor:pointer;font-size:13px;color:#94a3b8;user-select:none;font-weight:600">⚙️ Config Anti-Detect Browsers (Choix du Navigateur & Clés API)</summary>
+
+    <!-- 1. CHOIX DE L'ENVIRONNEMENT (GOLOGIN / DONUT) -->
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">
+        1. Créer la session dans :
+      </label>
+      <div class="session-engine-selector" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px">
+        <!-- Carte GoLogin -->
+        <div id="card-engine-gologin" onclick="selectSessionEngine('gologin')"
+          style="padding:16px 20px;background:rgba(59,130,246,0.08);border:2px solid #3b82f6;border-radius:12px;cursor:pointer;transition:all 0.2s">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:16px;font-weight:700;color:#60a5fa;display:flex;align-items:center;gap:8px">
+              🚀 GoLogin
+            </div>
+            <span id="badge-engine-gologin" style="background:#2563eb;color:#fff;font-size:11px;padding:2px 10px;border-radius:99px;font-weight:700">✓ Sélectionné</span>
+          </div>
+          <div style="font-size:12px;color:#94a3b8;line-height:1.4">
+            Profil synchronisé sur votre compte GoLogin avec clé Cloudflare intégrée et proxy Decodo géociblé.
+          </div>
+        </div>
+
+        <!-- Carte Donut Browser -->
+        <div id="card-engine-donut" onclick="selectSessionEngine('donut')"
+          style="padding:16px 20px;background:#1e293b;border:2px solid #334155;border-radius:12px;cursor:pointer;transition:all 0.2s">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="font-size:16px;font-weight:700;color:#f59e0b;display:flex;align-items:center;gap:8px">
+              🍩 Donut Browser
+            </div>
+            <span id="badge-engine-donut" style="display:none;background:#d97706;color:#fff;font-size:11px;padding:2px 10px;border-radius:99px;font-weight:700">✓ Sélectionné</span>
+          </div>
+          <div style="font-size:12px;color:#94a3b8;line-height:1.4">
+            Profil Wayfern / DonutBrowser local avec proxy Decodo attaché et démarrage direct.
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="session-engine" value="gologin" />
+    </div>
+
+    <!-- 2. INFORMATIONS DE LA SESSION -->
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:20px">
+      <label style="display:block;font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px">
+        2. Paramètres de la session
+      </label>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-bottom:16px">
+        <!-- Ville (Obligatoire) -->
+        <div>
+          <label for="session-ville" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px">
+            📍 Ville <span style="color:#ef4444;font-weight:700">*</span> <span style="color:#94a3b8;font-weight:400;font-size:12px">(Obligatoire — IP proxy ciblée)</span>
+          </label>
+          <input type="text" id="session-ville" list="datalist-session-villes" placeholder="Ex: Cannes, Lyon, Rouen, Bordeaux..."
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box"
+            oninput="onSessionVilleChange()" />
+          <datalist id="datalist-session-villes">
+            <option value="Cannes">
+            <option value="Lyon">
+            <option value="Rouen">
+            <option value="Bordeaux">
+            <option value="Paris">
+            <option value="Marseille">
+            <option value="Toulouse">
+            <option value="Nice">
+            <option value="Nantes">
+            <option value="Strasbourg">
+            <option value="Montpellier">
+            <option value="Lille">
+            <option value="Rennes">
+            <option value="Toulon">
+            <option value="Grenoble">
+            <option value="Dijon">
+            <option value="Angers">
+            <option value="Nîmes">
+            <option value="Caen">
+            <option value="Le Havre">
+            <option value="Reims">
+            <option value="Saint-Étienne">
+            <option value="Brest">
+            <option value="Amiens">
+            <option value="Limoges">
+            <option value="Annecy">
+            <option value="Perpignan">
+            <option value="Avignon">
+            <option value="Pau">
+            <option value="La Rochelle">
+          </datalist>
+        </div>
+
+        <!-- Nom de session (Optionnel) -->
+        <div>
+          <label for="session-name" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px">
+            🏷️ Nom de la session <span style="color:#94a3b8;font-weight:400;font-size:12px">(Optionnel — personnalisable)</span>
+          </label>
+          <input type="text" id="session-name" placeholder="Ex: Cannes - Élagage 01 (ou laisser vide)"
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box" />
+          <div style="font-size:12px;color:#64748b;margin-top:4px">
+            💡 Si laissé vide, le nom sera auto-généré : <strong id="session-name-hint" style="color:#94a3b8">Ville - 01</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bouton Créer la session -->
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px">
+        <button id="btn-creer-session" onclick="creerSessionNavigateur()"
+          style="padding:12px 28px;background:linear-gradient(135deg, #2563eb, #7c3aed);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(37,99,235,0.35);transition:all 0.2s">
+          🚀 Créer la session
+        </button>
+      </div>
+
+      <!-- Feedback de statut -->
+      <div id="session-feedback" style="display:none;margin-top:16px;padding:14px 16px;border-radius:8px;font-size:13px;line-height:1.5"></div>
+    </div>
+
+    <!-- 3. CONFIGURATION ANTI-DETECT (CLEFS & TESTS) -->
+    <details style="margin-bottom:20px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 16px">
+      <summary style="cursor:pointer;font-size:13px;color:#94a3b8;user-select:none;font-weight:600">⚙️ Options avancées Anti-Detect (Proxy, Clés API & Tests)</summary>
       <div style="margin-top:12px;display:flex;gap:12px;flex-direction:column">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <label style="font-size:12px;color:#94a3b8;font-weight:600">Moteur actif :</label>
-          <select id="antidetect-engine-input"
-            style="padding:6px 12px;border-radius:6px;border:1px solid #3b82f6;background:#1e293b;color:#60a5fa;font-size:13px;font-weight:600"
-            onchange="localStorage.setItem('antidetect_engine', this.value)">
-            <option value="gologin">🚀 GoLogin (Recommandé)</option>
-            <option value="donut">🍩 DonutBrowser</option>
-            <option value="auto">🤖 Auto (GoLogin si Kevin/Fif, Donut sinon)</option>
-            <option value="none">❌ Aucun (Désactiver)</option>
-          </select>
-          <label style="font-size:12px;color:#94a3b8;font-weight:600;margin-left:8px">Type Proxy :</label>
+          <label style="font-size:12px;color:#94a3b8;font-weight:600">Type de Proxy :</label>
           <select id="decodo-type-input"
             style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
             onchange="localStorage.setItem('decodo_type', this.value)">
             <option value="residential">Résidentiel (ville ciblée)</option>
             <option value="mobile">Mobile (4G)</option>
+          </select>
+
+          <label style="font-size:12px;color:#94a3b8;font-weight:600;margin-left:8px">Opérateur :</label>
+          <select id="session-operateur-select"
+            style="padding:6px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px"
+            onchange="localStorage.setItem('gmb_operateur', this.value)">
+            <option value="Kevin">Kevin</option>
+            <option value="Fifaliana">Fifaliana</option>
           </select>
         </div>
 
@@ -590,8 +695,21 @@
         </div>
       </div>
     </details>
-    <div id="planning-stats" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
-    <div id="planning-list"></div>
+
+    <!-- 4. HISTORIQUE DES SESSIONS RÉCENTES -->
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:16px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h3 style="font-size:14px;font-weight:700;color:#f1f5f9;margin:0">
+          🕒 Sessions créées récemment
+        </h3>
+        <button onclick="clearSessionHistory()" style="background:none;border:none;color:#64748b;font-size:12px;cursor:pointer;text-decoration:underline">
+          Effacer l'historique
+        </button>
+      </div>
+      <div id="session-history-list">
+        <p style="color:#64748b;font-size:13px;margin:8px 0">Aucune session créée pour l'instant.</p>
+      </div>
+    </div>
   </section>
 
 </div>

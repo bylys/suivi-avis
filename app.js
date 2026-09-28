@@ -217,7 +217,7 @@ async function init() {
 }
 
 // ── ROUTER & TABS ──
-const VALID_TABS = ['dashboard', 'planning', 'images', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
+const VALID_TABS = ['dashboard', 'session', 'sessions', 'planning', 'images', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
 
 function getBasePath() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -228,6 +228,7 @@ function getBasePath() {
 }
 
 function normalizeTabName(name) {
+  if (name === 'planning' || name === 'sessions') return 'session';
   if (name === 'saisir') return 'saisie';
   return name;
 }
@@ -288,7 +289,7 @@ function showTab(name, skipUrlUpdate = false) {
   }
 
   if (name === 'dashboard') renderDashboard();
-  if (name === 'planning') renderPlanning();
+  if (name === 'session' || name === 'planning') initSessionTab();
   if (name === 'images') initImageGenerator();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
@@ -3971,184 +3972,252 @@ function clearNotes() {
   updateNotesLines();
 }
 
-// ── PLANNING ──
+// ── SESSIONS NAVIGATEUR (GOLOGIN & DONUT) ──
 
-function ouvrirGenerateurImageDepuisPlanning(ficheNom, travaux = '', ville = '') {
-  showTab('images');
-  appliquerExempleImage(ficheNom, travaux, ville);
+function selectSessionEngine(engine) {
+  const input = document.getElementById('session-engine');
+  if (input) input.value = engine;
+  localStorage.setItem('antidetect_engine', engine);
+
+  const cardGl = document.getElementById('card-engine-gologin');
+  const cardDn = document.getElementById('card-engine-donut');
+  const badgeGl = document.getElementById('badge-engine-gologin');
+  const badgeDn = document.getElementById('badge-engine-donut');
+
+  if (cardGl && cardDn) {
+    if (engine === 'donut') {
+      cardDn.style.borderColor = '#f59e0b';
+      cardDn.style.background = 'rgba(245, 158, 11, 0.12)';
+      if (badgeDn) badgeDn.style.display = 'inline-block';
+
+      cardGl.style.borderColor = '#334155';
+      cardGl.style.background = '#1e293b';
+      if (badgeGl) badgeGl.style.display = 'none';
+    } else {
+      cardGl.style.borderColor = '#3b82f6';
+      cardGl.style.background = 'rgba(59, 130, 246, 0.12)';
+      if (badgeGl) badgeGl.style.display = 'inline-block';
+
+      cardDn.style.borderColor = '#334155';
+      cardDn.style.background = '#1e293b';
+      if (badgeDn) badgeDn.style.display = 'none';
+    }
+  }
 }
 
-async function renderPlanning() {
-  const dateEl = document.getElementById('planning-date');
-  const opEl   = document.getElementById('planning-operateur');
-  const stEl   = document.getElementById('planning-statut-filter');
-  const list   = document.getElementById('planning-list');
-  const stats  = document.getElementById('planning-stats');
-
-  if (!dateEl) return;
-
-  if (!dateEl.value) {
-    const today = new Date();
-    dateEl.value = today.toISOString().slice(0, 10);
+function getSessionHistory() {
+  try {
+    const raw = localStorage.getItem('gmb_browser_sessions');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
   }
+}
 
-  const dateVal = dateEl.value;
-  const opVal   = opEl?.value || '';
-  const stVal   = stEl?.value || '';
+function saveSessionToHistory(entry) {
+  try {
+    const history = getSessionHistory();
+    history.unshift(entry);
+    if (history.length > 20) history.pop();
+    localStorage.setItem('gmb_browser_sessions', JSON.stringify(history));
+  } catch (e) {}
+}
 
-  if (list) list.innerHTML = '<p style="color:#94a3b8">Chargement...</p>';
+function clearSessionHistory() {
+  if (!confirm("Voulez-vous effacer l'historique des sessions créées ?")) return;
+  localStorage.removeItem('gmb_browser_sessions');
+  renderSessionHistory();
+}
 
-  let query = `select=*&date=eq.${dateVal}&order=operateur.asc,ville.asc`;
-  if (opVal) query += `&operateur=eq.${encodeURIComponent(opVal)}`;
-  if (stVal) query += `&statut=eq.${stVal}`;
+function renderSessionHistory() {
+  const container = document.getElementById('session-history-list');
+  if (!container) return;
 
-  const rows = await sbGet('planning', query);
-  window._currentPlanningRows = rows || [];
-
-  // Stats
-  const total   = rows.length;
-  const pending = rows.filter(r => r.statut === 'pending').length;
-  const done    = rows.filter(r => r.statut === 'done').length;
-  const generated = rows.filter(r => r.statut === 'generated').length;
-
-  if (stats) {
-    stats.innerHTML = [
-      ['Total', total, '#3b82f6'],
-      ['En attente', pending, '#f59e0b'],
-      ['Généré', generated, '#8b5cf6'],
-      ['Terminé', done, '#22c55e'],
-    ].map(([label, val, color]) => `
-      <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:10px 18px;text-align:center">
-        <div style="font-size:22px;font-weight:700;color:${color}">${val}</div>
-        <div style="font-size:11px;color:#94a3b8;margin-top:2px">${label}</div>
-      </div>`).join('');
-  }
-
-  if (!list) return;
-
-  if (!rows.length) {
-    list.innerHTML = '<p style="color:#94a3b8;padding:20px">Aucune assignation pour cette date.</p>';
+  const history = getSessionHistory();
+  if (!history || !history.length) {
+    container.innerHTML = '<p style="color:#64748b;font-size:13px;margin:8px 0">Aucune session créée pour l\'instant.</p>';
     return;
   }
 
-  // Grouper par opérateur
-  const byOp = {};
-  for (const r of rows) {
-    const op = r.operateur || '—';
-    if (!byOp[op]) byOp[op] = [];
-    byOp[op].push(r);
+  let html = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="color:#64748b;text-align:left;border-bottom:1px solid #334155">
+          <th style="padding:6px 10px">Heure / Date</th>
+          <th style="padding:6px 10px">Nom de la session</th>
+          <th style="padding:6px 10px">Ville (Proxy)</th>
+          <th style="padding:6px 10px">Navigateur</th>
+          <th style="padding:6px 10px">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  for (const item of history) {
+    const isGl = item.engine?.toLowerCase().includes('gologin');
+    const badgeColor = isGl ? '#3b82f6' : '#f59e0b';
+    html += `
+      <tr style="border-bottom:1px solid #1e293b">
+        <td style="padding:8px 10px;color:#94a3b8;font-size:12px;white-space:nowrap">${item.date || '—'}</td>
+        <td style="padding:8px 10px;font-weight:600;color:#f1f5f9">${item.name}</td>
+        <td style="padding:8px 10px;color:#38bdf8">${item.ville}</td>
+        <td style="padding:8px 10px">
+          <span style="background:${badgeColor}22;color:${badgeColor};border:1px solid ${badgeColor}44;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
+            ${item.engine}
+          </span>
+        </td>
+        <td style="padding:8px 10px">
+          <span style="color:#22c55e;font-size:12px;font-weight:600">✅ Prêt</span>
+        </td>
+      </tr>
+    `;
   }
 
-  const STATUT_COLORS = {
-    pending: '#f59e0b', generated: '#8b5cf6', done: '#22c55e', skip: '#64748b'
-  };
-  const STATUT_LABELS = {
-    pending: 'En attente', generated: 'Généré', done: 'Terminé', skip: 'Ignoré'
-  };
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
 
-  list.innerHTML = Object.entries(byOp).map(([op, taches]) => {
-    // Trier par ID croissant pour reproduire rigoureusement l'ordre de passage
-    taches.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+function onSessionVilleChange() {
+  const villeInput = document.getElementById('session-ville');
+  const nameInput = document.getElementById('session-name');
+  const hintEl = document.getElementById('session-name-hint');
 
-    // Décompte de la règle des 50% de photos (index pairs: 0, 2, 4...)
-    const tachesAvecPhoto = taches.filter((_, idx) => idx % 2 === 0);
-    const photosPretes = tachesAvecPhoto.filter(r => r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http'))).length;
-    const photosManquantes = tachesAvecPhoto.length - photosPretes;
+  const ville = (villeInput?.value || '').trim();
+  if (!ville) {
+    if (hintEl) hintEl.textContent = 'Ville - 01';
+    return;
+  }
 
-    return `
-    <div style="margin-bottom:24px">
-      <h3 style="color:#f1f5f9;margin-bottom:10px;font-size:15px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span>👤 ${op} <span style="color:#64748b;font-weight:400;font-size:13px">(${taches.length} tâches)</span></span>
-          <span style="background:rgba(59,130,246,0.15);border:1px solid #3b82f6;color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
-            📸 Photos requises (50%) : ${photosPretes}/${tachesAvecPhoto.length}
-          </span>
-          ${photosManquantes > 0 ? `
-            <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
-              ⚠️ ${photosManquantes} image(s) manquante(s)
-            </span>
-          ` : `
-            <span style="background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#86efac;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
-              ✅ Toutes prêtes
-            </span>
-          `}
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button onclick="openOperatorDriveFolder('${op}')" style="padding:4px 10px;border-radius:6px;background:#1e293b;color:#38bdf8;border:1px solid #334155;cursor:pointer;font-size:12px">
-            📁 Dossier Drive ${op}
-          </button>
-        </div>
-      </h3>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead>
-          <tr style="color:#64748b;text-align:left">
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Ville</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Gmail</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Fiche</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Photo (Règle 50%)</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Statut</th>
-            <th style="padding:6px 10px;border-bottom:1px solid #334155">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${taches.map((r, idx) => {
-            const isPhotoRequired = (idx % 2 === 0);
-            const photoUrl = r.url_image || r.image_url || r.drive_url || (r.metier && r.metier.startsWith('http') ? r.metier : null);
-            const cleanFiche = (r.fiche_nom || '').replace(/'/g, "\\'");
-            const cleanTravaux = (r.travaux || '').replace(/'/g, "\\'");
-            const cleanVille = (r.ville || '').replace(/'/g, "\\'");
-            return `
-            <tr style="border-bottom:1px solid #1e293b" id="planning-row-${r.id}" data-operateur="${op}" data-ville="${r.ville || ''}">
-              <td style="padding:7px 10px;color:#94a3b8">${r.ville || '—'}</td>
-              <td style="padding:7px 10px;font-family:monospace;font-size:12px;color:#a5b4fc">${r.gmail}</td>
-              <td style="padding:7px 10px;color:#e2e8f0;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.fiche_nom}">${r.fiche_nom}</td>
-              <td style="padding:7px 10px;white-space:nowrap">
-                ${photoUrl ? `
-                  <div style="display:flex;align-items:center;gap:6px">
-                    <a href="${photoUrl}" target="_blank" rel="noopener"
-                      style="padding:3px 8px;border-radius:5px;background:#059669;color:#fff;text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px;font-weight:600">
-                      📸 Voir Photo
-                    </a>
-                    <span style="font-size:10px;color:#34d399;font-weight:600" title="Photo requise (règle 50%) — prête">✓ (50%)</span>
-                  </div>
-                ` : isPhotoRequired ? `
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
-                    <span style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;color:#fca5a5;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap" title="Avis éligible photo (règle 50%)">
-                      ⚠️ 50% Requis
-                    </span>
-                    <button onclick="ouvrirGenerateurImageDepuisPlanning('${cleanFiche}', '${cleanTravaux}', '${cleanVille}')"
-                      style="padding:3px 8px;border-radius:5px;background:linear-gradient(135deg, #6366f1, #8b5cf6);color:#fff;border:none;cursor:pointer;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;box-shadow:0 2px 6px rgba(99,102,241,0.3)"
-                      title="Générer la photo dans ChatGPT">
-                      🎨 Générer l'image
-                    </button>
-                  </div>
-                ` : `
-                  <span style="color:#64748b;font-size:11px;font-style:italic" title="Avis textuel simple sans photo">— Sans photo</span>
-                `}
-              </td>
-              <td style="padding:7px 10px">
-                <span style="background:${(STATUT_COLORS[r.statut]||'#64748b')}22;color:${STATUT_COLORS[r.statut]||'#64748b'};padding:2px 8px;border-radius:99px;font-size:11px">
-                  ${STATUT_LABELS[r.statut] || r.statut}
-                </span>
-              </td>
-              <td style="padding:7px 10px;white-space:nowrap">
-                ${r.statut === 'pending' || r.statut === 'generated' ? `
-                  <button onclick="planningGenerer('${r.id}','${cleanFiche}','${r.gmail}','${op}')"
-                    style="padding:3px 10px;border-radius:5px;background:#6366f1;color:#fff;border:none;cursor:pointer;font-size:12px;margin-right:4px">
-                    ✍️ Générer
-                  </button>
-                  <button onclick="planningSkip('${r.id}')"
-                    style="padding:3px 10px;border-radius:5px;background:#334155;color:#94a3b8;border:none;cursor:pointer;font-size:12px">
-                    Ignorer
-                  </button>
-                ` : r.statut === 'done' ? `<span style="color:#22c55e;font-size:12px">✅ Fait</span>` : ''}
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`;
-  }).join('');
+  const villeClean = ville.charAt(0).toUpperCase() + ville.slice(1);
+  const history = getSessionHistory();
+  const count = history.filter(h => (h.ville || '').toLowerCase() === ville.toLowerCase()).length;
+  const numStr = String(count + 1).padStart(2, '0');
+  const autoName = `${villeClean} - ${numStr}`;
+
+  if (hintEl) hintEl.textContent = autoName;
+}
+
+async function creerSessionNavigateur() {
+  const villeInput = document.getElementById('session-ville');
+  const nameInput = document.getElementById('session-name');
+  const engineInput = document.getElementById('session-engine');
+  const opSelect = document.getElementById('session-operateur-select');
+  const feedback = document.getElementById('session-feedback');
+  const btn = document.getElementById('btn-creer-session');
+
+  const ville = (villeInput?.value || '').trim();
+  if (!ville) {
+    alert("Veuillez renseigner une ville (ex: Cannes, Lyon, Rouen, Bordeaux...).");
+    villeInput?.focus();
+    return;
+  }
+
+  const engine = engineInput?.value || localStorage.getItem('antidetect_engine') || 'gologin';
+  const op = opSelect?.value || localStorage.getItem('gmb_operateur') || 'Kevin';
+
+  // Calcul du nom de session
+  const villeClean = ville.charAt(0).toUpperCase() + ville.slice(1);
+  let sessionName = (nameInput?.value || '').trim();
+  if (!sessionName) {
+    const history = getSessionHistory();
+    const count = history.filter(h => (h.ville || '').toLowerCase() === ville.toLowerCase()).length;
+    const numStr = String(count + 1).padStart(2, '0');
+    sessionName = `${villeClean} - ${numStr}`;
+  }
+
+  // Désactiver bouton et afficher spinner
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `⏳ Création dans ${engine === 'donut' ? 'Donut Browser' : 'GoLogin'}...`;
+  }
+  if (feedback) {
+    feedback.style.display = 'block';
+    feedback.style.background = 'rgba(59, 130, 246, 0.1)';
+    feedback.style.border = '1px solid #3b82f6';
+    feedback.style.color = '#93c5fd';
+    feedback.innerHTML = `⏳ Création de la session <strong>"${sessionName}"</strong> avec proxy géolocalisé à <strong>${villeClean}</strong> dans <strong>${engine === 'donut' ? 'Donut Browser' : 'GoLogin'}</strong>...`;
+  }
+
+  try {
+    let result = null;
+    if (engine === 'donut') {
+      result = await donutCreerProfil(ville, 'session@antidetect.local', sessionName, 'FR', op, sessionName);
+    } else {
+      // GoLogin par défaut
+      result = await gologinCreerProfil(ville, 'session@antidetect.local', sessionName, 'FR', op, sessionName);
+    }
+
+    if (result) {
+      saveSessionToHistory({
+        name: sessionName,
+        ville: villeClean,
+        engine: engine === 'donut' ? 'Donut Browser' : 'GoLogin',
+        date: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      });
+
+      if (feedback) {
+        feedback.style.background = 'rgba(16, 185, 129, 0.12)';
+        feedback.style.border = '1px solid #10b981';
+        feedback.style.color = '#86efac';
+        feedback.innerHTML = `
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px">✅ Session créée avec succès !</div>
+          <div><strong>Nom :</strong> ${sessionName}</div>
+          <div><strong>Ville proxy :</strong> ${villeClean} (France)</div>
+          <div><strong>Navigateur :</strong> ${engine === 'donut' ? 'Donut Browser' : 'GoLogin'}</div>
+          <div style="margin-top:8px;font-size:12px;opacity:0.9">
+            ${engine === 'donut' 
+              ? '▶️ Ouvrez Donut Browser et lancez le profil créé.' 
+              : '🚀 Le profil a été synchronisé sur votre compte GoLogin.'}
+          </div>
+        `;
+      }
+      showToast(`✅ Session "${sessionName}" (${villeClean}) créée !`, 'success', 5000);
+      renderSessionHistory();
+      if (nameInput) nameInput.value = '';
+    } else {
+      if (feedback) {
+        feedback.style.background = 'rgba(239, 68, 68, 0.12)';
+        feedback.style.border = '1px solid #ef4444';
+        feedback.style.color = '#fca5a5';
+        feedback.innerHTML = `❌ Échec de création de la session. Vérifiez la connexion à ${engine === 'donut' ? 'Donut Browser' : 'GoLogin'} dans les options avancées ci-dessous.`;
+      }
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.style.background = 'rgba(239, 68, 68, 0.12)';
+      feedback.style.border = '1px solid #ef4444';
+      feedback.style.color = '#fca5a5';
+      feedback.innerHTML = `❌ Erreur : ${err.message || err}`;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `🚀 Créer la session`;
+    }
+  }
+}
+
+function initSessionTab() {
+  const currentEngine = localStorage.getItem('antidetect_engine') || 'gologin';
+  selectSessionEngine(currentEngine === 'donut' ? 'donut' : 'gologin');
+
+  const opSelect = document.getElementById('session-operateur-select');
+  if (opSelect) {
+    const savedOp = localStorage.getItem('gmb_operateur') || 'Kevin';
+    opSelect.value = savedOp;
+  }
+
+  const decodoTypeSelect = document.getElementById('decodo-type-input');
+  if (decodoTypeSelect) {
+    decodoTypeSelect.value = localStorage.getItem('decodo_type') || 'residential';
+  }
+
+  onSessionVilleChange();
+  renderSessionHistory();
+}
+
+function renderPlanning() {
+  showTab('session');
 }
 
 // ── Toast éphémère ────────────────────────────────────────────────────────────
@@ -4416,7 +4485,7 @@ function raccourcirNomGmb(nom, ville = '') {
   return s || 'GMB';
 }
 
-async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '') {
+async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '', customProfileName = '') {
   const countryCfg  = getCountryConfig(pays);
   const rawCitySlug = normalizeCityForProxy(ville);
   const citySlug    = getDecodoCitySlug(ville, countryCfg.pays);
@@ -4437,7 +4506,9 @@ async function gologinCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateur
 
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
   const gmbCourt = raccourcirNomGmb(ficheNom, villeClean);
-  const profileName = `${gmbCourt}_${villeClean}_${opClean}`;
+  const profileName = (customProfileName && customProfileName.trim()) 
+    ? customProfileName.trim() 
+    : `${gmbCourt}_${villeClean}_${opClean}`;
 
   const isHostWindows = typeof navigator !== 'undefined' && /Windows|Win32/i.test(navigator.userAgent || navigator.platform || '');
   const desktopOs = isHostWindows ? 'win' : 'mac';
@@ -4657,10 +4728,10 @@ async function testDonutConnection() {
   }
 }
 
-async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '') {
+async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRaw = '', customProfileName = '') {
   const token = getDonutToken();
   if (!token) {
-    alert('Configure ton token DonutBrowser dans ⚙️ Config DonutBrowser (section Planning).');
+    alert('Configure ton token DonutBrowser dans ⚙️ Options avancées Anti-Detect.');
     return null;
   }
   const base = getDonutBase();
@@ -4692,7 +4763,9 @@ async function donutCreerProfil(ville, gmail, ficheNom, pays = 'FR', operateurRa
 
   const villeClean = ville ? (ville.trim().charAt(0).toUpperCase() + ville.trim().slice(1)) : citySlug;
   const gmbCourt   = raccourcirNomGmb(ficheNom, villeClean);
-  const profileName = `${gmbCourt}_${villeClean}_${opClean}`;
+  const profileName = (customProfileName && customProfileName.trim()) 
+    ? customProfileName.trim() 
+    : `${gmbCourt}_${villeClean}_${opClean}`;
 
   const _fetchTimeout = (url, opts, ms = 8000) => {
     const ctrl = new AbortController();
