@@ -600,11 +600,27 @@
         2. Paramètres de la session
       </label>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:16px;margin-bottom:16px">
+        <!-- Pays / Région -->
+        <div>
+          <label for="session-pays" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px">
+            🌍 Pays / Région <span style="color:#ef4444;font-weight:700">*</span>
+          </label>
+          <select id="session-pays" onchange="onSessionPaysChange()"
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;cursor:pointer">
+            <option value="FR" selected>🇫🇷 France</option>
+            <option value="CA">🇨🇦 Canada (Québec, Ontario, BC...)</option>
+            <option value="US">🇺🇸 États-Unis (New York, LA, Miami...)</option>
+            <option value="BE">🇧🇪 Belgique</option>
+            <option value="CH">🇨🇭 Suisse</option>
+            <option value="LU">🇱🇺 Luxembourg</option>
+          </select>
+        </div>
+
         <!-- Ville (Obligatoire) -->
         <div>
           <label for="session-ville" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px">
-            📍 Ville <span style="color:#ef4444;font-weight:700">*</span> <span style="color:#94a3b8;font-weight:400;font-size:12px">(Obligatoire — IP proxy ciblée)</span>
+            📍 Ville <span style="color:#ef4444;font-weight:700">*</span> <span style="color:#94a3b8;font-weight:400;font-size:12px">(IP proxy ciblée)</span>
           </label>
           <input type="text" id="session-ville" list="datalist-session-villes" placeholder="Ex: Cannes, Lyon, Rouen, Bordeaux..."
             style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box"
@@ -646,12 +662,12 @@
         <!-- Nom de session (Optionnel) -->
         <div>
           <label for="session-name" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px">
-            🏷️ Nom de la session <span style="color:#94a3b8;font-weight:400;font-size:12px">(Optionnel — personnalisable)</span>
+            🏷️ Nom de la session <span style="color:#94a3b8;font-weight:400;font-size:12px">(Optionnel)</span>
           </label>
           <input type="text" id="session-name" placeholder="Ex: Cannes - Élagage 01 (ou laisser vide)"
             style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box" />
           <div style="font-size:12px;color:#64748b;margin-top:4px">
-            💡 Si laissé vide, le nom sera auto-généré : <strong id="session-name-hint" style="color:#94a3b8">Ville - 01</strong>
+            💡 Auto-généré : <strong id="session-name-hint" style="color:#94a3b8">Ville - 01</strong>
           </div>
         </div>
       </div>

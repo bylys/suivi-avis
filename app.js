@@ -4137,6 +4137,63 @@ function clearSessionHistory() {
   renderSessionHistory();
 }
 
+const SESSION_CITIES_BY_COUNTRY = {
+  FR: [
+    'Cannes', 'Lyon', 'Rouen', 'Bordeaux', 'Paris', 'Marseille', 'Toulouse', 'Nice', 'Nantes',
+    'Strasbourg', 'Montpellier', 'Lille', 'Rennes', 'Toulon', 'Grenoble', 'Dijon', 'Angers',
+    'Nîmes', 'Caen', 'Le Havre', 'Reims', 'Saint-Étienne', 'Brest', 'Amiens', 'Limoges',
+    'Annecy', 'Perpignan', 'Avignon', 'Pau', 'La Rochelle'
+  ],
+  CA: [
+    'Montréal', 'Québec', 'Toronto', 'Vancouver', 'Ottawa', 'Calgary', 'Edmonton',
+    'Laval', 'Gatineau', 'Longueuil', 'Sherbrooke', 'Trois-Rivières', 'Halifax', 'Winnipeg', 'Victoria'
+  ],
+  US: [
+    'New York', 'Los Angeles', 'Chicago', 'Miami', 'Houston', 'San Francisco',
+    'Seattle', 'Las Vegas', 'Atlanta', 'Boston', 'Phoenix', 'Denver', 'Orlando',
+    'Dallas', 'Austin', 'San Diego', 'Philadelphia', 'San Antonio', 'Washington'
+  ],
+  BE: [
+    'Bruxelles', 'Liège', 'Anvers', 'Gand', 'Charleroi', 'Namur', 'Mons', 'Bruges', 'Louvain'
+  ],
+  CH: [
+    'Genève', 'Lausanne', 'Zurich', 'Bâle', 'Berne', 'Fribourg', 'Neuchâtel', 'Sion'
+  ],
+  LU: [
+    'Luxembourg', 'Esch-sur-Alzette', 'Differdange', 'Dudelange'
+  ]
+};
+
+function onSessionPaysChange() {
+  const paysSelect = document.getElementById('session-pays');
+  const villeInput = document.getElementById('session-ville');
+  const datalist = document.getElementById('datalist-session-villes');
+  const pays = (paysSelect?.value || 'FR').toUpperCase();
+
+  try {
+    localStorage.setItem('gmb_session_pays', pays);
+  } catch (e) {}
+
+  const cities = SESSION_CITIES_BY_COUNTRY[pays] || SESSION_CITIES_BY_COUNTRY.FR;
+  if (datalist) {
+    datalist.innerHTML = cities.map(c => `<option value="${c}">`).join('\n');
+  }
+
+  if (villeInput) {
+    const placeholders = {
+      FR: 'Ex: Cannes, Lyon, Rouen, Bordeaux, Paris...',
+      CA: 'Ex: Montréal, Québec, Toronto, Vancouver, Ottawa...',
+      US: 'Ex: New York, Los Angeles, Chicago, Miami, Houston...',
+      BE: 'Ex: Bruxelles, Liège, Anvers, Gand...',
+      CH: 'Ex: Genève, Lausanne, Zurich, Bâle...',
+      LU: 'Ex: Luxembourg, Esch-sur-Alzette...'
+    };
+    villeInput.placeholder = placeholders[pays] || 'Entrez le nom de la ville...';
+  }
+
+  onSessionVilleChange();
+}
+
 function renderSessionHistory() {
   const container = document.getElementById('session-history-list');
   if (!container) return;
@@ -4153,7 +4210,7 @@ function renderSessionHistory() {
         <tr style="color:#64748b;text-align:left;border-bottom:1px solid #334155">
           <th style="padding:6px 10px">Heure / Date</th>
           <th style="padding:6px 10px">Nom de la session</th>
-          <th style="padding:6px 10px">Ville (Proxy)</th>
+          <th style="padding:6px 10px">Pays / Ville (Proxy)</th>
           <th style="padding:6px 10px">Navigateur</th>
           <th style="padding:6px 10px">Statut</th>
         </tr>
@@ -4164,11 +4221,15 @@ function renderSessionHistory() {
   for (const item of history) {
     const isGl = item.engine?.toLowerCase().includes('gologin');
     const badgeColor = isGl ? '#3b82f6' : '#f59e0b';
+    const countryCfg = getCountryConfig(item.pays || 'FR', item.ville);
     html += `
       <tr style="border-bottom:1px solid #1e293b">
         <td style="padding:8px 10px;color:#94a3b8;font-size:12px;white-space:nowrap">${item.date || '—'}</td>
         <td style="padding:8px 10px;font-weight:600;color:#f1f5f9">${item.name}</td>
-        <td style="padding:8px 10px;color:#38bdf8">${item.ville}</td>
+        <td style="padding:8px 10px;color:#38bdf8">
+          <span style="margin-right:4px">${countryCfg.flag || '📍'}</span>${item.ville}
+          <span style="font-size:11px;color:#64748b;margin-left:4px">(${countryCfg.countryName})</span>
+        </td>
         <td style="padding:8px 10px">
           <span style="background:${badgeColor}22;color:${badgeColor};border:1px solid ${badgeColor}44;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600">
             ${item.engine}
@@ -4206,6 +4267,7 @@ function onSessionVilleChange() {
 }
 
 async function creerSessionNavigateur() {
+  const paysSelect = document.getElementById('session-pays');
   const villeInput = document.getElementById('session-ville');
   const nameInput = document.getElementById('session-name');
   const engineInput = document.getElementById('session-engine');
@@ -4213,15 +4275,17 @@ async function creerSessionNavigateur() {
   const feedback = document.getElementById('session-feedback');
   const btn = document.getElementById('btn-creer-session');
 
+  const pays = (paysSelect?.value || localStorage.getItem('gmb_session_pays') || 'FR').toUpperCase();
   const ville = (villeInput?.value || '').trim();
   if (!ville) {
-    alert("Veuillez renseigner une ville (ex: Cannes, Lyon, Rouen, Bordeaux...).");
+    alert("Veuillez renseigner une ville.");
     villeInput?.focus();
     return;
   }
 
   const engine = engineInput?.value || localStorage.getItem('antidetect_engine') || 'gologin';
   const op = opSelect?.value || localStorage.getItem('gmb_operateur') || 'Kevin';
+  const countryCfg = getCountryConfig(pays, ville);
 
   // Calcul du nom de session
   const villeClean = ville.charAt(0).toUpperCase() + ville.slice(1);
@@ -4243,22 +4307,23 @@ async function creerSessionNavigateur() {
     feedback.style.background = 'rgba(59, 130, 246, 0.1)';
     feedback.style.border = '1px solid #3b82f6';
     feedback.style.color = '#93c5fd';
-    feedback.innerHTML = `⏳ Création de la session <strong>"${sessionName}"</strong> avec proxy géolocalisé à <strong>${villeClean}</strong> dans <strong>${engine === 'donut' ? 'Donut Browser' : 'GoLogin'}</strong>...`;
+    feedback.innerHTML = `⏳ Création de la session <strong>"${sessionName}"</strong> (${countryCfg.flag} ${countryCfg.countryName}) avec proxy géolocalisé à <strong>${villeClean}</strong> dans <strong>${engine === 'donut' ? 'Donut Browser' : 'GoLogin'}</strong>...`;
   }
 
   try {
     let result = null;
     if (engine === 'donut') {
-      result = await donutCreerProfil(ville, 'session@antidetect.local', sessionName, 'FR', op, sessionName);
+      result = await donutCreerProfil(ville, 'session@antidetect.local', sessionName, pays, op, sessionName);
     } else {
       // GoLogin par défaut
-      result = await gologinCreerProfil(ville, 'session@antidetect.local', sessionName, 'FR', op, sessionName);
+      result = await gologinCreerProfil(ville, 'session@antidetect.local', sessionName, pays, op, sessionName);
     }
 
     if (result) {
       saveSessionToHistory({
         name: sessionName,
         ville: villeClean,
+        pays: pays,
         engine: engine === 'donut' ? 'Donut Browser' : 'GoLogin',
         date: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       });
@@ -4270,8 +4335,9 @@ async function creerSessionNavigateur() {
         feedback.innerHTML = `
           <div style="font-size:15px;font-weight:700;margin-bottom:6px">✅ Session créée avec succès !</div>
           <div><strong>Nom :</strong> ${sessionName}</div>
-          <div><strong>Ville proxy :</strong> ${villeClean} (France)</div>
+          <div><strong>Ville & Pays :</strong> ${countryCfg.flag} ${villeClean} (${countryCfg.countryName})</div>
           <div><strong>Navigateur :</strong> ${engine === 'donut' ? 'Donut Browser' : 'GoLogin'}</div>
+          <div><strong>Timezone :</strong> ${countryCfg.timezone} | <strong>Langue :</strong> ${countryCfg.lang}</div>
           <div style="margin-top:8px;font-size:12px;opacity:0.9">
             ${engine === 'donut' 
               ? '▶️ Ouvrez Donut Browser et lancez le profil créé.' 
@@ -4279,7 +4345,7 @@ async function creerSessionNavigateur() {
           </div>
         `;
       }
-      showToast(`✅ Session "${sessionName}" (${villeClean}) créée !`, 'success', 5000);
+      showToast(`✅ Session "${sessionName}" (${countryCfg.flag} ${villeClean}) créée !`, 'success', 5000);
       renderSessionHistory();
       if (nameInput) nameInput.value = '';
     } else {
@@ -4308,6 +4374,13 @@ async function creerSessionNavigateur() {
 function initSessionTab() {
   const currentEngine = localStorage.getItem('antidetect_engine') || 'gologin';
   selectSessionEngine(currentEngine === 'donut' ? 'donut' : 'gologin');
+
+  const paysSelect = document.getElementById('session-pays');
+  if (paysSelect) {
+    const savedPays = localStorage.getItem('gmb_session_pays') || 'FR';
+    paysSelect.value = savedPays;
+  }
+  onSessionPaysChange();
 
   const opSelect = document.getElementById('session-operateur-select');
   if (opSelect) {
@@ -4493,16 +4566,34 @@ function getDecodoCitySlug(ville, pays = 'FR') {
   const slug = normalizeCityForProxy(ville);
 
   if (p === 'BE') {
-    const mapBE = { 'bruxelles': 'bruxelles', 'brussels': 'bruxelles', 'anvers': 'anvers', 'antwerpen': 'anvers', 'liege': 'liege', 'gand': 'gand', 'gent': 'gand', 'charleroi': 'charleroi', 'namur': 'namur', 'mons': 'mons' };
-    return mapBE[slug] || 'bruxelles';
+    const mapBE = { 'bruxelles': 'bruxelles', 'brussels': 'bruxelles', 'anvers': 'anvers', 'antwerpen': 'anvers', 'liege': 'liege', 'gand': 'gand', 'gent': 'gand', 'charleroi': 'charleroi', 'namur': 'namur', 'mons': 'mons', 'bruges': 'bruges', 'louvain': 'louvain' };
+    return mapBE[slug] || slug || 'bruxelles';
   }
   if (p === 'CA') {
-    const mapCA = { 'montreal': 'montreal', 'toronto': 'toronto', 'vancouver': 'vancouver', 'quebec': 'quebec', 'ottawa': 'ottawa' };
-    return mapCA[slug] || 'montreal';
+    const mapCA = {
+      'montreal': 'montreal', 'toronto': 'toronto', 'vancouver': 'vancouver', 'quebec': 'quebec', 'ottawa': 'ottawa',
+      'calgary': 'calgary', 'edmonton': 'edmonton', 'winnipeg': 'winnipeg', 'halifax': 'halifax', 'victoria': 'victoria',
+      'laval': 'laval', 'gatineau': 'gatineau', 'longueuil': 'longueuil', 'sherbrooke': 'sherbrooke', 'levis': 'quebec',
+      'trois_rivieres': 'trois_rivieres', 'saguenay': 'saguenay'
+    };
+    return mapCA[slug] || slug || 'montreal';
   }
   if (p === 'US') {
-    const mapUS = { 'new_york': 'new_york', 'los_angeles': 'los_angeles', 'chicago': 'chicago', 'miami': 'miami', 'houston': 'houston' };
-    return mapUS[slug] || 'new_york';
+    const mapUS = {
+      'new_york': 'new_york', 'newyork': 'new_york', 'nyc': 'new_york',
+      'los_angeles': 'los_angeles', 'losangeles': 'los_angeles', 'la': 'los_angeles',
+      'chicago': 'chicago', 'miami': 'miami', 'houston': 'houston',
+      'san_francisco': 'san_francisco', 'sanfrancisco': 'san_francisco', 'sf': 'san_francisco',
+      'seattle': 'seattle', 'las_vegas': 'las_vegas', 'lasvegas': 'las_vegas',
+      'atlanta': 'atlanta', 'boston': 'boston', 'phoenix': 'phoenix', 'denver': 'denver',
+      'orlando': 'orlando', 'dallas': 'dallas', 'austin': 'austin', 'san_diego': 'san_diego',
+      'philadelphia': 'philadelphia', 'san_antonio': 'san_antonio', 'washington': 'washington'
+    };
+    return mapUS[slug] || slug || 'new_york';
+  }
+  if (p === 'CH') {
+    const mapCH = { 'geneve': 'geneva', 'geneva': 'geneva', 'zurich': 'zurich', 'lausanne': 'lausanne', 'bale': 'basel', 'basel': 'basel', 'berne': 'bern', 'bern': 'bern' };
+    return mapCH[slug] || slug || 'geneva';
   }
   if (p === 'LU') {
     return 'luxembourg';
@@ -4557,22 +4648,34 @@ function resolveGologinUrl(path = '/browser') {
   return `${proxyBase.replace(/\/$/, '')}/gologin${path}`;
 }
 
-function getCountryConfig(paysRaw = 'FR') {
+function getCountryConfig(paysRaw = 'FR', ville = '') {
   const p = (paysRaw || 'FR').toUpperCase().trim();
+  const v = (ville || '').toLowerCase().trim();
   switch (p) {
     case 'BE':
-      return { pays: 'BE', lang: 'fr-BE', languages: 'fr-BE,fr,nl-BE,nl,en-US', timezone: 'Europe/Brussels', countryName: 'Belgium' };
+      return { pays: 'BE', flag: '🇧🇪', lang: 'fr-BE', languages: 'fr-BE,fr,nl-BE,nl,en-US', timezone: 'Europe/Brussels', countryName: 'Belgique' };
     case 'LU':
-      return { pays: 'LU', lang: 'fr-LU', languages: 'fr-LU,fr,de-LU,de,en-US', timezone: 'Europe/Luxembourg', countryName: 'Luxembourg' };
+      return { pays: 'LU', flag: '🇱🇺', lang: 'fr-LU', languages: 'fr-LU,fr,de-LU,de,en-US', timezone: 'Europe/Luxembourg', countryName: 'Luxembourg' };
     case 'CH':
-      return { pays: 'CH', lang: 'fr-CH', languages: 'fr-CH,fr,de-CH,de,en-US', timezone: 'Europe/Zurich', countryName: 'Switzerland' };
-    case 'CA':
-      return { pays: 'CA', lang: 'fr-CA', languages: 'fr-CA,fr,en-CA,en-US', timezone: 'America/Montreal', countryName: 'Canada' };
-    case 'US':
-      return { pays: 'US', lang: 'en-US', languages: 'en-US,en', timezone: 'America/New_York', countryName: 'United States' };
+      return { pays: 'CH', flag: '🇨🇭', lang: 'fr-CH', languages: 'fr-CH,fr,de-CH,de,en-US', timezone: 'Europe/Zurich', countryName: 'Suisse' };
+    case 'CA': {
+      let tz = 'America/Montreal';
+      if (/vancouver|victoria|british columbia|cb|bc/i.test(v)) tz = 'America/Vancouver';
+      else if (/calgary|edmonton|alberta/i.test(v)) tz = 'America/Edmonton';
+      else if (/winnipeg|manitoba/i.test(v)) tz = 'America/Winnipeg';
+      else if (/halifax|nova scotia|nouvelle-ecosse/i.test(v)) tz = 'America/Halifax';
+      return { pays: 'CA', flag: '🇨🇦', lang: 'fr-CA', languages: 'fr-CA,fr,en-CA,en-US', timezone: tz, countryName: 'Canada' };
+    }
+    case 'US': {
+      let tz = 'America/New_York';
+      if (/los_angeles|los angeles|san_francisco|san francisco|seattle|san_diego|san diego|california|las_vegas|las vegas/i.test(v)) tz = 'America/Los_Angeles';
+      else if (/chicago|houston|dallas|austin|texas|illinois/i.test(v)) tz = 'America/Chicago';
+      else if (/denver|phoenix|colorado|arizona/i.test(v)) tz = 'America/Denver';
+      return { pays: 'US', flag: '🇺🇸', lang: 'en-US', languages: 'en-US,en', timezone: tz, countryName: 'États-Unis' };
+    }
     case 'FR':
     default:
-      return { pays: 'FR', lang: 'fr-FR', languages: 'fr-FR,fr,en-US', timezone: 'Europe/Paris', countryName: 'France' };
+      return { pays: 'FR', flag: '🇫🇷', lang: 'fr-FR', languages: 'fr-FR,fr,en-US', timezone: 'Europe/Paris', countryName: 'France' };
   }
 }
 
