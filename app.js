@@ -6992,6 +6992,49 @@ function buildVitrinePrompt(params = {}) {
     ? `utiliser fidèlement le logo fourni en référence (${window._vitrineLogoData.name || 'image attachée'}). Conserver sa forme générale, son identité visuelle et ses couleurs. Ne pas inventer un autre logo sauf demande explicite.`
     : `utiliser fidèlement le logo fourni en référence. Conserver sa forme générale, son identité visuelle et ses couleurs. Ne pas inventer un autre logo sauf demande explicite.`;
 
+  // Environnement : si une capture Street View est fournie, prioriser la reproduction de la vraie rue
+  let environnementSection = '';
+  if (window._vitrineStreetViewData) {
+    environnementSection = `ENVIRONNEMENT :
+
+RÉFÉRENCE VISUELLE DE LA FAÇADE (GOOGLE STREET VIEW FOURNIE EN PIÈCE JOINTE) :
+* Une photographie réelle de la façade et de la rue issue de Google Maps Street View pour cette adresse (${adresseComplete}) est fournie en référence visuelle.
+* CONSIGNES CRUCIALES DE REPRODUCTION DE LA RUE RÉELLE :
+  - Reproduire fidèlement l'architecture réelle du bâtiment visible sur l'image Street View : les matériaux exacts de la façade (pierre de taille, briques, enduit ou crépi spécifique avec sa patine d'âge), la teinte exacte des murs, le style et la couleur des volets et des fenêtres, les corniches, le nombre d'étages et la devanture au rez-de-chaussée.
+  - Conserver fidèlement l'environnement direct et la perspective de la rue observés sur la vue Street View (largeur du trottoir, typologie de la voirie, bâtiments adjacents réels).
+  - Fixer l'enseigne drapeau avec sa potence métallique noire de façon physiquement plausible sur la façade de ce véritable bâtiment.
+  - La photo générée doit donner l'impression indiscutable d'avoir été prise devant cette véritable adresse physique dans la rue réelle.`;
+  } else {
+    environnementSection = `ENVIRONNEMENT :
+
+Créer un environnement français naturel correspondant à ${villeSimple}.
+
+La façade et le quartier doivent être plausibles pour la ville, mais éviter de transformer chaque image en carte postale touristique.
+
+IMPORTANT : varier réellement l’environnement entre chaque nouvelle génération.
+
+Choisir aléatoirement un contexte crédible parmi :
+* ${contexte}
+
+Ajouter naturellement certains éléments secondaires :
+${elements} selon la scène.
+
+Ces éléments doivent rester secondaires et imparfaits comme dans une vraie photographie.
+
+ÉVITER :
+* cathédrale ou église systématiquement en arrière-plan
+* monument touristique systématique
+* vue spectaculaire de la ville à chaque image
+* décor trop propre
+* rue artificiellement vide
+* architecture générique répétée d’une génération à l’autre
+Un monument identifiable peut exceptionnellement apparaître très loin dans certaines images, mais pas systématiquement.`;
+  }
+
+  const styleFinalStr = window._vitrineStreetViewData
+    ? `photorealistic documentary street photography, faithful architectural reproduction of real-world Google Street View building, natural French urban environment, real-world materials, subtle imperfections, natural colors, realistic exposure, soft photographic detail, authentic small French business signage, physically plausible mounting, realistic depth of field, no CGI look, no advertising mockup look, no excessive HDR, no oversharpening, no excessive saturation.`
+    : `photorealistic documentary street photography, natural French urban environment, real-world materials, subtle imperfections, natural colors, realistic exposure, soft photographic detail, authentic small French business signage, physically plausible mounting, realistic depth of field, no CGI look, no advertising mockup look, no excessive HDR, no oversharpening, no excessive saturation.`;
+
   return `Génère une photographie ultra-réaliste d’une enseigne professionnelle extérieure installée en France pour une entreprise locale.
 
 IMPORTANT : il doit s’agir d’une vraie scène de rue crédible, photographiée naturellement, et NON d’un mockup publicitaire, d’un rendu 3D, d’une illustration ou d’une image trop parfaite.
@@ -7062,30 +7105,7 @@ Aucun texte flottant.
 Aucun néon.
 Aucun effet lumineux artificiel.
 
-ENVIRONNEMENT :
-
-Créer un environnement français naturel correspondant à ${villeSimple}.
-
-La façade et le quartier doivent être plausibles pour la ville, mais éviter de transformer chaque image en carte postale touristique.
-
-IMPORTANT : varier réellement l’environnement entre chaque nouvelle génération.
-
-Choisir aléatoirement un contexte crédible parmi :
-* ${contexte}
-
-Ajouter naturellement certains éléments secondaires :
-${elements} selon la scène.
-
-Ces éléments doivent rester secondaires et imparfaits comme dans une vraie photographie.
-
-ÉVITER :
-* cathédrale ou église systématiquement en arrière-plan
-* monument touristique systématique
-* vue spectaculaire de la ville à chaque image
-* décor trop propre
-* rue artificiellement vide
-* architecture générique répétée d’une génération à l’autre
-Un monument identifiable peut exceptionnellement apparaître très loin dans certaines images, mais pas systématiquement.
+${environnementSection}
 
 PHOTOGRAPHIE :
 
@@ -7127,21 +7147,7 @@ Très légère imperfection photographique possible :
 
 STYLE FINAL :
 
-photorealistic documentary street photography,
-natural French urban environment,
-real-world materials,
-subtle imperfections,
-natural colors,
-realistic exposure,
-soft photographic detail,
-authentic small French business signage,
-physically plausible mounting,
-realistic depth of field,
-no CGI look,
-no advertising mockup look,
-no excessive HDR,
-no oversharpening,
-no excessive saturation.
+${styleFinalStr}
 
 NEGATIVE / À ÉVITER ABSOLUMENT :
 
@@ -7343,3 +7349,128 @@ function initVitrineTab() {
   onVitrineAdresseInput();
 }
 
+function ouvrirStreetViewAdresse() {
+  const adr = (document.getElementById('vitrine-adresse')?.value || '').trim();
+  if (!adr) {
+    showToast("Veuillez d'abord saisir une adresse dans le champ ci-dessus.", "warning", 3000);
+    document.getElementById('vitrine-adresse')?.focus();
+    return;
+  }
+  const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adr)}`;
+  window.open(url, '_blank');
+}
+
+function handleVitrineStreetViewFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    showToast("Le fichier doit être une image.", "warning", 3000);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    window._vitrineStreetViewData = {
+      name: file.name || 'capture_street_view.png',
+      dataUrl: e.target.result,
+      blob: file
+    };
+
+    const previewBox = document.getElementById('vitrine-streetview-preview-box');
+    const previewImg = document.getElementById('vitrine-streetview-preview');
+    const filenameEl = document.getElementById('vitrine-streetview-filename');
+
+    if (previewImg) previewImg.src = e.target.result;
+    if (previewBox) previewBox.style.display = 'flex';
+    if (filenameEl) filenameEl.textContent = `${file.name || 'Capture'} (${Math.round(file.size / 1024)} Ko) — Intégrée pour la reproduction architecturale`;
+
+    onVitrineInputsChange();
+    showToast("✅ Façade Street View chargée ! L'environnement reproduira fidèlement l'immeuble réel.", "success", 4500);
+  };
+  reader.readAsDataURL(file);
+}
+
+function onVitrineStreetViewFileChange(event) {
+  const file = event.target.files?.[0];
+  if (file) handleVitrineStreetViewFile(file);
+}
+
+function onVitrineStreetViewDrop(event) {
+  event.preventDefault();
+  const dropzone = document.getElementById('vitrine-streetview-dropzone');
+  if (dropzone) dropzone.style.borderColor = '#334155';
+
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    handleVitrineStreetViewFile(files[0]);
+  }
+}
+
+function removeVitrineStreetView(event) {
+  if (event) event.stopPropagation();
+  window._vitrineStreetViewData = null;
+  const fileInput = document.getElementById('vitrine-streetview-file');
+  if (fileInput) fileInput.value = '';
+  const previewBox = document.getElementById('vitrine-streetview-preview-box');
+  if (previewBox) previewBox.style.display = 'none';
+  onVitrineInputsChange();
+  showToast("Façade Street View retirée.", "info", 2500);
+}
+
+function copierImageStreetView(event) {
+  if (event) event.stopPropagation();
+  if (!window._vitrineStreetViewData || !window._vitrineStreetViewData.dataUrl) {
+    showToast("Aucune image Street View à copier.", "warning", 3000);
+    return;
+  }
+  if (navigator.clipboard && window.ClipboardItem && window._vitrineStreetViewData.blob) {
+    try {
+      const item = new ClipboardItem({ [window._vitrineStreetViewData.blob.type || 'image/png']: window._vitrineStreetViewData.blob });
+      navigator.clipboard.write([item]).then(() => {
+        showToast("📋 Image Street View copiée dans le presse-papier ! Vous pouvez la coller dans ChatGPT.", "success", 4000);
+      }).catch(err => {
+        console.warn("ClipboardItem write failed, fallback", err);
+        showToast("Image prête ! Glissez-déposez-la ou collez votre capture dans ChatGPT.", "info", 4000);
+      });
+      return;
+    } catch (e) {
+      console.warn("ClipboardItem error", e);
+    }
+  }
+  showToast("Image prête ! Vous pouvez également la glisser-déposer directement dans ChatGPT.", "info", 4000);
+}
+
+// Écouteur global pour coller la capture Street View avec Cmd+V / Ctrl+V quand on est sur l'onglet Vitrine
+window.addEventListener('paste', (event) => {
+  const tabVitrine = document.getElementById('tab-vitrine');
+  if (!tabVitrine || tabVitrine.classList.contains('hidden')) return;
+
+  const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+  if (activeTag === 'input' || activeTag === 'textarea') {
+    const items = event.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const blob = items[i].getAsFile();
+          if (blob) {
+            event.preventDefault();
+            handleVitrineStreetViewFile(blob);
+            return;
+          }
+        }
+      }
+    }
+    return;
+  }
+
+  const items = event.clipboardData?.items;
+  if (!items) return;
+
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      const blob = items[i].getAsFile();
+      if (blob) {
+        event.preventDefault();
+        handleVitrineStreetViewFile(blob);
+        break;
+      }
+    }
+  }
+});

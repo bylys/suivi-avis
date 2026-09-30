@@ -521,6 +521,58 @@
         </div>
       </div>
 
+      <!-- 📸 Visuel Street View de la vraie rue (Google Maps) -->
+      <div style="background:#0f172a;border:1.5px solid #2563eb;border-radius:12px;padding:16px 20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <label style="display:block;font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:2px;">
+              🌐 Visuel réel de la rue (Google Maps Street View)
+            </label>
+            <p style="margin:0;font-size:12px;color:#94a3b8;">
+              Intégrez la vraie façade du bâtiment pour que l'IA reproduise l'architecture exacte de la rue.
+            </p>
+          </div>
+          <button type="button" class="btn-secondary" onclick="ouvrirStreetViewAdresse()"
+            style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;border-color:#3b82f6;color:#93c5fd;background:rgba(59,130,246,0.1);">
+            🔍 Ouvrir Street View à cette adresse ↗
+          </button>
+        </div>
+
+        <div id="vitrine-streetview-dropzone"
+          style="border:2px dashed #334155;border-radius:8px;padding:14px;text-align:center;background:#1e293b;cursor:pointer;transition:all 0.2s"
+          onclick="document.getElementById('vitrine-streetview-file').click()"
+          ondragover="event.preventDefault();this.style.borderColor='#3b82f6'"
+          ondragleave="this.style.borderColor='#334155'"
+          ondrop="onVitrineStreetViewDrop(event)">
+          <input type="file" id="vitrine-streetview-file" accept="image/*" onchange="onVitrineStreetViewFileChange(event)" style="display:none;" />
+          <div style="font-size:13px;color:#cbd5e1;font-weight:600;">
+            📸 Déposer ou coller la capture Street View de la façade (ou <kbd style="background:#334155;padding:2px 6px;border-radius:4px;font-size:11px;color:#f1f5f9">Cmd+V / Ctrl+V</kbd>)
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px;">
+            Faites une capture de l'immeuble sur Google Maps puis collez-la directement ici.
+          </div>
+        </div>
+
+        <!-- Aperçu de la capture Street View chargée -->
+        <div id="vitrine-streetview-preview-box" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;background:rgba(59,130,246,0.08);border:1px solid #3b82f644;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img id="vitrine-streetview-preview" src="" alt="Façade Street View" style="max-height:64px;max-width:110px;border-radius:6px;border:1px solid #475569;object-fit:cover;" />
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#93c5fd;">✅ Façade réelle Street View chargée</div>
+              <div style="font-size:11px;color:#94a3b8;" id="vitrine-streetview-filename">Image prête pour la reproduction architecturale</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" onclick="copierImageStreetView(event)" class="btn-secondary" style="font-size:12px;padding:4px 10px;color:#60a5fa;border-color:#3b82f644;">
+              📋 Copier l'image
+            </button>
+            <button type="button" onclick="removeVitrineStreetView(event)" class="btn-secondary" style="font-size:12px;padding:4px 10px;color:#f87171;border-color:#ef444444;">
+              Retirer
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Logo & Référence visuelle -->
       <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
         <label style="display:block;font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">
