@@ -554,10 +554,41 @@
               Intégrez la vraie façade du bâtiment pour que l'IA reproduise l'architecture exacte de la rue.
             </p>
           </div>
-          <button type="button" class="btn-secondary" onclick="ouvrirStreetViewAdresse()"
-            style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;border-color:#3b82f6;color:#93c5fd;background:rgba(59,130,246,0.1);">
-            🔍 Ouvrir Street View à cette adresse ↗
-          </button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" id="btn-auto-streetview" class="btn-primary" onclick="recupererStreetViewAutomatique()"
+              style="font-size:12px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, #2563eb, #3b82f6);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(37,99,235,0.3);">
+              ⚡ Récupérer automatiquement
+            </button>
+            <button type="button" class="btn-secondary" onclick="ouvrirStreetViewAdresse()"
+              style="font-size:12px;padding:6px 12px;display:inline-flex;align-items:center;gap:6px;border-color:#3b82f6;color:#93c5fd;background:rgba(59,130,246,0.1);">
+              🔍 Ouvrir Street View ↗
+            </button>
+            <button type="button" class="btn-secondary" onclick="toggleGoogleMapsKeyInput()" title="Configurer la clé API Google Maps"
+              style="font-size:12px;padding:6px 10px;border-color:#334155;color:#94a3b8;">
+              ⚙️ Clé API
+            </button>
+          </div>
+        </div>
+
+        <!-- Champ de configuration de la clé API Google Maps (dépliable) -->
+        <div id="box-gmaps-api-key" style="display:none;margin-bottom:12px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+            <label style="font-size:12px;font-weight:600;color:#cbd5e1;">
+              🔑 Clé API Google Maps (Street View Static API) :
+            </label>
+            <span style="font-size:11px;color:#10b981;font-weight:600;">Gratuit (jusqu'à 28 000 requêtes/mois)</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="password" id="gmaps-api-key-input" placeholder="AIzaSy..."
+              style="flex:1;padding:7px 10px;border-radius:6px;border:1px solid #475569;background:#0f172a;color:#f1f5f9;font-size:13px;"
+              oninput="sauvegarderCleGoogleMaps(this.value)" />
+            <button type="button" onclick="sauvegarderCleGoogleMaps()" class="btn-secondary" style="font-size:12px;padding:7px 12px;color:#60a5fa;">
+              Enregistrer
+            </button>
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:6px;">
+            Collez votre clé API Google Cloud avec la <strong>Street View Static API</strong> activée.
+          </div>
         </div>
 
         <div id="vitrine-streetview-dropzone"

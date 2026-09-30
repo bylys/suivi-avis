@@ -7742,6 +7742,11 @@ function initVitrineTab() {
   }
 
   onVitrineAdresseInput();
+
+  const keyInput = document.getElementById('gmaps-api-key-input');
+  if (keyInput && !keyInput.value) {
+    keyInput.value = getGoogleMapsApiKey();
+  }
 }
 
 function ouvrirStreetViewAdresse() {
@@ -7869,3 +7874,124 @@ window.addEventListener('paste', (event) => {
     }
   }
 });
+
+// ── GOOGLE MAPS STREET VIEW STATIC API ──
+
+function toggleGoogleMapsKeyInput() {
+  const box = document.getElementById('box-gmaps-api-key');
+  if (!box) return;
+  const isHidden = box.style.display === 'none';
+  box.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) {
+    const input = document.getElementById('gmaps-api-key-input');
+    if (input) {
+      input.value = getGoogleMapsApiKey();
+      input.focus();
+    }
+  }
+}
+
+function getGoogleMapsApiKey() {
+  return localStorage.getItem('google_maps_api_key') ||
+         window._APP_CONFIG?.google_maps_key ||
+         window._APP_CONFIG?.gmaps_api_key ||
+         document.getElementById('gmaps-api-key-input')?.value ||
+         '';
+}
+
+function sauvegarderCleGoogleMaps(val) {
+  const key = (val !== undefined ? val : (document.getElementById('gmaps-api-key-input')?.value || '')).trim();
+  if (key) {
+    localStorage.setItem('google_maps_api_key', key);
+    showToast("✅ Clé API Google Maps enregistrée !", "success", 3000);
+  } else {
+    localStorage.removeItem('google_maps_api_key');
+    showToast("Clé API Google Maps effacée.", "info", 2500);
+  }
+}
+
+async function recupererStreetViewAutomatique() {
+  const adr = (document.getElementById('vitrine-adresse')?.value || '').trim();
+  if (!adr) {
+    showToast("Veuillez d'abord saisir une adresse dans le champ ci-dessus.", "warning", 3000);
+    document.getElementById('vitrine-adresse')?.focus();
+    return;
+  }
+
+  const apiKey = getGoogleMapsApiKey().trim();
+  if (!apiKey) {
+    const box = document.getElementById('box-gmaps-api-key');
+    if (box) box.style.display = 'block';
+    const input = document.getElementById('gmaps-api-key-input');
+    if (input) input.focus();
+    showToast("Veuillez renseigner votre clé API Google Maps (Street View).", "warning", 4500);
+    return;
+  }
+
+  const btn = document.getElementById('btn-auto-streetview');
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `⏳ Récupération...`;
+  }
+
+  try {
+    // 1. Vérification metadata (gratuit, permet de s'assurer que Street View est disponible)
+    const metaUrl = `https://maps.googleapis.com/maps/api/streetview/metadata?location=${encodeURIComponent(adr)}&key=${encodeURIComponent(apiKey)}`;
+    const metaRes = await fetch(metaUrl);
+    const metaData = await metaRes.json();
+
+    if (metaData.status === 'ZERO_RESULTS' || metaData.status === 'NOT_FOUND') {
+      showToast("⚠️ Aucune vue Street View disponible exactement pour cette adresse. Utilisez 'Ouvrir Street View' pour cadrer manuellement.", "warning", 5000);
+      return;
+    }
+    if (metaData.status === 'REQUEST_DENIED') {
+      showToast(`❌ Clé refusée : ${metaData.error_message || "Activez 'Street View Static API' dans Google Cloud."}`, "error", 6000);
+      const box = document.getElementById('box-gmaps-api-key');
+      if (box) box.style.display = 'block';
+      return;
+    }
+
+    // 2. Image Street View (800x600, champ naturel fov=80, légère élévation pitch=5)
+    const imgUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${encodeURIComponent(adr)}&fov=80&pitch=5&key=${encodeURIComponent(apiKey)}&return_error_code=true`;
+
+    const imgRes = await fetch(imgUrl);
+    if (!imgRes.ok) {
+      throw new Error(`HTTP ${imgRes.status}`);
+    }
+    const blob = await imgRes.blob();
+    const file = new File([blob], `streetview_${encodeURIComponent(adr.slice(0, 20))}.jpg`, { type: 'image/jpeg' });
+    handleVitrineStreetViewFile(file);
+    showToast("✅ Façade Street View récupérée avec succès !", "success", 4000);
+
+  } catch (err) {
+    console.warn("Fetch direct Street View en fallback :", err);
+    try {
+      const imgUrl = `https://maps.googleapis.com/maps/api/streetview?size=800x600&location=${encodeURIComponent(adr)}&fov=80&pitch=5&key=${encodeURIComponent(apiKey)}`;
+      const previewBox = document.getElementById('vitrine-streetview-preview-box');
+      const previewImg = document.getElementById('vitrine-streetview-preview');
+      const filenameEl = document.getElementById('vitrine-streetview-filename');
+
+      if (previewImg) previewImg.src = imgUrl;
+      if (previewBox) previewBox.style.display = 'flex';
+      if (filenameEl) filenameEl.textContent = `Façade Street View récupérée via Google Maps`;
+
+      window._vitrineStreetViewData = {
+        name: 'streetview_api.jpg',
+        dataUrl: imgUrl,
+        blob: null
+      };
+
+      onVitrineInputsChange();
+      showToast("✅ Façade Street View chargée via Google Maps !", "success", 4000);
+    } catch (e2) {
+      showToast("Impossible de récupérer l'image : vérifiez votre connexion ou votre clé.", "error", 4000);
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
