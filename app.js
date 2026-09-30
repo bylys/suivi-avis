@@ -5599,6 +5599,55 @@ async function deleteGmail(id) {
   renderGmails();
 }
 
+async function exporterGmailsCSV() {
+  try {
+    const [gmails, avis, statuses] = await Promise.all([
+      getGmails(),
+      sbGet('avis', 'select=auteur,date&order=date.desc'),
+      getGmailStatuses()
+    ]);
+
+    const lastUse = {};
+    const avisCount = {};
+    avis.forEach(a => {
+      const aut = (a.auteur || '').toLowerCase().trim();
+      if (aut) {
+        avisCount[aut] = (avisCount[aut] || 0) + 1;
+        if (!lastUse[aut] && a.date) lastUse[aut] = a.date;
+      }
+    });
+
+    const headers = ['Email', 'Ville', 'Statut', 'Local Guide', 'Opérateur', 'Dernière utilisation', 'Nombre avis', 'ID Supabase'];
+    const rows = [headers.join(';')];
+
+    gmails.forEach(g => {
+      const em = (g.email || '').trim().replace(/"/g, '""');
+      const emKey = em.toLowerCase();
+      const ville = (g.ville || '').trim().replace(/"/g, '""');
+      const st = (statuses[emKey] || 'Fonctionnel').replace(/"/g, '""');
+      const lg = g.local_guide ? 'Oui' : 'Non';
+      const op = (g.operateur || '').trim().replace(/"/g, '""');
+      const lUse = lastUse[emKey] || '';
+      const nAvis = avisCount[emKey] || 0;
+      const gid = g.id || '';
+      rows.push([`"${em}"`, `"${ville}"`, `"${st}"`, `"${lg}"`, `"${op}"`, `"${lUse}"`, nAvis, `"${gid}"`].join(';'));
+    });
+
+    const csvContent = '\uFEFF' + rows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `gmails_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Erreur lors de l\'export CSV : ' + e.message);
+  }
+}
+
 // ── GMB MAP PANEL ──
 function normalizeStr(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
