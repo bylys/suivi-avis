@@ -295,8 +295,10 @@ function showTab(name, skipUrlUpdate = false) {
   if (name === 'vitrine') initVitrineTab();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
-  if (name === 'generateur') populateGenFiche();
-  if (name === 'gmails') renderGmails();
+  if (name === 'gmails') {
+    renderGmails();
+    initCarteGmbTab();
+  }
 }
 
 window.addEventListener('popstate', () => {
@@ -5616,14 +5618,26 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-// Base de pré-cache des principales villes de France pour résolution instantanée sans réseau (0ms)
-const _MAJOR_FRENCH_CITIES = {
+// Base de pré-cache des principales villes de France et Internationales pour résolution instantanée sans réseau (0ms)
+const _GLOBAL_CITIES_COORDS = {
+  // France - Métropoles & Régions
   'paris': { lat: 48.8566, lon: 2.3522 },
   'marseille': { lat: 43.2965, lon: 5.3698 },
   'lyon': { lat: 45.7640, lon: 4.8357 },
   'toulouse': { lat: 43.6047, lon: 1.4442 },
   'nice': { lat: 43.7102, lon: 7.2620 },
+  'cannes': { lat: 43.5528, lon: 7.0174 },
+  'antibes': { lat: 43.5804, lon: 7.1251 },
+  'grasse': { lat: 43.6608, lon: 6.9242 },
+  'menton': { lat: 43.7745, lon: 7.4975 },
+  'mougins': { lat: 43.6011, lon: 6.9961 },
+  'vallauris': { lat: 43.5801, lon: 7.0534 },
   'nantes': { lat: 47.2184, lon: -1.5536 },
+  'reze': { lat: 47.1919, lon: -1.5714 },
+  'rezé': { lat: 47.1919, lon: -1.5714 },
+  'vertou': { lat: 47.1686, lon: -1.4725 },
+  'saint-herblain': { lat: 47.2117, lon: -1.6508 },
+  'saint herblain': { lat: 47.2117, lon: -1.6508 },
   'montpellier': { lat: 43.6108, lon: 3.8767 },
   'strasbourg': { lat: 48.5734, lon: 7.7521 },
   'bordeaux': { lat: 44.8378, lon: -0.5792 },
@@ -5633,6 +5647,7 @@ const _MAJOR_FRENCH_CITIES = {
   'toulon': { lat: 43.1242, lon: 5.9280 },
   'saint-etienne': { lat: 45.4397, lon: 4.3872 },
   'le havre': { lat: 49.4944, lon: 0.1079 },
+  'rouen': { lat: 49.4431, lon: 1.0993 },
   'grenoble': { lat: 45.1885, lon: 5.7245 },
   'dijon': { lat: 47.3220, lon: 5.0415 },
   'angers': { lat: 47.4784, lon: -0.5632 },
@@ -5653,44 +5668,106 @@ const _MAJOR_FRENCH_CITIES = {
   'orleans': { lat: 47.9030, lon: 1.9090 },
   'saint-denis': { lat: 48.9362, lon: 2.3574 },
   'argenteuil': { lat: 48.9479, lon: 2.2467 },
-  'rouen': { lat: 49.4431, lon: 1.0993 },
   'mulhouse': { lat: 47.7508, lon: 7.3359 },
   'caen': { lat: 49.1829, lon: -0.3707 },
   'nancy': { lat: 48.6921, lon: 6.1844 },
-  'saint-paul': { lat: -21.0096, lon: 55.2707 },
-  'montreuil': { lat: 48.8638, lon: 2.4484 },
-  'roubaix': { lat: 50.6901, lon: 3.1817 },
-  'tourcoing': { lat: 50.7239, lon: 3.1612 },
-  'nanterre': { lat: 48.8924, lon: 2.2071 },
-  'avignon': { lat: 43.9493, lon: 4.8055 },
-  'vitry-sur-seine': { lat: 48.7875, lon: 2.3927 },
-  'crteil': { lat: 48.7904, lon: 2.4556 },
+  'quimper': { lat: 47.9960, lon: -4.1031 },
+  'cherbourg': { lat: 49.6337, lon: -1.6221 },
+  'valence': { lat: 44.9333, lon: 4.8917 },
+  'montauban': { lat: 44.0175, lon: 1.3547 },
+  'millau': { lat: 44.0988, lon: 3.0784 },
+  'castelsarrasin': { lat: 44.0381, lon: 1.1075 },
+  'colmar': { lat: 48.0794, lon: 7.3582 },
+  'belfort': { lat: 47.6397, lon: 6.8638 },
+  'gex': { lat: 46.3333, lon: 6.0667 },
+  'la rochelle': { lat: 46.1603, lon: -1.1511 },
+  'pau': { lat: 43.2951, lon: -0.3708 },
   'dunkerque': { lat: 51.0343, lon: 2.3768 },
   'poitiers': { lat: 46.5802, lon: 0.3404 },
-  'asnières-sur-seine': { lat: 48.9107, lon: 2.2891 },
   'versailles': { lat: 48.8049, lon: 2.1343 },
   'courbevoie': { lat: 48.8967, lon: 2.2567 },
   'colombes': { lat: 48.9231, lon: 2.2522 },
-  'aubervilliers': { lat: 48.9131, lon: 2.3831 },
-  'aulnay-sous-bois': { lat: 48.9386, lon: 2.4967 },
-  'la rochelle': { lat: 46.1603, lon: -1.1511 },
-  'rueil-malmaison': { lat: 48.8778, lon: 2.1802 },
-  'champigny-sur-marne': { lat: 48.8167, lon: 2.5167 },
-  'pau': { lat: 43.2951, lon: -0.3708 },
   'aubagne': { lat: 43.2925, lon: 5.5708 },
   'merignac': { lat: 44.8386, lon: -0.6436 },
-  'pessac': { lat: 44.8067, lon: -0.6311 },
-  'talence': { lat: 44.8083, lon: -0.5906 },
+
+  // Canada 🇨🇦
+  'montreal': { lat: 45.5017, lon: -73.5673 },
+  'montréal': { lat: 45.5017, lon: -73.5673 },
+  'quebec': { lat: 46.8139, lon: -71.2080 },
+  'québec': { lat: 46.8139, lon: -71.2080 },
+  'laval': { lat: 45.6066, lon: -73.7124 },
+  'gatineau': { lat: 45.4765, lon: -75.7013 },
+  'longueuil': { lat: 45.5312, lon: -73.5181 },
+  'sherbrooke': { lat: 45.4042, lon: -71.8929 },
+  'trois-rivieres': { lat: 46.3432, lon: -72.5477 },
+  'trois-rivières': { lat: 46.3432, lon: -72.5477 },
+  'toronto': { lat: 43.6532, lon: -79.3832 },
+  'ottawa': { lat: 45.4215, lon: -75.6972 },
+  'vancouver': { lat: 49.2827, lon: -123.1207 },
+  'calgary': { lat: 51.0447, lon: -114.0719 },
+  'edmonton': { lat: 53.5461, lon: -113.4938 },
+  'winnipeg': { lat: 49.8951, lon: -97.1384 },
+  'halifax': { lat: 44.6488, lon: -63.5752 },
+
+  // États-Unis 🇺🇸
+  'new york': { lat: 40.7128, lon: -74.0060 },
+  'miami': { lat: 25.7617, lon: -80.1918 },
+  'los angeles': { lat: 34.0522, lon: -118.2437 },
+  'chicago': { lat: 41.8781, lon: -87.6298 },
+  'houston': { lat: 29.7604, lon: -95.3698 },
+  'san francisco': { lat: 37.7749, lon: -122.4194 },
+  'seattle': { lat: 47.6062, lon: -122.3321 },
+  'atlanta': { lat: 33.7490, lon: -84.3880 },
+  'boston': { lat: 42.3601, lon: -71.0589 },
+  'dallas': { lat: 32.7767, lon: -96.7970 },
+  'las vegas': { lat: 36.1699, lon: -115.1398 },
+  'orlando': { lat: 28.5383, lon: -81.3792 },
+
+  // Belgique 🇧🇪
+  'bruxelles': { lat: 50.8503, lon: 4.3517 },
+  'brussels': { lat: 50.8503, lon: 4.3517 },
+  'liege': { lat: 50.6326, lon: 5.5797 },
+  'liège': { lat: 50.6326, lon: 5.5797 },
+  'anvers': { lat: 51.2194, lon: 4.4025 },
+  'antwerpen': { lat: 51.2194, lon: 4.4025 },
+  'gand': { lat: 51.0543, lon: 3.7174 },
+  'gent': { lat: 51.0543, lon: 3.7174 },
+  'charleroi': { lat: 50.4108, lon: 4.4446 },
+  'namur': { lat: 50.4674, lon: 4.8720 },
+  'mons': { lat: 50.4542, lon: 3.9567 },
+  'bruges': { lat: 51.2093, lon: 3.2247 },
+
+  // Suisse 🇨🇭
+  'geneve': { lat: 46.2044, lon: 6.1432 },
+  'genève': { lat: 46.2044, lon: 6.1432 },
+  'lausanne': { lat: 46.5197, lon: 6.6323 },
+  'zurich': { lat: 47.3769, lon: 8.5417 },
+  'zürich': { lat: 47.3769, lon: 8.5417 },
+  'bale': { lat: 47.5596, lon: 7.5886 },
+  'bâle': { lat: 47.5596, lon: 7.5886 },
+  'basel': { lat: 47.5596, lon: 7.5886 },
+  'berne': { lat: 46.9480, lon: 7.4474 },
+  'bern': { lat: 46.9480, lon: 7.4474 },
+  'fribourg': { lat: 46.8065, lon: 7.1620 },
+  'neuchatel': { lat: 46.9930, lon: 6.9315 },
+  'sion': { lat: 46.2331, lon: 7.3606 },
+  'lugano': { lat: 46.0037, lon: 8.9511 },
+
+  // Luxembourg 🇱🇺
+  'luxembourg': { lat: 49.6116, lon: 6.1319 },
+  'esch-sur-alzette': { lat: 49.4958, lon: 5.9806 },
+  'differdange': { lat: 49.5242, lon: 5.8908 },
+  'dudelange': { lat: 49.4800, lon: 6.0842 }
 };
+
+// Maintien rétro-compatibilité
+const _MAJOR_FRENCH_CITIES = _GLOBAL_CITIES_COORDS;
 
 function cleanCityQuery(raw) {
   if (!raw) return '';
   let s = String(raw).trim();
-  // Retirer les préfixes de métiers courants
-  s = s.replace(/^(élagage|elagage|abattage|couvreur|toiture|plomberie|maçonnerie|maconnerie|peinture|carrelage|vitrier|débarras|debarras|paysagiste|terrassement|dépannage|depannage)\s*(?:&|-|et)?\s*/i, '');
-  // Retirer les numéros de département en fin de chaîne (ex: "Bordeaux 33", "Fontenay 94")
+  s = s.replace(/^(élagage|elagage|abattage|taille de haie|couvreur|toiture|reparation toiture|renovation toiture|nettoyage toiture|nettoyage|plomberie|maçonnerie|maconnerie|peinture|carrelage|vitrier|débarras|debarras|paysagiste|terrassement|dépannage|depannage|étanchéité|etancheite|carreleur|peintre)\s*(?:&|-|et)?\s*/i, '');
   s = s.replace(/\s+\d{2,5}$/, '');
-  // Nettoyer les tirets et espaces superflus
   s = s.replace(/^[-–—\s]+|[-–—\s]+$/g, '').trim();
   return s;
 }
@@ -5702,14 +5779,14 @@ async function geocodeVille(villeRaw) {
   const cacheKey = villeClean.toLowerCase();
   if (_geoCache[cacheKey]) return _geoCache[cacheKey];
 
-  // 1. Vérification dans le pré-cache des grandes villes françaises (0ms)
+  // 1. Vérification dans le pré-cache mondial (0ms, sans requête réseau)
   const normKey = normalizeStr(villeClean);
-  if (_MAJOR_FRENCH_CITIES[normKey]) {
-    _geoCache[cacheKey] = _MAJOR_FRENCH_CITIES[normKey];
-    return _MAJOR_FRENCH_CITIES[normKey];
+  if (_GLOBAL_CITIES_COORDS[normKey]) {
+    _geoCache[cacheKey] = _GLOBAL_CITIES_COORDS[normKey];
+    return _GLOBAL_CITIES_COORDS[normKey];
   }
 
-  // 2. Tentative via l'API officielle française (API Adresse Gouv - Sans Rate Limit, Ultra Rapide)
+  // 2. Si c'est une commune française, tentative via l'API officielle française
   try {
     const rGouv = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(villeClean)}&type=municipality&limit=1`);
     if (rGouv.ok) {
@@ -5722,16 +5799,16 @@ async function geocodeVille(villeRaw) {
       }
     }
   } catch (eGouv) {
-    console.warn('[geocode Gouv] échec pour', villeClean, eGouv);
+    // Continue vers Nominatim pour les villes internationales
   }
 
-  // 3. Fallback OpenStreetMap Nominatim
+  // 3. OpenStreetMap Nominatim mondial (supporte Canada, USA, Belgique, Suisse, etc.)
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 1000));
+      if (attempt > 0) await new Promise(r => setTimeout(r, 800));
       const r = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(villeClean + ', France')}&format=json&limit=1`,
-        { headers: { 'Accept-Language': 'fr', 'User-Agent': 'GmbTracker/2.0' } }
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(villeClean)}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'fr,en', 'User-Agent': 'GmbTracker/2.0' } }
       );
       if (!r.ok) continue;
       const data = await r.json();
@@ -5938,6 +6015,319 @@ function closeGmbMap() {
   document.getElementById('gmb-map-panel').classList.remove('open');
   document.getElementById('gmb-map-overlay').classList.remove('open');
   if (_leafletMap) { _leafletMap.remove(); _leafletMap = null; }
+}
+
+// ── CARTE GMB INTERACTIVE (RAYON 50 KM) ──
+
+let _interactiveGmbMap = null;
+let _interactiveGmbCircle = null;
+let _interactiveGmbMarkers = [];
+let _interactiveGmbFiches = [];
+
+const _GMB_TRADE_STOPWORDS = new Set([
+  'elagage', 'élagage', 'abattage', 'taille', 'haie', 'couvreur', 'toiture',
+  'reparation', 'renovation', 'rénovation', 'nettoyage', 'plomberie', 'maçonnerie',
+  'maconnerie', 'peinture', 'carrelage', 'vitrier', 'debarras', 'débarras', 'paysagiste',
+  'terrassement', 'depannage', 'dépannage', 'etancheite', 'étanchéité', 'carreleur',
+  'peintre', 'terrasse', 'façade', 'facade', 'demoussage', 'démoussage', 'vrd',
+  'assainissement', 'arboriste', 'elagueur', 'élagueur', 'grimpeur', 'toit', 'plat',
+  'pose', 'installation', 'menuiserie', 'charpente', 'charpentier', 'zinguerie',
+  'artisan', 'services', 'service', 'travaux', 'batiment', 'bâtiment', 'amenagement',
+  'aménagement', 'jardinage', 'emondage', 'émondeur', 'emondeur', 'mr', 'expert',
+  'pro', 'entreprise', 'societe', 'société', 'de', 'du', 'des', 'la', 'le', 'les', 'd'
+]);
+
+function extractCityFromFicheName(nom = '') {
+  if (!nom) return '';
+  const parts = nom.split(/\s*[-–—]\s*/);
+  const mainPart = parts[0];
+
+  const tokens = mainPart.split(/[\s,&]+/).filter(w => w && !/^\d+$/.test(w));
+  const nonTrades = tokens.filter(w => !_GMB_TRADE_STOPWORDS.has(w.toLowerCase()) && w.length > 1);
+
+  if (nonTrades.length > 0) {
+    return nonTrades.join(' ');
+  }
+
+  if (parts.length > 1) {
+    const subTokens = parts[1].split(/[\s,]+/).filter(w => w && !/^\d+$/.test(w));
+    const subClean = subTokens.filter(w => !_GMB_TRADE_STOPWORDS.has(w.toLowerCase()) && w.length > 1);
+    if (subClean.length > 0) return subClean.join(' ');
+  }
+
+  return cleanCityQuery(nom);
+}
+
+function initCarteGmbTab() {
+  const mapContainer = document.getElementById('carte-gmb-map');
+  if (!mapContainer) return;
+
+  if (!_interactiveGmbMap && typeof L !== 'undefined') {
+    _interactiveGmbMap = L.map(mapContainer, { zoomControl: true }).setView([46.603354, 1.888334], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(_interactiveGmbMap);
+  }
+
+  setTimeout(() => {
+    if (_interactiveGmbMap) _interactiveGmbMap.invalidateSize();
+  }, 200);
+
+  const input = document.getElementById('carte-gmb-ville-input');
+  if (input && !input.value) {
+    input.value = 'Cannes';
+    lancerRechercheCarteGmb();
+  }
+}
+
+function chercherVilleRapide(ville) {
+  const input = document.getElementById('carte-gmb-ville-input');
+  if (input) input.value = ville;
+  lancerRechercheCarteGmb();
+}
+
+async function lancerRechercheCarteGmb() {
+  const villeInput = (document.getElementById('carte-gmb-ville-input')?.value || '').trim();
+  if (!villeInput) {
+    showToast("Veuillez saisir le nom d'une ville.", "warning", 3000);
+    document.getElementById('carte-gmb-ville-input')?.focus();
+    return;
+  }
+
+  const radiusKm = parseInt(document.getElementById('carte-gmb-radius-select')?.value || '50', 10);
+  const overlay = document.getElementById('carte-gmb-map-overlay-loading');
+  const loadingText = document.getElementById('carte-gmb-map-loading-text');
+  const countBadge = document.getElementById('carte-gmb-count');
+  const countPill = document.getElementById('carte-gmb-status-pill');
+  const sidebarCount = document.getElementById('carte-gmb-sidebar-count');
+
+  if (overlay) overlay.style.display = 'flex';
+  if (loadingText) loadingText.textContent = `Localisation de « ${villeInput} »...`;
+
+  try {
+    const centerGeo = await geocodeVille(villeInput);
+    if (!centerGeo) {
+      showToast(`Impossible de localiser « ${villeInput} ». Vérifiez l'orthographe.`, "error", 4000);
+      if (overlay) overlay.style.display = 'none';
+      return;
+    }
+
+    if (loadingText) loadingText.textContent = `Calcul des fiches GMB dans un rayon de ${radiusKm} km...`;
+
+    if (!_interactiveGmbMap && typeof L !== 'undefined') {
+      const mapContainer = document.getElementById('carte-gmb-map');
+      if (mapContainer) {
+        _interactiveGmbMap = L.map(mapContainer, { zoomControl: true }).setView([centerGeo.lat, centerGeo.lon], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors',
+          maxZoom: 19
+        }).addTo(_interactiveGmbMap);
+      }
+    }
+
+    if (_interactiveGmbMap) {
+      _interactiveGmbMap.invalidateSize();
+      _interactiveGmbMarkers.forEach(m => m.remove());
+      _interactiveGmbMarkers = [];
+      if (_interactiveGmbCircle) {
+        _interactiveGmbCircle.remove();
+        _interactiveGmbCircle = null;
+      }
+    }
+
+    const fiches = await getFiches();
+    const villeNorm = normalizeStr(villeInput);
+    const results = [];
+
+    for (const f of fiches) {
+      if (!f || !f.nom) continue;
+      const fNorm = normalizeStr(f.nom);
+
+      if (fNorm.includes(villeNorm)) {
+        results.push({
+          ...f,
+          _dist: 0,
+          _isExact: true,
+          _lat: centerGeo.lat,
+          _lon: centerGeo.lon
+        });
+        continue;
+      }
+
+      const extCity = extractCityFromFicheName(f.nom);
+      const fGeo = await geocodeVille(extCity);
+      if (!fGeo) continue;
+
+      const dist = haversineKm(centerGeo.lat, centerGeo.lon, fGeo.lat, fGeo.lon);
+      if (dist <= radiusKm) {
+        results.push({
+          ...f,
+          _dist: Math.round(dist),
+          _isExact: false,
+          _lat: fGeo.lat,
+          _lon: fGeo.lon
+        });
+      }
+    }
+
+    results.sort((a, b) => a._dist - b._dist);
+    _interactiveGmbFiches = results;
+
+    if (_interactiveGmbMap && typeof L !== 'undefined') {
+      _interactiveGmbMap.setView([centerGeo.lat, centerGeo.lon], 10);
+
+      _interactiveGmbCircle = L.circle([centerGeo.lat, centerGeo.lon], {
+        radius: radiusKm * 1000,
+        color: '#3b82f6',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.08,
+        weight: 2,
+        dashArray: '6 6'
+      }).addTo(_interactiveGmbMap);
+
+      const centerCityIcon = L.divIcon({
+        className: '',
+        html: `<div style="background:#6366f1;width:22px;height:22px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 16px #6366f1;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">📍</div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+      const centerMarker = L.marker([centerGeo.lat, centerGeo.lon], { icon: centerCityIcon })
+        .addTo(_interactiveGmbMap)
+        .bindPopup(`<b>📍 ${villeInput}</b><br><span style="font-size:12px;color:#64748b;">Centre de recherche (Rayon : ${radiusKm} km)</span>`);
+      _interactiveGmbMarkers.push(centerMarker);
+
+      const exactIcon = L.divIcon({
+        className: '',
+        html: `<div style="background:#10b981;width:18px;height:18px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px #10b981;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;">✓</div>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+
+      const nearbyIcon = L.divIcon({
+        className: '',
+        html: `<div style="background:#2563eb;width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px #2563eb;"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+
+      results.forEach((f, idx) => {
+        const marker = L.marker([f._lat, f._lon], { icon: f._isExact ? exactIcon : nearbyIcon })
+          .addTo(_interactiveGmbMap)
+          .bindPopup(`
+            <div style="font-family:sans-serif;min-width:210px;">
+              <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px;">🏢 ${_escHtml(f.nom)}</div>
+              <div style="font-size:12px;color:#2563eb;font-weight:600;margin-bottom:8px;">
+                📍 ${f._isExact ? '🟢 Même ville (0 km)' : '🔵 ~' + f._dist + ' km'}
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${f.lien ? `<a href="${f.lien}" target="_blank" rel="noopener" style="font-size:11px;color:#fff;background:#2563eb;padding:4px 9px;border-radius:4px;text-decoration:none;font-weight:600;">Ouvrir Maps ↗</a>` : ''}
+                <button onclick="copierTexteFiche('${_escHtml(f.nom).replace(/'/g, "\\'")}')" style="font-size:11px;background:#e2e8f0;color:#1e293b;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;">Copier nom</button>
+              </div>
+            </div>
+          `);
+        f._marker = marker;
+        _interactiveGmbMarkers.push(marker);
+      });
+
+      if (results.length > 0) {
+        _interactiveGmbMap.fitBounds(_interactiveGmbCircle.getBounds().pad(0.06));
+      } else {
+        _interactiveGmbMap.setView([centerGeo.lat, centerGeo.lon], 10);
+      }
+    }
+
+    renderCarteGmbSidebarList(results);
+
+    if (countBadge) countBadge.textContent = results.length;
+    if (countPill) countPill.style.display = 'flex';
+    if (sidebarCount) sidebarCount.textContent = `${results.length} fiche${results.length > 1 ? 's' : ''}`;
+
+    showToast(`✅ ${results.length} fiche${results.length > 1 ? 's' : ''} trouvée${results.length > 1 ? 's' : ''} dans les ${radiusKm} km autour de ${villeInput}`, "success", 4000);
+
+  } catch (err) {
+    console.error("Erreur lors de la recherche carte GMB :", err);
+    showToast("Une erreur est survenue lors de la recherche.", "error", 4000);
+  } finally {
+    if (overlay) overlay.style.display = 'none';
+  }
+}
+
+function renderCarteGmbSidebarList(fiches) {
+  const container = document.getElementById('carte-gmb-list');
+  if (!container) return;
+
+  if (!fiches || fiches.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:50px 16px;color:#64748b;font-size:13px;">
+        🔍 Aucune fiche GMB trouvée dans ce rayon.<br>
+        <span style="font-size:12px;margin-top:6px;display:inline-block;color:#94a3b8;">Essayez d'augmenter le rayon à 75 km ou 100 km.</span>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  fiches.forEach((f, idx) => {
+    const isExact = f._dist === 0;
+    const badgeColor = isExact ? '#10b981' : '#3b82f6';
+    const badgeBg = isExact ? 'rgba(16,185,129,0.12)' : 'rgba(59,130,246,0.12)';
+    const distText = isExact ? '📍 Même ville (0 km)' : `~${f._dist} km`;
+
+    html += `
+      <div class="carte-gmb-item" onclick="centrerFicheSurCarte(${idx})"
+        style="padding:12px 14px;background:#1e293b;border:1px solid #334155;border-radius:8px;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;gap:6px;"
+        onmouseenter="this.style.borderColor='${badgeColor}';this.style.background='${badgeBg}';"
+        onmouseleave="this.style.borderColor='#334155';this.style.background='#1e293b';">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="font-size:13px;font-weight:700;color:#f1f5f9;line-height:1.35;">
+            🏢 ${_escHtml(f.nom)}
+          </div>
+          <span style="background:${badgeBg};color:${badgeColor};border:1px solid ${badgeColor}44;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">
+            ${distText}
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;">
+          ${f.lien ? `<a href="${f.lien}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:11px;color:#60a5fa;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">Voir sur Google Maps ↗</a>` : '<span style="font-size:11px;color:#64748b;">(Pas de lien Maps)</span>'}
+          <button type="button" onclick="event.stopPropagation();centrerFicheSurCarte(${idx})"
+            style="background:none;border:none;color:#94a3b8;font-size:11px;cursor:pointer;padding:2px 6px;text-decoration:underline;">
+            🎯 Centrer
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function centrerFicheSurCarte(idx) {
+  const f = _interactiveGmbFiches[idx];
+  if (!f || !_interactiveGmbMap) return;
+
+  _interactiveGmbMap.flyTo([f._lat, f._lon], 13, { duration: 1 });
+  if (f._marker) {
+    f._marker.openPopup();
+  }
+}
+
+function filtrerResultatsLocaux() {
+  const query = (document.getElementById('carte-gmb-filter-local')?.value || '').toLowerCase().trim();
+  if (!query) {
+    renderCarteGmbSidebarList(_interactiveGmbFiches);
+    return;
+  }
+  const filtered = _interactiveGmbFiches.filter(f => normalizeStr(f.nom).includes(query));
+  renderCarteGmbSidebarList(filtered);
+}
+
+function copierTexteFiche(nom) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(nom);
+  } else {
+    fallbackCopyText(nom);
+  }
+  showToast("Nom de la fiche copié !", "success", 2000);
 }
 
 // ── GÉNÉRATEUR D'IMAGES BULK ──

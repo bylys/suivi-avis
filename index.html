@@ -57,7 +57,7 @@
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
       <button class="tab-btn" onclick="showTab('fiches')">Gérer les fiches</button>
-      <button class="tab-btn" onclick="showTab('gmails')">📧 GMails</button>
+      <button class="tab-btn" onclick="showTab('gmails')">🗺️ Carte GMB (50 km)</button>
       <button class="tab-btn" onclick="toggleNotes()">📝 Notes</button>
     </nav>
   </header>
@@ -319,66 +319,137 @@
     </div>
   </section>
 
-  <!-- GMAILS -->
+  <!-- CARTE GMB (50 KM) & BASE GMAILS -->
   <section id="tab-gmails" class="tab-content hidden">
-    <h2>📧 Liste des GMails</h2>
-    <form id="form-gmail" onsubmit="addGmail(event)" style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;align-items:center;">
-      <input type="email" id="gmail-email" placeholder="exemple@gmail.com" required style="flex:2;min-width:180px;width:auto;display:inline-block;" />
-      <input type="text" id="gmail-ville" placeholder="Ville (optionnel)" style="flex:1;min-width:120px;width:auto;display:inline-block;" />
-      <select id="gmail-statut" style="padding:8px 10px;border-radius:6px;background:#1e293b;color:#f1f5f9;border:1px solid #334155;font-size:0.88rem;outline:none;">
-        <option value="Fonctionnel">🟢 Fonctionnel</option>
-        <option value="Chauffe en cours">🔥 Chauffe en cours</option>
-        <option value="Transféré pour les GMB's">📤 Transféré pour les GMB's</option>
-        <option value="Indisponible">⛔ Indisponible</option>
-      </select>
-      <label class="checkbox-label" style="margin:0;white-space:nowrap;flex-shrink:0;">
-        <input type="checkbox" id="gmail-local-guide" />
-        ⭐ Local Guide
-      </label>
-      <button type="submit" class="btn-primary" style="white-space:nowrap;flex-shrink:0;">+ Ajouter</button>
-    </form>
-    <div class="gmail-toolbar">
-      <div class="gmail-search-wrap">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="gmail-filter-ville" placeholder="Rechercher par email ou ville..." oninput="renderGmails()" />
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="margin:0 0 4px 0;display:flex;align-items:center;gap:10px;font-size:1.35rem">
+          🗺️ Carte interactive des GMB — Rayon 50 km
+        </h2>
+        <p style="margin:0;font-size:13px;color:#94a3b8">
+          Recherchez une ville (France, Canada, USA, Belgique, Suisse, Luxembourg...) pour localiser toutes vos fiches GMB dans un rayon de 50 km.
+        </p>
       </div>
-      <div class="gmail-toolbar-sep"></div>
-      <div class="gmail-sort-wrap">
-        <select id="gmail-filter-statut" onchange="renderGmails()">
-          <option value="">Tous les statuts</option>
-          <option value="Fonctionnel">🟢 Fonctionnel</option>
-          <option value="Chauffe en cours">🔥 Chauffe en cours</option>
-          <option value="Transféré pour les GMB's">📤 Transféré pour les GMB's</option>
-          <option value="Indisponible">⛔ Indisponible</option>
-        </select>
-        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-      <div class="gmail-toolbar-sep"></div>
-      <div class="gmail-sort-wrap">
-        <select id="gmail-filter-operateur" onchange="renderGmails()">
-          <option value="">Tous les opérateurs</option>
-          <option value="Kevin">Kevin</option>
-          <option value="Fifaliana">Fifaliana</option>
-          <option value="Aina">Aina</option>
-          <option value="Kintana">Kintana</option>
-          <option value="Korail">Korail</option>
-          <option value="Anjara">Anjara</option>
-          <option value="__none__">Sans opérateur</option>
-        </select>
-        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-      </div>
-      <div class="gmail-toolbar-sep"></div>
-      <div class="gmail-sort-wrap">
-        <select id="gmail-filter-sort" onchange="renderGmails()">
-          <option value="az">A → Z</option>
-          <option value="recent">Récemment utilisés</option>
-          <option value="ancien">Anciennement utilisés</option>
-          <option value="ville">Ville A → Z</option>
-        </select>
-        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      <div id="carte-gmb-status-pill" style="display:none;background:#1e293b;border:1px solid #334155;border-radius:99px;padding:5px 14px;font-size:12px;color:#94a3b8;align-items:center;gap:6px;">
+        <span>📍</span>
+        <span id="carte-gmb-count" style="font-weight:700;color:#60a5fa;">0</span> fiches trouvées
       </div>
     </div>
-    <div id="gmails-list"></div>
+
+    <!-- Barre de recherche interactive & sélecteur de rayon -->
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:16px 20px;margin-bottom:16px;">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <div style="flex:1;min-width:260px;position:relative;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;">📍</span>
+          <input type="text" id="carte-gmb-ville-input" placeholder="Entrez une ville (ex : Cannes, Rouen, Montréal, Miami, Bruxelles, Genève...)"
+            style="width:100%;padding:11px 14px 11px 38px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();lancerRechercheCarteGmb();}" />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="font-size:12px;color:#94a3b8;font-weight:600;">Rayon :</label>
+          <select id="carte-gmb-radius-select" onchange="lancerRechercheCarteGmb()"
+            style="padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px;cursor:pointer;">
+            <option value="25">25 km</option>
+            <option value="50" selected>50 km (standard)</option>
+            <option value="75">75 km</option>
+            <option value="100">100 km</option>
+            <option value="150">150 km</option>
+          </select>
+        </div>
+        <button type="button" id="btn-carte-gmb-search" onclick="lancerRechercheCarteGmb()" class="btn-primary"
+          style="padding:11px 22px;background:linear-gradient(135deg, #2563eb, #7c3aed);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 3px 12px rgba(37,99,235,0.3);">
+          🔍 Rechercher
+        </button>
+      </div>
+
+      <!-- Suggestions rapides de villes (pills) -->
+      <div style="display:flex;align-items:center;gap:6px;margin-top:12px;flex-wrap:wrap;">
+        <span style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;">Villes fréquentes :</span>
+        <button type="button" onclick="chercherVilleRapide('Cannes')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Cannes</button>
+        <button type="button" onclick="chercherVilleRapide('Lyon')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Lyon</button>
+        <button type="button" onclick="chercherVilleRapide('Rouen')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Rouen</button>
+        <button type="button" onclick="chercherVilleRapide('Bordeaux')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Bordeaux</button>
+        <button type="button" onclick="chercherVilleRapide('Paris')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Paris</button>
+        <button type="button" onclick="chercherVilleRapide('Toulouse')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Toulouse</button>
+        <button type="button" onclick="chercherVilleRapide('Nantes')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Nantes</button>
+        <button type="button" onclick="chercherVilleRapide('Strasbourg')" class="btn-secondary" style="font-size:11px;padding:3px 8px;">Strasbourg</button>
+        <span style="font-size:11px;color:#475569;margin:0 4px;">|</span>
+        <button type="button" onclick="chercherVilleRapide('Montréal')" class="btn-secondary" style="font-size:11px;padding:3px 8px;border-color:#3b82f644;color:#93c5fd;">🇨🇦 Montréal</button>
+        <button type="button" onclick="chercherVilleRapide('Bruxelles')" class="btn-secondary" style="font-size:11px;padding:3px 8px;border-color:#3b82f644;color:#93c5fd;">🇧🇪 Bruxelles</button>
+        <button type="button" onclick="chercherVilleRapide('Genève')" class="btn-secondary" style="font-size:11px;padding:3px 8px;border-color:#3b82f644;color:#93c5fd;">🇨🇭 Genève</button>
+        <button type="button" onclick="chercherVilleRapide('New York')" class="btn-secondary" style="font-size:11px;padding:3px 8px;border-color:#3b82f644;color:#93c5fd;">🇺🇸 New York</button>
+      </div>
+    </div>
+
+    <!-- Double panneau : Liste des fiches (gauche) + Carte interactive Leaflet (droite) -->
+    <div style="display:grid;grid-template-columns:minmax(320px, 380px) 1fr;gap:16px;min-height:600px;align-items:stretch;">
+      <!-- Colonne gauche : liste des fiches -->
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:14px 16px;border-bottom:1px solid #334155;background:#1e293b;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:13px;font-weight:700;color:#f1f5f9;">📋 Fiches à proximité</span>
+            <span id="carte-gmb-sidebar-count" style="font-size:11px;background:#334155;padding:2px 8px;border-radius:99px;color:#cbd5e1;font-weight:600;">0 fiche</span>
+          </div>
+          <input type="text" id="carte-gmb-filter-local" placeholder="Filtrer la liste..." oninput="filtrerResultatsLocaux()"
+            style="padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;width:120px;" />
+        </div>
+        <div id="carte-gmb-list" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;max-height:620px;">
+          <div style="text-align:center;padding:50px 16px;color:#64748b;font-size:13px;">
+            📍 Saisissez une ville ci-dessus pour afficher toutes les fiches GMB dans un rayon de 50 km.
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite : Carte Leaflet -->
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;overflow:hidden;position:relative;display:flex;flex-direction:column;">
+        <div id="carte-gmb-map" style="flex:1;width:100%;height:100%;min-height:580px;background:#0b1120;"></div>
+        <div id="carte-gmb-map-overlay-loading" style="display:none;position:absolute;inset:0;background:rgba(15,23,42,0.75);backdrop-filter:blur(3px);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:10px;">
+          <div class="spinner" style="width:36px;height:36px;border:3px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+          <span id="carte-gmb-map-loading-text" style="color:#f1f5f9;font-size:13px;font-weight:600;">Recherche des fiches GMB dans le rayon...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sauvegarde / Accès aux GMails Supabase préservé en accordéon -->
+    <details style="margin-top:20px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 16px;">
+      <summary style="cursor:pointer;font-size:13px;color:#94a3b8;font-weight:600;user-select:none;">
+        📁 Base de données GMails Supabase (Données conservées en sécurité)
+      </summary>
+      <div style="margin-top:14px;">
+        <form id="form-gmail" onsubmit="addGmail(event)" style="display:flex;flex-direction:row;gap:10px;flex-wrap:wrap;margin-bottom:1.2rem;align-items:center;">
+          <input type="email" id="gmail-email" placeholder="exemple@gmail.com" style="flex:2;min-width:180px;padding:8px 12px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px;" />
+          <input type="text" id="gmail-ville" placeholder="Ville (optionnel)" style="flex:1;min-width:120px;padding:8px 12px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:13px;" />
+          <select id="gmail-statut" style="padding:8px 10px;border-radius:6px;background:#1e293b;color:#f1f5f9;border:1px solid #334155;font-size:13px;">
+            <option value="Fonctionnel">🟢 Fonctionnel</option>
+            <option value="Chauffe en cours">🔥 Chauffe en cours</option>
+            <option value="Transféré pour les GMB's">📤 Transféré pour les GMB's</option>
+            <option value="Indisponible">⛔ Indisponible</option>
+          </select>
+          <label class="checkbox-label" style="margin:0;white-space:nowrap;flex-shrink:0;">
+            <input type="checkbox" id="gmail-local-guide" />
+            ⭐ Local Guide
+          </label>
+          <button type="submit" class="btn-primary" style="padding:8px 16px;font-size:13px;">+ Ajouter Gmail</button>
+        </form>
+        <div class="gmail-toolbar">
+          <div class="gmail-search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="gmail-filter-ville" placeholder="Rechercher par email ou ville..." oninput="renderGmails()" />
+          </div>
+          <div class="gmail-toolbar-sep"></div>
+          <div class="gmail-sort-wrap">
+            <select id="gmail-filter-statut" onchange="renderGmails()">
+              <option value="">Tous les statuts</option>
+              <option value="Fonctionnel">🟢 Fonctionnel</option>
+              <option value="Chauffe en cours">🔥 Chauffe en cours</option>
+              <option value="Transféré pour les GMB's">📤 Transféré pour les GMB's</option>
+              <option value="Indisponible">⛔ Indisponible</option>
+            </select>
+          </div>
+        </div>
+        <div id="gmails-list"></div>
+      </div>
+    </details>
   </section>
 
   <!-- GÉNÉRER UNE IMAGE -->
