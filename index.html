@@ -52,6 +52,7 @@
       <button class="tab-btn active" onclick="showTab('dashboard')">Dashboard</button>
       <button class="tab-btn" onclick="showTab('session')">🌐 Session Navigateur</button>
       <button class="tab-btn" onclick="showTab('images')">🎨 Générer une image</button>
+      <button class="tab-btn" onclick="showTab('vitrine')">🏪 Vitrine GMB</button>
       <button class="tab-btn" onclick="showTab('generateur')">Générateur d'avis</button>
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
@@ -458,6 +459,185 @@
         <textarea id="img-gen-prompt-preview" readonly rows="10" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#cbd5e1;padding:12px;font-size:0.85rem;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;resize:vertical;line-height:1.5;outline:none;" placeholder="Remplissez les champs ci-dessus pour prévisualiser le prompt en temps réel..."></textarea>
         <div style="margin-top:8px;font-size:0.78rem;color:#64748b;display:flex;align-items:center;gap:6px;">
           <span>💡</span> Le prompt intègre automatiquement 100% des règles : sécurité du métier, proportion des équipements (perche, échafaudage, escabeau), architecture locale et rendu smartphone amateur.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GÉNÉRATION VITRINE GMB -->
+  <section id="tab-vitrine" class="tab-content hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="margin:0 0 4px 0;display:flex;align-items:center;gap:10px;font-size:1.35rem">
+          🏪 Génération de vitrine & enseigne GMB
+        </h2>
+        <p style="margin:0;font-size:13px;color:#94a3b8">
+          Générez une photographie ultra-réaliste d'une véritable enseigne drapeau extérieure avec le logo et les coordonnées de l'entreprise locale.
+        </p>
+      </div>
+    </div>
+
+    <div class="gen-form" style="max-width:780px;">
+      <!-- Sélection rapide de la fiche GMB -->
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+        <label style="display:block;font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">
+          🏢 Remplir depuis une fiche GMB existante (Optionnel) :
+        </label>
+        <input type="text" id="vitrine-fiche" list="datalist-form-fiche" placeholder="Rechercher une fiche GMB..." autocomplete="off"
+          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+          oninput="onVitrineFicheSelected()" onchange="onVitrineFicheSelected()" />
+      </div>
+
+      <!-- Informations de l'entreprise -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
+            🏷️ Nom / Activité de l'entreprise *
+          </label>
+          <input type="text" id="vitrine-nom" placeholder="Ex : Élagage Méditerranée" autocomplete="off"
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            oninput="onVitrineInputsChange()" />
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
+            📞 Téléphone *
+          </label>
+          <input type="text" id="vitrine-tel" placeholder="Ex : 04 93 45 67 89" autocomplete="off"
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            oninput="onVitrineInputsChange()" />
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
+            📍 Ville / Département *
+          </label>
+          <input type="text" id="vitrine-ville-dep" placeholder="Ex : Cannes 06 (ou Rouen 76...)" autocomplete="off"
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            oninput="onVitrineInputsChange()" />
+        </div>
+
+        <div>
+          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
+            📫 Adresse complète *
+          </label>
+          <input type="text" id="vitrine-adresse" placeholder="Ex : 14 rue des Artisans" autocomplete="off"
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            oninput="onVitrineInputsChange()" />
+        </div>
+      </div>
+
+      <!-- Logo & Référence visuelle -->
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+        <label style="display:block;font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">
+          🖼️ Logo fourni en référence
+        </label>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <input type="file" id="vitrine-logo-file" accept="image/*" onchange="onVitrineLogoFileChange(event)" style="display:none;" />
+          <button type="button" class="btn-secondary" onclick="document.getElementById('vitrine-logo-file').click()"
+            style="font-size:13px;padding:8px 14px;display:inline-flex;align-items:center;gap:6px;">
+            📁 Choisir une image de logo
+          </button>
+          <span id="vitrine-logo-status" style="font-size:12px;color:#94a3b8;">
+            Aucun logo chargé (la consigne par défaut "utiliser fidèlement le logo fourni en référence" sera insérée)
+          </span>
+          <div id="vitrine-logo-preview-box" style="display:none;align-items:center;gap:8px;">
+            <img id="vitrine-logo-preview" src="" alt="Aperçu logo" style="max-height:48px;max-width:80px;border-radius:6px;border:1px solid #475569;background:#fff;padding:2px;object-fit:contain;" />
+            <button type="button" onclick="removeVitrineLogo()" class="btn-secondary" style="font-size:11px;padding:4px 8px;color:#f87171;border-color:#ef444444;">Retirer</button>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:#64748b;">
+          💡 <em>Règle stricte :</em> Conserver fidèlement la forme, l'identité visuelle et les couleurs du logo. Ne pas inventer un autre logo.
+        </div>
+      </div>
+
+      <!-- Paramètres d'environnement & Lumière -->
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <label style="font-size:13px;font-weight:700;color:#cbd5e1;margin:0;">
+            🏙️ Décor urbain & Météo (variations automatiques)
+          </label>
+          <button type="button" class="btn-secondary" onclick="randomizeVitrineScene()"
+            style="font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px;border-color:#38bdf8;color:#38bdf8;">
+            🎲 Tirer une nouvelle variation aléatoire
+          </button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:12px;">
+          <div>
+            <label style="display:block;font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:4px;">Contexte de rue / Façade :</label>
+            <select id="vitrine-contexte" onchange="onVitrineInputsChange()"
+              style="width:100%;padding:8px 12px;border-radius:6px;background:#1e293b;border:1px solid #475569;color:#f1f5f9;font-size:13px;">
+              <option value="random">🎲 Aléatoire (varier à chaque clic)</option>
+              <option value="petite rue résidentielle">Petite rue résidentielle</option>
+              <option value="rue commerçante locale">Rue commerçante locale</option>
+              <option value="quartier mixte commerces/logements">Quartier mixte commerces/logements</option>
+              <option value="maison de ville">Maison de ville</option>
+              <option value="immeuble ancien rénové">Immeuble ancien rénové</option>
+              <option value="façade en pierre">Façade en pierre</option>
+              <option value="façade en crépi">Façade en crépi</option>
+              <option value="façade en briques">Façade en briques</option>
+              <option value="rue arborée">Rue arborée</option>
+              <option value="petite avenue">Petite avenue</option>
+              <option value="quartier périphérique">Quartier périphérique</option>
+              <option value="environnement pavillonnaire">Environnement pavillonnaire</option>
+              <option value="rue légèrement en pente">Rue légèrement en pente</option>
+              <option value="cour ou entrée donnant sur rue">Cour ou entrée donnant sur rue</option>
+              <option value="quartier urbain ordinaire">Quartier urbain ordinaire</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block;font-size:12px;color:#94a3b8;font-weight:600;margin-bottom:4px;">Lumière & Météo :</label>
+            <select id="vitrine-lumiere" onchange="onVitrineInputsChange()"
+              style="width:100%;padding:8px 12px;border-radius:6px;background:#1e293b;border:1px solid #475569;color:#f1f5f9;font-size:13px;">
+              <option value="random">🎲 Aléatoire (soleil doux, voilé, couvert...)</option>
+              <option value="soleil doux">Soleil doux</option>
+              <option value="ciel légèrement voilé">Ciel légèrement voilé</option>
+              <option value="temps couvert lumineux">Temps couvert lumineux</option>
+              <option value="lumière de fin de matinée">Lumière de fin de matinée</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exemples rapides -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:2px;">
+        <span style="font-size:0.75rem;color:#64748b;font-weight:600;">Exemples rapides :</span>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Élagage Méditerranée', '04 93 45 67 89', '14 rue des Oliviers', 'Cannes 06')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🌳 Élagage Cannes</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Azur Toiture Rénovation', '04 93 70 12 34', '8 avenue des Fleurs', 'Grasse 06')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🏠 Toiture Grasse</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Normandie Couverture', '02 35 71 88 99', '23 rue Jeanne d\'Arc', 'Rouen 76')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🔨 Couverture Rouen</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Miroiterie Vitrerie Lyonnaise', '04 78 28 33 44', '5 place Bellecour', 'Lyon 69')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🪟 Vitrerie Lyon</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="gen-actions" style="margin-top:1.2rem;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn-primary" onclick="genererVitrineChatGPT()" style="background:linear-gradient(135deg, #10b981, #059669);border:none;font-weight:700;padding:0.85rem 1.6rem;font-size:1rem;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(16,185,129,0.35);cursor:pointer;color:#fff;">
+          🚀 Générer la vitrine dans ChatGPT
+        </button>
+        <button type="button" class="btn-secondary" onclick="copierPromptVitrine()" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:0.85rem 1.3rem;">
+          📋 Copier le prompt
+        </button>
+      </div>
+
+      <div id="vitrine-feedback" style="display:none;margin-top:0.75rem;padding:0.75rem 1rem;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid #10b981;color:#86efac;font-size:0.9rem;font-weight:600;align-items:center;gap:8px;">
+        <span>✅</span>
+        <span id="vitrine-feedback-text">Prompt copié dans le presse-papier & ChatGPT ouvert !</span>
+      </div>
+    </div>
+
+    <!-- Aperçu dynamique du prompt généré -->
+    <div class="gen-result" style="max-width:780px;margin-top:1.8rem;border:1.5px solid #334155;border-radius:12px;background:#0b1120;">
+      <div class="gen-result-header" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1.2rem;background:#1e293b;border-bottom:1px solid #334155;">
+        <span style="display:flex;align-items:center;gap:6px;color:#38bdf8;font-weight:700;">
+          <span>📝</span> Prompt Enseigne Vitrine (optimisé DALL-E / GPT-4o)
+        </span>
+        <span id="vitrine-char-count" style="font-size:0.75rem;color:#64748b;text-transform:none;letter-spacing:0;font-weight:500;">0 caractère</span>
+      </div>
+      <div style="padding:14px;">
+        <textarea id="vitrine-prompt-preview" readonly rows="16" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#cbd5e1;padding:12px;font-size:0.85rem;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;resize:vertical;line-height:1.5;outline:none;" placeholder="Remplissez les champs ci-dessus pour prévisualiser le prompt de vitrine en temps réel..."></textarea>
+        <div style="margin-top:8px;font-size:0.78rem;color:#64748b;display:flex;align-items:center;gap:6px;">
+          <span>💡</span> Intègre 100% de la charte de l'enseigne drapeau (potence métallique noire, aluminium composite satiné, typographie sans-serif, rendu photo documentaire de rue, sans effet 3D).
         </div>
       </div>
     </div>

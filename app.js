@@ -217,7 +217,7 @@ async function init() {
 }
 
 // ── ROUTER & TABS ──
-const VALID_TABS = ['dashboard', 'session', 'sessions', 'planning', 'images', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
+const VALID_TABS = ['dashboard', 'session', 'sessions', 'planning', 'images', 'vitrine', 'vitrines', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
 
 function getBasePath() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -230,6 +230,7 @@ function getBasePath() {
 function normalizeTabName(name) {
   if (name === 'planning' || name === 'sessions') return 'session';
   if (name === 'saisir') return 'saisie';
+  if (name === 'vitrines') return 'vitrine';
   return name;
 }
 
@@ -291,6 +292,7 @@ function showTab(name, skipUrlUpdate = false) {
   if (name === 'dashboard') renderDashboard();
   if (name === 'session' || name === 'planning') initSessionTab();
   if (name === 'images') initImageGenerator();
+  if (name === 'vitrine') initVitrineTab();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
   if (name === 'generateur') populateGenFiche();
@@ -6807,5 +6809,497 @@ function initImageGenerator() {
 
   renderRecentAvisBanner();
   onImgGenInputsChange();
+}
+
+// ── SECTION VITRINE & ENSEIGNE GMB ──────────────────────────────────────────
+
+const VITRINE_CONTEXTES = [
+  'petite rue résidentielle',
+  'rue commerçante locale',
+  'quartier mixte commerces/logements',
+  'maison de ville',
+  'immeuble ancien rénové',
+  'façade en pierre',
+  'façade en crépi',
+  'façade en briques',
+  'rue arborée',
+  'petite avenue',
+  'quartier périphérique',
+  'environnement pavillonnaire',
+  'rue légèrement en pente',
+  'cour ou entrée donnant sur rue',
+  'quartier urbain ordinaire'
+];
+
+const VITRINE_ELEMENTS_LIST = [
+  'voitures garées', 'arbres en bord de chaussée', 'haies taillées', 'jardinières aux fenêtres',
+  'volets traditionnels en bois', 'fenêtres anciennes', 'balcons en fer forgé', 'gouttières en zinc',
+  'câbles de façade discrets', 'lampadaire urbain', 'mobilier urbain', 'vélos garés'
+];
+
+const VITRINE_LUMIERES = [
+  'soleil doux',
+  'ciel légèrement voilé',
+  'temps couvert lumineux',
+  'lumière de fin de matinée'
+];
+
+const FRENCH_CITIES_DEPT = {
+  'cannes': '06', 'nice': '06', 'grasse': '06', 'antibes': '06', 'mougins': '06', 'menton': '06', 'vallauris': '06',
+  'paris': '75', 'marseille': '13', 'lyon': '69', 'toulouse': '31', 'nantes': '44', 'strasbourg': '67',
+  'montpellier': '34', 'bordeaux': '33', 'lille': '59', 'rennes': '35', 'reims': '51', 'toulon': '83', 'saint-etienne': '42',
+  'le havre': '76', 'rouen': '76', 'grenoble': '38', 'dijon': '21', 'angers': '49', 'nimes': '30', 'villeurbanne': '69',
+  'clermont-ferrand': '63', 'le mans': '72', 'aix-en-provence': '13', 'brest': '29', 'tours': '37', 'amiens': '80',
+  'limoges': '87', 'annecy': '74', 'perpignan': '66', 'boulogne-billancourt': '92', 'metz': '57', 'besancon': '25',
+  'orleans': '45', 'saint-denis': '93', 'argenteuil': '95', 'mulhouse': '68', 'montreuil': '93', 'caen': '14',
+  'nancy': '54', 'avignon': '84', 'poitiers': '86', 'dunkerque': '59', 'versailles': '78', 'beziers': '34',
+  'pau': '64', 'la rochelle': '17', 'calais': '62', 'frejus': '83', 'valence': '26', 'bourges': '18',
+  'quimper': '29', 'tarbes': '65', 'troyes': '10', 'chambery': '73', 'niort': '79', 'lorient': '56'
+};
+
+function getDeptForCity(ville) {
+  if (!ville) return '';
+  const clean = ville.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  for (const [k, d] of Object.entries(FRENCH_CITIES_DEPT)) {
+    if (clean.includes(k)) return d;
+  }
+  return '';
+}
+
+function buildVitrinePrompt(params = {}) {
+  const nom = (params.nom || document.getElementById('vitrine-nom')?.value || '').trim() || '[NOM DE L’ENTREPRISE]';
+  const tel = (params.tel || document.getElementById('vitrine-tel')?.value || '').trim() || '[TÉLÉPHONE]';
+  const adresse = (params.adresse || document.getElementById('vitrine-adresse')?.value || '').trim() || '[ADRESSE COMPLÈTE]';
+  const villeDep = (params.villeDep || document.getElementById('vitrine-ville-dep')?.value || '').trim() || '[VILLE + NUMÉRO]';
+
+  // Extraire le nom de la ville propre pour [VILLE]
+  let villeSimple = villeDep.replace(/\b\d{2,5}\b/g, '').replace(/[-–—,]/g, ' ').trim();
+  if (!villeSimple || villeSimple === '[VILLE + NUMÉRO]') {
+    villeSimple = extractCityFromFicheName(nom) || 'la ville';
+  }
+
+  // Contexte
+  let contexte = params.contexte || document.getElementById('vitrine-contexte')?.value || 'random';
+  if (contexte === 'random') {
+    contexte = window._currentVitrineContexte || VITRINE_CONTEXTES[Math.floor(Math.random() * VITRINE_CONTEXTES.length)];
+  }
+
+  // Éléments secondaires
+  let elements = params.elements;
+  if (!elements) {
+    if (!window._currentVitrineElements) {
+      const shuffled = [...VITRINE_ELEMENTS_LIST].sort(() => 0.5 - Math.random());
+      window._currentVitrineElements = shuffled.slice(0, 3).join(', ');
+    }
+    elements = window._currentVitrineElements;
+  }
+
+  // Lumière
+  let lumiere = params.lumiere || document.getElementById('vitrine-lumiere')?.value || 'random';
+  if (lumiere === 'random') {
+    lumiere = window._currentVitrineLumiere || VITRINE_LUMIERES[Math.floor(Math.random() * VITRINE_LUMIERES.length)];
+  }
+
+  const logoConsigne = window._vitrineLogoData
+    ? `utiliser fidèlement le logo fourni en référence (${window._vitrineLogoData.name || 'image attachée'}). Conserver sa forme générale, son identité visuelle et ses couleurs. Ne pas inventer un autre logo sauf demande explicite.`
+    : `utiliser fidèlement le logo fourni en référence. Conserver sa forme générale, son identité visuelle et ses couleurs. Ne pas inventer un autre logo sauf demande explicite.`;
+
+  return `Génère une photographie ultra-réaliste d’une enseigne professionnelle extérieure installée en France pour une entreprise locale.
+
+IMPORTANT : il doit s’agir d’une vraie scène de rue crédible, photographiée naturellement, et NON d’un mockup publicitaire, d’un rendu 3D, d’une illustration ou d’une image trop parfaite.
+
+ENTREPRISE :
+* Nom / activité : ${nom}
+* Téléphone : ${tel}
+* Adresse : ${adresse}
+* Ville / département : ${villeDep}
+* Logo : ${logoConsigne}
+
+
+ENSEIGNE :
+Créer une véritable enseigne drapeau rectangulaire, installée perpendiculairement à la façade d’un bâtiment.
+
+L’enseigne est fixée suffisamment haut sur la façade avec une potence métallique noire réaliste.
+
+La fixation doit sembler physiquement crédible :
+* plaque métallique vissée dans le mur
+* boulons visibles
+* soudures plausibles
+* structure métallique légèrement patinée
+* petites irrégularités dues à l’âge et aux intempéries
+Le panneau possède :
+* cadre métallique noir ou anthracite
+* épaisseur réelle d’environ 3 à 5 cm
+* plaque en aluminium émaillé / composite professionnel
+* finition satinée ou semi-mate
+* légères traces naturelles d’utilisation
+IMPORTANT :
+Le panneau doit être entretenu et professionnel.
+
+NE PAS rendre le panneau excessivement sale, rouillé ou abandonné.
+
+Le réalisme doit venir principalement des matériaux, de la lumière, des fixations, des petites imperfections et de l’environnement réel — PAS d’une accumulation de saleté.
+
+GRAPHISME DU PANNEAU :
+
+Composition parfaitement centrée et équilibrée.
+
+En haut :
+[LOGO FOURNI : ${logoConsigne}]
+
+Puis :
+
+${nom}
+
+${villeDep}
+
+${tel}
+
+${adresse}
+
+Tout doit être lisible et correctement orthographié.
+
+Hiérarchie :
+* logo : environ 20–25 % de la surface utile
+* activité : grande et immédiatement lisible
+* ville/département : taille intermédiaire
+* téléphone : très lisible
+* adresse : plus petite mais parfaitement lisible
+Utiliser une typographie sans-serif professionnelle et crédible pour une petite entreprise française.
+
+Le logo et les textes doivent sembler réellement imprimés sur le panneau par impression UV professionnelle.
+
+Aucun effet 3D.
+Aucun texte flottant.
+Aucun néon.
+Aucun effet lumineux artificiel.
+
+ENVIRONNEMENT :
+
+Créer un environnement français naturel correspondant à ${villeSimple}.
+
+La façade et le quartier doivent être plausibles pour la ville, mais éviter de transformer chaque image en carte postale touristique.
+
+IMPORTANT : varier réellement l’environnement entre chaque nouvelle génération.
+
+Choisir aléatoirement un contexte crédible parmi :
+* ${contexte}
+
+Ajouter naturellement certains éléments secondaires :
+${elements} selon la scène.
+
+Ces éléments doivent rester secondaires et imparfaits comme dans une vraie photographie.
+
+ÉVITER :
+* cathédrale ou église systématiquement en arrière-plan
+* monument touristique systématique
+* vue spectaculaire de la ville à chaque image
+* décor trop propre
+* rue artificiellement vide
+* architecture générique répétée d’une génération à l’autre
+Un monument identifiable peut exceptionnellement apparaître très loin dans certaines images, mais pas systématiquement.
+
+PHOTOGRAPHIE :
+
+Photographie réaliste prise depuis le trottoir par une personne.
+
+Angle légèrement oblique et légèrement vers le haut.
+
+L’enseigne occupe environ 55–70 % de l’image mais laisse suffisamment d’environnement visible pour rendre la scène crédible.
+
+Perspective naturelle.
+
+Appareil photo plein format ou smartphone haut de gamme réaliste.
+
+Équivalent 50–85 mm.
+
+Ouverture approximative f/2.8–f/4.
+
+Profondeur de champ naturelle :
+enseigne nette, arrière-plan légèrement flou mais encore identifiable.
+
+Lumière naturelle correspondant réellement à la météo locale :
+${lumiere}.
+
+Couleurs naturelles et légèrement neutres.
+
+Balance des blancs réaliste.
+
+Contraste modéré.
+
+Texture photographique douce.
+
+Détails réalistes mais pas exagérément accentués.
+
+Très légère imperfection photographique possible :
+* perspective imparfaite
+* petite variation d’exposition
+* léger bruit numérique
+* petites irrégularités des matériauxL’image doit ressembler à une véritable photographie prise dans la rue et non à une image publicitaire.
+
+STYLE FINAL :
+
+photorealistic documentary street photography,
+natural French urban environment,
+real-world materials,
+subtle imperfections,
+natural colors,
+realistic exposure,
+soft photographic detail,
+authentic small French business signage,
+physically plausible mounting,
+realistic depth of field,
+no CGI look,
+no advertising mockup look,
+no excessive HDR,
+no oversharpening,
+no excessive saturation.
+
+NEGATIVE / À ÉVITER ABSOLUMENT :
+
+CGI,
+3D render,
+advertising mockup,
+perfect showroom sign,
+floating sign,
+plastic-looking materials,
+excessive rust,
+excessive dirt,
+abandoned appearance,
+extreme weathering,
+HDR,
+oversharpening,
+hyper-saturation,
+dramatic cinematic lighting,
+fake bokeh,
+distorted architecture,
+crooked typography,
+misspelled text,
+invented phone number,
+invented address,
+additional logos,
+additional business names,
+watermark.`;
+}
+
+function onVitrineInputsChange() {
+  const nomVal = document.getElementById('vitrine-nom')?.value || '';
+  const telVal = document.getElementById('vitrine-tel')?.value || '';
+  const adrVal = document.getElementById('vitrine-adresse')?.value || '';
+  const villeVal = document.getElementById('vitrine-ville-dep')?.value || '';
+
+  const preview = document.getElementById('vitrine-prompt-preview');
+  const countEl = document.getElementById('vitrine-char-count');
+
+  if (!nomVal && !telVal && !adrVal && !villeVal) {
+    if (preview) preview.value = '';
+    if (countEl) countEl.textContent = '0 caractère';
+    return;
+  }
+
+  const prompt = buildVitrinePrompt();
+  if (preview) preview.value = prompt;
+  if (countEl) countEl.textContent = `${prompt.length} caractères`;
+}
+
+async function onVitrineFicheSelected() {
+  const ficheInput = document.getElementById('vitrine-fiche');
+  const nomInput = document.getElementById('vitrine-nom');
+  const villeDepInput = document.getElementById('vitrine-ville-dep');
+  const telInput = document.getElementById('vitrine-tel');
+  const adresseInput = document.getElementById('vitrine-adresse');
+
+  if (!ficheInput) return;
+  const ficheVal = ficheInput.value.trim();
+  if (!ficheVal) return;
+
+  if (nomInput && !nomInput.value.trim()) {
+    nomInput.value = ficheVal;
+  }
+
+  const city = extractCityFromFicheName(ficheVal);
+  if (city && villeDepInput && !villeDepInput.value.trim()) {
+    const dept = getDeptForCity(city);
+    villeDepInput.value = dept ? `${city} ${dept}` : city;
+  }
+
+  if (adresseInput && !adresseInput.value.trim()) {
+    const defaultStreets = ['14 rue des Artisans', '8 avenue de la République', '25 rue du Commerce', '12 rue Principale', '6 boulevard de la Gare'];
+    adresseInput.value = defaultStreets[Math.floor(Math.random() * defaultStreets.length)];
+  }
+
+  if (telInput && !telInput.value.trim()) {
+    const dept = city ? getDeptForCity(city) : '';
+    let prefix = '04';
+    if (['75', '77', '78', '91', '92', '93', '94', '95'].includes(dept)) prefix = '01';
+    else if (['14', '27', '28', '29', '35', '50', '53', '56', '61', '72', '76'].includes(dept)) prefix = '02';
+    else if (['02', '08', '10', '51', '52', '54', '55', '57', '59', '60', '62', '67', '68', '80', '88'].includes(dept)) prefix = '03';
+    else if (['04', '05', '06', '13', '26', '83', '84', '38', '73', '74', '69', '42', '01'].includes(dept)) prefix = '04';
+    else if (['16', '17', '19', '23', '24', '33', '40', '47', '64', '79', '86', '87', '09', '11', '12', '30', '31', '32', '34', '46', '48', '65', '66', '81', '82'].includes(dept)) prefix = '05';
+
+    const p1 = String(Math.floor(10 + Math.random() * 89));
+    const p2 = String(Math.floor(10 + Math.random() * 89));
+    const p3 = String(Math.floor(10 + Math.random() * 89));
+    const p4 = String(Math.floor(10 + Math.random() * 89));
+    telInput.value = `${prefix} ${p1} ${p2} ${p3} ${p4}`;
+  }
+
+  onVitrineInputsChange();
+}
+
+function randomizeVitrineScene() {
+  window._currentVitrineContexte = VITRINE_CONTEXTES[Math.floor(Math.random() * VITRINE_CONTEXTES.length)];
+  const shuffled = [...VITRINE_ELEMENTS_LIST].sort(() => 0.5 - Math.random());
+  window._currentVitrineElements = shuffled.slice(0, 3).join(', ');
+  window._currentVitrineLumiere = VITRINE_LUMIERES[Math.floor(Math.random() * VITRINE_LUMIERES.length)];
+
+  onVitrineInputsChange();
+  showToast(`🎲 Décor : ${window._currentVitrineContexte} • ${window._currentVitrineLumiere}`, 'info', 3000);
+}
+
+function onVitrineLogoFileChange(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    window._vitrineLogoData = {
+      name: file.name,
+      dataUrl: e.target.result
+    };
+
+    const status = document.getElementById('vitrine-logo-status');
+    const previewBox = document.getElementById('vitrine-logo-preview-box');
+    const previewImg = document.getElementById('vitrine-logo-preview');
+
+    if (previewImg) previewImg.src = e.target.result;
+    if (previewBox) previewBox.style.display = 'flex';
+    if (status) status.innerHTML = `✅ <strong>${file.name}</strong> (${Math.round(file.size / 1024)} Ko)`;
+
+    onVitrineInputsChange();
+    showToast("✅ Logo chargé ! Pensez à le coller également dans ChatGPT.", "success", 4000);
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeVitrineLogo() {
+  window._vitrineLogoData = null;
+  const fileInput = document.getElementById('vitrine-logo-file');
+  if (fileInput) fileInput.value = '';
+  const status = document.getElementById('vitrine-logo-status');
+  const previewBox = document.getElementById('vitrine-logo-preview-box');
+  if (previewBox) previewBox.style.display = 'none';
+  if (status) status.textContent = 'Aucun logo chargé (la consigne par défaut "utiliser fidèlement le logo fourni en référence" sera insérée)';
+  onVitrineInputsChange();
+}
+
+function appliquerExempleVitrine(nom, tel, adresse, villeDep) {
+  const nomInput = document.getElementById('vitrine-nom');
+  const telInput = document.getElementById('vitrine-tel');
+  const adrInput = document.getElementById('vitrine-adresse');
+  const vdInput  = document.getElementById('vitrine-ville-dep');
+
+  if (nomInput) nomInput.value = nom;
+  if (telInput) telInput.value = tel;
+  if (adrInput) adrInput.value = adresse;
+  if (vdInput) vdInput.value = villeDep;
+
+  onVitrineInputsChange();
+}
+
+function genererVitrineChatGPT() {
+  const nomVal = (document.getElementById('vitrine-nom')?.value || '').trim();
+  const vdVal  = (document.getElementById('vitrine-ville-dep')?.value || '').trim();
+
+  if (!nomVal && !vdVal) {
+    alert("Veuillez renseigner au moins le nom de l'entreprise et la ville/département.");
+    document.getElementById('vitrine-nom')?.focus();
+    return;
+  }
+
+  const prompt = buildVitrinePrompt();
+
+  const preview = document.getElementById('vitrine-prompt-preview');
+  if (preview) preview.value = prompt;
+  const countEl = document.getElementById('vitrine-char-count');
+  if (countEl) countEl.textContent = `${prompt.length} caractères`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(prompt).then(() => {
+      showVitrineFeedback("Prompt copié dans le presse-papier & ChatGPT ouvert !");
+    }).catch(() => {
+      fallbackCopyText(prompt);
+      showVitrineFeedback("Prompt copié & ChatGPT ouvert !");
+    });
+  } else {
+    fallbackCopyText(prompt);
+    showVitrineFeedback("Prompt copié & ChatGPT ouvert !");
+  }
+
+  const chatGptUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
+  window.open(chatGptUrl, '_blank');
+}
+
+function copierPromptVitrine() {
+  const nomVal = (document.getElementById('vitrine-nom')?.value || '').trim();
+  const vdVal  = (document.getElementById('vitrine-ville-dep')?.value || '').trim();
+
+  if (!nomVal && !vdVal) {
+    alert("Veuillez renseigner au moins le nom de l'entreprise et la ville/département.");
+    document.getElementById('vitrine-nom')?.focus();
+    return;
+  }
+
+  const prompt = buildVitrinePrompt();
+
+  const preview = document.getElementById('vitrine-prompt-preview');
+  if (preview) preview.value = prompt;
+  const countEl = document.getElementById('vitrine-char-count');
+  if (countEl) countEl.textContent = `${prompt.length} caractères`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(prompt).then(() => {
+      showVitrineFeedback("Prompt copié dans le presse-papier !");
+    }).catch(() => {
+      fallbackCopyText(prompt);
+      showVitrineFeedback("Prompt copié !");
+    });
+  } else {
+    fallbackCopyText(prompt);
+    showVitrineFeedback("Prompt copié !");
+  }
+}
+
+function showVitrineFeedback(text, isError = false) {
+  const feedback = document.getElementById('vitrine-feedback');
+  const feedbackText = document.getElementById('vitrine-feedback-text');
+  if (!feedback) return;
+
+  if (feedbackText) feedbackText.textContent = text;
+  feedback.style.display = 'flex';
+  feedback.style.background = isError ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
+  feedback.style.borderColor = isError ? '#ef4444' : '#10b981';
+  feedback.style.color = isError ? '#fca5a5' : '#86efac';
+
+  setTimeout(() => {
+    feedback.style.display = 'none';
+  }, 4500);
+}
+
+function initVitrineTab() {
+  populateFicheSelects();
+
+  if (!window._currentVitrineContexte) {
+    window._currentVitrineContexte = VITRINE_CONTEXTES[Math.floor(Math.random() * VITRINE_CONTEXTES.length)];
+  }
+  if (!window._currentVitrineElements) {
+    const shuffled = [...VITRINE_ELEMENTS_LIST].sort(() => 0.5 - Math.random());
+    window._currentVitrineElements = shuffled.slice(0, 3).join(', ');
+  }
+  if (!window._currentVitrineLumiere) {
+    window._currentVitrineLumiere = VITRINE_LUMIERES[Math.floor(Math.random() * VITRINE_LUMIERES.length)];
+  }
+
+  onVitrineInputsChange();
 }
 
