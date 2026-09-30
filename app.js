@@ -5623,14 +5623,19 @@ async function exporterGmailsCSV() {
     gmails.forEach(g => {
       const em = (g.email || '').trim().replace(/"/g, '""');
       const emKey = em.toLowerCase();
+      const st = (statuses[emKey] || 'Fonctionnel').trim();
+      
+      // Exclure les emails transférés aux GMB et indisponibles
+      if (st.includes('Transféré') || st === 'Indisponible') return;
+
       const ville = (g.ville || '').trim().replace(/"/g, '""');
-      const st = (statuses[emKey] || 'Fonctionnel').replace(/"/g, '""');
+      const safeSt = st.replace(/"/g, '""');
       const lg = g.local_guide ? 'Oui' : 'Non';
       const op = (g.operateur || '').trim().replace(/"/g, '""');
       const lUse = lastUse[emKey] || '';
       const nAvis = avisCount[emKey] || 0;
       const gid = g.id || '';
-      rows.push([`"${em}"`, `"${ville}"`, `"${st}"`, `"${lg}"`, `"${op}"`, `"${lUse}"`, nAvis, `"${gid}"`].join(';'));
+      rows.push([`"${em}"`, `"${ville}"`, `"${safeSt}"`, `"${lg}"`, `"${op}"`, `"${lUse}"`, nAvis, `"${gid}"`].join(';'));
     });
 
     const csvContent = '\uFEFF' + rows.join('\r\n');
@@ -5638,7 +5643,7 @@ async function exporterGmailsCSV() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `gmails_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `gmails_actifs_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
