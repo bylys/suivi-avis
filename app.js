@@ -6857,34 +6857,122 @@ const FRENCH_CITIES_DEPT = {
   'quimper': '29', 'tarbes': '65', 'troyes': '10', 'chambery': '73', 'niort': '79', 'lorient': '56'
 };
 
-function getDeptForCity(ville) {
-  if (!ville) return '';
-  const clean = ville.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-  for (const [k, d] of Object.entries(FRENCH_CITIES_DEPT)) {
-    if (clean.includes(k)) return d;
+function parseGmbAddress(addressStr, nomGmb = '') {
+  const raw = (addressStr || '').trim();
+  let adresse = raw;
+  let ville = '';
+  let dep = '';
+
+  // 1. Chercher un code postal à 5 chiffres (ex: 06400, 75001, 76000...)
+  const cpMatch = raw.match(/\b(0[1-9]|[1-8][0-9]|9[0-5]|97[1-6]|2[AB])\d{3}\b/);
+  if (cpMatch) {
+    dep = cpMatch[1];
+    const afterCp = raw.slice(raw.indexOf(cpMatch[0]) + cpMatch[0].length).replace(/^[\s,;:-]+/, '').trim();
+    if (afterCp) {
+      ville = afterCp.split(/[\s,;:-]+/)[0];
+    }
   }
-  return '';
+
+  // 2. Si pas de ville trouvée après le CP, chercher les villes françaises connues dans raw
+  if (!ville) {
+    for (const [vClean, d] of Object.entries(FRENCH_CITIES_DEPT)) {
+      const re = new RegExp(`\\b${vClean.replace(/_/g, '[\\s-_]')}\\b`, 'i');
+      if (re.test(raw)) {
+        ville = vClean.charAt(0).toUpperCase() + vClean.slice(1);
+        if (!dep) dep = d;
+        break;
+      }
+    }
+  }
+
+  // 3. Si toujours pas de ville, chercher dans le nom du GMB
+  if (!ville && nomGmb) {
+    for (const [vClean, d] of Object.entries(FRENCH_CITIES_DEPT)) {
+      const re = new RegExp(`\\b${vClean.replace(/_/g, '[\\s-_]')}\\b`, 'i');
+      if (re.test(nomGmb)) {
+        ville = vClean.charAt(0).toUpperCase() + vClean.slice(1);
+        if (!dep) dep = d;
+        break;
+      }
+    }
+  }
+
+  // 4. Si la ville ou le code postal a été détecté dans l'adresse brute, extraire la partie rue (avec la lettre)
+  if (cpMatch) {
+    const beforeCp = raw.slice(0, raw.indexOf(cpMatch[0])).replace(/[\s,;:-]+$/, '').trim();
+    if (beforeCp) adresse = beforeCp;
+  } else if (ville) {
+    const reVille = new RegExp(`[\\s,;:-]+${ville}\\b.*$`, 'i');
+    const beforeVille = raw.replace(reVille, '').trim();
+    if (beforeVille) adresse = beforeVille;
+  }
+
+  // Formatage propre de villeDep
+  let villeDep = '';
+  if (ville && dep) {
+    villeDep = `${ville} ${dep}`;
+  } else if (ville) {
+    villeDep = ville;
+  } else if (dep) {
+    villeDep = `France (${dep})`;
+  } else {
+    villeDep = raw ? raw : 'France';
+  }
+
+  return {
+    adressePleine: raw || '[ADRESSE COMPLÈTE]',
+    adresseRue: adresse || raw || '[ADRESSE]',
+    ville: ville || 'la ville',
+    dep: dep || '',
+    villeDep: villeDep
+  };
+}
+
+function onVitrineAdresseInput() {
+  const adrInput = document.getElementById('vitrine-adresse');
+  const nomInput = document.getElementById('vitrine-nom');
+  const detectedLabel = document.getElementById('vitrine-detected-label');
+  const hiddenVilleDep = document.getElementById('vitrine-ville-dep');
+
+  const rawAdr = adrInput?.value || '';
+  const nomGmb = nomInput?.value || '';
+
+  if (!rawAdr.trim()) {
+    if (detectedLabel) detectedLabel.textContent = '—';
+    if (hiddenVilleDep) hiddenVilleDep.value = '';
+    onVitrineInputsChange();
+    return;
+  }
+
+  const parsed = parseGmbAddress(rawAdr, nomGmb);
+  if (detectedLabel) {
+    detectedLabel.textContent = parsed.villeDep !== 'France' ? parsed.villeDep : (parsed.ville || 'France');
+  }
+  if (hiddenVilleDep) {
+    hiddenVilleDep.value = parsed.villeDep;
+  }
+
+  onVitrineInputsChange();
 }
 
 function buildVitrinePrompt(params = {}) {
   const nom = (params.nom || document.getElementById('vitrine-nom')?.value || '').trim() || '[NOM DE L’ENTREPRISE]';
   const tel = (params.tel || document.getElementById('vitrine-tel')?.value || '').trim() || '[TÉLÉPHONE]';
-  const adresse = (params.adresse || document.getElementById('vitrine-adresse')?.value || '').trim() || '[ADRESSE COMPLÈTE]';
-  const villeDep = (params.villeDep || document.getElementById('vitrine-ville-dep')?.value || '').trim() || '[VILLE + NUMÉRO]';
+  const adresseBrute = (params.adresse || document.getElementById('vitrine-adresse')?.value || '').trim() || '[ADRESSE DU GMB PRÉVU]';
 
-  // Extraire le nom de la ville propre pour [VILLE]
-  let villeSimple = villeDep.replace(/\b\d{2,5}\b/g, '').replace(/[-–—,]/g, ' ').trim();
-  if (!villeSimple || villeSimple === '[VILLE + NUMÉRO]') {
-    villeSimple = extractCityFromFicheName(nom) || 'la ville';
-  }
+  const parsed = parseGmbAddress(adresseBrute, nom);
+  const adresseComplete = parsed.adressePleine;
+  const adresseSurPanneau = parsed.adresseRue;
+  const villeDep = parsed.villeDep;
+  const villeSimple = parsed.ville;
 
-  // Contexte
+  // Contexte architectural ultra-réaliste
   let contexte = params.contexte || document.getElementById('vitrine-contexte')?.value || 'random';
   if (contexte === 'random') {
     contexte = window._currentVitrineContexte || VITRINE_CONTEXTES[Math.floor(Math.random() * VITRINE_CONTEXTES.length)];
   }
 
-  // Éléments secondaires
+  // Éléments secondaires authentiques
   let elements = params.elements;
   if (!elements) {
     if (!window._currentVitrineElements) {
@@ -6894,7 +6982,7 @@ function buildVitrinePrompt(params = {}) {
     elements = window._currentVitrineElements;
   }
 
-  // Lumière
+  // Lumière naturelle
   let lumiere = params.lumiere || document.getElementById('vitrine-lumiere')?.value || 'random';
   if (lumiere === 'random') {
     lumiere = window._currentVitrineLumiere || VITRINE_LUMIERES[Math.floor(Math.random() * VITRINE_LUMIERES.length)];
@@ -6911,7 +6999,7 @@ IMPORTANT : il doit s’agir d’une vraie scène de rue crédible, photographi�
 ENTREPRISE :
 * Nom / activité : ${nom}
 * Téléphone : ${tel}
-* Adresse : ${adresse}
+* Adresse : ${adresseComplete}
 * Ville / département : ${villeDep}
 * Logo : ${logoConsigne}
 
@@ -6955,7 +7043,7 @@ ${villeDep}
 
 ${tel}
 
-${adresse}
+${adresseSurPanneau}
 
 Tout doit être lisible et correctement orthographié.
 
@@ -7086,12 +7174,11 @@ function onVitrineInputsChange() {
   const nomVal = document.getElementById('vitrine-nom')?.value || '';
   const telVal = document.getElementById('vitrine-tel')?.value || '';
   const adrVal = document.getElementById('vitrine-adresse')?.value || '';
-  const villeVal = document.getElementById('vitrine-ville-dep')?.value || '';
 
   const preview = document.getElementById('vitrine-prompt-preview');
   const countEl = document.getElementById('vitrine-char-count');
 
-  if (!nomVal && !telVal && !adrVal && !villeVal) {
+  if (!nomVal && !telVal && !adrVal) {
     if (preview) preview.value = '';
     if (countEl) countEl.textContent = '0 caractère';
     return;
@@ -7100,51 +7187,6 @@ function onVitrineInputsChange() {
   const prompt = buildVitrinePrompt();
   if (preview) preview.value = prompt;
   if (countEl) countEl.textContent = `${prompt.length} caractères`;
-}
-
-async function onVitrineFicheSelected() {
-  const ficheInput = document.getElementById('vitrine-fiche');
-  const nomInput = document.getElementById('vitrine-nom');
-  const villeDepInput = document.getElementById('vitrine-ville-dep');
-  const telInput = document.getElementById('vitrine-tel');
-  const adresseInput = document.getElementById('vitrine-adresse');
-
-  if (!ficheInput) return;
-  const ficheVal = ficheInput.value.trim();
-  if (!ficheVal) return;
-
-  if (nomInput && !nomInput.value.trim()) {
-    nomInput.value = ficheVal;
-  }
-
-  const city = extractCityFromFicheName(ficheVal);
-  if (city && villeDepInput && !villeDepInput.value.trim()) {
-    const dept = getDeptForCity(city);
-    villeDepInput.value = dept ? `${city} ${dept}` : city;
-  }
-
-  if (adresseInput && !adresseInput.value.trim()) {
-    const defaultStreets = ['14 rue des Artisans', '8 avenue de la République', '25 rue du Commerce', '12 rue Principale', '6 boulevard de la Gare'];
-    adresseInput.value = defaultStreets[Math.floor(Math.random() * defaultStreets.length)];
-  }
-
-  if (telInput && !telInput.value.trim()) {
-    const dept = city ? getDeptForCity(city) : '';
-    let prefix = '04';
-    if (['75', '77', '78', '91', '92', '93', '94', '95'].includes(dept)) prefix = '01';
-    else if (['14', '27', '28', '29', '35', '50', '53', '56', '61', '72', '76'].includes(dept)) prefix = '02';
-    else if (['02', '08', '10', '51', '52', '54', '55', '57', '59', '60', '62', '67', '68', '80', '88'].includes(dept)) prefix = '03';
-    else if (['04', '05', '06', '13', '26', '83', '84', '38', '73', '74', '69', '42', '01'].includes(dept)) prefix = '04';
-    else if (['16', '17', '19', '23', '24', '33', '40', '47', '64', '79', '86', '87', '09', '11', '12', '30', '31', '32', '34', '46', '48', '65', '66', '81', '82'].includes(dept)) prefix = '05';
-
-    const p1 = String(Math.floor(10 + Math.random() * 89));
-    const p2 = String(Math.floor(10 + Math.random() * 89));
-    const p3 = String(Math.floor(10 + Math.random() * 89));
-    const p4 = String(Math.floor(10 + Math.random() * 89));
-    telInput.value = `${prefix} ${p1} ${p2} ${p3} ${p4}`;
-  }
-
-  onVitrineInputsChange();
 }
 
 function randomizeVitrineScene() {
@@ -7193,27 +7235,26 @@ function removeVitrineLogo() {
   onVitrineInputsChange();
 }
 
-function appliquerExempleVitrine(nom, tel, adresse, villeDep) {
+function appliquerExempleVitrine(nom, adresse, tel) {
   const nomInput = document.getElementById('vitrine-nom');
   const telInput = document.getElementById('vitrine-tel');
   const adrInput = document.getElementById('vitrine-adresse');
-  const vdInput  = document.getElementById('vitrine-ville-dep');
 
   if (nomInput) nomInput.value = nom;
-  if (telInput) telInput.value = tel;
   if (adrInput) adrInput.value = adresse;
-  if (vdInput) vdInput.value = villeDep;
+  if (telInput) telInput.value = tel;
 
-  onVitrineInputsChange();
+  onVitrineAdresseInput();
 }
 
 function genererVitrineChatGPT() {
   const nomVal = (document.getElementById('vitrine-nom')?.value || '').trim();
-  const vdVal  = (document.getElementById('vitrine-ville-dep')?.value || '').trim();
+  const adrVal = (document.getElementById('vitrine-adresse')?.value || '').trim();
 
-  if (!nomVal && !vdVal) {
-    alert("Veuillez renseigner au moins le nom de l'entreprise et la ville/département.");
-    document.getElementById('vitrine-nom')?.focus();
+  if (!nomVal || !adrVal) {
+    alert("Veuillez renseigner au moins le nom du GMB prévu et son adresse.");
+    if (!nomVal) document.getElementById('vitrine-nom')?.focus();
+    else document.getElementById('vitrine-adresse')?.focus();
     return;
   }
 
@@ -7242,11 +7283,12 @@ function genererVitrineChatGPT() {
 
 function copierPromptVitrine() {
   const nomVal = (document.getElementById('vitrine-nom')?.value || '').trim();
-  const vdVal  = (document.getElementById('vitrine-ville-dep')?.value || '').trim();
+  const adrVal = (document.getElementById('vitrine-adresse')?.value || '').trim();
 
-  if (!nomVal && !vdVal) {
-    alert("Veuillez renseigner au moins le nom de l'entreprise et la ville/département.");
-    document.getElementById('vitrine-nom')?.focus();
+  if (!nomVal || !adrVal) {
+    alert("Veuillez renseigner au moins le nom du GMB prévu et son adresse.");
+    if (!nomVal) document.getElementById('vitrine-nom')?.focus();
+    else document.getElementById('vitrine-adresse')?.focus();
     return;
   }
 
@@ -7287,8 +7329,6 @@ function showVitrineFeedback(text, isError = false) {
 }
 
 function initVitrineTab() {
-  populateFicheSelects();
-
   if (!window._currentVitrineContexte) {
     window._currentVitrineContexte = VITRINE_CONTEXTES[Math.floor(Math.random() * VITRINE_CONTEXTES.length)];
   }
@@ -7300,6 +7340,6 @@ function initVitrineTab() {
     window._currentVitrineLumiere = VITRINE_LUMIERES[Math.floor(Math.random() * VITRINE_LUMIERES.length)];
   }
 
-  onVitrineInputsChange();
+  onVitrineAdresseInput();
 }
 

@@ -478,51 +478,45 @@
     </div>
 
     <div class="gen-form" style="max-width:780px;">
-      <!-- Sélection rapide de la fiche GMB -->
-      <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
-        <label style="display:block;font-size:13px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">
-          🏢 Remplir depuis une fiche GMB existante (Optionnel) :
+      <!-- Informations du GMB prévu (3 entrées directes) -->
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:16px;">
+        <label style="display:block;font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px;">
+          📋 Informations du GMB prévu
         </label>
-        <input type="text" id="vitrine-fiche" list="datalist-form-fiche" placeholder="Rechercher une fiche GMB..." autocomplete="off"
-          style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
-          oninput="onVitrineFicheSelected()" onchange="onVitrineFicheSelected()" />
-      </div>
 
-      <!-- Informations de l'entreprise -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:14px;margin-bottom:14px;">
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
-            🏷️ Nom / Activité de l'entreprise *
+        <!-- 1. Demande de nom du GMB prévu -->
+        <div style="margin-bottom:14px;">
+          <label for="vitrine-nom" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
+            🏢 Nom du GMB prévu <span style="color:#ef4444;font-weight:700">*</span>
           </label>
-          <input type="text" id="vitrine-nom" placeholder="Ex : Élagage Méditerranée" autocomplete="off"
-            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+          <input type="text" id="vitrine-nom" placeholder="Ex : Élagage Azur, Normandie Toiture, Vitrerie Moderne..." autocomplete="off"
+            style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
             oninput="onVitrineInputsChange()" />
         </div>
 
+        <!-- 2. Adresse du GMB prévu (avec la lettre) -->
+        <div style="margin-bottom:14px;">
+          <label for="vitrine-adresse" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
+            📍 Adresse du GMB prévu (avec la lettre) <span style="color:#ef4444;font-weight:700">*</span>
+            <span style="color:#94a3b8;font-weight:400;font-size:12px;margin-left:6px;">(Ex : 14B rue des Artisans, 06400 Cannes — ou 12 bis, 8A, 3C...)</span>
+          </label>
+          <input type="text" id="vitrine-adresse" placeholder="Ex : 14B rue des Artisans, 06400 Cannes" autocomplete="off"
+            style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            oninput="onVitrineAdresseInput()" />
+          <div id="vitrine-detection-box" style="margin-top:6px;font-size:12px;color:#38bdf8;display:flex;align-items:center;gap:6px;">
+            <span>📍</span>
+            <span>Ville & département détectés : <strong id="vitrine-detected-label" style="color:#f1f5f9;">—</strong></span>
+            <input type="hidden" id="vitrine-ville-dep" value="" />
+          </div>
+        </div>
+
+        <!-- 3. Numéro de téléphone du GMB -->
         <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
-            📞 Téléphone *
+          <label for="vitrine-tel" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
+            📞 Numéro de téléphone du GMB <span style="color:#ef4444;font-weight:700">*</span>
           </label>
           <input type="text" id="vitrine-tel" placeholder="Ex : 04 93 45 67 89" autocomplete="off"
-            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
-            oninput="onVitrineInputsChange()" />
-        </div>
-
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
-            📍 Ville / Département *
-          </label>
-          <input type="text" id="vitrine-ville-dep" placeholder="Ex : Cannes 06 (ou Rouen 76...)" autocomplete="off"
-            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
-            oninput="onVitrineInputsChange()" />
-        </div>
-
-        <div>
-          <label style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
-            📫 Adresse complète *
-          </label>
-          <input type="text" id="vitrine-adresse" placeholder="Ex : 14 rue des Artisans" autocomplete="off"
-            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
             oninput="onVitrineInputsChange()" />
         </div>
       </div>
@@ -604,10 +598,10 @@
       <!-- Exemples rapides -->
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:2px;">
         <span style="font-size:0.75rem;color:#64748b;font-weight:600;">Exemples rapides :</span>
-        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Élagage Méditerranée', '04 93 45 67 89', '14 rue des Oliviers', 'Cannes 06')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🌳 Élagage Cannes</button>
-        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Azur Toiture Rénovation', '04 93 70 12 34', '8 avenue des Fleurs', 'Grasse 06')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🏠 Toiture Grasse</button>
-        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Normandie Couverture', '02 35 71 88 99', '23 rue Jeanne d\'Arc', 'Rouen 76')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🔨 Couverture Rouen</button>
-        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Miroiterie Vitrerie Lyonnaise', '04 78 28 33 44', '5 place Bellecour', 'Lyon 69')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🪟 Vitrerie Lyon</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Élagage Méditerranée', '14B rue des Oliviers, 06400 Cannes', '04 93 45 67 89')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🌳 Élagage Cannes (14B)</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Azur Toiture Rénovation', '8A avenue des Fleurs, 06130 Grasse', '04 93 70 12 34')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🏠 Toiture Grasse (8A)</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Normandie Couverture', '12 bis rue Jeanne d\'Arc, 76000 Rouen', '02 35 71 88 99')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🔨 Couverture Rouen (12 bis)</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleVitrine('Miroiterie Vitrerie Lyonnaise', '5 ter place Bellecour, 69002 Lyon', '04 78 28 33 44')" style="font-size:0.75rem;padding:3px 8px;border-radius:6px;">🪟 Vitrerie Lyon (5 ter)</button>
       </div>
 
       <!-- Actions -->
