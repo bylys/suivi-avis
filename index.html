@@ -478,18 +478,40 @@
     </div>
 
     <div class="gen-form" style="max-width:780px;">
-      <!-- Informations du GMB prévu (3 entrées directes) -->
+      <!-- Informations du GMB prévu (avec support multi-pays) -->
       <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:16px;">
         <label style="display:block;font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.5px;">
           📋 Informations du GMB prévu
         </label>
+
+        <!-- 0. Pays / Région de l'entreprise -->
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <label for="vitrine-pays" style="font-size:13px;font-weight:600;color:#cbd5e1;">
+              🌍 Pays / Région de l'entreprise <span style="color:#ef4444;font-weight:700">*</span>
+            </label>
+            <span id="vitrine-pays-badge" style="background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid #3b82f644;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;">
+              🌐 Détection auto & manuelle
+            </span>
+          </div>
+          <select id="vitrine-pays" onchange="onVitrinePaysChange(true)"
+            style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;cursor:pointer;">
+            <option value="FR" selected>🇫🇷 France</option>
+            <option value="CA">🇨🇦 Canada (Québec, Ontario, BC...)</option>
+            <option value="US">🇺🇸 États-Unis (USA)</option>
+            <option value="BE">🇧🇪 Belgique</option>
+            <option value="CH">🇨🇭 Suisse</option>
+            <option value="LU">🇱🇺 Luxembourg</option>
+            <option value="OTHER">🌐 Autre / International</option>
+          </select>
+        </div>
 
         <!-- 1. Demande de nom du GMB prévu -->
         <div style="margin-bottom:14px;">
           <label for="vitrine-nom" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
             🏢 Nom du GMB prévu <span style="color:#ef4444;font-weight:700">*</span>
           </label>
-          <input type="text" id="vitrine-nom" placeholder="Ex : Élagage Azur, Normandie Toiture, Vitrerie Moderne..." autocomplete="off"
+          <input type="text" id="vitrine-nom" placeholder="Ex : Élagage Azur, Maple Ridge Roofing, Toitures Dumont, Sunrise Dental..." autocomplete="off"
             style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
             oninput="onVitrineInputsChange()" />
         </div>
@@ -498,14 +520,14 @@
         <div style="margin-bottom:14px;">
           <label for="vitrine-adresse" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
             📍 Adresse du GMB prévu (avec la lettre) <span style="color:#ef4444;font-weight:700">*</span>
-            <span style="color:#94a3b8;font-weight:400;font-size:12px;margin-left:6px;">(Ex : 14B rue des Artisans, 06400 Cannes — ou 12 bis, 8A, 3C...)</span>
+            <span style="color:#94a3b8;font-weight:400;font-size:12px;margin-left:6px;">(Ex : 14B rue des Artisans, Cannes — ou 4520 Rue Saint-Denis, Montréal — ou 123 Main St, Miami...)</span>
           </label>
-          <input type="text" id="vitrine-adresse" placeholder="Ex : 14B rue des Artisans, 06400 Cannes" autocomplete="off"
+          <input type="text" id="vitrine-adresse" placeholder="Ex : 14B rue des Artisans, 06400 Cannes (ou Montréal QC, Miami FL, Bruxelles...)" autocomplete="off"
             style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
             oninput="onVitrineAdresseInput()" />
           <div id="vitrine-detection-box" style="margin-top:6px;font-size:12px;color:#38bdf8;display:flex;align-items:center;gap:6px;">
             <span>📍</span>
-            <span>Ville & département détectés : <strong id="vitrine-detected-label" style="color:#f1f5f9;">—</strong></span>
+            <span>Localisation détectée : <strong id="vitrine-detected-label" style="color:#f1f5f9;">—</strong></span>
             <input type="hidden" id="vitrine-ville-dep" value="" />
           </div>
         </div>
@@ -515,7 +537,7 @@
           <label for="vitrine-tel" style="display:block;font-size:13px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">
             📞 Numéro de téléphone du GMB <span style="color:#ef4444;font-weight:700">*</span>
           </label>
-          <input type="text" id="vitrine-tel" placeholder="Ex : 04 93 45 67 89" autocomplete="off"
+          <input type="text" id="vitrine-tel" placeholder="Ex : 04 93 45 67 89 ou +1 (514) 555-0199 ou +1 305-555-0143..." autocomplete="off"
             style="width:100%;padding:11px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
             oninput="onVitrineInputsChange()" />
         </div>

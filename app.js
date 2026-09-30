@@ -6857,13 +6857,226 @@ const FRENCH_CITIES_DEPT = {
   'quimper': '29', 'tarbes': '65', 'troyes': '10', 'chambery': '73', 'niort': '79', 'lorient': '56'
 };
 
-function parseGmbAddress(addressStr, nomGmb = '') {
+const CANADIAN_CITIES_PROVINCE = {
+  'montreal': 'QC', 'montréal': 'QC', 'quebec': 'QC', 'québec': 'QC', 'laval': 'QC',
+  'gatineau': 'QC', 'longueuil': 'QC', 'sherbrooke': 'QC', 'levis': 'QC', 'lévis': 'QC',
+  'trois-rivieres': 'QC', 'trois-rivières': 'QC', 'terrebonne': 'QC', 'saint-jean-sur-richelieu': 'QC',
+  'toronto': 'ON', 'ottawa': 'ON', 'mississauga': 'ON', 'brampton': 'ON', 'hamilton': 'ON',
+  'london': 'ON', 'markham': 'ON', 'vaughan': 'ON', 'kitchener': 'ON', 'windsor': 'ON',
+  'vancouver': 'BC', 'surrey': 'BC', 'burnaby': 'BC', 'richmond': 'BC', 'victoria': 'BC', 'kelowna': 'BC',
+  'calgary': 'AB', 'edmonton': 'AB',
+  'winnipeg': 'MB', 'halifax': 'NS'
+};
+
+const US_CITIES_STATE = {
+  'new york': 'NY', 'los angeles': 'CA', 'chicago': 'IL', 'houston': 'TX', 'phoenix': 'AZ',
+  'philadelphia': 'PA', 'san antonio': 'TX', 'san diego': 'CA', 'dallas': 'TX', 'san jose': 'CA',
+  'austin': 'TX', 'jacksonville': 'FL', 'fort worth': 'TX', 'columbus': 'OH', 'charlotte': 'NC',
+  'san francisco': 'CA', 'indianapolis': 'IN', 'seattle': 'WA', 'denver': 'CO', 'washington': 'DC',
+  'boston': 'MA', 'el paso': 'TX', 'nashville': 'TN', 'detroit': 'MI', 'oklahoma city': 'OK',
+  'portland': 'OR', 'las vegas': 'NV', 'memphis': 'TN', 'louisville': 'KY', 'baltimore': 'MD',
+  'milwaukee': 'WI', 'albuquerque': 'NM', 'tucson': 'AZ', 'fresno': 'CA', 'sacramento': 'CA',
+  'atlanta': 'GA', 'miami': 'FL', 'tampa': 'FL', 'orlando': 'FL'
+};
+
+const BELGIAN_CITIES = ['bruxelles', 'brussels', 'anvers', 'antwerpen', 'gand', 'gent', 'charleroi', 'liege', 'liège', 'bruges', 'brugge', 'namur', 'mons', 'louvain', 'leuven'];
+const SWISS_CITIES = {
+  'geneve': 'GE', 'genève': 'GE', 'lausanne': 'VD', 'zurich': 'ZH', 'zürich': 'ZH',
+  'bale': 'BS', 'bâle': 'BS', 'basel': 'BS', 'berne': 'BE', 'bern': 'BE',
+  'fribourg': 'FR', 'neuchatel': 'NE', 'neuchâtel': 'NE', 'sion': 'VS', 'lugano': 'TI'
+};
+const LUXEMBOURG_CITIES = ['luxembourg', 'esch-sur-alzette', 'differdange', 'dudelange', 'ettelbruck', 'diekirch'];
+
+function detectCountryFromText(text = '') {
+  if (!text) return null;
+  const t = text.toLowerCase();
+
+  // Canada
+  if (/\b(canada|québec|quebec|ontario|alberta|british columbia|colombie-britannique|manitoba|nova scotia|nouvelle-écosse)\b/i.test(t) ||
+      /\b[A-CEGHJ-NPR-TVXY]\d[A-CEGHJ-NPR-TV-Z][ -]?\d[A-CEGHJ-NPR-TV-Z]\d\b/i.test(text) ||
+      /\b(montréal|montreal|toronto|vancouver|calgary|ottawa|edmonton|sherbrooke|gatineau|trois-rivières|trois-rivieres)\b/i.test(t)) {
+    return 'CA';
+  }
+
+  // USA
+  if (/\b(usa|united states|états-unis|etats-unis|u\.s\.a|u\.s\.)\b/i.test(t) ||
+      /,\s*(ny|ca|fl|tx|il|wa|ga|co|ma|nc|pa|oh|az|mi|nv|or)\b/i.test(text) ||
+      /\b(new york|los angeles|chicago|miami|houston|san francisco|seattle|atlanta|dallas|boston|las vegas)\b/i.test(t)) {
+    return 'US';
+  }
+
+  // Belgique
+  if (/\b(belgique|belgium|belgië|belgie)\b/i.test(t) ||
+      /\b(bruxelles|brussels|liège|liege|anvers|antwerpen|gand|gent|namur|charleroi|mons)\b/i.test(t)) {
+    return 'BE';
+  }
+
+  // Suisse
+  if (/\b(suisse|switzerland|schweiz|svizzera)\b/i.test(t) ||
+      /\b(genève|geneve|lausanne|zurich|zürich|bâle|basel|berne|bern|neuchâtel|neuchatel|sion|fribourg)\b/i.test(t)) {
+    return 'CH';
+  }
+
+  // Luxembourg
+  if (/\b(luxembourg|lëtzebuerg|letzebuerg)\b/i.test(t) || /\bL-[1-9]\d{3}\b/i.test(text) ||
+      /\b(esch-sur-alzette|differdange|dudelange)\b/i.test(t)) {
+    return 'LU';
+  }
+
+  // France
+  if (/\b(0[1-9]|[1-8][0-9]|9[0-5]|97[1-6]|2[AB])\d{3}\b/.test(text) ||
+      /\b(france|paris|marseille|lyon|toulouse|nice|nantes|strasbourg|montpellier|bordeaux|lille|rennes|cannes|rouen)\b/i.test(t)) {
+    return 'FR';
+  }
+
+  return null;
+}
+
+function parseGmbAddress(addressStr, nomGmb = '', currentPays = null) {
   const raw = (addressStr || '').trim();
   let adresse = raw;
   let ville = '';
   let dep = '';
+  let paysCode = (currentPays || 'FR').toUpperCase();
 
-  // 1. Chercher un code postal à 5 chiffres (ex: 06400, 75001, 76000...)
+  if (!currentPays || currentPays === 'AUTO') {
+    const detected = detectCountryFromText(raw + ' ' + nomGmb);
+    if (detected) paysCode = detected;
+  }
+
+  if (paysCode === 'CA') {
+    const caMatch = raw.match(/\b([A-CEGHJ-NPR-TVXY]\d[A-CEGHJ-NPR-TV-Z])[ -]?(\d[A-CEGHJ-NPR-TV-Z]\d)\b/i);
+    if (caMatch) {
+      dep = caMatch[1].toUpperCase();
+      const before = raw.slice(0, raw.indexOf(caMatch[0])).replace(/[\s,;:-]+$/, '').trim();
+      if (before) adresse = before;
+    }
+    for (const [vClean, prov] of Object.entries(CANADIAN_CITIES_PROVINCE)) {
+      const re = new RegExp(`\\b${vClean}\\b`, 'i');
+      if (re.test(raw) || (nomGmb && re.test(nomGmb))) {
+        ville = vClean.charAt(0).toUpperCase() + vClean.slice(1);
+        dep = prov;
+        break;
+      }
+    }
+    const villeDep = ville && dep ? `${ville}, ${dep} (Canada)` : (ville || 'Canada');
+    return {
+      pays: 'CA',
+      adressePleine: raw || '[ADRESSE COMPLÈTE]',
+      adresseRue: adresse || raw || '[ADRESSE]',
+      ville: ville || 'la ville',
+      dep: dep || 'Canada',
+      villeDep: villeDep
+    };
+  }
+
+  if (paysCode === 'US') {
+    const usZip = raw.match(/\b\d{5}(-\d{4})?\b/);
+    if (usZip) {
+      dep = usZip[0];
+      const before = raw.slice(0, raw.indexOf(usZip[0])).replace(/[\s,;:-]+$/, '').trim();
+      if (before) adresse = before;
+    }
+    for (const [vClean, st] of Object.entries(US_CITIES_STATE)) {
+      const re = new RegExp(`\\b${vClean}\\b`, 'i');
+      if (re.test(raw) || (nomGmb && re.test(nomGmb))) {
+        ville = vClean.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        dep = st;
+        break;
+      }
+    }
+    const villeDep = ville && dep ? `${ville}, ${dep} (USA)` : (ville ? `${ville} (USA)` : 'États-Unis');
+    return {
+      pays: 'US',
+      adressePleine: raw || '[ADRESSE COMPLÈTE]',
+      adresseRue: adresse || raw || '[ADRESSE]',
+      ville: ville || 'la ville',
+      dep: dep || 'USA',
+      villeDep: villeDep
+    };
+  }
+
+  if (paysCode === 'BE') {
+    const beMatch = raw.match(/\b([1-9]\d{3})\b/);
+    if (beMatch) {
+      dep = beMatch[1];
+      const after = raw.slice(raw.indexOf(beMatch[0]) + beMatch[0].length).replace(/^[\s,;:-]+/, '').trim();
+      if (after) ville = after.split(/[\s,;:-]+/)[0];
+    }
+    if (!ville) {
+      for (const v of BELGIAN_CITIES) {
+        if (new RegExp(`\\b${v}\\b`, 'i').test(raw) || (nomGmb && new RegExp(`\\b${v}\\b`, 'i').test(nomGmb))) {
+          ville = v.charAt(0).toUpperCase() + v.slice(1);
+          break;
+        }
+      }
+    }
+    const villeDep = ville && dep ? `${ville} (${dep}, Belgique)` : (ville ? `${ville} (Belgique)` : 'Belgique');
+    return {
+      pays: 'BE',
+      adressePleine: raw || '[ADRESSE COMPLÈTE]',
+      adresseRue: adresse || raw || '[ADRESSE]',
+      ville: ville || 'la ville',
+      dep: dep || 'Belgique',
+      villeDep: villeDep
+    };
+  }
+
+  if (paysCode === 'CH') {
+    const chMatch = raw.match(/\b([1-9]\d{3})\b/);
+    if (chMatch) {
+      dep = chMatch[1];
+      const after = raw.slice(raw.indexOf(chMatch[0]) + chMatch[0].length).replace(/^[\s,;:-]+/, '').trim();
+      if (after) ville = after.split(/[\s,;:-]+/)[0];
+    }
+    for (const [vClean, can] of Object.entries(SWISS_CITIES)) {
+      if (new RegExp(`\\b${vClean}\\b`, 'i').test(raw) || (nomGmb && new RegExp(`\\b${vClean}\\b`, 'i').test(nomGmb))) {
+        ville = vClean.charAt(0).toUpperCase() + vClean.slice(1);
+        dep = can;
+        break;
+      }
+    }
+    const villeDep = ville && dep ? `${ville} (${dep}, Suisse)` : (ville ? `${ville} (Suisse)` : 'Suisse');
+    return {
+      pays: 'CH',
+      adressePleine: raw || '[ADRESSE COMPLÈTE]',
+      adresseRue: adresse || raw || '[ADRESSE]',
+      ville: ville || 'la ville',
+      dep: dep || 'Suisse',
+      villeDep: villeDep
+    };
+  }
+
+  if (paysCode === 'LU') {
+    for (const v of LUXEMBOURG_CITIES) {
+      if (new RegExp(`\\b${v}\\b`, 'i').test(raw) || (nomGmb && new RegExp(`\\b${v}\\b`, 'i').test(nomGmb))) {
+        ville = v.charAt(0).toUpperCase() + v.slice(1);
+        break;
+      }
+    }
+    const villeDep = ville ? `${ville} (Luxembourg)` : 'Luxembourg';
+    return {
+      pays: 'LU',
+      adressePleine: raw || '[ADRESSE COMPLÈTE]',
+      adresseRue: adresse || raw || '[ADRESSE]',
+      ville: ville || 'Luxembourg',
+      dep: 'Luxembourg',
+      villeDep: villeDep
+    };
+  }
+
+  if (paysCode === 'OTHER') {
+    return {
+      pays: 'OTHER',
+      adressePleine: raw || '[ADRESSE COMPLÈTE]',
+      adresseRue: adresse || raw || '[ADRESSE]',
+      ville: raw ? raw.split(',')[0].trim() : 'la ville',
+      dep: '',
+      villeDep: raw || 'International'
+    };
+  }
+
+  // France (FR)
   const cpMatch = raw.match(/\b(0[1-9]|[1-8][0-9]|9[0-5]|97[1-6]|2[AB])\d{3}\b/);
   if (cpMatch) {
     dep = cpMatch[1];
@@ -6873,11 +7086,10 @@ function parseGmbAddress(addressStr, nomGmb = '') {
     }
   }
 
-  // 2. Si pas de ville trouvée après le CP, chercher les villes françaises connues dans raw
   if (!ville) {
     for (const [vClean, d] of Object.entries(FRENCH_CITIES_DEPT)) {
       const re = new RegExp(`\\b${vClean.replace(/_/g, '[\\s-_]')}\\b`, 'i');
-      if (re.test(raw)) {
+      if (re.test(raw) || (nomGmb && re.test(nomGmb))) {
         ville = vClean.charAt(0).toUpperCase() + vClean.slice(1);
         if (!dep) dep = d;
         break;
@@ -6885,19 +7097,6 @@ function parseGmbAddress(addressStr, nomGmb = '') {
     }
   }
 
-  // 3. Si toujours pas de ville, chercher dans le nom du GMB
-  if (!ville && nomGmb) {
-    for (const [vClean, d] of Object.entries(FRENCH_CITIES_DEPT)) {
-      const re = new RegExp(`\\b${vClean.replace(/_/g, '[\\s-_]')}\\b`, 'i');
-      if (re.test(nomGmb)) {
-        ville = vClean.charAt(0).toUpperCase() + vClean.slice(1);
-        if (!dep) dep = d;
-        break;
-      }
-    }
-  }
-
-  // 4. Si la ville ou le code postal a été détecté dans l'adresse brute, extraire la partie rue (avec la lettre)
   if (cpMatch) {
     const beforeCp = raw.slice(0, raw.indexOf(cpMatch[0])).replace(/[\s,;:-]+$/, '').trim();
     if (beforeCp) adresse = beforeCp;
@@ -6907,7 +7106,6 @@ function parseGmbAddress(addressStr, nomGmb = '') {
     if (beforeVille) adresse = beforeVille;
   }
 
-  // Formatage propre de villeDep
   let villeDep = '';
   if (ville && dep) {
     villeDep = `${ville} ${dep}`;
@@ -6920,6 +7118,7 @@ function parseGmbAddress(addressStr, nomGmb = '') {
   }
 
   return {
+    pays: 'FR',
     adressePleine: raw || '[ADRESSE COMPLÈTE]',
     adresseRue: adresse || raw || '[ADRESSE]',
     ville: ville || 'la ville',
@@ -6928,14 +7127,210 @@ function parseGmbAddress(addressStr, nomGmb = '') {
   };
 }
 
+function getCountryVitrineData(paysCode = 'FR', parsed = {}) {
+  const code = (paysCode || 'FR').toUpperCase();
+  const ville = parsed.ville || 'la ville';
+  const villeDep = parsed.villeDep || ville;
+
+  switch (code) {
+    case 'CA':
+      return {
+        paysNom: 'Canada',
+        introPays: 'au Canada',
+        labelLocalisation: 'Ville / province',
+        typoConsigne: 'Utiliser une typographie moderne, sobre et crédible pour une entreprise locale canadienne (respecter les normes visuelles et linguistiques locales de la province, bilingue ou francophone/anglophone selon la région).',
+        enseigneType: 'Créer une véritable enseigne drapeau (blade sign / projecting sign) rectangulaire ou carrée, installée perpendiculairement à la façade avec une potence métallique noire réaliste (ou enseigne commerciale extérieure nord-américaine fixée solidement sur la maçonnerie de la devanture).',
+        contextes: [
+          'Rue commerciale urbaine canadienne typique (immeuble en brique rouge ou brune avec détails architecturaux traditionnels ou escaliers extérieurs métalliques si quartier style Montréal/Plateau)',
+          'Main street commerciale de ville canadienne dynamique avec trottoirs larges en béton, lampadaires urbains modernes et devantures soignées',
+          'Avenue commerçante mixte alliant architecture victorienne en brique et commerces de proximité modernes au rez-de-chaussée',
+          'Quartier d\'affaires ou d\'artisanat soigné avec bâtiment commercial en brique et maçonnerie robuste adaptée au climat nord-américain'
+        ],
+        elements: [
+          'trottoir en dalles de béton nord-américaines avec bordures nettes',
+          'signalisation de stationnement municipale canadienne sobre',
+          'arbre de voirie avec grille de protection au sol',
+          'poteau de signalisation urbain sobre ou borne de parcomètre canadienne',
+          'légère patine naturelle due aux saisons et au climat canadien'
+        ],
+        styleFinal: 'photorealistic documentary street photography, authentic Canadian urban streetscape, real-world North American building materials (brick, stone, painted wood), natural Canadian lighting and atmosphere, realistic depth of field, authentic local commercial signage, no CGI look, no advertising mockup look, no oversharpening.',
+        negativeSpecific: 'Parisian architecture, French monuments, Eiffel tower, French-specific street signs, Haussmann buildings'
+      };
+
+    case 'US':
+      return {
+        paysNom: 'États-Unis (USA)',
+        introPays: 'aux États-Unis (USA)',
+        labelLocalisation: 'Ville / État',
+        typoConsigne: 'Utiliser une typographie américaine sobre, percutante et professionnelle (style sans-serif moderne ou lettrage architectural traditionnel d\'entreprise locale américaine).',
+        enseigneType: 'Créer une véritable enseigne drapeau (blade sign / projecting sign) américaine rectangulaire ou carrée, fixée perpendiculairement au mur avec une potence métallique noire industrielle robuste (ou enseigne commerciale extérieure de façade sur briques).',
+        contextes: [
+          'Downtown commercial street typique d\'une ville américaine (bâtiment en briques rouges ou brunes, linteaux en pierre ou métal, devantures de boutiques au rez-de-chaussée)',
+          'Main Street américaine de centre-ville ou quartier historique avec trottoirs larges en béton et architecture commerciale traditionnelle',
+          'Bâtiment commercial urbain style brique et fonte (cast iron / brick masonry storefront) avec grandes baies vitrées',
+          'Quartier d\'artisanat ou de services rénové avec architecture industrielle propre et enseignes soignées'
+        ],
+        elements: [
+          'borne d\'incendie américaine (fire hydrant) typique',
+          'trottoir large en dalles de béton avec joints réguliers',
+          'panneau de signalisation de rue américain sobre (vert ou blanc avec nom de rue)',
+          'parcomètre ou rack à vélo urbain métallique',
+          'lumière naturelle franche et réaliste'
+        ],
+        styleFinal: 'photorealistic documentary street photography, authentic American downtown streetscape, real-world US building materials (red brick, brownstone, painted steel), natural American urban atmosphere, realistic depth of field, authentic US commercial signage, no CGI look, no advertising mockup look, no oversharpening.',
+        negativeSpecific: 'European architecture, French monuments, Eiffel tower, French-specific street signs, Haussmann facades'
+      };
+
+    case 'BE':
+      return {
+        paysNom: 'Belgique',
+        introPays: 'en Belgique',
+        labelLocalisation: 'Ville / code postal',
+        typoConsigne: 'Utiliser une typographie sobre, professionnelle et crédible pour une entreprise locale belge.',
+        enseigneType: 'Créer une véritable enseigne drapeau rectangulaire, installée perpendiculairement à la façade d’un bâtiment avec une potence métallique noire réaliste.',
+        contextes: [
+          'Maison de ville ou maison de maître belge en brique rouge ou brune avec soubassement en pierre bleue de taille',
+          'Rue commerçante de centre-ville belge avec façades étroites mitoyennes typiques et menuiseries soignées',
+          'Immeuble urbain flamand ou wallon avec toiture inclinée en tuiles ou ardoises et grandes fenêtres lumineuses'
+        ],
+        elements: [
+          'soubassement en pierre bleue belge (petit granit)',
+          'trottoir en pavés ou dalles de béton régulières',
+          'plaque de numéro de maison en émail ou métal',
+          'éclairage public urbain sobre'
+        ],
+        styleFinal: 'photorealistic documentary street photography, authentic Belgian streetscape, traditional brick and blue stone materials, natural Northern European light, realistic depth of field, authentic business signage, no CGI look, no advertising mockup look.',
+        negativeSpecific: 'Eiffel tower, Parisian monuments, American skyscrapers'
+      };
+
+    case 'CH':
+      return {
+        paysNom: 'Suisse',
+        introPays: 'en Suisse',
+        labelLocalisation: 'Ville / canton',
+        typoConsigne: 'Utiliser une typographie helvétique épurée, rigoureuse et professionnelle, typique de la précision et du design suisse.',
+        enseigneType: 'Créer une véritable enseigne drapeau rectangulaire de haute précision, installée perpendiculairement à la façade avec une potence métallique sobre et soignée.',
+        contextes: [
+          'Immeuble de centre-ville suisse en pierre de taille claire ou enduit minéral impeccable avec ferronneries soignées',
+          'Rue piétonne ou commerçante helvétique pavée, d\'une propreté exemplaire, avec façades régulières bien entretenues',
+          'Bâtiment d\'artisanat ou de services contemporain alliant bois, maçonnerie noble et menuiseries de haute qualité'
+        ],
+        elements: [
+          'façade et huisseries d\'une qualité et d\'un entretien impeccables',
+          'plaque de rue suisse sobre, bleue ou blanche, à typographie soignée',
+          'trottoir pavé ou dallé propre avec bordures nettes',
+          'mobilier urbain discret et design'
+        ],
+        styleFinal: 'photorealistic documentary street photography, pristine Swiss urban environment, high-precision Swiss architectural details, clean natural mountain/plateau lighting, realistic depth of field, authentic Swiss business signage, no CGI look, no advertising mockup look.',
+        negativeSpecific: 'dilapidated buildings, excessive street trash, Parisian monuments'
+      };
+
+    case 'LU':
+      return {
+        paysNom: 'Luxembourg',
+        introPays: 'au Luxembourg',
+        labelLocalisation: 'Ville / code postal',
+        typoConsigne: 'Utiliser une typographie sobre, haut de gamme et professionnelle adaptée aux standards luxembourgeois.',
+        enseigneType: 'Créer une véritable enseigne drapeau rectangulaire soignée, installée perpendiculairement à la façade avec une potence métallique noire élégante.',
+        contextes: [
+          'Immeuble bourgeois luxembourgeois en pierre de grès ou brique claire de centre-ville',
+          'Rue commerçante moderne et cossue avec devantures soignées au rez-de-chaussée',
+          'Bâtiment professionnel rénové aux finitions architecturales contemporaines de qualité'
+        ],
+        elements: [
+          'revêtement en pierre de taille ou grès luxembourgeois',
+          'mobilier urbain moderne et discret',
+          'trottoir dallé soigné',
+          'véhicules propres en arrière-plan flou'
+        ],
+        styleFinal: 'photorealistic documentary street photography, authentic Luxembourg streetscape, refined European building materials, natural clean lighting, realistic depth of field, authentic business signage, no CGI look, no advertising mockup look.',
+        negativeSpecific: 'Eiffel tower, Parisian monuments, American billboards'
+      };
+
+    case 'OTHER':
+      return {
+        paysNom: 'International',
+        introPays: 'pour une entreprise locale',
+        labelLocalisation: 'Ville / région',
+        typoConsigne: 'Utiliser une typographie sobre, professionnelle et universelle adaptée à une entreprise locale.',
+        enseigneType: 'Créer une véritable enseigne drapeau rectangulaire, installée perpendiculairement à la façade d’un bâtiment avec une potence métallique noire réaliste.',
+        contextes: [
+          'Rue commerciale urbaine crédible et vivante avec devantures de boutiques au rez-de-chaussée',
+          'Centre-ville avec bâtiments mitoyens soignés et trottoirs piétons',
+          'Bâtiment d\'artisanat ou de services bien entretenu avec architecture locale sobre'
+        ],
+        elements: [
+          'trottoir piéton avec bordure',
+          'mobilier urbain sobre',
+          'arbre de voirie discret',
+          'signalisation urbaine locale sobre'
+        ],
+        styleFinal: 'photorealistic documentary street photography, authentic local streetscape, real-world building materials, natural ambient lighting, realistic depth of field, authentic commercial signage, no CGI look, no advertising mockup look.',
+        negativeSpecific: 'advertising mockup, CGI, 3D render, floating sign'
+      };
+
+    case 'FR':
+    default:
+      return {
+        paysNom: 'France',
+        introPays: 'en France',
+        labelLocalisation: 'Ville / département',
+        typoConsigne: 'Utiliser une typographie sans-serif professionnelle et crédible pour une petite entreprise française.',
+        enseigneType: 'Créer une véritable enseigne drapeau rectangulaire, installée perpendiculairement à la façade d’un bâtiment avec une potence métallique noire réaliste.',
+        contextes: [
+          'Centre-ville historique français (façades en pierre de taille ou briques selon la région, toits en ardoises ou tuiles)',
+          'Quartier résidentiel ou faubourg vivant (immeubles 19e/20e siècle, commerces en rez-de-chaussée, trottoir avec bordures)',
+          'Rue commerçante de province (bâtiments mitoyens traditionnels, vitrines de boutiques locales, pavés ou enrobé soigné)',
+          'Zone d\'activité ou d\'artisanat soignée en périphérie de ville (bâtiments professionnels propres, abords dégagés)'
+        ],
+        elements: [
+          'volets battants en bois ou persiennes typiques',
+          'trottoir avec bordure en granit et pavés ou asphalte réaliste',
+          'plaque de rue bleue émaillée ou panneau de signalisation sobre',
+          'légère patine naturelle du bâtiment due au temps'
+        ],
+        styleFinal: 'photorealistic documentary street photography, natural French urban environment, real-world materials, subtle imperfections, natural colors, realistic exposure, soft photographic detail, authentic small French business signage, physically plausible mounting, realistic depth of field, no CGI look, no advertising mockup look, no excessive HDR, no oversharpening, no excessive saturation.',
+        negativeSpecific: 'cathédrale ou église systématiquement en arrière-plan, monument touristique systématique, vue spectaculaire de la ville à chaque image, décor trop propre, rue artificiellement vide'
+      };
+  }
+}
+
+function onVitrinePaysChange(manual = false) {
+  if (manual) {
+    window._vitrinePaysManual = true;
+    const badge = document.getElementById('vitrine-pays-badge');
+    if (badge) {
+      badge.textContent = '🔒 Choix manuel';
+      badge.style.color = '#38bdf8';
+    }
+  }
+  onVitrineAdresseInput();
+  onVitrineInputsChange();
+}
+
 function onVitrineAdresseInput() {
   const adrInput = document.getElementById('vitrine-adresse');
   const nomInput = document.getElementById('vitrine-nom');
   const detectedLabel = document.getElementById('vitrine-detected-label');
   const hiddenVilleDep = document.getElementById('vitrine-ville-dep');
+  const paysSelect = document.getElementById('vitrine-pays');
+  const badge = document.getElementById('vitrine-pays-badge');
 
   const rawAdr = adrInput?.value || '';
   const nomGmb = nomInput?.value || '';
+
+  if (!window._vitrinePaysManual && (rawAdr || nomGmb)) {
+    const detectedPays = detectCountryFromText(rawAdr + ' ' + nomGmb);
+    if (detectedPays && paysSelect && paysSelect.value !== detectedPays) {
+      paysSelect.value = detectedPays;
+      if (badge) {
+        badge.textContent = '✨ Détecté auto';
+        badge.style.color = '#60a5fa';
+      }
+    }
+  }
+
+  const selectedPays = paysSelect?.value || 'FR';
 
   if (!rawAdr.trim()) {
     if (detectedLabel) detectedLabel.textContent = '—';
@@ -6944,9 +7339,9 @@ function onVitrineAdresseInput() {
     return;
   }
 
-  const parsed = parseGmbAddress(rawAdr, nomGmb);
+  const parsed = parseGmbAddress(rawAdr, nomGmb, selectedPays);
   if (detectedLabel) {
-    detectedLabel.textContent = parsed.villeDep !== 'France' ? parsed.villeDep : (parsed.ville || 'France');
+    detectedLabel.textContent = parsed.villeDep;
   }
   if (hiddenVilleDep) {
     hiddenVilleDep.value = parsed.villeDep;
@@ -6959,8 +7354,10 @@ function buildVitrinePrompt(params = {}) {
   const nom = (params.nom || document.getElementById('vitrine-nom')?.value || '').trim() || '[NOM DE L’ENTREPRISE]';
   const tel = (params.tel || document.getElementById('vitrine-tel')?.value || '').trim() || '[TÉLÉPHONE]';
   const adresseBrute = (params.adresse || document.getElementById('vitrine-adresse')?.value || '').trim() || '[ADRESSE DU GMB PRÉVU]';
+  const paysCode = (params.pays || document.getElementById('vitrine-pays')?.value || 'FR').toUpperCase();
 
-  const parsed = parseGmbAddress(adresseBrute, nom);
+  const parsed = parseGmbAddress(adresseBrute, nom, paysCode);
+  const countryData = getCountryVitrineData(paysCode, parsed);
   const adresseComplete = parsed.adressePleine;
   const adresseSurPanneau = parsed.adresseRue;
   const villeDep = parsed.villeDep;
@@ -6969,14 +7366,14 @@ function buildVitrinePrompt(params = {}) {
   // Contexte architectural ultra-réaliste
   let contexte = params.contexte || document.getElementById('vitrine-contexte')?.value || 'random';
   if (contexte === 'random') {
-    contexte = window._currentVitrineContexte || VITRINE_CONTEXTES[Math.floor(Math.random() * VITRINE_CONTEXTES.length)];
+    contexte = window._currentVitrineContexte || countryData.contextes[Math.floor(Math.random() * countryData.contextes.length)];
   }
 
   // Éléments secondaires authentiques
   let elements = params.elements;
   if (!elements) {
     if (!window._currentVitrineElements) {
-      const shuffled = [...VITRINE_ELEMENTS_LIST].sort(() => 0.5 - Math.random());
+      const shuffled = [...countryData.elements].sort(() => 0.5 - Math.random());
       window._currentVitrineElements = shuffled.slice(0, 3).join(', ');
     }
     elements = window._currentVitrineElements;
@@ -6998,7 +7395,7 @@ function buildVitrinePrompt(params = {}) {
     environnementSection = `ENVIRONNEMENT :
 
 RÉFÉRENCE VISUELLE DE LA FAÇADE (GOOGLE STREET VIEW FOURNIE EN PIÈCE JOINTE) :
-* Une photographie réelle de la façade et de la rue issue de Google Maps Street View pour cette adresse (${adresseComplete}) est fournie en référence visuelle.
+* Une photographie réelle de la façade et de la rue issue de Google Maps Street View pour cette adresse (${adresseComplete}, ${countryData.paysNom}) est fournie en référence visuelle.
 * CONSIGNES CRUCIALES DE REPRODUCTION DE LA RUE RÉELLE :
   - Reproduire fidèlement l'architecture réelle du bâtiment visible sur l'image Street View : les matériaux exacts de la façade (pierre de taille, briques, enduit ou crépi spécifique avec sa patine d'âge), la teinte exacte des murs, le style et la couleur des volets et des fenêtres, les corniches, le nombre d'étages et la devanture au rez-de-chaussée.
   - Conserver fidèlement l'environnement direct et la perspective de la rue observés sur la vue Street View (largeur du trottoir, typologie de la voirie, bâtiments adjacents réels).
@@ -7007,13 +7404,13 @@ RÉFÉRENCE VISUELLE DE LA FAÇADE (GOOGLE STREET VIEW FOURNIE EN PIÈCE JOINTE)
   } else {
     environnementSection = `ENVIRONNEMENT :
 
-Créer un environnement français naturel correspondant à ${villeSimple}.
+Créer un environnement urbain naturel et authentique correspondant à ${villeSimple} (${countryData.paysNom}).
 
-La façade et le quartier doivent être plausibles pour la ville, mais éviter de transformer chaque image en carte postale touristique.
+La façade et le quartier doivent être plausibles et fidèles aux caractéristiques locales de la région, en évitant les clichés touristiques.
 
 IMPORTANT : varier réellement l’environnement entre chaque nouvelle génération.
 
-Choisir aléatoirement un contexte crédible parmi :
+Choisir de manière réaliste un contexte crédible parmi :
 * ${contexte}
 
 Ajouter naturellement certains éléments secondaires :
@@ -7022,20 +7419,16 @@ ${elements} selon la scène.
 Ces éléments doivent rester secondaires et imparfaits comme dans une vraie photographie.
 
 ÉVITER :
-* cathédrale ou église systématiquement en arrière-plan
-* monument touristique systématique
-* vue spectaculaire de la ville à chaque image
-* décor trop propre
-* rue artificiellement vide
-* architecture générique répétée d’une génération à l’autre
-Un monument identifiable peut exceptionnellement apparaître très loin dans certaines images, mais pas systématiquement.`;
+* ${countryData.negativeSpecific}
+* décor trop propre ou artificiellement vide
+* architecture générique répétée d’une génération à l’autre`;
   }
 
   const styleFinalStr = window._vitrineStreetViewData
-    ? `photorealistic documentary street photography, faithful architectural reproduction of real-world Google Street View building, natural French urban environment, real-world materials, subtle imperfections, natural colors, realistic exposure, soft photographic detail, authentic small French business signage, physically plausible mounting, realistic depth of field, no CGI look, no advertising mockup look, no excessive HDR, no oversharpening, no excessive saturation.`
-    : `photorealistic documentary street photography, natural French urban environment, real-world materials, subtle imperfections, natural colors, realistic exposure, soft photographic detail, authentic small French business signage, physically plausible mounting, realistic depth of field, no CGI look, no advertising mockup look, no excessive HDR, no oversharpening, no excessive saturation.`;
+    ? `photorealistic documentary street photography, faithful architectural reproduction of real-world Google Street View building, authentic ${countryData.paysNom} urban environment, real-world materials, subtle imperfections, natural colors, realistic exposure, soft photographic detail, authentic local business signage, physically plausible mounting, realistic depth of field, no CGI look, no advertising mockup look, no excessive HDR, no oversharpening, no excessive saturation.`
+    : countryData.styleFinal;
 
-  return `Génère une photographie ultra-réaliste d’une enseigne professionnelle extérieure installée en France pour une entreprise locale.
+  return `Génère une photographie ultra-réaliste d’une enseigne professionnelle extérieure installée ${countryData.introPays} pour une entreprise locale.
 
 IMPORTANT : il doit s’agir d’une vraie scène de rue crédible, photographiée naturellement, et NON d’un mockup publicitaire, d’un rendu 3D, d’une illustration ou d’une image trop parfaite.
 
@@ -7043,12 +7436,13 @@ ENTREPRISE :
 * Nom / activité : ${nom}
 * Téléphone : ${tel}
 * Adresse : ${adresseComplete}
-* Ville / département : ${villeDep}
+* Localisation (${countryData.labelLocalisation}) : ${villeDep}
+* Pays : ${countryData.paysNom}
 * Logo : ${logoConsigne}
 
 
 ENSEIGNE :
-Créer une véritable enseigne drapeau rectangulaire, installée perpendiculairement à la façade d’un bâtiment.
+${countryData.enseigneType}
 
 L’enseigne est fixée suffisamment haut sur la façade avec une potence métallique noire réaliste.
 
@@ -7093,12 +7487,12 @@ Tout doit être lisible et correctement orthographié.
 Hiérarchie :
 * logo : environ 20–25 % de la surface utile
 * activité : grande et immédiatement lisible
-* ville/département : taille intermédiaire
+* localisation (${countryData.labelLocalisation}) : taille intermédiaire
 * téléphone : très lisible
 * adresse : plus petite mais parfaitement lisible
-Utiliser une typographie sans-serif professionnelle et crédible pour une petite entreprise française.
+${countryData.typoConsigne}
 
-Le logo et les textes doivent sembler réellement imprimés sur le panneau par impression UV professionnelle.
+Le logo et les textes doivent sembler réellement imprimés sur le panneau par impression professionnelle.
 
 Aucun effet 3D.
 Aucun texte flottant.
@@ -7143,7 +7537,8 @@ Très légère imperfection photographique possible :
 * perspective imparfaite
 * petite variation d’exposition
 * léger bruit numérique
-* petites irrégularités des matériauxL’image doit ressembler à une véritable photographie prise dans la rue et non à une image publicitaire.
+* petites irrégularités des matériaux
+L’image doit ressembler à une véritable photographie prise dans la rue et non à une image publicitaire.
 
 STYLE FINAL :
 
@@ -7173,7 +7568,7 @@ invented phone number,
 invented address,
 additional logos,
 additional business names,
-watermark.`;
+${countryData.negativeSpecific ? countryData.negativeSpecific + ',\n' : ''}watermark.`;
 }
 
 function onVitrineInputsChange() {
