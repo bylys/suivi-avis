@@ -8741,7 +8741,7 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '')
     'électricité', 'electricite', 'menuiserie', 'carrelage', 'serrurerie', 'assainissement',
     'ramonage', 'débarras', 'debarras', 'traitement hydrofuge', 'recherche de fuite', 'émondage',
     'haubanage', 'déchiquetage', 'essouchage', 'arboriculture', 'plantation', 'taille', 'élagueur',
-    'émondeur', 'arboriste'
+    'émondeur', 'arboriste', 'arbre', 'maladie', 'diagnostic', 'expertise', 'traitement', 'soin des arbres', 'détection', 'detection', 'frelon', 'nuisible'
   ];
 
   function ajouterService(cand) {
@@ -8762,8 +8762,41 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '')
     servicesSet.add(formatted);
   }
 
-  // 1. Priorité absolue : contenu extrait spécifiquement de la section #services (via X-Target-Selector)
-  if (targetedServicesMarkdown && targetedServicesMarkdown.length > 20) {
+  // 1. PRIORITÉ ABSOLUE : Lignes avec EMOJIS (cartes de prestations du site)
+  // Ex: "🌳 Emondage d'arbre", "🪓 Abattage d'arbre", "🔬 Detection de maladie d'arbre"
+  const emojiLineRegex = /^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2700}-\u{27BF}][\ufe00-\ufe0f\u200d\s]*)\s+([^#\n\r!\[<]+)$/u;
+  const allLines = (markdown || '').split('\n');
+  for (const rawLine of allLines) {
+    const trimmed = rawLine.trim();
+    const emMatch = trimmed.match(emojiLineRegex);
+    if (emMatch) {
+      const emoji = emMatch[1].trim();
+      let srvName = emMatch[2].replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*_#`:]/g, '').trim();
+      srvName = srvName.replace(/^[-*•\d.]+\s*/, '').trim();
+      if (srvName.length >= 3 && srvName.length <= 60 && !srvName.startsWith('http') && !/image|téléphone|appel|devis|estimation|question sur/i.test(srvName)) {
+        servicesSet.add(`${emoji} ${srvName}`);
+      }
+    }
+  }
+
+  // 2. Navigation sous-menu "Nos services" (si le menu déroulant est présent dans le HTML ou markdown)
+  if (servicesSet.size < 3 && markdown) {
+    const subMenuRegex = /(?:nos\s+services|prestations)[\s\S]*?(?:<ul[^>]*sub-menu[^>]*>([\s\S]*?)<\/ul>)/i;
+    const subMenuMatch = markdown.match(subMenuRegex);
+    if (subMenuMatch && subMenuMatch[1]) {
+      const linkRegex = /<a[^>]*>(.*?)<\/a>/gi;
+      let lm;
+      while ((lm = linkRegex.exec(subMenuMatch[1])) !== null) {
+        const itemTxt = lm[1].replace(/<[^>]+>/g, '').trim();
+        if (itemTxt && itemTxt.length >= 3 && itemTxt.length <= 60) {
+          ajouterService(itemTxt);
+        }
+      }
+    }
+  }
+
+  // 3. Contenu extrait spécifiquement de la section #services (via X-Target-Selector)
+  if (servicesSet.size < 2 && targetedServicesMarkdown && targetedServicesMarkdown.length > 20) {
     const lines = targetedServicesMarkdown.split('\n');
     for (const rawLine of lines) {
       const line = rawLine.trim();
