@@ -894,8 +894,11 @@
           <label for="seo-site-url" style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
             🌐 URL du site SEO à scrapper *
           </label>
-          <input type="text" id="seo-site-url" placeholder="https://artisan-couvreur-nantes.fr ou ravalement-bordeaux.com..."
+          <input type="text" id="seo-site-url" placeholder="https://monsite.fr/#services ou https://monsite.fr ou nom de métier..."
             style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;" required />
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+            🎯 Extrait en priorité l'ensemble des prestations depuis la section <code>#services</code> du site web.
+          </div>
         </div>
 
         <div style="flex:1.2;min-width:160px;">
@@ -1420,6 +1423,6 @@
 </div>
 
 <!-- ── MODAL GÉNÉRATION IMAGE PLANNING ── -->
-<script src="app.js?v=83_resilient_seo_scraper"></script>
+<script src="app.js?v=84_services_section_scraper"></script>
 </body>
 </html>

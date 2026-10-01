@@ -8730,7 +8730,7 @@ function extraireVilleDepuisTexteEtUrl(url, text) {
   return '';
 }
 
-function extraireServicesDepuisMarkdown(markdown) {
+function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '') {
   const servicesSet = new Set();
   const tradeWords = [
     'ravalement', 'couverture', 'toiture', 'élagage', 'elagage', 'démoussage', 'demoussage',
@@ -8739,59 +8739,112 @@ function extraireServicesDepuisMarkdown(markdown) {
     'pose de', 'rénovation', 'renovation', 'gouttière', 'gouttiere', 'vitrerie', 'miroiterie',
     'maçonnerie', 'maconnerie', 'débroussaillage', 'debroussaillage', 'dessouchage', 'plomberie',
     'électricité', 'electricite', 'menuiserie', 'carrelage', 'serrurerie', 'assainissement',
-    'ramonage', 'débarras', 'debarras', 'traitement hydrofuge', 'recherche de fuite'
+    'ramonage', 'débarras', 'debarras', 'traitement hydrofuge', 'recherche de fuite', 'émondage',
+    'haubanage', 'déchiquetage', 'essouchage', 'arboriculture', 'plantation', 'taille', 'élagueur',
+    'émondeur', 'arboriste'
   ];
 
-  const lines = markdown.split('\n');
-  let inServiceSection = false;
+  function ajouterService(cand) {
+    if (!cand) return;
+    let clean = cand.replace(/\[(.*?)\]\(.*?\)/g, '$1');
+    clean = clean.replace(/[*_#`:]/g, '').trim();
+    clean = clean.replace(/^[-*•\d.]+\s*/, '').trim();
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
+    // Rejeter phrases longues ou terminant par un point descriptif
+    if (clean.endsWith('.') && clean.split(/\s+/).length > 4) return;
+    if (clean.length < 3 || clean.length > 70) return;
 
-    if (/^#+\s*(nos prestations|nos services|prestations|services|activités|nos métiers|ce que nous proposons)/i.test(line)) {
-      inServiceSection = true;
-      continue;
+    const lower = clean.toLowerCase();
+    if (/accueil|contact|mentions|politique|rgpd|cookie|téléphone|devis|en savoir plus|lire la suite|0[1-9]|nos services|nos prestations|services proposés|tous nos services|pourquoi nous choisir|nos réalisations|nos avis/i.test(lower)) {
+      return;
     }
+    const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
+    servicesSet.add(formatted);
+  }
 
-    if (inServiceSection && /^#+\s*(contact|à propos|mentions|avis|actualités|qui sommes-nous)/i.test(line)) {
-      inServiceSection = false;
+  // 1. Priorité absolue : contenu extrait spécifiquement de la section #services (via X-Target-Selector)
+  if (targetedServicesMarkdown && targetedServicesMarkdown.length > 20) {
+    const lines = targetedServicesMarkdown.split('\n');
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      const bm = line.match(/^[-*•\d.]+\s+(.*)/);
+      const hm = line.match(/^#+\s+(.*)/);
+      const boldm = line.match(/^\*\*(.*?)\*\*/);
+      const linkm = line.match(/^\[(.*?)\]\(.*?\)/);
+      if (bm) ajouterService(bm[1]);
+      else if (hm) ajouterService(hm[1]);
+      else if (boldm) ajouterService(boldm[1]);
+      else if (linkm) ajouterService(linkm[1]);
+      else if (line.length < 50 && !line.endsWith('.')) ajouterService(line);
     }
+  }
 
-    const isBullet = /^[-*•]\s+/.test(line) || /^\d+\.\s+/.test(line);
-    const isHeading = /^#+\s+/.test(line);
+  // 2. Si moins de 2 services, recherche ciblée de la section #services dans le markdown complet
+  if (servicesSet.size < 2 && markdown) {
+    const lines = markdown.split('\n');
+    let inServiceSection = false;
 
-    if (inServiceSection || isBullet || isHeading) {
-      const cleanLine = line.replace(/^#+\s*/, '').replace(/^[-*•\d.]+\s*/, '').replace(/\[(.*?)\]\(.*?\)/g, '$1').trim();
-      if (cleanLine.length >= 4 && cleanLine.length <= 65) {
-        const lower = cleanLine.toLowerCase();
-        const hasTrade = tradeWords.some(w => lower.includes(w));
-        const isBlacklisted = /accueil|contact|mentions|politique|rgpd|cookie|téléphone|devis gratuit|0[1-9]|en savoir plus|lire la suite/i.test(lower);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
 
-        if (!isBlacklisted && (hasTrade || inServiceSection)) {
-          const formatted = cleanLine.charAt(0).toUpperCase() + cleanLine.slice(1);
-          servicesSet.add(formatted);
+      // Détection ancre ou titre de la section #services
+      const isServiceAnchorOrHeading = (
+        /(id=["']services["']|\{#services\}|href=["']#services["']|<section[^>]*id=["']services["']|<div[^>]*id=["']services["'])/i.test(line) ||
+        /^#+\s*.*(services|prestations|nos offres|nos activit|ce que nous proposons|ce que nous faisons|domaines d'intervention|interventions|nos compétences).*$/i.test(line)
+      );
+
+      if (isServiceAnchorOrHeading) {
+        inServiceSection = true;
+        continue;
+      }
+
+      // Fin de la section services
+      if (inServiceSection && (
+        /^#+\s*.*(contact|à propos|a propos|qui sommes-nous|avis|témoignages|faq|partenaires|notre histoire|mentions|pourquoi nous|formulaire|galerie).*$/i.test(line) ||
+        /<\/section>/i.test(line)
+      )) {
+        inServiceSection = false;
+      }
+
+      if (inServiceSection) {
+        const bm = line.match(/^[-*•\d.]+\s+(.*)/);
+        const hm = line.match(/^#+\s+(.*)/);
+        const boldm = line.match(/^\*\*(.*?)\*\*/);
+        const linkm = line.match(/^\[(.*?)\]\(.*?\)/);
+
+        if (bm) ajouterService(bm[1]);
+        else if (hm) ajouterService(hm[1]);
+        else if (boldm) ajouterService(boldm[1]);
+        else if (linkm) ajouterService(linkm[1]);
+        else if (line.length < 50 && !line.endsWith('.')) {
+          const lower = line.toLowerCase();
+          if (tradeWords.some(tw => lower.includes(tw))) {
+            ajouterService(line);
+          }
         }
       }
     }
   }
 
-  if (servicesSet.size < 2) {
+  // 3. Fallback avec mots-clés métiers dans tout le document si la section n'a pas été détectée
+  if (servicesSet.size < 2 && markdown) {
     tradeWords.forEach(tw => {
-      const re = new RegExp(`\\b(${tw}[a-zà-ÿ\\s]{0,30})\\b`, 'gi');
+      const re = new RegExp(`\\b(${tw}[a-zà-ÿ\\s]{0,35})\\b`, 'gi');
       let m;
       let count = 0;
       while ((m = re.exec(markdown)) !== null && count < 3) {
         const cand = m[1].trim();
-        if (cand.length >= 6 && cand.length <= 40 && !/pour|dans|avec|notre|votre/i.test(cand)) {
-          servicesSet.add(cand.charAt(0).toUpperCase() + cand.slice(1));
+        if (cand.length >= 5 && cand.length <= 45 && !/pour|dans|avec|notre|votre/i.test(cand)) {
+          ajouterService(cand);
           count++;
         }
       }
     });
   }
 
-  return Array.from(servicesSet).slice(0, 18);
+  return Array.from(servicesSet).slice(0, 20);
 }
 
 function extraireDescriptionGmbDepuisMarkdown(markdown, ville) {
@@ -9294,12 +9347,39 @@ async function lancerScrapingSiteSeo(event) {
   let markdown = '';
   let photosSite = [];
 
-  // 2. Si c'est une vraie URL, tentative de scraping avec Jina (timeout 7s)
+  // 2. Si c'est une vraie URL, tentative de scraping ciblé sur #services puis global
   if (isRealUrl) {
+    const cleanBaseUrl = targetUrl.split('#')[0].replace(/\/+$/, '');
+    let targetedServicesMarkdown = '';
+
+    // A. Priorité absolue : récupération directe du bloc #services via Jina X-Target-Selector
+    try {
+      const ctrlSelector = new AbortController();
+      const timerSelector = setTimeout(() => ctrlSelector.abort(), 6000);
+      const respSelector = await fetch(`https://r.jina.ai/${cleanBaseUrl}`, {
+        headers: {
+          'Accept': 'text/plain',
+          'X-Target-Selector': '#services'
+        },
+        signal: ctrlSelector.signal
+      });
+      clearTimeout(timerSelector);
+      if (respSelector.ok) {
+        const txt = await respSelector.text();
+        if (txt && txt.length > 25 && !txt.includes('AssertionFailureError') && !txt.includes('42206')) {
+          targetedServicesMarkdown = txt;
+          console.log("Section #services ciblée récupérée avec succès via Jina");
+        }
+      }
+    } catch (e) {
+      console.warn("Jina selector #services non disponible, fallback", e);
+    }
+
+    // B. Récupération globale du site (description GMB, ville, photos, et fallback services)
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 7000);
-      const resp = await fetch(`https://r.jina.ai/${targetUrl}`, {
+      const resp = await fetch(`https://r.jina.ai/${cleanBaseUrl}`, {
         headers: { 'Accept': 'text/plain' },
         signal: controller.signal
       });
@@ -9310,19 +9390,40 @@ async function lancerScrapingSiteSeo(event) {
     } catch (e) {
       console.warn("Jina scrape direct failed, fallback to intelligent generation", e);
     }
+
+    // C. Si markdown complet et ciblé sont vides, fallback HTML via proxy
+    if (!markdown && !targetedServicesMarkdown) {
+      try {
+        const fbResp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(cleanBaseUrl)}`);
+        if (fbResp.ok) {
+          const rawHtml = await fbResp.text();
+          const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+          const servicesEl = doc.querySelector('#services') || doc.querySelector('[id*="service"]') || doc.querySelector('[class*="service"]');
+          if (servicesEl) {
+            targetedServicesMarkdown = servicesEl.innerText;
+          }
+          markdown = doc.body ? doc.body.innerText : '';
+        }
+      } catch (errProxy) {
+        console.warn("Fallback proxy failed", errProxy);
+      }
+    }
+
+    window._lastTargetedServicesMarkdown = targetedServicesMarkdown;
   }
 
   // 3. Extraction ou génération synthétique
   let services = [];
   let description = '';
+  const targetedServicesMarkdown = window._lastTargetedServicesMarkdown || '';
 
-  if (markdown && markdown.length > 80) {
+  if ((markdown && markdown.length > 80) || (targetedServicesMarkdown && targetedServicesMarkdown.length > 20)) {
     if (!ville) {
-      ville = extraireVilleDepuisTexteEtUrl(targetUrl, markdown);
+      ville = extraireVilleDepuisTexteEtUrl(targetUrl, markdown || targetedServicesMarkdown);
       if (ville && villeInput) villeInput.value = ville;
       _seoScrapedData.ville = ville;
     }
-    services = extraireServicesDepuisMarkdown(markdown);
+    services = extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown);
     description = extraireDescriptionGmbDepuisMarkdown(markdown, ville);
     photosSite = extrairePhotosDepuisMarkdown(markdown, targetUrl);
   } else {
