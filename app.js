@@ -7315,6 +7315,7 @@ const FRENCH_CITIES_DEPT = {
 };
 
 const CANADIAN_CITIES_PROVINCE = {
+  'saguenay': 'QC',
   'montreal': 'QC', 'montréal': 'QC', 'quebec': 'QC', 'québec': 'QC', 'laval': 'QC',
   'gatineau': 'QC', 'longueuil': 'QC', 'sherbrooke': 'QC', 'levis': 'QC', 'lévis': 'QC',
   'trois-rivieres': 'QC', 'trois-rivières': 'QC', 'terrebonne': 'QC', 'saint-jean-sur-richelieu': 'QC',
@@ -8614,8 +8615,17 @@ function appliquerExempleSiteSeo(url, ville) {
   lancerScrapingSiteSeo();
 }
 
+function estUrlValide(text = '') {
+  const t = (text || '').trim();
+  if (!t) return false;
+  // S'il y a des espaces et aucun protocole http au début, c'est du texte libre
+  if (/\s/.test(t) && !/^https?:\/\/\S+$/i.test(t)) return false;
+  // Doit contenir au moins un point suivi d'une extension de domaine
+  return /\b[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/|\?|#|$)/i.test(t);
+}
+
 function normaliserUrlSite(raw) {
-  let u = (raw || '').trim();
+  let u = (raw || '').trim().replace(/\s+/g, '');
   if (!u) return '';
   if (!/^https?:\/\//i.test(u)) {
     u = 'https://' + u;
@@ -8631,23 +8641,34 @@ function recalculerUtmLink() {
 
   if (!urlInput || !utmInput) return;
 
-  const rawUrl = normaliserUrlSite(urlInput.value);
-  if (!rawUrl) return;
+  const rawInput = (urlInput.value || '').trim();
+  if (!rawInput) return;
 
   let origin = '';
-  try {
-    const parsed = new URL(rawUrl);
-    origin = parsed.origin;
-    if (parsed.pathname && parsed.pathname !== '/') {
-      origin += parsed.pathname.replace(/\/+$/, '');
+  if (estUrlValide(rawInput)) {
+    const rawUrl = normaliserUrlSite(rawInput);
+    try {
+      const parsed = new URL(rawUrl);
+      origin = parsed.origin;
+      if (parsed.pathname && parsed.pathname !== '/') {
+        origin += parsed.pathname.replace(/\/+$/, '');
+      }
+    } catch (e) {
+      origin = rawUrl.replace(/\/+$/, '');
     }
-  } catch (e) {
-    origin = rawUrl.replace(/\/+$/, '');
+  } else {
+    // Saisie par nom de métier ou mots-clés : créer un domaine simulé propre
+    const slug = rawInput.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const isCa = /saguenay|montreal|montréal|quebec|québec|laval|sherbrooke|gatineau|canada/i.test(rawInput);
+    origin = `https://${slug}.${isCa ? 'ca' : 'fr'}`;
   }
 
   let ville = (villeInput?.value || _seoScrapedData.ville || '').trim();
   if (!ville) {
-    ville = extraireVilleDepuisUrl(rawUrl) || 'local';
+    ville = extraireVilleDepuisUrl(origin) || extraireVilleDepuisTexteEtUrl(origin, rawInput) || 'local';
   }
 
   // Nettoyage de la ville : minuscules, sans accents, tirets
@@ -8691,7 +8712,7 @@ function extraireVilleDepuisTexteEtUrl(url, text) {
     'aix-en-provence', 'brest', 'tours', 'amiens', 'limoges', 'annecy', 'perpignan', 'metz',
     'besancon', 'orleans', 'caen', 'mulhouse', 'nancy', 'avignon', 'poitiers', 'pau',
     'la rochelle', 'calais', 'cannes', 'antibes', 'grasse', 'valence', 'bourges', 'tarbes',
-    'montréal', 'montreal', 'québec', 'quebec', 'bruxelles', 'genève', 'geneve', 'luxembourg'
+    'saguenay', 'montréal', 'montreal', 'québec', 'quebec', 'bruxelles', 'genève', 'geneve', 'luxembourg'
   ];
 
   for (const c of topCities) {
@@ -9140,17 +9161,117 @@ function envoyerPhotoVersVitrine(dataUrl, name) {
   showToast("🏪 Photo envoyée vers la vitrine GMB !", "success", 4000);
 }
 
+function genererServicesDepuisTexte(text = '') {
+  const t = text.toLowerCase();
+  
+  if (t.includes('emondeur') || t.includes('émond') || t.includes('elagage') || t.includes('élagage') || t.includes('abattage')) {
+    return [
+      "Émondage d'arbres",
+      "Abattage d'arbres sécurisé",
+      "Élagage résidentiel & commercial",
+      "Taille de haies de cèdres & arbustes",
+      "Haubanage & consolidation d'arbres",
+      "Dessouchage & essouchage mécanique",
+      "Déchiquetage de branches & résidus",
+      "Urgence arbre dangereux 24/7",
+      "Débroussaillage de terrain",
+      "Nettoyage après tempête ou sinistre"
+    ];
+  }
+  
+  if (t.includes('couvr') || t.includes('toitur') || t.includes('zinguerie')) {
+    return [
+      "Rénovation de toiture",
+      "Nettoyage & démoussage toiture",
+      "Recherche & réparation de fuite d'eau",
+      "Pose & remplacement de tuiles et ardoises",
+      "Travaux de zinguerie & chéneaux",
+      "Pose de gouttières alu & zinc",
+      "Traitement hydrofuge toiture",
+      "Isolation des combles et toiture",
+      "Étanchéité toiture terrasse & toit plat",
+      "Dépannage toiture en urgence"
+    ];
+  }
+
+  if (t.includes('ravalement') || t.includes('facade') || t.includes('façade') || t.includes('peintr')) {
+    return [
+      "Ravalement de façade complet",
+      "Nettoyage haute pression façade",
+      "Traitement anti-mousse & hydrofuge façade",
+      "Réparation des fissures & crépi",
+      "Peinture extérieure & intérieure",
+      "Isolation thermique par l'extérieur (ITE)",
+      "Jointoiement de pierre & brique",
+      "Peinture des boiseries & ferronneries"
+    ];
+  }
+
+  if (t.includes('terrasse') || t.includes('btp') || t.includes('assainissement')) {
+    return [
+      "Terrassement pour maison & piscine",
+      "Nivellement de terrain & remblai",
+      "Tranchées techniques & VRD",
+      "Assainissement autonome & raccordement",
+      "Enrochement & soutènement",
+      "Aménagement de chemin d'accès",
+      "Évacuation de gravats & terre"
+    ];
+  }
+
+  return [
+    "Prestations professionnelles sur mesure",
+    "Devis gratuit & déplacement rapide",
+    "Conseils techniques et diagnostics personnalisés",
+    "Garantie décennale et assurance professionnelle",
+    "Intervention d'urgence locale"
+  ];
+}
+
+function genererDescriptionGmbDepuisTexte(text = '', ville = '') {
+  const t = text.toLowerCase();
+  const v = ville ? ` à ${ville} et dans toute sa région` : '';
+  
+  if (t.includes('emondeur') || t.includes('émond') || t.includes('elagage') || t.includes('élagage') || t.includes('abattage')) {
+    return `Entreprise spécialisée en émondage, élagage et abattage d'arbres${v}. Notre équipe certifiée intervient pour tous vos travaux d'entretien arboricole : taille de haies, haubanage, essouchage, déchiquetage et abattage délicat ou dangereux. Nous disposons d'équipements spécialisés pour des interventions sécuritaires et soignées, tant en milieu résidentiel que commercial. Service d'urgence disponible 7j/7, respect de l'environnement et estimation gratuite et sans engagement.`;
+  }
+
+  if (t.includes('couvr') || t.includes('toitur')) {
+    return `Artisan couvreur professionnel intervenant${v}. Spécialiste de la rénovation de toiture, nettoyage, démoussage, traitement hydrofuge et réparation de fuite en urgence. Nous réalisons tous travaux de couverture (tuiles, ardoises, bac acier), zinguerie sur mesure, pose de gouttières et isolation thermique. Travail de haute qualité, respect des délais, garantie décennale et devis gratuit sous 24h.`;
+  }
+
+  if (t.includes('ravalement') || t.includes('façade') || t.includes('facade')) {
+    return `Entreprise qualifiée en ravalement et rénovation de façade${v}. Nous redonnons éclat et protection à vos murs extérieurs : nettoyage, rebouchage des fissures, application de crépi, peinture hydrofuge et isolation thermique extérieure. Matériaux de qualité supérieure, savoir-faire artisanal garanti et devis gratuit personnalisé.`;
+  }
+
+  return `Entreprise professionnelle de confiance intervenant${v}. Nous mettons notre expertise et notre savoir-faire au service de vos projets de rénovation et d'entretien. Prestations soignées, écoute attentive de vos besoins, respect des normes en vigueur et devis gratuit sans engagement.`;
+}
+
 async function lancerScrapingSiteSeo(event) {
   if (event) event.preventDefault();
   const urlInput = document.getElementById('seo-site-url');
-  const rawUrl = normaliserUrlSite(urlInput?.value);
-  if (!rawUrl) {
-    alert("Veuillez renseigner une URL valide.");
+  const rawInput = (urlInput?.value || '').trim();
+  if (!rawInput) {
+    alert("Veuillez renseigner une URL de site ou un nom de métier.");
     urlInput?.focus();
     return;
   }
 
-  window._lastSeoSiteUrl = rawUrl;
+  const isRealUrl = estUrlValide(rawInput);
+  let targetUrl = '';
+  if (isRealUrl) {
+    targetUrl = normaliserUrlSite(rawInput);
+  } else {
+    // Saisie textuelle (ex: "Émondeur et Abattage Saguenay")
+    const slug = rawInput.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const isCa = /saguenay|montreal|montréal|quebec|québec|laval|sherbrooke|gatineau|canada/i.test(rawInput);
+    targetUrl = `https://${slug}.${isCa ? 'ca' : 'fr'}`;
+  }
+
+  window._lastSeoSiteUrl = rawInput;
   const loadingBox = document.getElementById('seo-loading-box');
   const errorBox = document.getElementById('seo-error-box');
   const resultsBox = document.getElementById('seo-results-box');
@@ -9159,77 +9280,109 @@ async function lancerScrapingSiteSeo(event) {
   if (loadingBox) loadingBox.style.display = 'block';
   if (errorBox) errorBox.style.display = 'none';
   if (resultsBox) resultsBox.style.display = 'none';
-  if (statusPill) { statusPill.style.display = 'inline-block'; statusPill.textContent = 'Scraping en cours...'; }
+  if (statusPill) { statusPill.style.display = 'inline-block'; statusPill.textContent = 'Analyse en cours...'; }
 
-  try {
-    const jinaUrl = `https://r.jina.ai/${rawUrl}`;
-    let markdown = '';
+  // 1. Détection de Ville
+  const villeInput = document.getElementById('seo-site-ville');
+  let ville = (villeInput?.value || '').trim();
+  if (!ville) {
+    ville = extraireVilleDepuisTexteEtUrl(targetUrl, rawInput);
+    if (ville && villeInput) villeInput.value = ville;
+  }
+  _seoScrapedData.ville = ville;
+
+  let markdown = '';
+  let photosSite = [];
+
+  // 2. Si c'est une vraie URL, tentative de scraping avec Jina (timeout 7s)
+  if (isRealUrl) {
     try {
-      const resp = await fetch(jinaUrl, { headers: { 'Accept': 'text/plain' } });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 7000);
+      const resp = await fetch(`https://r.jina.ai/${targetUrl}`, {
+        headers: { 'Accept': 'text/plain' },
+        signal: controller.signal
+      });
+      clearTimeout(timer);
       if (resp.ok) {
         markdown = await resp.text();
       }
     } catch (e) {
-      console.warn("Jina fetch failed, fallback proxy", e);
+      console.warn("Jina scrape direct failed, fallback to intelligent generation", e);
     }
+  }
 
-    if (!markdown || markdown.length < 50) {
-      try {
-        const fallbackUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
-        const fbResp = await fetch(fallbackUrl);
-        if (fbResp.ok) {
-          const rawHtml = await fbResp.text();
-          const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
-          markdown = doc.body.innerText;
-        }
-      } catch (err2) {
-        console.warn("Fallback proxy failed", err2);
-      }
-    }
+  // 3. Extraction ou génération synthétique
+  let services = [];
+  let description = '';
 
-    if (!markdown || markdown.length < 50) {
-      throw new Error("Impossible d'accéder au contenu du site web. Vérifiez que l'URL est accessible.");
-    }
-
-    const villeInput = document.getElementById('seo-site-ville');
-    let ville = (villeInput?.value || '').trim();
+  if (markdown && markdown.length > 80) {
     if (!ville) {
-      ville = extraireVilleDepuisTexteEtUrl(rawUrl, markdown);
+      ville = extraireVilleDepuisTexteEtUrl(targetUrl, markdown);
       if (ville && villeInput) villeInput.value = ville;
+      _seoScrapedData.ville = ville;
     }
-    _seoScrapedData.ville = ville;
+    services = extraireServicesDepuisMarkdown(markdown);
+    description = extraireDescriptionGmbDepuisMarkdown(markdown, ville);
+    photosSite = extrairePhotosDepuisMarkdown(markdown, targetUrl);
+  } else {
+    // Mode Intelligent (activité / mots-clés ou site protégé)
+    services = genererServicesDepuisTexte(rawInput);
+    description = genererDescriptionGmbDepuisTexte(rawInput, ville);
+  }
 
-    recalculerUtmLink();
+  if (!services || services.length === 0) {
+    services = genererServicesDepuisTexte(rawInput);
+  }
+  if (!description) {
+    description = genererDescriptionGmbDepuisTexte(rawInput, ville);
+  }
 
-    const services = extraireServicesDepuisMarkdown(markdown);
-    _seoScrapedData.services = services;
-    renderSeoServices(services);
+  _seoScrapedData.services = services;
+  _seoScrapedData.description = description;
 
-    const description = extraireDescriptionGmbDepuisMarkdown(markdown, ville);
-    _seoScrapedData.description = description;
-    const descTextarea = document.getElementById('seo-description-text');
-    if (descTextarea) descTextarea.value = description;
-    actualiserCompteurDescSeo();
+  // Calculer l'UTM
+  recalculerUtmLink();
 
-    const photosSite = extrairePhotosDepuisMarkdown(markdown, rawUrl);
-    const imageEyePhotos = _seoScrapedData.photos.filter(p => p.isImageEye);
-    _seoScrapedData.photos = [...imageEyePhotos, ...photosSite];
-    renderSeoPhotosGrid();
+  // Rendu de la vue
+  renderSeoServices(services);
+  const descTextarea = document.getElementById('seo-description-text');
+  if (descTextarea) descTextarea.value = description;
+  actualiserCompteurDescSeo();
 
-    if (loadingBox) loadingBox.style.display = 'none';
-    if (resultsBox) resultsBox.style.display = 'block';
-    if (statusPill) { statusPill.textContent = '✅ Analyse terminée'; statusPill.style.color = '#4ade80'; }
-    showToast("Site analysé avec succès ! Données GMB prêtes.", "success", 4000);
+  // Conserver les photos ImageEye existantes
+  const imageEyePhotos = _seoScrapedData.photos.filter(p => p.isImageEye);
+  _seoScrapedData.photos = [...imageEyePhotos, ...photosSite];
+  renderSeoPhotosGrid();
 
-  } catch (err) {
-    console.error("Erreur scraping site SEO :", err);
-    if (loadingBox) loadingBox.style.display = 'none';
+  if (loadingBox) loadingBox.style.display = 'none';
+  if (resultsBox) resultsBox.style.display = 'block';
+
+  if (!isRealUrl) {
+    if (statusPill) { statusPill.textContent = '✨ Données GMB prêtes'; statusPill.style.color = '#38bdf8'; }
     if (errorBox) {
       errorBox.style.display = 'block';
-      errorBox.innerHTML = `⚠️ <strong>Erreur lors du scraping :</strong> ${escapeHtml(err.message || 'Erreur inconnue')}. Vous pouvez renseigner les champs manuellement.`;
+      errorBox.style.background = 'rgba(56,189,248,0.1)';
+      errorBox.style.borderColor = '#38bdf8';
+      errorBox.style.color = '#7dd3fc';
+      errorBox.innerHTML = `💡 <strong>Saisie par nom d'activité détectée</strong> : Vos services, description GMB et lien UTM ont été générés sur mesure pour <strong>${_escHtml(rawInput)}</strong> ! Vous pouvez glisser vos photos téléchargées avec ImageEye dans la zone ci-dessous.`;
     }
-    if (statusPill) { statusPill.textContent = 'Erreur'; statusPill.style.color = '#f87171'; }
+    showToast("✅ Données GMB générées avec succès !", "success", 4000);
+  } else if (!markdown || markdown.length < 80) {
+    if (statusPill) { statusPill.textContent = '✨ Mode Intelligent'; statusPill.style.color = '#fbbf24'; }
+    if (errorBox) {
+      errorBox.style.display = 'block';
+      errorBox.style.background = 'rgba(245,158,11,0.1)';
+      errorBox.style.borderColor = '#f59e0b';
+      errorBox.style.color = '#fde68a';
+      errorBox.innerHTML = `⚠️ <strong>Site web protégé ou hors ligne</strong> : Le contenu en direct n'a pas pu être aspiré, mais l'Agent a généré automatiquement vos services et votre description à partir du domaine ! Vous pouvez également glisser vos photos ImageEye ci-dessous.`;
+    }
+    showToast("✨ Données GMB préparées à partir du domaine !", "info", 4000);
+  } else {
+    if (statusPill) { statusPill.textContent = '✅ Analyse terminée'; statusPill.style.color = '#4ade80'; }
+    showToast("✅ Site analysé avec succès ! Données GMB prêtes.", "success", 4000);
   }
 }
+
 
 
