@@ -8848,6 +8848,54 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '')
 }
 
 function extraireDescriptionGmbDepuisMarkdown(markdown, ville) {
+  if (!markdown) return genererDescriptionGmbDepuisTexte('', ville);
+
+  // 1. RECHERCHE PRIORITAIRE : Paragraphe descriptif en bas de page situé juste au-dessus de CONTACT / MES COORDONNÉES
+  const paragraphs = markdown.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const contactKeywords = /^(#+\s*|\*\*\s*)?(mes\s+coordonn[eé]es|coordonn[eé]es|contactez[- ]nous|contact|nous\s+contacter|nos\s+coordonn[eé]es|pour\s+nous\s+joindre|joindre)/i;
+  const phoneOrEmail = /(\(\d{3}\)\s*\d{3}[-\s]\d{4}|\b\d{2}[\s.-]?\d{2}[\s.-]?\d{2}[\s.-]?\d{2}[\s.-]?\d{2}\b|@\S+\.\S+)/i;
+
+  for (let idx = 0; idx < paragraphs.length; idx++) {
+    const p = paragraphs[idx];
+    const lines = p.split('\n').map(l => l.trim()).filter(Boolean);
+    const firstLine = lines[0] || '';
+    const isContactBlock = Boolean(
+      contactKeywords.test(firstLine) ||
+      (phoneOrEmail.test(p) && /téléphone|courriel|email|adresse|coordonnées|📞|✉️|📍/i.test(p))
+    );
+
+    if (isContactBlock && idx > 0) {
+      for (let prevIdx = idx - 1; prevIdx >= Math.max(0, idx - 4); prevIdx--) {
+        const prevP = paragraphs[prevIdx];
+        let cleanP = prevP.replace(/\[(.*?)\]\(.*?\)/g, '$1');
+        cleanP = cleanP.replace(/[*_#`]/g, '').trim();
+
+        if (/cookie|rgpd|copyright|tous droits|navigation|menu|mentions|plan du site/i.test(cleanP)) {
+          continue;
+        }
+
+        const pLines = cleanP.split('\n').map(l => l.trim()).filter(Boolean);
+        const descCandidates = pLines.filter(l =>
+          l.length >= 45 &&
+          (l.includes('.') || /services|activité|depuis|devis|estimation|spécialisé|garantie|travaux|arbres|artisan|intervention/i.test(l))
+        );
+
+        if (descCandidates.length > 0) {
+          const chosen = descCandidates.join(' ');
+          if (chosen.length <= 750) {
+            return chosen;
+          }
+          return chosen.slice(0, 740).replace(/\s+\S*$/, '') + '.';
+        }
+
+        if (cleanP.length >= 60 && cleanP.length <= 750) {
+          return cleanP;
+        }
+      }
+    }
+  }
+
+  // 2. Meta description du site
   const metaMatch = markdown.match(/description\s*:\s*([^\n\r]+)/i);
   if (metaMatch && metaMatch[1] && metaMatch[1].trim().length > 50) {
     let desc = metaMatch[1].trim().replace(/^["']|["']$/g, '');
@@ -8855,17 +8903,16 @@ function extraireDescriptionGmbDepuisMarkdown(markdown, ville) {
     return desc.slice(0, 740).replace(/\s+\S*$/, '') + '.';
   }
 
-  const paragraphs = markdown.split(/\n\s*\n/)
-    .map(p => p.trim())
-    .filter(p => {
-      if (p.length < 60) return false;
-      if (p.startsWith('#') || p.startsWith('!') || p.startsWith('[')) return false;
-      if (/cookie|rgpd|mentions légales|copyright|tous droits réservés/i.test(p)) return false;
-      return true;
-    });
+  // 3. Fallback paragraphes généraux du contenu
+  const generalParas = paragraphs.filter(p => {
+    if (p.length < 60) return false;
+    if (p.startsWith('#') || p.startsWith('!') || p.startsWith('[')) return false;
+    if (/cookie|rgpd|mentions légales|copyright|tous droits réservés/i.test(p)) return false;
+    return true;
+  });
 
   let candidate = '';
-  for (const p of paragraphs) {
+  for (const p of generalParas) {
     const clean = p.replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*_#`]/g, '').trim();
     if (clean.length >= 80) {
       candidate += (candidate ? ' ' : '') + clean;
@@ -8874,7 +8921,7 @@ function extraireDescriptionGmbDepuisMarkdown(markdown, ville) {
   }
 
   if (!candidate) {
-    candidate = `Entreprise spécialisée dans les travaux et l'artisanat${ville ? ` à ${ville} et ses environs` : ''}. Nous mettons à votre service notre savoir-faire professionnel pour des prestations soignées et durables. Devis gratuit, intervention rapide et travail de qualité garantie.`;
+    candidate = genererDescriptionGmbDepuisTexte('', ville);
   }
 
   if (candidate.length > 745) {
