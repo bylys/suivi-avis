@@ -53,6 +53,7 @@
       <button class="tab-btn" onclick="showTab('session')">🌐 Session Navigateur</button>
       <button class="tab-btn" onclick="showTab('images')">🎨 Générer une image</button>
       <button class="tab-btn" onclick="showTab('vitrine')">🏪 Vitrine GMB</button>
+      <button class="tab-btn" onclick="showTab('site-seo')">🔍 Scraper Site SEO (GMB)</button>
       <button class="tab-btn" onclick="showTab('generateur')">Générateur d'avis</button>
       <button class="tab-btn" onclick="showTab('saisie')">Saisir un avis</button>
       <button class="tab-btn" onclick="showTab('liste')">Liste des avis</button>
@@ -786,7 +787,10 @@
       <!-- Actions -->
       <div class="gen-actions" style="margin-top:1.2rem;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
         <button type="button" class="btn-primary" onclick="genererVitrineChatGPT()" style="background:linear-gradient(135deg, #10b981, #059669);border:none;font-weight:700;padding:0.85rem 1.6rem;font-size:1rem;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(16,185,129,0.35);cursor:pointer;color:#fff;">
-          🚀 Générer la vitrine dans ChatGPT
+          🚀 Lancer la création sur ChatGPT
+        </button>
+        <button type="button" class="btn-primary" onclick="genererVitrineAgentDirect()" style="background:linear-gradient(135deg, #2563eb, #3b82f6);border:none;font-weight:700;padding:0.85rem 1.4rem;font-size:0.95rem;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(37,99,235,0.35);cursor:pointer;color:#fff;">
+          ⚡ Générer via l'Agent IA (Direct)
         </button>
         <button type="button" class="btn-secondary" onclick="copierPromptVitrine()" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;padding:0.85rem 1.3rem;">
           📋 Copier le prompt
@@ -796,6 +800,55 @@
       <div id="vitrine-feedback" style="display:none;margin-top:0.75rem;padding:0.75rem 1rem;border-radius:8px;background:rgba(16,185,129,0.15);border:1px solid #10b981;color:#86efac;font-size:0.9rem;font-weight:600;align-items:center;gap:8px;">
         <span>✅</span>
         <span id="vitrine-feedback-text">Prompt copié dans le presse-papier & ChatGPT ouvert !</span>
+      </div>
+
+      <!-- 🖼️ ZONE AFFICHAGE PHOTO VITRINE GÉNÉRÉE (DIRECT DANS L'OUTIL SANS EXIF) -->
+      <div id="vitrine-photo-card" style="display:none;margin-top:1.5rem;background:#0f172a;border:2px solid #10b981;border-radius:12px;padding:16px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">🏪</span>
+              <strong style="font-size:15px;color:#f1f5f9;">Photo de vitrine générée avec succès</strong>
+              <span style="background:rgba(16,185,129,0.2);color:#4ade80;border:1px solid #10b98144;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;">
+                ⚡ Direct outil · Pas besoin d'EXIF
+              </span>
+            </div>
+            <p style="margin:4px 0 0 0;font-size:12px;color:#94a3b8;">
+              Photographie prête à être utilisée directement pour votre fiche GMB.
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="btn-primary" onclick="telechargerPhotoVitrine()" style="background:#10b981;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              💾 Télécharger l'image
+            </button>
+            <button type="button" class="btn-secondary" onclick="copierPhotoVitrine()" style="font-size:12px;padding:7px 12px;display:inline-flex;align-items:center;gap:6px;color:#38bdf8;border-color:#38bdf844;">
+              📋 Copier l'image
+            </button>
+            <button type="button" class="btn-secondary" onclick="document.getElementById('vitrine-generated-img').requestFullscreen && document.getElementById('vitrine-generated-img').requestFullscreen()" style="font-size:12px;padding:7px 10px;color:#94a3b8;">
+              🔍 Plein écran
+            </button>
+          </div>
+        </div>
+
+        <div style="text-align:center;background:#020617;border-radius:8px;padding:10px;overflow:hidden;border:1px solid #1e293b;">
+          <img id="vitrine-generated-img" src="" alt="Vitrine générée" style="max-height:520px;width:auto;max-width:100%;border-radius:6px;object-fit:contain;box-shadow:0 10px 30px rgba(0,0,0,0.5);" />
+        </div>
+      </div>
+
+      <!-- Zone pour coller/déposer directement la photo depuis ChatGPT -->
+      <div id="vitrine-drop-paste-zone"
+        style="margin-top:1.2rem;border:2px dashed #334155;border-radius:10px;padding:16px;text-align:center;background:#0b1120;cursor:pointer;transition:all 0.2s;"
+        onclick="document.getElementById('vitrine-photo-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#10b981'"
+        ondragleave="this.style.borderColor='#334155'"
+        ondrop="onVitrinePhotoDrop(event)">
+        <input type="file" id="vitrine-photo-file-input" accept="image/*" onchange="onVitrinePhotoFileSelected(event)" style="display:none;" />
+        <div style="font-size:13px;color:#cbd5e1;font-weight:600;">
+          📥 Collez ici l'image générée dans ChatGPT (<kbd style="background:#334155;padding:2px 6px;border-radius:4px;font-size:11px;color:#f1f5f9">Cmd+V / Ctrl+V</kbd>) ou glissez-déposez le fichier
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">
+          L'image s'affichera immédiatement dans l'outil, prête à être copiée ou sauvegardée, sans aucune manipulation d'EXIF.
+        </div>
       </div>
     </div>
 
@@ -811,6 +864,219 @@
         <textarea id="vitrine-prompt-preview" readonly rows="16" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#cbd5e1;padding:12px;font-size:0.85rem;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;resize:vertical;line-height:1.5;outline:none;" placeholder="Remplissez les champs ci-dessus pour prévisualiser le prompt de vitrine en temps réel..."></textarea>
         <div style="margin-top:8px;font-size:0.78rem;color:#64748b;display:flex;align-items:center;gap:6px;">
           <span>💡</span> Intègre 100% de la charte de l'enseigne drapeau (potence métallique noire, aluminium composite satiné, typographie sans-serif, rendu photo documentaire de rue, sans effet 3D).
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 🔍 SCRAPER SITE SEO & CRÉATION GMB -->
+  <section id="tab-site-seo" class="tab-content hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="margin:0 0 4px 0;display:flex;align-items:center;gap:10px;font-size:1.35rem">
+          🔍 Scraper Site SEO & Création GMB
+        </h2>
+        <p style="margin:0;font-size:13px;color:#94a3b8">
+          Collez l'URL du site SEO : l'agent extrait automatiquement les services, la description prête pour GMB, génère le lien avec UTM et rassemble les photos (du site ou téléchargées via ImageEye).
+        </p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span id="seo-status-pill" style="display:none;background:#1e293b;border:1px solid #334155;border-radius:99px;padding:4px 12px;font-size:12px;color:#38bdf8;font-weight:600;">
+          Prêt
+        </span>
+      </div>
+    </div>
+
+    <!-- Barre de formulaire de scraping -->
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:18px;margin-bottom:20px;">
+      <form onsubmit="lancerScrapingSiteSeo(event)" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:3;min-width:240px;">
+          <label for="seo-site-url" style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
+            🌐 URL du site SEO à scrapper *
+          </label>
+          <input type="text" id="seo-site-url" placeholder="https://artisan-couvreur-nantes.fr ou ravalement-bordeaux.com..."
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;" required />
+        </div>
+
+        <div style="flex:1.2;min-width:160px;">
+          <label for="seo-site-ville" style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">
+            📍 Ville pour l'UTM GMB
+          </label>
+          <input type="text" id="seo-site-ville" placeholder="Auto-détection (ou forcer)"
+            style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:14px;box-sizing:border-box;"
+            oninput="recalculerUtmLink()" />
+        </div>
+
+        <button type="submit" id="btn-scrape-seo" class="btn-primary"
+          style="padding:10px 20px;font-size:14px;font-weight:700;background:linear-gradient(135deg, #2563eb, #3b82f6);color:#fff;border:none;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(37,99,235,0.35);height:42px;">
+          <span>⚡ Scrapper le site</span>
+        </button>
+      </form>
+
+      <!-- Raccourcis de sites récents ou exemples -->
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:12px;">
+        <span style="font-size:11px;color:#64748b;font-weight:600;">Exemples rapides :</span>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleSiteSeo('https://artisan-couvreur-nantes.fr', 'Nantes')" style="font-size:11px;padding:2px 8px;border-radius:6px;">🏠 Couvreur Nantes</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleSiteSeo('https://ravalement-bordeaux.com', 'Bordeaux')" style="font-size:11px;padding:2px 8px;border-radius:6px;">🧱 Ravalement Bordeaux</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleSiteSeo('https://elagage-nantes.fr', 'Nantes')" style="font-size:11px;padding:2px 8px;border-radius:6px;">🌳 Élagage Nantes</button>
+        <button type="button" class="btn-secondary" onclick="appliquerExempleSiteSeo('https://terrassement-toulouse.com', 'Toulouse')" style="font-size:11px;padding:2px 8px;border-radius:6px;">🚜 Terrassement Toulouse</button>
+      </div>
+    </div>
+
+    <!-- Spinner de chargement -->
+    <div id="seo-loading-box" style="display:none;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:30px;text-align:center;margin-bottom:20px;">
+      <div class="spinner" style="width:36px;height:36px;border:3px solid #334155;border-top-color:#38bdf8;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px auto;"></div>
+      <div style="font-size:14px;font-weight:700;color:#f1f5f9;">Scraping du site en cours par l'agent...</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Analyse de la structure, extraction des services, de la description et des photos...</div>
+    </div>
+
+    <!-- Message d'erreur éventuel -->
+    <div id="seo-error-box" style="display:none;background:rgba(239,68,68,0.15);border:1px solid #ef4444;border-radius:8px;padding:12px 16px;color:#fca5a5;font-size:13px;margin-bottom:20px;"></div>
+
+    <!-- RÉSULTATS DU SCRAPING -->
+    <div id="seo-results-box" style="display:none;">
+      <!-- LIGNE 1 : LIEN DU SITE AVEC L'UTM GMB (Requis par l'utilisateur) -->
+      <div style="background:#0f172a;border:2px solid #3b82f6;border-radius:12px;padding:18px;margin-bottom:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">🔗</span>
+            <strong style="font-size:14px;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;">
+              Lien du site avec UTM Google My Business
+            </strong>
+          </div>
+          <span style="font-size:11px;background:rgba(59,130,246,0.15);color:#93c5fd;padding:2px 8px;border-radius:6px;border:1px solid #3b82f644;">
+            Format : /?utm_source=google&amp;utm_medium=gmb&amp;utm_campaign=[ville]
+          </span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input type="text" id="seo-utm-link-input" readonly
+            style="flex:1;min-width:260px;padding:10px 14px;border-radius:8px;border:1px solid #475569;background:#1e293b;color:#38bdf8;font-size:14px;font-family:ui-monospace,Menlo,monospace;font-weight:600;" />
+          <button type="button" class="btn-primary" onclick="copierLienUtmSeo()"
+            style="background:#2563eb;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+            📋 Copier le lien UTM
+          </button>
+          <a id="seo-utm-link-btn" href="#" target="_blank" class="btn-secondary"
+            style="padding:10px 14px;font-size:13px;display:inline-flex;align-items:center;gap:6px;color:#93c5fd;text-decoration:none;border-color:#334155;">
+            🌐 Ouvrir ↗
+          </a>
+        </div>
+        <div id="seo-utm-confirm" class="success hidden" style="margin-top:6px;font-size:12px;">✅ Lien copié dans le presse-papier !</div>
+      </div>
+
+      <!-- DEUX COLONNES : DESCRIPTION GMB (gauche) & SERVICES DU SITE (droite) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:18px;margin-bottom:18px;">
+        <!-- DESCRIPTION DU SITE POUR GMB -->
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:18px;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:16px;">📝</span>
+              <strong style="font-size:14px;color:#f1f5f9;">Description du site pour création GMB</strong>
+            </div>
+            <span id="seo-desc-count" style="font-size:12px;color:#94a3b8;font-weight:600;">0 / 750 car.</span>
+          </div>
+          <p style="margin:0 0 10px 0;font-size:12px;color:#94a3b8;">
+            Description récupérée sur le site, calibrée pour le champ « Description » lors de la création de la fiche GMB.
+          </p>
+          <textarea id="seo-description-text" rows="8"
+            style="width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#f1f5f9;padding:12px;font-size:13px;line-height:1.5;resize:vertical;outline:none;"
+            oninput="actualiserCompteurDescSeo()"></textarea>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+            <button type="button" class="btn-primary" onclick="copierDescriptionSeo()"
+              style="background:#059669;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              📋 Copier la description
+            </button>
+            <button type="button" class="btn-secondary" onclick="optimiserDescriptionSeoIA()"
+              style="padding:8px 12px;border-radius:6px;font-size:12px;color:#38bdf8;border-color:#38bdf844;display:inline-flex;align-items:center;gap:6px;">
+              ✨ Raccourcir &amp; optimiser pour GMB (IA)
+            </button>
+          </div>
+          <div id="seo-desc-confirm" class="success hidden" style="margin-top:6px;font-size:12px;">✅ Description copiée !</div>
+        </div>
+
+        <!-- SERVICES PROPOSÉS (PRESTATIONS) -->
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:18px;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:16px;">🛠️</span>
+              <strong style="font-size:14px;color:#f1f5f9;">Services proposés sur le site</strong>
+            </div>
+            <span id="seo-services-count-badge" style="background:#1e293b;color:#38bdf8;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;border:1px solid #334155;">
+              0 service
+            </span>
+          </div>
+          <p style="margin:0 0 10px 0;font-size:12px;color:#94a3b8;">
+            Cliquez sur un service pour le copier individuellement, ou copiez tous les services d'un seul coup pour GMB.
+          </p>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+            <button type="button" class="btn-primary" onclick="copierTousLesServicesSeo()"
+              style="background:#2563eb;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              📋 Tout copier (1 service par ligne)
+            </button>
+            <div id="seo-services-confirm" class="success hidden" style="font-size:12px;margin:0;">✅ Copié !</div>
+          </div>
+
+          <!-- Conteneur des badges de services -->
+          <div id="seo-services-list" style="display:flex;flex-wrap:wrap;gap:8px;max-height:220px;overflow-y:auto;padding-right:4px;">
+            <!-- Rempli dynamiquement -->
+          </div>
+
+          <!-- Ajout d'un service manuel -->
+          <div style="display:flex;gap:6px;margin-top:12px;align-items:center;">
+            <input type="text" id="seo-new-service-input" placeholder="Ajouter un autre service..."
+              style="flex:1;padding:7px 10px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:12px;"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();ajouterServiceManuelSeo();}" />
+            <button type="button" class="btn-secondary" onclick="ajouterServiceManuelSeo()"
+              style="padding:7px 12px;font-size:12px;color:#94a3b8;">
+              + Ajouter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIGNE 3 : PHOTOS DU SITE & IMPORT EXTENSION IMAGEEYE -->
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">📸</span>
+              <strong style="font-size:14px;color:#f1f5f9;">Photos du site &amp; Téléchargements ImageEye</strong>
+              <span id="seo-photos-count-badge" style="background:#1e293b;color:#10b981;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;border:1px solid #334155;">
+                0 photo
+              </span>
+            </div>
+            <p style="margin:4px 0 0 0;font-size:12px;color:#94a3b8;">
+              Photos trouvées sur le site ou glissées depuis votre extension <strong>ImageEye</strong>. Prêtes pour illustrer votre fiche GMB ou votre vitrine.
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button type="button" class="btn-secondary" onclick="document.getElementById('imageeye-file-picker').click()"
+              style="padding:7px 14px;font-size:12px;display:inline-flex;align-items:center;gap:6px;color:#38bdf8;border-color:#38bdf844;">
+              📁 Parcourir mes photos ImageEye
+            </button>
+            <input type="file" id="imageeye-file-picker" multiple accept="image/*" onchange="onImageEyeFilesPicked(event)" style="display:none;" />
+          </div>
+        </div>
+
+        <!-- Zone de Dépôt Drag & Drop pour ImageEye -->
+        <div id="imageeye-dropzone"
+          style="border:2px dashed #38bdf8;border-radius:10px;padding:20px;text-align:center;background:rgba(56,189,248,0.03);cursor:pointer;margin-bottom:16px;transition:all 0.2s;"
+          onclick="document.getElementById('imageeye-file-picker').click()"
+          ondragover="event.preventDefault();this.style.borderColor='#3b82f6';this.style.background='rgba(59,130,246,0.1)'"
+          ondragleave="this.style.borderColor='#38bdf8';this.style.background='rgba(56,189,248,0.03)'"
+          ondrop="onImageEyeFilesDrop(event)">
+          <div style="font-size:24px;margin-bottom:4px;">📥</div>
+          <div style="font-size:13px;color:#cbd5e1;font-weight:700;">
+            Glissez-déposez ici les photos téléchargées avec l'extension ImageEye
+          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px;">
+            Vous pouvez sélectionner plusieurs photos à la fois (JPG, PNG, WebP). Elles s'afficheront instantanément ci-dessous.
+          </div>
+        </div>
+
+        <!-- Grille de prévisualisation des photos -->
+        <div id="seo-photos-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));gap:12px;max-height:460px;overflow-y:auto;padding-right:4px;">
+          <!-- Rempli dynamiquement -->
         </div>
       </div>
     </div>

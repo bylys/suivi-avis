@@ -217,7 +217,7 @@ async function init() {
 }
 
 // ── ROUTER & TABS ──
-const VALID_TABS = ['dashboard', 'session', 'sessions', 'planning', 'images', 'vitrine', 'vitrines', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
+const VALID_TABS = ['dashboard', 'session', 'sessions', 'planning', 'images', 'vitrine', 'vitrines', 'site-seo', 'seo', 'scraper', 'generateur', 'saisie', 'saisir', 'liste', 'fiches', 'gmails'];
 
 function getBasePath() {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
@@ -231,6 +231,7 @@ function normalizeTabName(name) {
   if (name === 'planning' || name === 'sessions') return 'session';
   if (name === 'saisir') return 'saisie';
   if (name === 'vitrines') return 'vitrine';
+  if (name === 'seo' || name === 'scraper') return 'site-seo';
   return name;
 }
 
@@ -293,6 +294,7 @@ function showTab(name, skipUrlUpdate = false) {
   if (name === 'session' || name === 'planning') initSessionTab();
   if (name === 'images') initImageGenerator();
   if (name === 'vitrine') initVitrineTab();
+  if (name === 'site-seo') initSeoScraperTab();
   if (name === 'liste') renderListe();
   if (name === 'fiches') renderFiches();
   if (name === 'gmails') {
@@ -8122,6 +8124,7 @@ function genererVitrineChatGPT() {
     showVitrineFeedback("Prompt copié & ChatGPT ouvert !");
   }
 
+  window._currentVitrinePromptCopie = true;
   const chatGptUrl = `https://chatgpt.com/?q=${encodeURIComponent(prompt)}`;
   window.open(chatGptUrl, '_blank');
 }
@@ -8281,39 +8284,51 @@ function copierImageStreetView(event) {
   showToast("Image prête ! Vous pouvez également la glisser-déposer directement dans ChatGPT.", "info", 4000);
 }
 
-// Écouteur global pour coller la capture Street View avec Cmd+V / Ctrl+V quand on est sur l'onglet Vitrine
+// Écouteur global pour coller des images avec Cmd+V / Ctrl+V
 window.addEventListener('paste', (event) => {
   const tabVitrine = document.getElementById('tab-vitrine');
-  if (!tabVitrine || tabVitrine.classList.contains('hidden')) return;
+  const isVitrineActive = tabVitrine && !tabVitrine.classList.contains('hidden');
+
+  const tabSiteSeo = document.getElementById('tab-site-seo');
+  const isSeoActive = tabSiteSeo && !tabSiteSeo.classList.contains('hidden');
 
   const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
   if (activeTag === 'input' || activeTag === 'textarea') {
     const items = event.clipboardData?.items;
-    if (items) {
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          const blob = items[i].getAsFile();
-          if (blob) {
-            event.preventDefault();
-            handleVitrineStreetViewFile(blob);
-            return;
-          }
-        }
-      }
-    }
-    return;
+    if (!items) return;
+    const hasImage = Array.from(items).some(it => it.type.startsWith('image/'));
+    if (!hasImage) return; // texte collé normal dans un champ texte
   }
 
   const items = event.clipboardData?.items;
   if (!items) return;
 
   for (let i = 0; i < items.length; i++) {
-    if (items[i].type.indexOf('image') !== -1) {
+    if (items[i].type.startsWith('image/')) {
       const blob = items[i].getAsFile();
-      if (blob) {
+      if (!blob) continue;
+
+      if (isVitrineActive) {
         event.preventDefault();
-        handleVitrineStreetViewFile(blob);
-        break;
+        // Si Street View est déjà renseigné OU si le prompt a été lancé, c'est la photo générée de ChatGPT !
+        if (window._vitrineStreetViewData || window._currentVitrinePromptCopie) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            afficherPhotoVitrineDirecte(e.target.result, blob);
+            showToast("🖼️ Photo de vitrine ChatGPT affichée directement dans l'outil ! (Sans EXIF)", "success", 4500);
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          handleVitrineStreetViewFile(blob);
+        }
+        return;
+      }
+
+      if (isSeoActive) {
+        event.preventDefault();
+        handleImageEyeFiles([blob]);
+        showToast("📸 Photo collée dans la galerie SEO !", "success", 3000);
+        return;
       }
     }
   }
@@ -8438,4 +8453,772 @@ async function recupererStreetViewAutomatique() {
     }
   }
 }
+
+// ── VITRINE : AFFICHAGE DIRECT DE LA PHOTO (SANS DONNÉE EXIF) ───────────────
+
+function afficherPhotoVitrineDirecte(dataUrl, blob = null) {
+  window._vitrineGeneratedPhoto = {
+    dataUrl: dataUrl,
+    blob: blob,
+    timestamp: Date.now()
+  };
+  const card = document.getElementById('vitrine-photo-card');
+  const img = document.getElementById('vitrine-generated-img');
+  if (img) img.src = dataUrl;
+  if (card) {
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+function onVitrinePhotoDrop(event) {
+  event.preventDefault();
+  const dropzone = document.getElementById('vitrine-drop-paste-zone');
+  if (dropzone) dropzone.style.borderColor = '#334155';
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0 && files[0].type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => afficherPhotoVitrineDirecte(e.target.result, files[0]);
+    reader.readAsDataURL(files[0]);
+    showToast("✅ Photo de vitrine importée et affichée directement !", "success", 4000);
+  }
+}
+
+function onVitrinePhotoFileSelected(event) {
+  const file = event.target?.files?.[0];
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = (e) => afficherPhotoVitrineDirecte(e.target.result, file);
+    reader.readAsDataURL(file);
+    showToast("✅ Photo de vitrine chargée directement !", "success", 4000);
+  }
+}
+
+function telechargerPhotoVitrine() {
+  if (!window._vitrineGeneratedPhoto?.dataUrl) {
+    showToast("Aucune image à télécharger.", "warning", 3000);
+    return;
+  }
+  const nomVal = (document.getElementById('vitrine-nom')?.value || 'vitrine_gmb').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+  const a = document.createElement('a');
+  a.href = window._vitrineGeneratedPhoto.dataUrl;
+  a.download = `${nomVal}_vitrine_enseigne.jpg`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast("💾 Photo de vitrine téléchargée sans métadonnées EXIF !", "success", 3500);
+}
+
+async function copierPhotoVitrine() {
+  if (!window._vitrineGeneratedPhoto?.dataUrl) {
+    showToast("Aucune image à copier.", "warning", 3000);
+    return;
+  }
+  try {
+    const resp = await fetch(window._vitrineGeneratedPhoto.dataUrl);
+    const blob = await resp.blob();
+    if (navigator.clipboard && window.ClipboardItem) {
+      const item = new ClipboardItem({ [blob.type || 'image/png']: blob });
+      await navigator.clipboard.write([item]);
+      showToast("📋 Photo de vitrine copiée dans le presse-papier !", "success", 3500);
+      return;
+    }
+  } catch (e) {
+    console.warn("Copie directe impossible", e);
+  }
+  showToast("Vous pouvez faire un clic-droit > Copier l'image sur la photo.", "info", 4000);
+}
+
+async function genererVitrineAgentDirect() {
+  const nomVal = (document.getElementById('vitrine-nom')?.value || '').trim();
+  const adrVal = (document.getElementById('vitrine-adresse')?.value || '').trim();
+
+  if (!nomVal || !adrVal) {
+    alert("Veuillez renseigner au moins le nom du GMB prévu et son adresse.");
+    if (!nomVal) document.getElementById('vitrine-nom')?.focus();
+    else document.getElementById('vitrine-adresse')?.focus();
+    return;
+  }
+
+  const prompt = buildVitrinePrompt();
+  const apiKey = getGeminiKey();
+
+  showToast("⚡ Lancement de la création par l'Agent IA...", "info", 5000);
+
+  // Tentative directe avec Imagen si clé configurée
+  if (apiKey) {
+    try {
+      const imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt: prompt }],
+          parameters: { sampleCount: 1, aspectRatio: '4:3', outputOptions: { mimeType: 'image/jpeg' } }
+        })
+      });
+      if (imgRes.ok) {
+        const data = await imgRes.json();
+        const b64 = data.predictions?.[0]?.bytesBase64Encoded;
+        if (b64) {
+          const dataUrl = `data:image/jpeg;base64,${b64}`;
+          afficherPhotoVitrineDirecte(dataUrl);
+          showToast("✅ Photo de vitrine générée avec succès ! (Sans données EXIF)", "success", 5000);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Imagen generation error, fallback to ChatGPT", e);
+    }
+  }
+
+  // Fallback direct vers ChatGPT avec le prompt prérempli et prêt
+  genererVitrineChatGPT();
+  showToast("📋 Prompt copié et ChatGPT ouvert ! Collez l'image générée ici avec Cmd+V.", "info", 6000);
+}
+
+// ── SECTION SCRAPER SITE SEO & CRÉATION GMB ────────────────────────────────
+
+let _seoScrapedData = {
+  url: '',
+  cleanUrl: '',
+  ville: '',
+  utmUrl: '',
+  description: '',
+  services: [],
+  photos: []
+};
+
+function initSeoScraperTab() {
+  const inputUrl = document.getElementById('seo-site-url');
+  if (inputUrl && !inputUrl.value && window._lastSeoSiteUrl) {
+    inputUrl.value = window._lastSeoSiteUrl;
+  }
+}
+
+function appliquerExempleSiteSeo(url, ville) {
+  const uInput = document.getElementById('seo-site-url');
+  const vInput = document.getElementById('seo-site-ville');
+  if (uInput) uInput.value = url;
+  if (vInput) vInput.value = ville;
+  lancerScrapingSiteSeo();
+}
+
+function normaliserUrlSite(raw) {
+  let u = (raw || '').trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) {
+    u = 'https://' + u;
+  }
+  return u;
+}
+
+function recalculerUtmLink() {
+  const urlInput = document.getElementById('seo-site-url');
+  const villeInput = document.getElementById('seo-site-ville');
+  const utmInput = document.getElementById('seo-utm-link-input');
+  const utmBtn = document.getElementById('seo-utm-link-btn');
+
+  if (!urlInput || !utmInput) return;
+
+  const rawUrl = normaliserUrlSite(urlInput.value);
+  if (!rawUrl) return;
+
+  let origin = '';
+  try {
+    const parsed = new URL(rawUrl);
+    origin = parsed.origin;
+    if (parsed.pathname && parsed.pathname !== '/') {
+      origin += parsed.pathname.replace(/\/+$/, '');
+    }
+  } catch (e) {
+    origin = rawUrl.replace(/\/+$/, '');
+  }
+
+  let ville = (villeInput?.value || _seoScrapedData.ville || '').trim();
+  if (!ville) {
+    ville = extraireVilleDepuisUrl(rawUrl) || 'local';
+  }
+
+  // Nettoyage de la ville : minuscules, sans accents, tirets
+  const villeClean = ville.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  const utmUrl = `${origin}/?utm_source=google&utm_medium=gmb&utm_campaign=${encodeURIComponent(villeClean || 'local')}`;
+  utmInput.value = utmUrl;
+  if (utmBtn) utmBtn.href = utmUrl;
+  _seoScrapedData.utmUrl = utmUrl;
+}
+
+function extraireVilleDepuisUrl(url) {
+  if (!url) return '';
+  const domain = url.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  if (typeof _GLOBAL_CITIES_COORDS === 'object') {
+    for (const city of Object.keys(_GLOBAL_CITIES_COORDS)) {
+      const cleanCity = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (cleanCity.length >= 4 && (domain.includes(cleanCity) || domain.includes(cleanCity.replace(/\s+/g, '-')))) {
+        return city.charAt(0).toUpperCase() + city.slice(1);
+      }
+    }
+  }
+  return '';
+}
+
+function extraireVilleDepuisTexteEtUrl(url, text) {
+  const fromUrl = extraireVilleDepuisUrl(url);
+  if (fromUrl) return fromUrl;
+
+  if (!text) return '';
+  const cleanText = text.toLowerCase();
+
+  const topCities = [
+    'paris', 'marseille', 'lyon', 'toulouse', 'nice', 'nantes', 'strasbourg', 'montpellier',
+    'bordeaux', 'lille', 'rennes', 'reims', 'toulon', 'saint-etienne', 'le havre', 'rouen',
+    'grenoble', 'dijon', 'angers', 'nimes', 'villeurbanne', 'clermont-ferrand', 'le mans',
+    'aix-en-provence', 'brest', 'tours', 'amiens', 'limoges', 'annecy', 'perpignan', 'metz',
+    'besancon', 'orleans', 'caen', 'mulhouse', 'nancy', 'avignon', 'poitiers', 'pau',
+    'la rochelle', 'calais', 'cannes', 'antibes', 'grasse', 'valence', 'bourges', 'tarbes',
+    'montréal', 'montreal', 'québec', 'quebec', 'bruxelles', 'genève', 'geneve', 'luxembourg'
+  ];
+
+  for (const c of topCities) {
+    const re = new RegExp(`\\b${c}\\b`, 'i');
+    if (re.test(cleanText)) {
+      return c.charAt(0).toUpperCase() + c.slice(1);
+    }
+  }
+
+  const cpMatch = text.match(/\b(0[1-9]|[1-8][0-9]|9[0-5]|97[1-6]|2[AB])\d{3}\s+([A-ZÀ-Ÿ][a-zà-ÿ\-]+)\b/);
+  if (cpMatch && cpMatch[2]) {
+    return cpMatch[2];
+  }
+
+  return '';
+}
+
+function extraireServicesDepuisMarkdown(markdown) {
+  const servicesSet = new Set();
+  const tradeWords = [
+    'ravalement', 'couverture', 'toiture', 'élagage', 'elagage', 'démoussage', 'demoussage',
+    'zinguerie', 'charpente', 'isolation', 'étanchéité', 'etancheite', 'nettoyage', 'peinture',
+    'terrassement', 'façade', 'facade', 'abattage', 'taille de haie', 'dépannage', 'depannage',
+    'pose de', 'rénovation', 'renovation', 'gouttière', 'gouttiere', 'vitrerie', 'miroiterie',
+    'maçonnerie', 'maconnerie', 'débroussaillage', 'debroussaillage', 'dessouchage', 'plomberie',
+    'électricité', 'electricite', 'menuiserie', 'carrelage', 'serrurerie', 'assainissement',
+    'ramonage', 'débarras', 'debarras', 'traitement hydrofuge', 'recherche de fuite'
+  ];
+
+  const lines = markdown.split('\n');
+  let inServiceSection = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    if (/^#+\s*(nos prestations|nos services|prestations|services|activités|nos métiers|ce que nous proposons)/i.test(line)) {
+      inServiceSection = true;
+      continue;
+    }
+
+    if (inServiceSection && /^#+\s*(contact|à propos|mentions|avis|actualités|qui sommes-nous)/i.test(line)) {
+      inServiceSection = false;
+    }
+
+    const isBullet = /^[-*•]\s+/.test(line) || /^\d+\.\s+/.test(line);
+    const isHeading = /^#+\s+/.test(line);
+
+    if (inServiceSection || isBullet || isHeading) {
+      const cleanLine = line.replace(/^#+\s*/, '').replace(/^[-*•\d.]+\s*/, '').replace(/\[(.*?)\]\(.*?\)/g, '$1').trim();
+      if (cleanLine.length >= 4 && cleanLine.length <= 65) {
+        const lower = cleanLine.toLowerCase();
+        const hasTrade = tradeWords.some(w => lower.includes(w));
+        const isBlacklisted = /accueil|contact|mentions|politique|rgpd|cookie|téléphone|devis gratuit|0[1-9]|en savoir plus|lire la suite/i.test(lower);
+
+        if (!isBlacklisted && (hasTrade || inServiceSection)) {
+          const formatted = cleanLine.charAt(0).toUpperCase() + cleanLine.slice(1);
+          servicesSet.add(formatted);
+        }
+      }
+    }
+  }
+
+  if (servicesSet.size < 2) {
+    tradeWords.forEach(tw => {
+      const re = new RegExp(`\\b(${tw}[a-zà-ÿ\\s]{0,30})\\b`, 'gi');
+      let m;
+      let count = 0;
+      while ((m = re.exec(markdown)) !== null && count < 3) {
+        const cand = m[1].trim();
+        if (cand.length >= 6 && cand.length <= 40 && !/pour|dans|avec|notre|votre/i.test(cand)) {
+          servicesSet.add(cand.charAt(0).toUpperCase() + cand.slice(1));
+          count++;
+        }
+      }
+    });
+  }
+
+  return Array.from(servicesSet).slice(0, 18);
+}
+
+function extraireDescriptionGmbDepuisMarkdown(markdown, ville) {
+  const metaMatch = markdown.match(/description\s*:\s*([^\n\r]+)/i);
+  if (metaMatch && metaMatch[1] && metaMatch[1].trim().length > 50) {
+    let desc = metaMatch[1].trim().replace(/^["']|["']$/g, '');
+    if (desc.length <= 750) return desc;
+    return desc.slice(0, 740).replace(/\s+\S*$/, '') + '.';
+  }
+
+  const paragraphs = markdown.split(/\n\s*\n/)
+    .map(p => p.trim())
+    .filter(p => {
+      if (p.length < 60) return false;
+      if (p.startsWith('#') || p.startsWith('!') || p.startsWith('[')) return false;
+      if (/cookie|rgpd|mentions légales|copyright|tous droits réservés/i.test(p)) return false;
+      return true;
+    });
+
+  let candidate = '';
+  for (const p of paragraphs) {
+    const clean = p.replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*_#`]/g, '').trim();
+    if (clean.length >= 80) {
+      candidate += (candidate ? ' ' : '') + clean;
+      if (candidate.length >= 350) break;
+    }
+  }
+
+  if (!candidate) {
+    candidate = `Entreprise spécialisée dans les travaux et l'artisanat${ville ? ` à ${ville} et ses environs` : ''}. Nous mettons à votre service notre savoir-faire professionnel pour des prestations soignées et durables. Devis gratuit, intervention rapide et travail de qualité garantie.`;
+  }
+
+  if (candidate.length > 745) {
+    candidate = candidate.slice(0, 740).replace(/\s+\S*$/, '') + '.';
+  }
+
+  return candidate;
+}
+
+function extrairePhotosDepuisMarkdown(markdown, baseUrl) {
+  const photos = [];
+  const seenUrls = new Set();
+
+  const mdImgRegex = /!\[(.*?)\]\((https?:\/\/[^\s\)]+|\/[^\s\)]+)\)/g;
+  let match;
+  while ((match = mdImgRegex.exec(markdown)) !== null) {
+    let u = match[2];
+    try {
+      u = new URL(u, baseUrl).href;
+    } catch (e) {}
+
+    if (!seenUrls.has(u) && !estImageIgnoree(u)) {
+      seenUrls.add(u);
+      photos.push({
+        url: u,
+        name: match[1] || 'photo_site',
+        isImageEye: false
+      });
+    }
+  }
+
+  const htmlImgRegex = /<img[^>]+src=["'](https?:\/\/[^"'>]+|\/[^"'>]+)["'][^>]*>/gi;
+  while ((match = htmlImgRegex.exec(markdown)) !== null) {
+    let u = match[1];
+    try {
+      u = new URL(u, baseUrl).href;
+    } catch (e) {}
+
+    if (!seenUrls.has(u) && !estImageIgnoree(u)) {
+      seenUrls.add(u);
+      photos.push({
+        url: u,
+        name: 'photo_site',
+        isImageEye: false
+      });
+    }
+  }
+
+  return photos.slice(0, 24);
+}
+
+function estImageIgnoree(url = '') {
+  const u = url.toLowerCase();
+  return u.includes('logo') && (u.includes('wp-content') || u.includes('svg')) ||
+    u.includes('favicon') || u.includes('pixel') || u.includes('tracking') ||
+    u.includes('.svg') || u.includes('1x1') || u.includes('icon') || u.includes('badge') ||
+    u.includes('gravatar') || u.includes('facebook') || u.includes('instagram');
+}
+
+function renderSeoServices(services = []) {
+  const container = document.getElementById('seo-services-list');
+  const badge = document.getElementById('seo-services-count-badge');
+  if (badge) badge.textContent = `${services.length} service${services.length > 1 ? 's' : ''}`;
+  if (!container) return;
+
+  if (!services || services.length === 0) {
+    container.innerHTML = '<span style="color:#64748b;font-size:12px;">Aucun service identifié automatiquement. Ajoutez-en ci-dessous.</span>';
+    return;
+  }
+
+  container.innerHTML = services.map((srv, idx) => `
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:20px;padding:4px 10px 4px 12px;font-size:12px;color:#f1f5f9;display:inline-flex;align-items:center;gap:6px;max-width:100%;">
+      <span style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(srv)}</span>
+      <button type="button" onclick="copierServiceSeo(this, '${escapeHtml(srv).replace(/'/g, "\\'")}')" title="Copier ce service"
+        style="background:transparent;border:none;color:#38bdf8;cursor:pointer;font-size:12px;padding:0 2px;">
+        📋
+      </button>
+      <button type="button" onclick="supprimerServiceSeo(${idx})" title="Retirer ce service"
+        style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:11px;padding:0 2px;line-height:1;">
+        ✕
+      </button>
+    </div>
+  `).join('');
+}
+
+function renderSeoPhotosGrid() {
+  const grid = document.getElementById('seo-photos-grid');
+  const countBadge = document.getElementById('seo-photos-count-badge');
+  const photos = _seoScrapedData.photos || [];
+
+  if (countBadge) countBadge.textContent = `${photos.length} photo${photos.length > 1 ? 's' : ''}`;
+  if (!grid) return;
+
+  if (photos.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;color:#64748b;font-size:12px;text-align:center;padding:16px;">Aucune photo trouvée sur le site. Vous pouvez glisser vos photos ImageEye dans la zone ci-dessus.</div>';
+    return;
+  }
+
+  grid.innerHTML = photos.map((p) => {
+    const src = p.dataUrl || p.url;
+    const isEye = p.isImageEye;
+    return `
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+        <div style="position:relative;height:120px;background:#0b1120;overflow:hidden;">
+          <img src="${src}" alt="${escapeHtml(p.name || 'photo')}" loading="lazy"
+            style="width:100%;height:100%;object-fit:cover;cursor:pointer;"
+            onclick="window.open('${src}', '_blank')" />
+          ${isEye ? `<span style="position:absolute;top:6px;left:6px;background:rgba(16,185,129,0.85);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;">ImageEye</span>` : ''}
+        </div>
+        <div style="padding:8px;display:flex;flex-direction:column;gap:6px;flex:1;justify-content:space-between;">
+          <div style="font-size:11px;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(p.name || 'photo')}">
+            ${escapeHtml(p.name || 'Photo')}
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button type="button" onclick="copierPhotoSeo('${src}')" title="Copier l'image"
+              style="flex:1;padding:4px 6px;background:#334155;border:none;border-radius:4px;color:#f1f5f9;font-size:11px;cursor:pointer;">
+              📋 Copier
+            </button>
+            <a href="${src}" download="${escapeHtml(p.name || 'photo')}.jpg" target="_blank" title="Télécharger"
+              style="flex:1;padding:4px 6px;background:#2563eb;border:none;border-radius:4px;color:#fff;font-size:11px;text-align:center;text-decoration:none;">
+              💾 Télécharger
+            </a>
+          </div>
+          <button type="button" onclick="envoyerPhotoVersVitrine('${src}', '${escapeHtml(p.name || 'logo').replace(/'/g, "\\'")}')"
+            style="width:100%;padding:4px 6px;background:rgba(56,189,248,0.15);border:1px solid #38bdf844;border-radius:4px;color:#38bdf8;font-size:11px;font-weight:600;cursor:pointer;">
+            🏪 Utiliser dans Vitrine GMB
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function onImageEyeFilesPicked(event) {
+  const files = event.target?.files;
+  if (files && files.length > 0) {
+    handleImageEyeFiles(Array.from(files));
+  }
+}
+
+function onImageEyeFilesDrop(event) {
+  event.preventDefault();
+  const dropzone = document.getElementById('imageeye-dropzone');
+  if (dropzone) {
+    dropzone.style.borderColor = '#38bdf8';
+    dropzone.style.background = 'rgba(56,189,248,0.03)';
+  }
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    handleImageEyeFiles(Array.from(files));
+  }
+}
+
+function handleImageEyeFiles(fileList) {
+  let loadedCount = 0;
+  const imageFiles = fileList.filter(f => f.type.startsWith('image/'));
+  if (imageFiles.length === 0) {
+    showToast("Aucun fichier image valide détecté.", "warning", 3000);
+    return;
+  }
+
+  imageFiles.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      _seoScrapedData.photos.unshift({
+        url: e.target.result,
+        dataUrl: e.target.result,
+        name: file.name || 'ImageEye_Photo',
+        blob: file,
+        isImageEye: true
+      });
+      loadedCount++;
+      if (loadedCount === imageFiles.length) {
+        renderSeoPhotosGrid();
+        showToast(`✅ ${loadedCount} photo${loadedCount > 1 ? 's' : ''} ImageEye importée${loadedCount > 1 ? 's' : ''} avec succès !`, "success", 4000);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function copierLienUtmSeo() {
+  const utmInput = document.getElementById('seo-utm-link-input');
+  if (!utmInput || !utmInput.value) return;
+  navigator.clipboard.writeText(utmInput.value).then(() => {
+    const confirm = document.getElementById('seo-utm-confirm');
+    if (confirm) {
+      confirm.classList.remove('hidden');
+      setTimeout(() => confirm.classList.add('hidden'), 3500);
+    }
+    showToast("📋 Lien du site avec UTM GMB copié !", "success", 3000);
+  });
+}
+
+function actualiserCompteurDescSeo() {
+  const text = document.getElementById('seo-description-text')?.value || '';
+  const countEl = document.getElementById('seo-desc-count');
+  if (countEl) {
+    countEl.textContent = `${text.length} / 750 car.`;
+    countEl.style.color = text.length > 750 ? '#ef4444' : (text.length > 680 ? '#fbbf24' : '#94a3b8');
+  }
+}
+
+function copierDescriptionSeo() {
+  const text = document.getElementById('seo-description-text')?.value || '';
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const confirm = document.getElementById('seo-desc-confirm');
+    if (confirm) {
+      confirm.classList.remove('hidden');
+      setTimeout(() => confirm.classList.add('hidden'), 3500);
+    }
+    showToast("📋 Description GMB copiée !", "success", 3000);
+  });
+}
+
+async function optimiserDescriptionSeoIA() {
+  const textEl = document.getElementById('seo-description-text');
+  const currentText = textEl?.value || '';
+  const ville = (document.getElementById('seo-site-ville')?.value || _seoScrapedData.ville || '').trim();
+  const apiKey = getGeminiKey();
+
+  if (!apiKey) {
+    if (!promptGeminiKey()) return;
+  }
+
+  showToast("✨ Optimisation de la description GMB par l'IA...", "info", 4000);
+
+  const prompt = `Tu es un expert en référencement local Google My Business (GMB).
+Voici les informations d'une entreprise locale${ville ? ` située à ${ville}` : ''} :
+SERVICES : ${_seoScrapedData.services.join(', ') || 'Travaux et rénovation artisanale'}
+TEXTE SOURCE DU SITE : ${currentText || 'Artisan de proximité'}
+
+Rédige la description PARFAITE pour sa fiche Google My Business :
+- Maximum 740 caractères (strictement ! Google bloque à 750).
+- Ton professionnel, rassurant et local.
+- Met en valeur les prestations phares, le devis gratuit, la garantie et la zone d'intervention.
+- Retourne UNIQUEMENT le texte de la description, sans guillemets, sans titre et sans markdown.`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${getGeminiKey()}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 300 }
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const txt = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (txt) {
+        textEl.value = txt.slice(0, 745);
+        actualiserCompteurDescSeo();
+        showToast("✅ Description optimisée pour GMB !", "success", 3500);
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn("Erreur AI polish", e);
+  }
+  showToast("Impossible d'optimiser automatiquement avec l'IA.", "error", 3500);
+}
+
+function copierTousLesServicesSeo() {
+  const services = _seoScrapedData.services || [];
+  if (services.length === 0) {
+    showToast("Aucun service à copier.", "warning", 2500);
+    return;
+  }
+  const text = services.join('\n');
+  navigator.clipboard.writeText(text).then(() => {
+    const confirm = document.getElementById('seo-services-confirm');
+    if (confirm) {
+      confirm.classList.remove('hidden');
+      setTimeout(() => confirm.classList.add('hidden'), 3500);
+    }
+    showToast(`📋 ${services.length} services copiés (1 par ligne) !`, "success", 3500);
+  });
+}
+
+function copierServiceSeo(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    if (btn) {
+      const old = btn.textContent;
+      btn.textContent = '✅';
+      setTimeout(() => btn.textContent = old, 1500);
+    }
+    showToast(`Copié : "${text}"`, "info", 2000);
+  });
+}
+
+function supprimerServiceSeo(index) {
+  _seoScrapedData.services.splice(index, 1);
+  renderSeoServices(_seoScrapedData.services);
+}
+
+function ajouterServiceManuelSeo() {
+  const input = document.getElementById('seo-new-service-input');
+  const val = (input?.value || '').trim();
+  if (!val) return;
+  _seoScrapedData.services.push(val.charAt(0).toUpperCase() + val.slice(1));
+  renderSeoServices(_seoScrapedData.services);
+  input.value = '';
+}
+
+async function copierPhotoSeo(src) {
+  try {
+    const resp = await fetch(src);
+    const blob = await resp.blob();
+    if (navigator.clipboard && window.ClipboardItem) {
+      const item = new ClipboardItem({ [blob.type || 'image/png']: blob });
+      await navigator.clipboard.write([item]);
+      showToast("📋 Photo copiée dans le presse-papier !", "success", 3000);
+      return;
+    }
+  } catch (e) {}
+  window.open(src, '_blank');
+  showToast("Image ouverte : faites clic-droit > Copier l'image.", "info", 4000);
+}
+
+function envoyerPhotoVersVitrine(dataUrl, name) {
+  window._vitrineStreetViewData = {
+    name: name || 'photo_site.jpg',
+    dataUrl: dataUrl,
+    blob: null
+  };
+  showTab('vitrine');
+
+  const previewBox = document.getElementById('vitrine-streetview-preview-box');
+  const previewImg = document.getElementById('vitrine-streetview-preview');
+  const filenameEl = document.getElementById('vitrine-streetview-filename');
+  if (previewImg) previewImg.src = dataUrl;
+  if (previewBox) previewBox.style.display = 'flex';
+  if (filenameEl) filenameEl.textContent = `Photo transférée depuis le site SEO (${name || 'Image'})`;
+
+  showToast("🏪 Photo envoyée vers la vitrine GMB !", "success", 4000);
+}
+
+async function lancerScrapingSiteSeo(event) {
+  if (event) event.preventDefault();
+  const urlInput = document.getElementById('seo-site-url');
+  const rawUrl = normaliserUrlSite(urlInput?.value);
+  if (!rawUrl) {
+    alert("Veuillez renseigner une URL valide.");
+    urlInput?.focus();
+    return;
+  }
+
+  window._lastSeoSiteUrl = rawUrl;
+  const loadingBox = document.getElementById('seo-loading-box');
+  const errorBox = document.getElementById('seo-error-box');
+  const resultsBox = document.getElementById('seo-results-box');
+  const statusPill = document.getElementById('seo-status-pill');
+
+  if (loadingBox) loadingBox.style.display = 'block';
+  if (errorBox) errorBox.style.display = 'none';
+  if (resultsBox) resultsBox.style.display = 'none';
+  if (statusPill) { statusPill.style.display = 'inline-block'; statusPill.textContent = 'Scraping en cours...'; }
+
+  try {
+    const jinaUrl = `https://r.jina.ai/${rawUrl}`;
+    let markdown = '';
+    try {
+      const resp = await fetch(jinaUrl, { headers: { 'Accept': 'text/plain' } });
+      if (resp.ok) {
+        markdown = await resp.text();
+      }
+    } catch (e) {
+      console.warn("Jina fetch failed, fallback proxy", e);
+    }
+
+    if (!markdown || markdown.length < 50) {
+      try {
+        const fallbackUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
+        const fbResp = await fetch(fallbackUrl);
+        if (fbResp.ok) {
+          const rawHtml = await fbResp.text();
+          const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+          markdown = doc.body.innerText;
+        }
+      } catch (err2) {
+        console.warn("Fallback proxy failed", err2);
+      }
+    }
+
+    if (!markdown || markdown.length < 50) {
+      throw new Error("Impossible d'accéder au contenu du site web. Vérifiez que l'URL est accessible.");
+    }
+
+    const villeInput = document.getElementById('seo-site-ville');
+    let ville = (villeInput?.value || '').trim();
+    if (!ville) {
+      ville = extraireVilleDepuisTexteEtUrl(rawUrl, markdown);
+      if (ville && villeInput) villeInput.value = ville;
+    }
+    _seoScrapedData.ville = ville;
+
+    recalculerUtmLink();
+
+    const services = extraireServicesDepuisMarkdown(markdown);
+    _seoScrapedData.services = services;
+    renderSeoServices(services);
+
+    const description = extraireDescriptionGmbDepuisMarkdown(markdown, ville);
+    _seoScrapedData.description = description;
+    const descTextarea = document.getElementById('seo-description-text');
+    if (descTextarea) descTextarea.value = description;
+    actualiserCompteurDescSeo();
+
+    const photosSite = extrairePhotosDepuisMarkdown(markdown, rawUrl);
+    const imageEyePhotos = _seoScrapedData.photos.filter(p => p.isImageEye);
+    _seoScrapedData.photos = [...imageEyePhotos, ...photosSite];
+    renderSeoPhotosGrid();
+
+    if (loadingBox) loadingBox.style.display = 'none';
+    if (resultsBox) resultsBox.style.display = 'block';
+    if (statusPill) { statusPill.textContent = '✅ Analyse terminée'; statusPill.style.color = '#4ade80'; }
+    showToast("Site analysé avec succès ! Données GMB prêtes.", "success", 4000);
+
+  } catch (err) {
+    console.error("Erreur scraping site SEO :", err);
+    if (loadingBox) loadingBox.style.display = 'none';
+    if (errorBox) {
+      errorBox.style.display = 'block';
+      errorBox.innerHTML = `⚠️ <strong>Erreur lors du scraping :</strong> ${escapeHtml(err.message || 'Erreur inconnue')}. Vous pouvez renseigner les champs manuellement.`;
+    }
+    if (statusPill) { statusPill.textContent = 'Erreur'; statusPill.style.color = '#f87171'; }
+  }
+}
+
 
