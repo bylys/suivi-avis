@@ -8733,9 +8733,10 @@ function extraireVilleDepuisTexteEtUrl(url, text) {
 function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '', ville = '') {
   const servicesSet = new Set();
 
-  const rejectPatterns = /(\?|→|>|📞|☎|\(\d{3}\)|\b\d{3}[-\s]\d{4}\b|\b\d{2}[\s.-]?\d{2}\b|questions|faq|vos questions|avis|témoignages|temoignages|tarif|tarifs|prix|coût|cout|disponible|horaires|lun|mar|mer|jeu|ven|sam|dim|\d+\s*h\b|soumission|devis|gratuit|estimation|appelez|contact|qualifié|qualifie|assuré|assure|assurance|expérience|experience|rbq|licence|responsabilité|responsabilite|zone|secteur|commune|faut-il|comment|quel est|pourquoi|en savoir plus|cliquez|lire la suite)/i;
+  const rejectPatterns = /(\?|→|>|📞|☎|\(\d{3}\)|\b\d{3}[-\s]\d{4}\b|\b\d{2}[\s.-]?\d{2}\b|questions|faq|vos questions|avis|témoignages|temoignages|tarif|tarifs|prix|coût|cout|disponible|horaires|lun|mar|mer|jeu|ven|sam|dim|\d+\s*h\b|soumission|devis|gratuit|estimation|appelez|contact|qualifié|qualifie|assuré|assure|assurance|expérience|experience|rbq|licence|responsabilité|responsabilite|zone|secteur|commune|faut-il|comment|quel est|pourquoi|en savoir plus|cliquez|lire la suite|get a quote|estimate|free quote|home|accueil|about|privacy|terms|policy)/i;
 
   const tradeWords = [
+    // Français
     'ravalement', 'couverture', 'toiture', 'élagage', 'elagage', 'démoussage', 'demoussage',
     'zinguerie', 'charpente', 'isolation', 'étanchéité', 'etancheite', 'nettoyage', 'peinture',
     'terrassement', 'façade', 'facade', 'abattage', 'taille de haie', 'dépannage', 'depannage',
@@ -8745,27 +8746,31 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '',
     'ramonage', 'débarras', 'debarras', 'traitement hydrofuge', 'recherche de fuite', 'émondage',
     'haubanage', 'déchiquetage', 'essouchage', 'arboriculture', 'plantation', 'taille', 'élagueur',
     'émondeur', 'arboriste', 'arbre', 'maladie', 'diagnostic', 'expertise', 'traitement', 'soin des arbres',
-    'détection', 'detection', 'frelon', 'nuisible', 'verglas', 'neige', 'branches', 'souche', 'agrile'
+    'détection', 'detection', 'frelon', 'nuisible', 'verglas', 'neige', 'branches', 'souche', 'agrile',
+    // English
+    'tree', 'trimming', 'pruning', 'removal', 'stump', 'grinding', 'cabling', 'bracing',
+    'chipping', 'hedge', 'cedar', 'planting', 'transplanting', 'disease', 'arborist', 'cutting',
+    'storm', 'emergency', 'pest', 'ash borer', 'inspection', 'assessment', 'roofing', 'siding'
   ];
 
   function attribuerEmoji(name) {
     const n = name.toLowerCase();
-    if (n.includes('urgence')) return '🚨';
-    if (n.includes('abattage')) return '🪓';
-    if (n.includes('émond') || n.includes('emond')) return '🌳';
+    if (n.includes('urgence') || n.includes('emergency')) return '🚨';
+    if (n.includes('abattage') || n.includes('removal') || n.includes('cutting') || n.includes('felling')) return '🪓';
+    if (n.includes('émond') || n.includes('emond') || n.includes('trimming') || n.includes('pruning')) return '🌳';
     if (n.includes('élag') || n.includes('elag')) return '✂️';
-    if (n.includes('haie') || n.includes('cèdre') || n.includes('cedre')) return '🌿';
-    if (n.includes('essouch') || n.includes('souche')) return '⛏️';
-    if (n.includes('hauban')) return '🔗';
-    if (n.includes('agrile') || n.includes('insecte') || n.includes('parasite')) return '🐛';
-    if (n.includes('déchiquet') || n.includes('dechiquet') || n.includes('branche')) return '🛻';
+    if (n.includes('haie') || n.includes('cèdre') || n.includes('cedre') || n.includes('hedge')) return '🌿';
+    if (n.includes('essouch') || n.includes('souche') || n.includes('stump')) return '⛏️';
+    if (n.includes('hauban') || n.includes('cabling') || n.includes('bracing')) return '🔗';
+    if (n.includes('agrile') || n.includes('insecte') || n.includes('parasite') || n.includes('pest') || n.includes('borer')) return '🐛';
+    if (n.includes('déchiquet') || n.includes('dechiquet') || n.includes('branche') || n.includes('chipping') || n.includes('wood')) return '🛻';
     if (n.includes('plant') || n.includes('transplant')) return '🌱';
-    if (n.includes('maladie') || n.includes('détect') || n.includes('detect') || n.includes('dépist') || n.includes('depist')) return '🔬';
-    if (n.includes('verglas') || n.includes('neige') || n.includes('tempête') || n.includes('tempete')) return '❄️';
+    if (n.includes('maladie') || n.includes('détect') || n.includes('detect') || n.includes('dépist') || n.includes('depist') || n.includes('disease') || n.includes('health') || n.includes('inspect')) return '🔬';
+    if (n.includes('verglas') || n.includes('neige') || n.includes('tempête') || n.includes('tempete') || n.includes('storm')) return '❄️';
     if (n.includes('fruitier')) return '🍎';
-    if (n.includes('toit') || n.includes('couvert') || n.includes('zinguerie')) return '🏠';
-    if (n.includes('façade') || n.includes('facade') || n.includes('raval')) return '🧱';
-    if (n.includes('peint')) return '🎨';
+    if (n.includes('toit') || n.includes('couvert') || n.includes('zinguerie') || n.includes('roof')) return '🏠';
+    if (n.includes('façade') || n.includes('facade') || n.includes('raval') || n.includes('siding')) return '🧱';
+    if (n.includes('peint') || n.includes('paint')) return '🎨';
     if (n.includes('terrass') || n.includes('btp')) return '🚜';
     return '🌲';
   }
@@ -8798,7 +8803,25 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '',
 
   const combinedContent = (targetedServicesMarkdown ? targetedServicesMarkdown + '\n\n' : '') + (markdown || '');
 
-  // 1. PRIORITÉ ABSOLUE : Lignes avec EMOJIS existantes (ex: "🌳 Emondage d'arbre", "🪓 Abattage d'arbre")
+  // 1. PRIORITÉ SUB-MENU : Liens markdown issus de <ul class="sub-menu"> (ex: "* [Tree Removal](url)")
+  const subMenuBulletRegex = /^\s*[*•-]\s*\[(.*?)\]\((.*?)\)/gm;
+  let smb;
+  while ((smb = subMenuBulletRegex.exec(combinedContent)) !== null) {
+    const srvText = smb[1].trim();
+    const srvUrl = smb[2].trim().toLowerCase();
+
+    // Arrêter ou ignorer les liens géographiques ou pages hors-service
+    if (/(secteur|saguenay\/|ville\/|city\/|region\/|contact|a-propos|about|devis|quote|politique|privacy|mention|sitemap)/i.test(srvUrl)) {
+      continue;
+    }
+    ajouterService(srvText);
+  }
+
+  if (servicesSet.size >= 3) {
+    return Array.from(servicesSet).slice(0, 15);
+  }
+
+  // 2. PRIORITÉ EMOJIS : Lignes avec EMOJIS existantes (ex: "🌳 Emondage d'arbre", "🪓 Abattage d'arbre")
   const emojiLineRegex = /^([\p{Extended_Pictographic}\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}][\ufe00-\ufe0f\u200d\s]*)\s+([^#\n\r!\[<]+)$/u;
   const allLines = combinedContent.split('\n');
   for (const rawLine of allLines) {
@@ -8819,7 +8842,7 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '',
     return Array.from(servicesSet).slice(0, 15);
   }
 
-  // 2. PRIORITÉ CARTES DE SERVICES : Images avec alt / liens (ex: Sherbrooke "[![Image 1: Émondage d'arbre Sherbrooke](...)...]")
+  // 3. PRIORITÉ CARTES DE SERVICES : Images avec alt / liens (ex: Sherbrooke "[![Image 1: Émondage d'arbre Sherbrooke](...)...]")
   const cardImgRegex = /\[!\[Image\s*\d*:\s*([^\]]+)\]\([^\)]+\)\s*([^\]]*?)\]\(([^\)]+)\)/g;
   let cm;
   while ((cm = cardImgRegex.exec(combinedContent)) !== null) {
@@ -8833,7 +8856,7 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '',
     return Array.from(servicesSet).slice(0, 15);
   }
 
-  // 3. Fallback images avec alt dans la section services
+  // 4. Fallback images avec alt dans la section services
   const simpleImgRegex = /!\[Image\s*\d*:\s*([^\]]+)\]/g;
   let sim;
   while ((sim = simpleImgRegex.exec(targetedServicesMarkdown || combinedContent)) !== null) {
@@ -8847,8 +8870,8 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '',
     return Array.from(servicesSet).slice(0, 15);
   }
 
-  // 4. Navigation sous-menu "Nos services" (si présent dans le HTML ou markdown)
-  const subMenuRegex = /(?:nos\s+services|prestations)[\s\S]*?(?:<ul[^>]*sub-menu[^>]*>([\s\S]*?)<\/ul>)/i;
+  // 5. Navigation sous-menu HTML brut (si extrait sous forme HTML)
+  const subMenuRegex = /(?:nos\s+services|prestations|services)[\s\S]*?(?:<ul[^>]*sub-menu[^>]*>([\s\S]*?)<\/ul>)/i;
   const subMenuMatch = combinedContent.match(subMenuRegex);
   if (subMenuMatch && subMenuMatch[1]) {
     const linkRegex = /<a[^>]*>(.*?)<\/a>/gi;
@@ -8865,7 +8888,7 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '',
     return Array.from(servicesSet).slice(0, 15);
   }
 
-  // 5. Titres de sections (### Nom du service, ## Nom du service)
+  // 6. Titres de sections (### Nom du service, ## Nom du service)
   for (const rawLine of allLines) {
     const trimmed = rawLine.trim();
     if (!trimmed) continue;
@@ -8884,39 +8907,39 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '',
 }
 
 function extraireDescriptionGmbDepuisMarkdown(markdown, ville, footerMarkdown = '') {
-  // 1. SI LE FOOTER A ÉTÉ EXTRAIT (X-Target-Selector: footer) : PRIORITÉ ABSOLUE
-  if (footerMarkdown && footerMarkdown.length > 30) {
-    // Nettoyer les en-têtes Jina Reader et warning
-    const rawFootLines = footerMarkdown.split('\n');
-    const cleanFootLines = [];
-    let inContent = false;
-    for (const l of rawFootLines) {
-      if (l.includes('Markdown Content:')) {
-        inContent = true;
-        continue;
+  // 1. SI LE SÉLECTEUR .f-brand-desc OU FOOTER A ÉTÉ EXTRAIT : PRIORITÉ ABSOLUE
+  if (footerMarkdown && footerMarkdown.length > 20) {
+    // Si c'est directement le texte de .f-brand-desc
+    let contentOnly = footerMarkdown;
+    if (footerMarkdown.includes('Markdown Content:')) {
+      contentOnly = footerMarkdown.split('Markdown Content:')[1].trim();
+    }
+    const cleanLines = contentOnly.split('\n')
+      .map(l => l.trim())
+      .filter(l => l && !l.startsWith('!') && !l.startsWith('[!') && !/^(Title:|URL Source:|Warning:)/i.test(l));
+
+    for (const line of cleanLines) {
+      const cleanLine = line.replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*_#`"]/g, '').trim();
+      if (cleanLine.length >= 40 && cleanLine.length <= 750 && !/coordonnées|contact|téléphone|adresse|📞|✉️|📍|avis|★|satisfaits/i.test(cleanLine)) {
+        return cleanLine;
       }
-      if (!inContent && /^(Title:|URL Source:|Published Time:|Warning:)/i.test(l)) {
-        continue;
-      }
-      cleanFootLines.append ? cleanFootLines.append(l) : cleanFootLines.push(l);
     }
 
-    const cleanFooterText = cleanFootLines.join('\n');
-    const footParas = cleanFooterText.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-
+    // Si plusieurs paragraphes (ex: bloc footer complet)
+    const footParas = contentOnly.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
     for (const p of footParas) {
       if (p.startsWith('!') || p.startsWith('[!') || p.includes('![Image')) continue;
-      let cleanP = p.replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*_#`]/g, '').trim();
+      let cleanP = p.replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*_#`"]/g, '').trim();
       if (/warning:|title:|url source:|published time:/i.test(cleanP)) continue;
       if (/coordonnées|contact|téléphone|adresse|📞|✉️|📍|avis|★|satisfaits|client/i.test(cleanP)) continue;
 
       const pLines = cleanP.split('\n').map(l => l.trim()).filter(Boolean);
       for (const l of pLines) {
-        if (l.length >= 45 && l.length <= 750 && (l.includes('.') || /services|activité|depuis|devis|estimation|arbres|artisan|spécialiste|assuré/i.test(l))) {
+        if (l.length >= 40 && l.length <= 750 && (l.includes('.') || /services|activité|depuis|devis|estimation|arbres|artisan|spécialiste|assuré|specializ|homeowner/i.test(l))) {
           return l;
         }
       }
-      if (cleanP.length >= 50 && cleanP.length <= 750 && (cleanP.includes('.') || /services|depuis|activité/i.test(cleanP))) {
+      if (cleanP.length >= 45 && cleanP.length <= 750 && (cleanP.includes('.') || /services|depuis|activité|specializ/i.test(cleanP))) {
         return cleanP;
       }
     }
@@ -9551,7 +9574,7 @@ async function lancerScrapingSiteSeo(event) {
     let targetedServicesMarkdown = '';
     let footerMarkdown = '';
 
-    // Lancement en parallèle des 3 requêtes ciblées : #services, footer, et global
+    // Lancement en parallèle des requêtes ciblées : .f-brand-desc, .sub-menu, footer, #services, et global
     try {
       const fetchWithTimeout = async (url, headers = {}, timeoutMs = 8000) => {
         const ctrl = new AbortController();
@@ -9571,14 +9594,28 @@ async function lancerScrapingSiteSeo(event) {
         return '';
       };
 
-      const [resServices, resFooter, resGlobal] = await Promise.allSettled([
-        fetchWithTimeout(`https://r.jina.ai/${cleanBaseUrl}`, { 'Accept': 'text/plain', 'X-Target-Selector': '#services' }, 7000),
+      const [resBrandDesc, resSubMenu, resFooter, resServicesSection, resGlobal] = await Promise.allSettled([
+        fetchWithTimeout(`https://r.jina.ai/${cleanBaseUrl}`, { 'Accept': 'text/plain', 'X-Target-Selector': '.f-brand-desc' }, 6500),
+        fetchWithTimeout(`https://r.jina.ai/${cleanBaseUrl}`, { 'Accept': 'text/plain', 'X-Target-Selector': '.sub-menu' }, 6500),
         fetchWithTimeout(`https://r.jina.ai/${cleanBaseUrl}`, { 'Accept': 'text/plain', 'X-Target-Selector': 'footer' }, 7000),
+        fetchWithTimeout(`https://r.jina.ai/${cleanBaseUrl}`, { 'Accept': 'text/plain', 'X-Target-Selector': '#services' }, 7000),
         fetchWithTimeout(`https://r.jina.ai/${cleanBaseUrl}`, { 'Accept': 'text/plain' }, 8000)
       ]);
 
-      if (resServices.status === 'fulfilled' && resServices.value) targetedServicesMarkdown = resServices.value;
-      if (resFooter.status === 'fulfilled' && resFooter.value) footerMarkdown = resFooter.value;
+      // Description : .f-brand-desc en priorité absolue, puis footer
+      if (resBrandDesc.status === 'fulfilled' && resBrandDesc.value && resBrandDesc.value.length > 25) {
+        footerMarkdown = resBrandDesc.value;
+      } else if (resFooter.status === 'fulfilled' && resFooter.value) {
+        footerMarkdown = resFooter.value;
+      }
+
+      // Services : .sub-menu en priorité absolue, puis section #services
+      if (resSubMenu.status === 'fulfilled' && resSubMenu.value && resSubMenu.value.length > 25) {
+        targetedServicesMarkdown = resSubMenu.value;
+      } else if (resServicesSection.status === 'fulfilled' && resServicesSection.value) {
+        targetedServicesMarkdown = resServicesSection.value;
+      }
+
       if (resGlobal.status === 'fulfilled' && resGlobal.value) markdown = resGlobal.value;
     } catch (e) {
       console.warn("Erreur scraping parallèle Jina", e);
@@ -9591,10 +9628,21 @@ async function lancerScrapingSiteSeo(event) {
         if (fbResp.ok) {
           const rawHtml = await fbResp.text();
           const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
-          const servicesEl = doc.querySelector('#services') || doc.querySelector('[id*="service"]') || doc.querySelector('[class*="service"]');
-          if (servicesEl) targetedServicesMarkdown = servicesEl.innerText;
-          const footerEl = doc.querySelector('footer');
-          if (footerEl) footerMarkdown = footerEl.innerText;
+
+          const brandDescEl = doc.querySelector('.f-brand-desc, .footer-desc, [class*="brand-desc"]');
+          if (brandDescEl) footerMarkdown = brandDescEl.innerText;
+          else {
+            const footerEl = doc.querySelector('footer');
+            if (footerEl) footerMarkdown = footerEl.innerText;
+          }
+
+          const subMenuEl = doc.querySelector('.has-sub .sub-menu, .sub-menu');
+          if (subMenuEl) targetedServicesMarkdown = subMenuEl.innerText;
+          else {
+            const servicesEl = doc.querySelector('#services') || doc.querySelector('[id*="service"]') || doc.querySelector('[class*="service"]');
+            if (servicesEl) targetedServicesMarkdown = servicesEl.innerText;
+          }
+
           markdown = doc.body ? doc.body.innerText : '';
         }
       } catch (errProxy) {
