@@ -8732,6 +8732,9 @@ function extraireVilleDepuisTexteEtUrl(url, text) {
 
 function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '') {
   const servicesSet = new Set();
+
+  const rejectPatterns = /(\?|→|>|📞|☎|\(\d{3}\)|\b\d{3}[-\s]\d{4}\b|\b\d{2}[\s.-]?\d{2}\b|questions|faq|vos questions|avis|témoignages|temoignages|tarif|tarifs|prix|coût|cout|disponible|horaires|lun|mar|mer|jeu|ven|sam|dim|\d+\s*h\b|soumission|devis|gratuit|estimation|appelez|contact|qualifié|qualifie|assuré|assure|assurance|expérience|experience|rbq|licence|responsabilité|responsabilite|zone|secteur|commune|faut-il|comment|quel est|pourquoi|en savoir plus|cliquez|lire la suite)/i;
+
   const tradeWords = [
     'ravalement', 'couverture', 'toiture', 'élagage', 'elagage', 'démoussage', 'demoussage',
     'zinguerie', 'charpente', 'isolation', 'étanchéité', 'etancheite', 'nettoyage', 'peinture',
@@ -8741,8 +8744,31 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '')
     'électricité', 'electricite', 'menuiserie', 'carrelage', 'serrurerie', 'assainissement',
     'ramonage', 'débarras', 'debarras', 'traitement hydrofuge', 'recherche de fuite', 'émondage',
     'haubanage', 'déchiquetage', 'essouchage', 'arboriculture', 'plantation', 'taille', 'élagueur',
-    'émondeur', 'arboriste', 'arbre', 'maladie', 'diagnostic', 'expertise', 'traitement', 'soin des arbres', 'détection', 'detection', 'frelon', 'nuisible'
+    'émondeur', 'arboriste', 'arbre', 'maladie', 'diagnostic', 'expertise', 'traitement', 'soin des arbres',
+    'détection', 'detection', 'frelon', 'nuisible', 'verglas', 'neige', 'branches', 'souche', 'agrile'
   ];
+
+  function attribuerEmoji(name) {
+    const n = name.toLowerCase();
+    if (n.includes('urgence')) return '🚨';
+    if (n.includes('abattage')) return '🪓';
+    if (n.includes('émond') || n.includes('emond')) return '🌳';
+    if (n.includes('élag') || n.includes('elag')) return '✂️';
+    if (n.includes('haie') || n.includes('cèdre') || n.includes('cedre')) return '🌿';
+    if (n.includes('essouch') || n.includes('souche')) return '⛏️';
+    if (n.includes('hauban')) return '🔗';
+    if (n.includes('agrile') || n.includes('insecte') || n.includes('parasite')) return '🐛';
+    if (n.includes('déchiquet') || n.includes('dechiquet') || n.includes('branche')) return '🛻';
+    if (n.includes('plant') || n.includes('transplant')) return '🌱';
+    if (n.includes('maladie') || n.includes('détect') || n.includes('detect') || n.includes('dépist') || n.includes('depist')) return '🔬';
+    if (n.includes('verglas') || n.includes('neige') || n.includes('tempête') || n.includes('tempete')) return '❄️';
+    if (n.includes('fruitier')) return '🍎';
+    if (n.includes('toit') || n.includes('couvert') || n.includes('zinguerie')) return '🏠';
+    if (n.includes('façade') || n.includes('facade') || n.includes('raval')) return '🧱';
+    if (n.includes('peint')) return '🎨';
+    if (n.includes('terrass') || n.includes('btp')) return '🚜';
+    return '🌲';
+  }
 
   function ajouterService(cand) {
     if (!cand) return;
@@ -8750,20 +8776,23 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '')
     clean = clean.replace(/[*_#`:]/g, '').trim();
     clean = clean.replace(/^[-*•\d.]+\s*/, '').trim();
 
-    // Rejeter phrases longues ou terminant par un point descriptif
+    // Filtre strict anti-parasite (FAQ, CTA, téléphone, horaires, etc.)
+    if (rejectPatterns.test(clean)) return;
     if (clean.endsWith('.') && clean.split(/\s+/).length > 4) return;
-    if (clean.length < 3 || clean.length > 70) return;
+    if (clean.length < 3 || clean.length > 55) return;
 
+    // Doit contenir au moins un mot de métier si ce n'est pas déjà un emoji
+    const hasEmoji = /^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2700}-\u{27BF}]/u.test(clean);
     const lower = clean.toLowerCase();
-    if (/accueil|contact|mentions|politique|rgpd|cookie|téléphone|devis|en savoir plus|lire la suite|0[1-9]|nos services|nos prestations|services proposés|tous nos services|pourquoi nous choisir|nos réalisations|nos avis/i.test(lower)) {
-      return;
-    }
-    const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
-    servicesSet.add(formatted);
+    const hasTrade = tradeWords.some(tw => lower.includes(tw));
+
+    if (!hasEmoji && !hasTrade) return;
+
+    const withEmoji = hasEmoji ? clean : `${attribuerEmoji(clean)} ${clean.charAt(0).toUpperCase() + clean.slice(1)}`;
+    servicesSet.add(withEmoji);
   }
 
-  // 1. PRIORITÉ ABSOLUE : Lignes avec EMOJIS (cartes de prestations du site)
-  // Ex: "🌳 Emondage d'arbre", "🪓 Abattage d'arbre", "🔬 Detection de maladie d'arbre"
+  // 1. PRIORITÉ ABSOLUE : Lignes avec EMOJIS existantes (ex: "🌳 Emondage d'arbre", "🪓 Abattage d'arbre")
   const emojiLineRegex = /^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2700}-\u{27BF}][\ufe00-\ufe0f\u200d\s]*)\s+([^#\n\r!\[<]+)$/u;
   const allLines = (markdown || '').split('\n');
   for (const rawLine of allLines) {
@@ -8773,14 +8802,14 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '')
       const emoji = emMatch[1].trim();
       let srvName = emMatch[2].replace(/\[(.*?)\]\(.*?\)/g, '$1').replace(/[*_#`:]/g, '').trim();
       srvName = srvName.replace(/^[-*•\d.]+\s*/, '').trim();
-      if (srvName.length >= 3 && srvName.length <= 60 && !srvName.startsWith('http') && !/image|téléphone|appel|devis|estimation|question sur/i.test(srvName)) {
+      if (!rejectPatterns.test(srvName) && srvName.length >= 3 && srvName.length <= 60 && !srvName.startsWith('http')) {
         servicesSet.add(`${emoji} ${srvName}`);
       }
     }
   }
 
-  // 2. Navigation sous-menu "Nos services" (si le menu déroulant est présent dans le HTML ou markdown)
-  if (servicesSet.size < 3 && markdown) {
+  // 2. Navigation sous-menu "Nos services" (si présent dans le HTML ou markdown)
+  if (markdown) {
     const subMenuRegex = /(?:nos\s+services|prestations)[\s\S]*?(?:<ul[^>]*sub-menu[^>]*>([\s\S]*?)<\/ul>)/i;
     const subMenuMatch = markdown.match(subMenuRegex);
     if (subMenuMatch && subMenuMatch[1]) {
@@ -8795,86 +8824,20 @@ function extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown = '')
     }
   }
 
-  // 3. Contenu extrait spécifiquement de la section #services (via X-Target-Selector)
-  if (servicesSet.size < 2 && targetedServicesMarkdown && targetedServicesMarkdown.length > 20) {
-    const lines = targetedServicesMarkdown.split('\n');
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (!line) continue;
-      const bm = line.match(/^[-*•\d.]+\s+(.*)/);
-      const hm = line.match(/^#+\s+(.*)/);
-      const boldm = line.match(/^\*\*(.*?)\*\*/);
-      const linkm = line.match(/^\[(.*?)\]\(.*?\)/);
-      if (bm) ajouterService(bm[1]);
-      else if (hm) ajouterService(hm[1]);
-      else if (boldm) ajouterService(boldm[1]);
-      else if (linkm) ajouterService(linkm[1]);
-      else if (line.length < 50 && !line.endsWith('.')) ajouterService(line);
-    }
-  }
+  // 3. Titres de sections et cartes de services dans le markdown (### Nom du service, ## Nom du service)
+  for (const rawLine of allLines) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+    // Ignorer les sections parasites
+    if (/questions|faq|tarifs|prix|coordonnées|contact|avis/i.test(trimmed)) continue;
 
-  // 2. Si moins de 2 services, recherche ciblée de la section #services dans le markdown complet
-  if (servicesSet.size < 2 && markdown) {
-    const lines = markdown.split('\n');
-    let inServiceSection = false;
+    const hm = trimmed.match(/^#+\s+(.*)/);
+    const bm = trimmed.match(/^[-*•\d.]+\s+(.*)/);
+    const boldm = trimmed.match(/^\*\*(.*?)\*\*/);
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      // Détection ancre ou titre de la section #services
-      const isServiceAnchorOrHeading = (
-        /(id=["']services["']|\{#services\}|href=["']#services["']|<section[^>]*id=["']services["']|<div[^>]*id=["']services["'])/i.test(line) ||
-        /^#+\s*.*(services|prestations|nos offres|nos activit|ce que nous proposons|ce que nous faisons|domaines d'intervention|interventions|nos compétences).*$/i.test(line)
-      );
-
-      if (isServiceAnchorOrHeading) {
-        inServiceSection = true;
-        continue;
-      }
-
-      // Fin de la section services
-      if (inServiceSection && (
-        /^#+\s*.*(contact|à propos|a propos|qui sommes-nous|avis|témoignages|faq|partenaires|notre histoire|mentions|pourquoi nous|formulaire|galerie).*$/i.test(line) ||
-        /<\/section>/i.test(line)
-      )) {
-        inServiceSection = false;
-      }
-
-      if (inServiceSection) {
-        const bm = line.match(/^[-*•\d.]+\s+(.*)/);
-        const hm = line.match(/^#+\s+(.*)/);
-        const boldm = line.match(/^\*\*(.*?)\*\*/);
-        const linkm = line.match(/^\[(.*?)\]\(.*?\)/);
-
-        if (bm) ajouterService(bm[1]);
-        else if (hm) ajouterService(hm[1]);
-        else if (boldm) ajouterService(boldm[1]);
-        else if (linkm) ajouterService(linkm[1]);
-        else if (line.length < 50 && !line.endsWith('.')) {
-          const lower = line.toLowerCase();
-          if (tradeWords.some(tw => lower.includes(tw))) {
-            ajouterService(line);
-          }
-        }
-      }
-    }
-  }
-
-  // 3. Fallback avec mots-clés métiers dans tout le document si la section n'a pas été détectée
-  if (servicesSet.size < 2 && markdown) {
-    tradeWords.forEach(tw => {
-      const re = new RegExp(`\\b(${tw}[a-zà-ÿ\\s]{0,35})\\b`, 'gi');
-      let m;
-      let count = 0;
-      while ((m = re.exec(markdown)) !== null && count < 3) {
-        const cand = m[1].trim();
-        if (cand.length >= 5 && cand.length <= 45 && !/pour|dans|avec|notre|votre/i.test(cand)) {
-          ajouterService(cand);
-          count++;
-        }
-      }
-    });
+    if (hm) ajouterService(hm[1]);
+    else if (bm) ajouterService(bm[1]);
+    else if (boldm) ajouterService(boldm[1]);
   }
 
   return Array.from(servicesSet).slice(0, 20);
@@ -9380,6 +9343,82 @@ function genererDescriptionGmbDepuisTexte(text = '', ville = '') {
   return `Entreprise professionnelle de confiance intervenant${v}. Nous mettons notre expertise et notre savoir-faire au service de vos projets de rénovation et d'entretien. Prestations soignées, écoute attentive de vos besoins, respect des normes en vigueur et devis gratuit sans engagement.`;
 }
 
+async function analyserSiteSeoViaGemini(markdown, siteUrl = '') {
+  const apiKey = getGeminiKey();
+  if (!apiKey || !markdown || markdown.length < 50) return null;
+
+  try {
+    const prompt = `Tu es un expert en SEO local et Google My Business (GMB).
+Voici le contenu texte d'un site web d'entreprise locale / artisan :
+${markdown.slice(0, 6500)}
+
+TÂCHE :
+1. Extrais UNIQUEMENT la liste des véritables prestations/services métiers proposés aux clients (ex: "🌳 Émondage d'arbre", "🪓 Abattage d'arbre", "🌿 Taille de haie de cèdres", "⛏️ Essouchage").
+RÈGLES STRICTES D'EXCLUSION :
+- Ne mets AUCUN numéro de téléphone (ex: "(819) ...")
+- Ne mets AUCUN horaire d'ouverture (ex: "Lun-Ven 7 h - 17 h")
+- Ne mets AUCUN bouton commercial (ex: "Obtenir une soumission", "Demandez votre soumission", "Soumission 100% gratuit")
+- Ne mets AUCUNE question de FAQ (ex: "Faut-il un permis... ?", "Comment obtenir...")
+- Ne mets AUCUN argument de réassurance (ex: "Arboriculteurs qualifiés", "Responsabilité civile assurée")
+- Attribue un emoji adapté devant chaque service.
+2. Extrais ou rédige une description percutante et professionnelle pour la fiche Google My Business (maximum 740 caractères).
+
+RÉPONDS STRICTEMENT AU FORMAT JSON SUIVANT, SANS AUCUN AUTRE TEXTE NI BALISE MARKDOWN :
+{
+  "services": ["🪓 Nom du service 1", "🌳 Nom du service 2"],
+  "description": "Texte description GMB"
+}`;
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" }
+      })
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawJson) return null;
+    return JSON.parse(rawJson);
+  } catch (e) {
+    console.warn("Échec analyse Gemini site SEO :", e);
+    return null;
+  }
+}
+
+async function perfectionnerServicesSeoViaGemini() {
+  const markdown = window._lastScrapedMarkdown || '';
+  const apiKey = getGeminiKey();
+  if (!apiKey) {
+    const keyPrompt = prompt("🔑 Entrez votre clé API Google Gemini pour analyser et perfectionner les services du site :");
+    if (keyPrompt && keyPrompt.trim()) {
+      localStorage.setItem('gemini_api_key', keyPrompt.trim());
+    } else {
+      return;
+    }
+  }
+
+  showToast("🧠 Analyse intelligente des services par Gemini...", "info", 3000);
+  const contentToAnalyze = markdown || (_seoScrapedData.services || []).join('\n') || window._lastSeoSiteUrl || '';
+  const aiData = await analyserSiteSeoViaGemini(contentToAnalyze, window._lastSeoSiteUrl || '');
+  if (aiData && Array.isArray(aiData.services) && aiData.services.length > 0) {
+    _seoScrapedData.services = aiData.services;
+    renderSeoServices(aiData.services);
+    if (aiData.description) {
+      _seoScrapedData.description = aiData.description;
+      const descEl = document.getElementById('seo-description-text');
+      if (descEl) descEl.value = aiData.description;
+      actualiserCompteurDescSeo();
+    }
+    showToast(`✨ ${aiData.services.length} services nettoyés et extraits par l'IA !`, "success", 4000);
+  } else {
+    showToast("Impossible d'extraire les services via l'IA.", "warning", 3000);
+  }
+}
+
 async function lancerScrapingSiteSeo(event) {
   if (event) event.preventDefault();
   const urlInput = document.getElementById('seo-site-url');
@@ -9492,6 +9531,8 @@ async function lancerScrapingSiteSeo(event) {
     window._lastTargetedServicesMarkdown = targetedServicesMarkdown;
   }
 
+  window._lastScrapedMarkdown = markdown;
+
   // 3. Extraction ou génération synthétique
   let services = [];
   let description = '';
@@ -9503,8 +9544,32 @@ async function lancerScrapingSiteSeo(event) {
       if (ville && villeInput) villeInput.value = ville;
       _seoScrapedData.ville = ville;
     }
-    services = extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown);
-    description = extraireDescriptionGmbDepuisMarkdown(markdown, ville);
+
+    // 3.1. Tentative d'analyse IA avec Gemini (si clé configurée)
+    if (getGeminiKey() && markdown && markdown.length > 80) {
+      try {
+        if (statusPill) statusPill.textContent = 'Extraction IA Gemini...';
+        const aiData = await analyserSiteSeoViaGemini(markdown, targetUrl);
+        if (aiData) {
+          if (Array.isArray(aiData.services) && aiData.services.length > 0) {
+            services = aiData.services;
+          }
+          if (aiData.description && aiData.description.length > 40) {
+            description = aiData.description;
+          }
+        }
+      } catch (errAi) {
+        console.warn("Gemini auto-extract skipped", errAi);
+      }
+    }
+
+    // 3.2. Fallback heuristique ultra-filtré si Gemini n'a pas tout extrait
+    if (services.length === 0) {
+      services = extraireServicesDepuisMarkdown(markdown, targetedServicesMarkdown);
+    }
+    if (!description) {
+      description = extraireDescriptionGmbDepuisMarkdown(markdown, ville);
+    }
     photosSite = extrairePhotosDepuisMarkdown(markdown, targetUrl);
   } else {
     // Mode Intelligent (activité / mots-clés ou site protégé)
