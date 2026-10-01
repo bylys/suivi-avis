@@ -30,6 +30,13 @@ const SB_HEADERS = {
   'Content-Type': 'application/json'
 };
 
+function _escHtml(s) {
+  return (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function escapeHtml(s) {
+  return _escHtml(s);
+}
+
 async function sbGet(table, params) {
   const url = `${SUPABASE_URL}/rest/v1/${table}?${params || 'select=*'}`;
   const res = await fetch(url, { headers: SB_HEADERS });
@@ -6622,6 +6629,10 @@ window.__GMB_IMAGE_CONTEXT__ = Object.freeze({
 
 function _escHtml(s) {
   return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escapeHtml(s) {
+  return _escHtml(s);
 }
 
 function removeImgRow(id) {
